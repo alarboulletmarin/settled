@@ -33,7 +33,7 @@ export function Field({ label, children, hint, error, optional, className }: Fie
       </label>
       {children(id, describedBy)}
       {(error ?? hint) !== undefined && (
-        <p id={helpId} className={cn('t-label', error !== undefined && 'text-danger')}>
+        <p id={helpId} className={cn('t-label', error !== undefined && 'text-danger-text')}>
           {error ?? hint}
         </p>
       )}

@@ -103,6 +103,25 @@ export const fr = {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
   },
 
+  onboarding: {
+    step: 'Étape %s sur 2',
+    householdTitle: 'Comment s’appelle ton foyer ?',
+    householdHint: 'Tu pourras le changer plus tard.',
+    householdLabel: 'Nom du foyer',
+    householdEmpty: 'Donne un nom à ton foyer pour continuer.',
+    membersTitle: 'Qui vit ici ?',
+    membersHint:
+      'Les membres servent d’étiquette sur les dépenses. Tu peux passer et rester en solo.',
+    membersLabel: 'Prénom',
+    membersPlaceholder: 'Alix',
+    membersAdd: 'Ajouter',
+    membersEmpty: 'Personne pour l’instant. Ajoute un prénom, ou passe.',
+    membersRemove: 'Retirer %s',
+    solo: 'Je suis seul·e',
+    start: 'Commencer',
+    privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
+  },
+
   styleguide: {
     title: 'Styleguide',
     subtitle: 'Chaque token et chaque composant du design system, dans les deux thèmes.',

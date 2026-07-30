@@ -58,11 +58,14 @@ export function IconButton({
   children,
   label,
   variant = 'ghost',
+  className,
   ...rest
-}: { children: ReactNode; label: string; variant?: ButtonVariant } & Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  'className' | 'aria-label'
->) {
+}: {
+  children: ReactNode
+  label: string
+  variant?: ButtonVariant
+  className?: string
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'aria-label'>) {
   return (
     <button
       type="button"
@@ -72,6 +75,7 @@ export function IconButton({
         'transition-colors duration-[var(--dur)] ease-ds',
         'disabled:pointer-events-none disabled:opacity-40',
         VARIANT[variant],
+        className,
       )}
       {...rest}
     >

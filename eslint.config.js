@@ -25,6 +25,12 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       '@typescript-eslint/no-explicit-any': 'error',
+      // Le rest-spread est la seule façon de retirer une propriété d'un objet
+      // sans le muter : la liaison écartée porte un underscore et ne sert pas.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
       '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       '@typescript-eslint/no-unnecessary-condition': 'off',

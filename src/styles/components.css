@@ -10,6 +10,7 @@
   .surface,
   .tile {
     --text-muted: var(--text-muted-on-surface);
+    --danger-text: var(--danger-text-on-surface);
   }
 
   .tile {

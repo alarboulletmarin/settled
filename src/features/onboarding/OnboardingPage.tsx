@@ -1,15 +1,51 @@
+import { useState } from 'react'
 import { fr } from '@/i18n/fr'
+import { addMember, removeMember, setHouseholdName } from '@/store/actions'
+import { useHouseholdName, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
-import { Button } from '@/ui/Button'
+import { Tile } from '@/ui/Tile'
+import { HouseholdStep } from './HouseholdStep'
+import { MembersStep } from './MembersStep'
 
-/** Remplacé en phase 4 par le parcours en deux étapes du cahier §4.1. */
+/**
+ * Deux questions, puis l'app est utilisable. Le jeu de catégories par défaut
+ * est déjà posé par le document initial : il n'y a rien à demander de plus.
+ */
 export function OnboardingPage() {
+  const [step, setStep] = useState<1 | 2>(1)
+  const householdName = useHouseholdName()
+  const members = useMembers()
   const finishOnboarding = useStore((s) => s.finishOnboarding)
+
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 px-6">
-      <h1 className="t-hero">{fr.app.name}</h1>
-      <p className="t-body text-muted">{fr.app.tagline}</p>
-      <Button onClick={finishOnboarding}>{fr.common.next}</Button>
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-5 py-10">
+      <header className="flex flex-col gap-1">
+        <span className="t-eyebrow text-muted">{fr.app.name}</span>
+        <span className="t-label">{fr.onboarding.step.replace('%s', String(step))}</span>
+      </header>
+
+      <Tile>
+        {step === 1 ? (
+          <HouseholdStep
+            initialName={householdName}
+            onSubmit={(name) => {
+              setHouseholdName(name)
+              setStep(2)
+            }}
+          />
+        ) : (
+          <MembersStep
+            members={members}
+            onAdd={(name) => {
+              addMember(name)
+            }}
+            onRemove={removeMember}
+            onDone={finishOnboarding}
+          />
+        )}
+      </Tile>
+
+      <p className="t-label">{fr.onboarding.privacy}</p>
     </div>
   )
 }

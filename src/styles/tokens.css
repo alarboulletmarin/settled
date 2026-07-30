@@ -119,6 +119,11 @@
   --track-on-accent: rgb(11 14 13 / 0.16);
   /* Une seule valeur passe AA partout en clair : rien à repointer. */
   --text-muted-on-surface: var(--text-muted);
+  /* --alert-500 en texte plafonne à 3,55:1 sur --bg. Même teinte assombrie à
+     80 % : 5,69 sur --surface, 5,16 sur --bg, 4,55 sur --surface-2. Le token
+     --danger, lui, reste la valeur du DS et sert de remplissage. */
+  --danger-text: #b73a3e;
+  --danger-text-on-surface: var(--danger-text);
 }
 
 [data-theme='dark'] {
@@ -127,6 +132,10 @@
   /* Valeur du DS, valable dès qu'on est dans une surface : 7,08:1 sur
      --surface, 6,41 sur --surface-2. `.tile` la remet en place. */
   --text-muted-on-surface: #8fa09a;
+  /* Même partage pour l'alerte : la valeur par défaut tient sur le sapin
+     (5,04:1), les surfaces reprennent un rouge plus franc (6,39:1). */
+  --danger-text: #f7c8ca;
+  --danger-text-on-surface: #ea6d71;
 }
 
 /* ---------------------------------------------------------------------------
@@ -178,6 +187,7 @@
   --color-accent-2-fg: var(--accent-2-fg);
   --color-danger: var(--danger);
   --color-danger-fg: var(--danger-fg);
+  --color-danger-text: var(--danger-text);
 
   --color-flow-in: var(--flow-in);
   --color-flow-out: var(--flow-out);

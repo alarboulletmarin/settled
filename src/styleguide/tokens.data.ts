@@ -53,7 +53,8 @@ export const SEMANTIC_TOKENS: TokenEntry[] = [
   { name: '--accent-fg', value: 'texte sur lime' },
   { name: '--accent-2', value: 'violet — remplissage' },
   { name: '--accent-2-fg', value: 'texte sur violet' },
-  { name: '--danger', value: 'dépassements et erreurs' },
+  { name: '--danger', value: 'dépassements et erreurs — remplissage' },
+  { name: '--danger-text', value: 'texte d’erreur' },
 ]
 
 export const CATEGORY_PALETTE: TokenEntry[] = [
