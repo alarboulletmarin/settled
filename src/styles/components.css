@@ -1,0 +1,122 @@
+/* Styles de composants qui ne peuvent pas s'exprimer en utilitaires : ceux qui
+ * repointent un token sémantique pour tout leur sous-arbre, et la grille bento.
+ * Aucune valeur brute de palette ici non plus. */
+
+@layer components {
+  /* --- Tile — DS §6 ------------------------------------------------------ */
+
+  /* Toute zone posée sur --surface : tuile, feuille modale, panneau. Y compris
+     pour l'unique raison de repointer --text-muted sur sa valeur de surface. */
+  .surface,
+  .tile {
+    --text-muted: var(--text-muted-on-surface);
+  }
+
+  .tile {
+    position: relative;
+    background-color: var(--surface);
+    color: var(--text);
+    border-radius: var(--r-tile);
+    border: 1px solid var(--tile-border);
+    box-shadow: var(--shadow);
+  }
+
+  /* Les variantes accentuées repointent les tokens sémantiques pour tout leur
+     contenu : un enfant qui lit `--text-muted` s'adapte sans rien savoir. */
+  .tile--accent {
+    background-color: var(--accent);
+    border-color: transparent;
+    box-shadow: none;
+    --text: var(--accent-fg);
+    --text-muted: rgb(11 14 13 / 0.62);
+    --surface-2: rgb(11 14 13 / 0.12);
+    --border: rgb(11 14 13 / 0.14);
+    --eyebrow-bg: rgb(11 14 13 / 0.12);
+    --eyebrow-fg: rgb(11 14 13 / 0.72);
+    color: var(--accent-fg);
+  }
+
+  .tile--accent-2 {
+    background-color: var(--accent-2);
+    border-color: transparent;
+    box-shadow: none;
+    --text: var(--accent-2-fg);
+    /* Le blanc plein n'atteint que 4,67:1 sur violet : la moindre opacité
+       repasse sous AA. Sur cette tuile, la hiérarchie vient de la taille et de
+       la pilule d'eyebrow, jamais d'un texte atténué. */
+    --text-muted: var(--accent-2-fg);
+    --surface-2: rgb(255 255 255 / 0.16);
+    --border: rgb(255 255 255 / 0.2);
+    --eyebrow-bg: rgb(255 255 255 / 0.18);
+    --eyebrow-fg: var(--accent-2-fg);
+    color: var(--accent-2-fg);
+  }
+
+  .eyebrow-pill {
+    background-color: var(--eyebrow-bg, var(--surface-2));
+    color: var(--eyebrow-fg, var(--text-muted));
+  }
+
+  /* --- Grille bento — DS §5 --------------------------------------------- */
+
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    grid-auto-rows: 84px;
+    /* `dense` permet à une tuile 2×1 de venir combler la demi-hauteur laissée
+       libre à côté d'une 2×2 — c'est la colonne €/% du schéma du DS §5. */
+    grid-auto-flow: row dense;
+  }
+
+  @media (min-width: 768px) {
+    .bento {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 16px;
+      grid-auto-rows: 100px;
+    }
+  }
+
+  /* Formats autorisés, et rien d'autre. Le premier chiffre est le nombre de
+     colonnes sur la grille desktop (6 colonnes) ; sur mobile (2 colonnes),
+     seul un 2×1 se met côte à côte, le reste prend la largeur. */
+  .span-2x1 {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+  .span-2x2,
+  .span-4x1,
+  .span-4x2,
+  .span-6x2 {
+    grid-column: span 2;
+  }
+  .span-4x1 {
+    grid-row: span 1;
+  }
+  .span-2x2,
+  .span-4x2,
+  .span-6x2 {
+    grid-row: span 2;
+  }
+
+  @media (min-width: 768px) {
+    .span-2x1,
+    .span-2x2 {
+      grid-column: span 2;
+    }
+    .span-4x1,
+    .span-4x2 {
+      grid-column: span 4;
+    }
+    .span-6x2 {
+      grid-column: span 6;
+    }
+  }
+
+  /* --- Anneau ----------------------------------------------------------- */
+
+  .ring-svg {
+    /* Départ à midi, sens horaire. */
+    transform: rotate(-90deg);
+  }
+}

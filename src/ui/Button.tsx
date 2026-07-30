@@ -1,0 +1,81 @@
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { cn } from '@/lib/cn'
+
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type ButtonSize = 'md' | 'sm'
+
+export type ButtonProps = {
+  children: ReactNode
+  variant?: ButtonVariant
+  size?: ButtonSize
+  full?: boolean
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'>
+
+/* Lime et violet ne sont jamais une `color` : ils remplissent le fond, et le
+   texte prend --accent-fg / --accent-2-fg. */
+const VARIANT: Record<ButtonVariant, string> = {
+  primary: 'bg-accent text-accent-fg hover:brightness-95',
+  secondary: 'bg-surface-2 text-text hover:brightness-[0.97]',
+  ghost: 'bg-transparent text-text hover:bg-surface-2',
+  danger: 'bg-danger text-danger-fg hover:brightness-95',
+}
+
+const SIZE: Record<ButtonSize, string> = {
+  md: 'h-11 px-5 text-[15px]',
+  sm: 'h-9 px-3.5 text-[13px]',
+}
+
+export function Button({
+  children,
+  variant = 'primary',
+  size = 'md',
+  full = false,
+  type = 'button',
+  disabled,
+  ...rest
+}: ButtonProps) {
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center gap-2 rounded-input font-medium',
+        'transition-[filter,background-color] duration-[var(--dur)] ease-ds',
+        'disabled:pointer-events-none disabled:opacity-40',
+        VARIANT[variant],
+        SIZE[size],
+        full && 'w-full',
+      )}
+      {...rest}
+    >
+      {children}
+    </button>
+  )
+}
+
+/** Bouton réduit à une icône. Conserve la cible tactile de 44px du DS §8. */
+export function IconButton({
+  children,
+  label,
+  variant = 'ghost',
+  ...rest
+}: { children: ReactNode; label: string; variant?: ButtonVariant } & Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'className' | 'aria-label'
+>) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      className={cn(
+        'hit inline-flex items-center justify-center rounded-chip',
+        'transition-colors duration-[var(--dur)] ease-ds',
+        'disabled:pointer-events-none disabled:opacity-40',
+        VARIANT[variant],
+      )}
+      {...rest}
+    >
+      {children}
+    </button>
+  )
+}
