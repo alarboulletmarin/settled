@@ -69,6 +69,11 @@ export const CATEGORY_PALETTE: TokenEntry[] = [
 
 export const TYPE_SCALE = [
   { role: 'Chiffre héros', className: 't-hero', detail: 'sans · 56/72px · 700 · stretch 112%' },
+  {
+    role: 'Chiffre héros ajusté',
+    className: 't-hero-fit',
+    detail: 'mêmes bornes, ramené à la largeur de la tuile',
+  },
   { role: 'Chiffre de tuile', className: 't-tile-num', detail: 'sans · 32px · 650' },
   { role: 'Titre de section', className: 't-section', detail: 'sans · 20px · 600' },
   { role: 'Corps', className: 't-body', detail: 'sans · 15px · 400' },

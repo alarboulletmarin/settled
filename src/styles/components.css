@@ -15,6 +15,9 @@
 
   .tile {
     position: relative;
+    /* Fait de la tuile un conteneur de requête, pour que le chiffre héros
+       puisse se dimensionner sur la largeur réellement disponible. */
+    container-type: inline-size;
     background-color: var(--surface);
     color: var(--text);
     border-radius: var(--r-tile);
@@ -64,7 +67,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    grid-auto-rows: 84px;
+    grid-auto-rows: 88px;
     /* `dense` permet à une tuile 2×1 de venir combler la demi-hauteur laissée
        libre à côté d'une 2×2 — c'est la colonne €/% du schéma du DS §5. */
     grid-auto-flow: row dense;
@@ -74,7 +77,7 @@
     .bento {
       grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 16px;
-      grid-auto-rows: 100px;
+      grid-auto-rows: 108px;
     }
   }
 

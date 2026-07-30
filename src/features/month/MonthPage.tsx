@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { MonthHeader } from '@/app/MonthHeader'
 import { type ISODate, type YearMonth, startOfMonth, today, ymOf } from '@/domain/date'
 import type { Entry } from '@/domain/types'
+import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
 import { useCurrentYm, useIsMonthOpened, useMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
@@ -45,14 +46,17 @@ export function MonthPage() {
       {entries.length === 0 && opened ? (
         <EmptyState message={fr.month.empty} actionLabel={fr.entry.add} onAction={openCreate} />
       ) : (
-        <div className="flex max-w-3xl flex-col gap-4">
-          <PendingSection />
-          <EntriesSection
-            onOpen={(entry) => {
-              setEditing(entry)
-              setSheetOpen(true)
-            }}
-          />
+        <div className="flex flex-col gap-4">
+          <Dashboard />
+          <div className="flex max-w-3xl flex-col gap-4">
+            <PendingSection />
+            <EntriesSection
+              onOpen={(entry) => {
+                setEditing(entry)
+                setSheetOpen(true)
+              }}
+            />
+          </div>
         </div>
       )}
 

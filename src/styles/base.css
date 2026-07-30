@@ -58,6 +58,24 @@
     }
   }
 
+  /* Variante du chiffre héros pour une tuile étroite : mêmes bornes que le DS,
+     mais ramenée à la largeur du conteneur plutôt que de déborder. Un solde à
+     quatre chiffres ne tient pas à 72px dans une tuile 2×2. */
+  .t-hero-fit {
+    font-family: var(--font-sans);
+    font-size: clamp(28px, 15cqi, 56px);
+    font-weight: 700;
+    font-stretch: 112%;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  @media (min-width: 768px) {
+    .t-hero-fit {
+      font-size: clamp(32px, 15cqi, 72px);
+    }
+  }
+
   .t-tile-num {
     font-family: var(--font-sans);
     font-size: 32px;
