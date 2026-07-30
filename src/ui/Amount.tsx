@@ -17,6 +17,8 @@ export type AmountProps = {
    * Laissé vide, la valeur est un solde : le « − » est affiché.
    */
   direction?: 'in' | 'out'
+  /** Affiche le « + » sur une valeur positive. Pour un écart, jamais un solde. */
+  signed?: boolean
   tone?: AmountTone
   withCents?: boolean
   currency?: string
@@ -55,6 +57,7 @@ export function Amount({
   value,
   size = 'body',
   direction,
+  signed = false,
   tone = 'default',
   withCents = true,
   currency,
@@ -64,9 +67,9 @@ export function Amount({
   const code = currency ?? activeCurrency
   const displayed = (direction ? Math.abs(value) : value) as Money
   const parts = moneyParts(displayed, code)
-  const sign = direction === 'in' ? '+' : parts.sign
+  const sign = direction === 'in' || (signed && displayed > 0) ? '+' : parts.sign
 
-  const spoken = `${direction === 'in' ? '+' : ''}${formatMoney(displayed, code, withCents)}`
+  const spoken = `${sign === '+' ? '+' : ''}${formatMoney(displayed, code, withCents)}`
   const label =
     direction === 'out' ? `${fr.direction.out.toLowerCase()} ${spoken}` : spoken
 

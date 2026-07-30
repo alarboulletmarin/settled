@@ -103,6 +103,32 @@ export const fr = {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
   },
 
+  history: {
+    title: 'Historique',
+    trailing: 'Douze derniers mois',
+    trailingEmpty: 'Pas encore assez de données pour tracer une courbe.',
+    legendIn: 'Entrées',
+    legendOut: 'Sorties',
+    legendBalance: 'Solde',
+    compare: 'Comparer deux mois',
+    compareLeft: 'Mois de référence',
+    compareRight: 'Mois comparé',
+    compareEmpty: 'Ces deux mois n’ont aucune sortie à comparer.',
+    compareSingleMonth:
+      'Un seul mois de données pour l’instant. La comparaison arrivera avec le deuxième.',
+    category: 'Catégorie',
+    delta: 'Écart',
+    years: 'Comparer deux années',
+    year: 'Année',
+    yearsEmpty: 'Pas encore d’année complète à comparer.',
+    yearCurrent: '%s',
+    yearPrevious: '%s',
+    cumulative: 'Cumul du solde, mois après mois',
+    srTrailing: 'Solde mensuel : %s',
+    srYears: 'Cumul %s contre %s : %s',
+    noData: 'Aucune donnée sur cette période.',
+  },
+
   dashboard: {
     balance: 'Solde du mois',
     forecast: 'Prévisionnel',
