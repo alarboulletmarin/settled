@@ -133,6 +133,51 @@ export function useSubscriptionTotals(): SubscriptionTotals {
   }, [recurrences, entries])
 }
 
+export type MonthPending = {
+  /** Échéances prêtes à confirmer telles quelles. */
+  fixed: Entry[]
+  /** Échéances dont le montant reste à saisir (cahier §4.3). */
+  variable: Entry[]
+}
+
+/** Les échéances prévues du mois affiché, les variables listées à part. */
+export function useMonthPending(): MonthPending {
+  const entries = useMonthEntries()
+  const recurrences = useRecurrences()
+  return useMemo(() => {
+    const variableIds = new Set(
+      recurrences.filter((r) => r.amount === null).map((r) => r.id),
+    )
+    const planned = entries
+      .filter((e) => e.status === 'planned')
+      .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+    return {
+      fixed: planned.filter((e) => e.recurrenceId === undefined || !variableIds.has(e.recurrenceId)),
+      variable: planned.filter(
+        (e) => e.recurrenceId !== undefined && variableIds.has(e.recurrenceId),
+      ),
+    }
+  }, [entries, recurrences])
+}
+
+/** Les entrées confirmées du mois, de la plus récente à la plus ancienne. */
+export function useMonthConfirmed(): Entry[] {
+  const entries = useMonthEntries()
+  return useMemo(
+    () =>
+      entries
+        .filter((e) => e.status === 'confirmed')
+        .sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0)),
+    [entries],
+  )
+}
+
+export function useIsMonthOpened(): boolean {
+  const ym = useCurrentYm()
+  const months = useStore((s) => s.data.months)
+  return useMemo(() => months.some((m) => m.ym === ym), [months, ym])
+}
+
 export type RecurrenceRow = {
   recurrence: Recurrence
   /** Prochaine échéance à venir, ou null si la récurrence est terminée. */

@@ -43,12 +43,13 @@ export function Field({ label, children, hint, error, optional, className }: Fie
 
 export type TextInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className'> & {
   invalid?: boolean
+  className?: string
 }
 
-export function TextInput({ invalid = false, ...rest }: TextInputProps) {
+export function TextInput({ invalid = false, className, ...rest }: TextInputProps) {
   return (
     <input
-      className={cn(CONTROL, 'h-11', invalid && 'border-danger')}
+      className={cn(CONTROL, 'h-11', invalid && 'border-danger', className)}
       aria-invalid={invalid || undefined}
       {...rest}
     />
@@ -56,10 +57,15 @@ export function TextInput({ invalid = false, ...rest }: TextInputProps) {
 }
 
 /** Saisie de montant : tabular-nums et clavier numérique, sans exception. */
-export function AmountInput({ invalid = false, ...rest }: TextInputProps) {
+export function AmountInput({ invalid = false, className, ...rest }: TextInputProps) {
   return (
     <input
-      className={cn(CONTROL, 'tnum h-11 text-right font-medium', invalid && 'border-danger')}
+      className={cn(
+        CONTROL,
+        'tnum h-11 text-right font-medium',
+        invalid && 'border-danger',
+        className,
+      )}
       inputMode="decimal"
       autoComplete="off"
       aria-invalid={invalid || undefined}
@@ -70,11 +76,12 @@ export function AmountInput({ invalid = false, ...rest }: TextInputProps) {
 
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> & {
   children: ReactNode
+  className?: string
 }
 
-export function Select({ children, ...rest }: SelectProps) {
+export function Select({ children, className, ...rest }: SelectProps) {
   return (
-    <select className={cn(CONTROL, 'h-11 appearance-none pr-9')} {...rest}>
+    <select className={cn(CONTROL, 'h-11 appearance-none pr-9', className)} {...rest}>
       {children}
     </select>
   )

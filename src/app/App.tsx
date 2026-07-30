@@ -9,6 +9,7 @@ import { SettingsPage } from '@/features/settings/SettingsPage'
 import { useStore } from '@/store/store'
 import { StyleguidePage } from '@/styleguide/StyleguidePage'
 import { useApplyTheme } from '@/theme/useTheme'
+import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
 import { AppShell } from './AppShell'
 import { BootScreen } from './BootScreen'
@@ -55,6 +56,7 @@ export function App() {
           <Route path="/styleguide" element={<StyleguidePage />} />
           <Route path="*" element={<Booted />} />
         </Routes>
+        <Toaster />
       </BrowserRouter>
     </CurrencyContext>
   )

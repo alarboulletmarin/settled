@@ -7,7 +7,9 @@
  * ==========================================================================*/
 
 import { create } from 'zustand'
-import { type YearMonth, currentYm } from '@/domain/date'
+import { type YearMonth, currentYm, today } from '@/domain/date'
+import { makeId } from '@/domain/ids'
+import { openMonth } from '@/domain/updates'
 import type { Data, ThemeSetting } from '@/domain/types'
 import { clearDocument, createWriter, loadDocument, saveDocument } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
@@ -34,6 +36,8 @@ export type StoreActions = {
   setMemberFilter: (memberId: string | undefined) => void
   setTheme: (theme: ThemeSetting) => void
   finishOnboarding: () => void
+  /** Ouvre le mois courant s'il ne l'a jamais été. Idempotent. */
+  ensureCurrentMonthOpen: () => void
   replaceData: (data: Data) => Promise<void>
   resetAll: () => Promise<void>
   setError: (message: string | null) => void
@@ -69,6 +73,8 @@ export const useStore = create<Store>()((set, get) => ({
       }
       storePreference(stored.settings.theme)
       set({ status: 'ready', data: stored })
+      // Cahier §4.3 : l'ouverture est déclenchée au premier lancement du mois.
+      get().ensureCurrentMonthOpen()
     } catch {
       set({
         status: 'onboarding',
@@ -98,7 +104,14 @@ export const useStore = create<Store>()((set, get) => ({
 
   finishOnboarding() {
     set({ status: 'ready' })
+    get().ensureCurrentMonthOpen()
     writer.schedule(get().data)
+  },
+
+  ensureCurrentMonthOpen() {
+    const ym = currentYm()
+    if (get().data.months.some((m) => m.ym === ym)) return
+    get().mutate((data) => openMonth(data, ym, makeId, today()).data)
   },
 
   async replaceData(data) {
