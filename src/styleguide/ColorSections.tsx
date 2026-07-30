@@ -42,7 +42,7 @@ function SemanticList() {
             className="size-8 shrink-0 rounded-inner border border-border"
             style={{ backgroundColor: `var(${entry.name})` }}
           />
-          <span className="t-axis w-32 shrink-0">{entry.name}</span>
+          <span className="t-axis w-52 shrink-0">{entry.name}</span>
           <span className="t-label truncate">{entry.value}</span>
         </li>
       ))}

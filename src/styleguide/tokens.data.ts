@@ -54,6 +54,7 @@ export const SEMANTIC_TOKENS: TokenEntry[] = [
   { name: '--accent-2', value: 'violet — remplissage' },
   { name: '--accent-2-fg', value: 'texte sur violet' },
   { name: '--danger', value: 'dépassements et erreurs — remplissage' },
+  { name: '--danger-fill', value: 'fond portant du texte blanc' },
   { name: '--danger-text', value: 'texte d’erreur' },
 ]
 

@@ -10,6 +10,7 @@ import type { Data } from '@/domain/types'
 import { ImportError, type MigrationResult, migrateDocument } from './schema'
 
 export { ImportError }
+export type { MigrationResult }
 
 const EXPORT_MIME = 'application/json'
 

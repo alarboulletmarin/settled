@@ -36,7 +36,7 @@ export function Segmented<T extends string>({
               onChange(option.value)
             }}
             className={cn(
-              'min-h-9 rounded-chip px-3.5 text-[13px] font-medium',
+              'min-h-11 rounded-chip px-3.5 text-[13px] font-medium',
               'transition-colors duration-[var(--dur)] ease-ds',
               active ? 'bg-accent text-accent-fg' : 'text-muted hover:text-text',
             )}

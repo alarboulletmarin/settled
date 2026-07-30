@@ -101,6 +101,51 @@ export const fr = {
 
   settings: {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
+
+    household: 'Foyer',
+    householdName: 'Nom du foyer',
+    members: 'Membres',
+    memberAdd: 'Ajouter un membre',
+    memberName: 'Prénom',
+    memberRemove: 'Retirer %s',
+    memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
+    membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
+
+    categories: 'Catégories',
+    categoryAdd: 'Ajouter une catégorie',
+    categoryName: 'Libellé',
+    categoryArchive: 'Archiver %s',
+    categoryRestore: 'Réactiver %s',
+    archive: 'Archiver',
+    restore: 'Réactiver',
+    categoryDirection: 'Sens',
+    categoryArchived: 'Archivées',
+    categoriesHint:
+      'Une catégorie n’est jamais effacée : elle est archivée, et les entrées passées la gardent.',
+
+    data: 'Données',
+    export: 'Exporter mes données',
+    exportHint: 'Un fichier .json contenant tout, à ranger où tu veux.',
+    exported: 'Export téléchargé',
+    lastExport: 'Dernier export : %s',
+    neverExported: 'Jamais exporté.',
+    import: 'Importer un fichier',
+    importHint: 'Remplace intégralement les données actuelles.',
+    importConfirm: 'Remplacer toutes les données par ce fichier ?',
+    imported: 'Données importées',
+    importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
+    reset: 'Tout effacer',
+    resetHint: 'Efface le foyer, les abonnements et toutes les entrées. Sans retour.',
+    resetConfirm1: 'Effacer toutes les données de cet appareil ?',
+    resetConfirm2: 'Vraiment tout effacer ? Exporte d’abord si tu veux garder une trace.',
+    resetDone: 'Données effacées',
+
+    reminderTitle: 'Ton dernier export date de plus de 30 jours.',
+    reminderBody: 'Les données vivent dans ce navigateur. Un export les met à l’abri.',
+    reminderDismiss: 'Plus tard',
+
+    updateAvailable: 'Une nouvelle version est prête.',
+    updateAction: 'Recharger',
   },
 
   history: {

@@ -9,6 +9,7 @@ export type ButtonProps = {
   variant?: ButtonVariant
   size?: ButtonSize
   full?: boolean
+  className?: string
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'>
 
 /* Lime et violet ne sont jamais une `color` : ils remplissent le fond, et le
@@ -17,12 +18,14 @@ const VARIANT: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-accent-fg hover:brightness-95',
   secondary: 'bg-surface-2 text-text hover:brightness-[0.97]',
   ghost: 'bg-transparent text-text hover:bg-surface-2',
-  danger: 'bg-danger text-danger-fg hover:brightness-95',
+  danger: 'bg-danger-fill text-danger-fg hover:brightness-95',
 }
 
+/* Les deux tailles font 44px de haut : le DS §8 impose cette cible tactile.
+   `sm` se distingue par sa densité horizontale, pas par sa hauteur. */
 const SIZE: Record<ButtonSize, string> = {
   md: 'h-11 px-5 text-[15px]',
-  sm: 'h-9 px-3.5 text-[13px]',
+  sm: 'h-11 px-3.5 text-[13px]',
 }
 
 export function Button({
@@ -32,6 +35,7 @@ export function Button({
   full = false,
   type = 'button',
   disabled,
+  className,
   ...rest
 }: ButtonProps) {
   return (
@@ -45,6 +49,7 @@ export function Button({
         VARIANT[variant],
         SIZE[size],
         full && 'w-full',
+        className,
       )}
       {...rest}
     >

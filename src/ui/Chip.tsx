@@ -17,7 +17,7 @@ export type ChipProps = {
  */
 export function Chip({ children, color, active = false, onClick, className }: ChipProps) {
   const classes = cn(
-    'inline-flex min-h-9 items-center gap-2 rounded-chip px-3 text-[13px]',
+    'inline-flex min-h-11 items-center gap-2 rounded-chip px-3.5 text-[13px]',
     'transition-colors duration-[var(--dur)] ease-ds',
     active ? 'bg-accent text-accent-fg' : 'bg-surface-2 text-text',
     className,

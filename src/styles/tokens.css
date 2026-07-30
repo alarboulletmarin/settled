@@ -86,8 +86,12 @@
   --accent-2: var(--violet-600);
   --accent-2-fg: #ffffff;
 
-  /* Alerte, exposée en sémantique : dépassements et erreurs uniquement. */
+  /* Alerte, exposée en sémantique : dépassements et erreurs uniquement.
+     --danger est un remplissage non textuel (barres, pastilles). Dès qu'un
+     texte se pose dessus, c'est --danger-fill : blanc sur --alert-500 ne donne
+     que 3,91:1, contre 5,69:1 sur la même teinte assombrie. */
   --danger: var(--alert-500);
+  --danger-fill: #b73a3e;
   --danger-fg: #ffffff;
 
   /* Palette catégories — DS §2.4. Six teintes, dans cet ordre. */
@@ -157,6 +161,11 @@
 
   /* Épaisseur de l'anneau signature — DS §6. */
   --ring-width: 12px;
+
+  /* Atténuation du symbole monétaire. Le DS pose 0.5 ; 0.6 est le minimum qui
+     tienne le 4,5:1. Une tuile dont la couleur de texte n'a pas de marge peut
+     le repointer à 1 (voir .tile--accent-2). */
+  --amount-symbol-opacity: 0.6;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -186,6 +195,7 @@
   --color-accent-2: var(--accent-2);
   --color-accent-2-fg: var(--accent-2-fg);
   --color-danger: var(--danger);
+  --color-danger-fill: var(--danger-fill);
   --color-danger-fg: var(--danger-fg);
   --color-danger-text: var(--danger-text);
 

@@ -37,13 +37,12 @@ export function RecurrenceRow({
       className={cn(
         'flex w-full items-center gap-3 rounded-inner px-3 py-2.5 text-left',
         'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2',
-        stopped && 'opacity-60',
       )}
     >
       <Dot color={color} outlined={stopped} />
 
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="t-body truncate">{recurrence.label}</span>
+        <span className={cn('t-body truncate', stopped && 'text-muted')}>{recurrence.label}</span>
         <span className="t-axis truncate">{meta(row)}</span>
         {priceChange !== null && (
           <span className="t-label mt-0.5 flex items-center gap-1 text-danger-text">

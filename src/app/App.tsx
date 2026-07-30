@@ -13,6 +13,7 @@ import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
 import { AppShell } from './AppShell'
 import { BootScreen } from './BootScreen'
+import { UpdatePrompt } from './UpdatePrompt'
 
 /** Les routes de l'app, une fois le foyer créé. */
 function AppRoutes() {
@@ -57,6 +58,7 @@ export function App() {
           <Route path="*" element={<Booted />} />
         </Routes>
         <Toaster />
+        <UpdatePrompt />
       </BrowserRouter>
     </CurrencyContext>
   )

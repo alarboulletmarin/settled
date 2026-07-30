@@ -1,6 +1,7 @@
 import { money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { Amount } from '@/ui/Amount'
+import { Tile } from '@/ui/Tile'
 import { Section, SubTitle } from './Section'
 import { DualTheme } from './ThemePane'
 import { MOTION, RADII, SPACING_SCALE, TYPE_SCALE } from './tokens.data'
@@ -31,7 +32,9 @@ export function TypographySection() {
 
       <SubTitle>{fr.styleguide.sampleAmount}</SubTitle>
       <DualTheme>
-        <div className="flex flex-col gap-4">
+        {/* Dans une tuile, comme partout dans l'app : un montant ne se pose
+            jamais directement sur le fond de page. */}
+        <Tile className="flex flex-col gap-4">
           <Amount value={SAMPLE} size="hero" />
           <Amount value={SAMPLE} size="tile" />
           <div className="flex items-center gap-4">
@@ -41,7 +44,7 @@ export function TypographySection() {
             <Amount value={money(-4290)} size="body" tone="danger" />
             <Amount value={SAMPLE} size="label" tone="muted" />
           </div>
-        </div>
+        </Tile>
       </DualTheme>
     </Section>
   )

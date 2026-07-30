@@ -45,7 +45,7 @@ const CENTS_EM: Record<AmountSize, string> = {
 const TONE_CLASS: Record<AmountTone, string> = {
   default: 'text-text',
   muted: 'text-muted',
-  danger: 'text-danger',
+  danger: 'text-danger-text',
 }
 
 /**
@@ -89,8 +89,15 @@ export function Amount({
       </span>
       <span
         aria-hidden="true"
-        className="ml-[0.18em] opacity-50"
-        style={{ fontSize: '0.55em', lineHeight: 1.2 }}
+        // L'atténuation du symbole est un token : une tuile dont la couleur de
+        // texte n'a aucune marge de contraste la ramène à 1. Un montant déjà
+        // atténué, lui, ne la subit pas du tout.
+        className="ml-[0.18em]"
+        style={{
+          fontSize: '0.55em',
+          lineHeight: 1.2,
+          opacity: tone === 'default' ? 'var(--amount-symbol-opacity)' : 1,
+        }}
       >
         {parts.symbol}
       </span>

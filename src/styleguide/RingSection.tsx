@@ -3,6 +3,7 @@ import { fr } from '@/i18n/fr'
 import { Amount } from '@/ui/Amount'
 import { EmptyState } from '@/ui/EmptyState'
 import { Ring, type RingSegment } from '@/ui/Ring'
+import { Tile } from '@/ui/Tile'
 import { Section, SubTitle } from './Section'
 import { DualTheme } from './ThemePane'
 
@@ -16,7 +17,7 @@ const SEGMENTS: RingSegment[] = [
 
 function Rings() {
   return (
-    <div className="flex flex-wrap items-center gap-8">
+    <Tile className="flex flex-row flex-wrap items-center gap-8">
       <Ring size={160} value={0.42} label="Progression du mois" srText="42 % du mois écoulé">
         <span className="t-eyebrow text-muted">jour 13</span>
         <span className="t-tile-num tnum">42 %</span>
@@ -32,7 +33,7 @@ function Rings() {
       </Ring>
 
       <Ring size={160} value={0} label="Anneau vide" />
-    </div>
+    </Tile>
   )
 }
 

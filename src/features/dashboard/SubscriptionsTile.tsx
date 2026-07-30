@@ -22,7 +22,7 @@ export function SubscriptionsTile() {
         </span>
         <Link
           to="/abonnements"
-          className="t-label mt-1 w-fit rounded-input underline underline-offset-2"
+          className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"
         >
           {fr.recurrences.title}
         </Link>

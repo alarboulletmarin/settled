@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
+import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { useHouseholdName } from '@/store/selectors'
 import { Sidebar, TabBar } from './Nav'
@@ -25,6 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           key={pathname}
           className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 md:pb-10"
         >
+          <ExportReminder />
           {children}
         </main>
       </div>

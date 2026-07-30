@@ -53,6 +53,9 @@
     --border: rgb(255 255 255 / 0.2);
     --eyebrow-bg: rgb(255 255 255 / 0.18);
     --eyebrow-fg: var(--accent-2-fg);
+    /* Le blanc plein ne donne que 4,67:1 sur violet : aucune atténuation ne
+       tient, pas même sur le symbole monétaire. */
+    --amount-symbol-opacity: 1;
     color: var(--accent-2-fg);
   }
 

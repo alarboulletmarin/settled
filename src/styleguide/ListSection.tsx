@@ -5,6 +5,7 @@ import { Amount } from '@/ui/Amount'
 import { Chip } from '@/ui/Chip'
 import { ListRow } from '@/ui/ListRow'
 import { MonthNav } from '@/ui/MonthNav'
+import { Tile } from '@/ui/Tile'
 import { Section, SubTitle } from './Section'
 import { DualTheme } from './ThemePane'
 
@@ -38,7 +39,7 @@ function Chips() {
 
 function Rows() {
   return (
-    <div className="flex flex-col">
+    <Tile className="flex flex-col">
       <ListRow
         color="var(--cat-1)"
         label="Loyer"
@@ -58,7 +59,7 @@ function Rows() {
         planned
         trailing={<Amount value={money(1099)} direction="out" />}
       />
-    </div>
+    </Tile>
   )
 }
 
