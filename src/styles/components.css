@@ -76,7 +76,10 @@
     grid-auto-flow: row dense;
   }
 
-  @media (min-width: 768px) {
+  /* 1024px et non 768 : la colonne latérale prend 224px, et six colonnes dans
+     ce qu'il reste d'une tablette portrait écrasent chaque tuile sous 80px.
+     En dessous, on garde la grille à deux colonnes du DS, en pleine largeur. */
+  @media (min-width: 1024px) {
     .bento {
       grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 16px;
@@ -106,7 +109,7 @@
     grid-row: span 2;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .span-2x1,
     .span-2x2 {
       grid-column: span 2;

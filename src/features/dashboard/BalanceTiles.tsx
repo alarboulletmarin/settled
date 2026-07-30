@@ -40,9 +40,9 @@ export function ForecastTile() {
       <Eyebrow>{fr.dashboard.forecast}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={totals.forecastBalance} size="tile" />
-        {/* Une tuile 2×1 ne fait qu'une demi-hauteur en mobile : la lecture
-            secondaire y reste lue par un lecteur d'écran, sans déborder. */}
-        <span className="t-label max-md:sr-only">{fr.dashboard.forecastHint}</span>
+        {/* Tant que la rangée fait une demi-hauteur, la lecture secondaire
+            reste lue par un lecteur d'écran mais ne s'affiche pas. */}
+        <span className="t-label max-lg:sr-only">{fr.dashboard.forecastHint}</span>
       </div>
     </Tile>
   )
@@ -59,7 +59,7 @@ export function RemainingTile() {
       <Eyebrow>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={remaining} size="tile" tone={remaining < 0 ? 'danger' : 'default'} />
-        <span className="t-label max-md:sr-only">
+        <span className="t-label max-lg:sr-only">
           {hasIncome ? fr.dashboard.remainingHint : fr.dashboard.remainingNoIncome}
         </span>
       </div>

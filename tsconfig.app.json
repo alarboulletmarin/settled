@@ -5,13 +5,14 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client", "vitest/globals", "vite-plugin-pwa/react"],
+    "types": ["vite/client", "vitest/globals"],
 
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
+    "skipLibCheck": true,
     "jsx": "react-jsx",
 
     "strict": true,

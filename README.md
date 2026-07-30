@@ -20,6 +20,7 @@ npm run dev
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest |
+| `npm run verify` | les quatre d'un coup — c'est la porte de sortie |
 
 ## Repères
 
@@ -80,8 +81,33 @@ La date du dernier export vit en `localStorage`, hors du document : elle décrit
 l'état de sauvegarde de cet appareil, et l'inclure ferait qu'un fichier importé
 prétendrait avoir été sauvegardé à l'instant.
 
+## Responsive
+
+Mobile d'abord : le style non préfixé vise le téléphone, les variantes `lg:`
+ajoutent le confort au-delà. Deux grilles seulement, celles du DS §5 — deux
+colonnes, puis six.
+
+Le point de bascule est à **1024px, et non 768**. La colonne latérale consomme
+224px : déclencher les six colonnes en même temps qu'elle ne laisse que ~480px
+de contenu sur une tablette portrait, et chaque tuile tombe sous 80px de large.
+En dessous de 1024px, l'app garde donc la barre d'onglets et la grille à deux
+colonnes, en pleine largeur.
+
+Vérifié sans débordement horizontal de 320 à 1920px sur les cinq écrans. Les
+feuilles modales montent du bas sur mobile et se centrent au-delà ; le mois se
+balaie horizontalement au doigt ; les cibles tactiles font 44px partout.
+
+## Déploiement
+
+Vercel, preset **Vite**. `vercel.json` porte déjà la réécriture SPA — sans elle
+un rechargement sur `/calendrier` renverrait un 404 — et les en-têtes de cache :
+`sw.js` et le manifeste jamais mis en cache, les assets empreintés pour un an.
+
+Aucune variable d'environnement. Le service worker exige HTTPS, que Vercel
+fournit d'office.
+
 ## Vérification
 
-Chaque écran a été relu dans les deux thèmes, en desktop et en mobile. Le
-contraste, les noms accessibles et les cibles tactiles sont audités par script
+Chaque écran a été relu dans les deux thèmes, en téléphone, tablette et desktop.
+Le contraste, les noms accessibles et les cibles tactiles sont audités par script
 sur les six routes, dans les deux thèmes : aucun point en suspens.

@@ -70,7 +70,7 @@
     line-height: 1;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     .t-hero-fit {
       font-size: clamp(32px, 15cqi, 72px);
     }

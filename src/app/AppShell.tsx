@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main
           id="contenu"
           key={pathname}
-          className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 md:pb-10"
+          className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 lg:pb-10"
         >
           <ExportReminder />
           {children}

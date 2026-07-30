@@ -10,6 +10,10 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
+    // Les .d.ts de tiers ne sont pas typecheckés : ceux de vite-plugin-pwa
+    // passent par workbox, écrit pour un service worker, et référencent une
+    // dépendance optionnelle de génération d'assets que l'app n'utilise pas.
+    "skipLibCheck": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

@@ -13,7 +13,7 @@ export function Sidebar({ householdName }: { householdName: string }) {
   return (
     <nav
       aria-label={fr.nav.label}
-      className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 p-5 md:flex"
+      className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 p-5 lg:flex"
     >
       <div className="mb-6 flex flex-col gap-0.5 px-3">
         <span className="t-eyebrow text-muted">{fr.app.name}</span>
@@ -55,7 +55,7 @@ export function TabBar() {
     <nav
       aria-label={fr.nav.label}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface md:hidden',
+        'fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface lg:hidden',
         'pb-[env(safe-area-inset-bottom)]',
       )}
     >
