@@ -103,6 +103,19 @@ export const fr = {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
   },
 
+  calendar: {
+    title: 'Calendrier',
+    dayLabel: '%s — %s',
+    noEntry: 'aucune échéance',
+    oneEntry: '1 échéance',
+    someEntries: '%s échéances',
+    selected: 'Jour sélectionné',
+    emptyDay: 'Rien ce jour-là.',
+    empty: 'Aucune échéance ce mois-ci. Ouvre le mois ou ajoute une dépense.',
+    more: '+%s',
+    today: 'Aujourd’hui',
+  },
+
   month: {
     title: 'Le mois',
     open: 'Ouvrir le mois',
