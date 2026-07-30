@@ -83,6 +83,26 @@ export const fr = {
     toggle: 'Changer de thème',
   },
 
+  nav: {
+    label: 'Navigation principale',
+    month: 'Le mois',
+    calendar: 'Calendrier',
+    subscriptions: 'Abonnements',
+    history: 'Historique',
+    settings: 'Réglages',
+    styleguide: 'Styleguide',
+  },
+
+  shell: {
+    loading: 'Ouverture de tes données',
+    filterByMember: 'Filtrer par membre',
+    everyone: 'Tout le foyer',
+  },
+
+  settings: {
+    themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
+  },
+
   styleguide: {
     title: 'Styleguide',
     subtitle: 'Chaque token et chaque composant du design system, dans les deux thèmes.',

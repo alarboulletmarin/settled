@@ -1,5 +1,5 @@
 import { fr } from '@/i18n/fr'
-import { useTheme } from '@/theme/useTheme'
+import { useStore } from '@/store/store'
 import { Segmented } from '@/ui/Segmented'
 import { BasePaletteSection, CategoryPaletteSection, SemanticTokensSection } from './ColorSections'
 import { ControlsSection } from './ControlsSection'
@@ -20,7 +20,8 @@ const THEME_OPTIONS = [
  * du projet.
  */
 export function StyleguidePage() {
-  const { preference, setPreference } = useTheme()
+  const preference = useStore((s) => s.data.settings.theme)
+  const setPreference = useStore((s) => s.setTheme)
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-8 md:px-8 md:py-12">

@@ -113,6 +113,23 @@
     }
   }
 
+  /* --- Entrée de vue — DS §4, 240ms ------------------------------------- */
+
+  .view-enter {
+    animation: view-in var(--dur-view) var(--ease) both;
+  }
+
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   /* --- Anneau ----------------------------------------------------------- */
 
   .ring-svg {

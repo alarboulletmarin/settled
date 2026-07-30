@@ -1,0 +1,165 @@
+/* ============================================================================
+ * Sélecteurs — le seul chemin par lequel un composant lit une statistique.
+ *
+ * Chaque hook lit des tranches stables du store puis dérive avec useMemo :
+ * un sélecteur zustand qui renverrait un objet neuf à chaque rendu relancerait
+ * le rendu en boucle.
+ * ==========================================================================*/
+
+import { useMemo } from 'react'
+import { type YearMonth, addMonthsToYm, today } from '@/domain/date'
+import { type MonthPoint, trailingMonths } from '@/domain/history'
+import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
+import type { Money } from '@/domain/money'
+import {
+  type CategorySlice,
+  type DayTotals,
+  type MonthTotals,
+  type SubscriptionTotals,
+  type Upcoming,
+  breakdownByCategory,
+  dailyBreakdown,
+  entriesOfMonth,
+  monthProgress,
+  monthTotals,
+  restToLive,
+  subscriptionTotals,
+  upcomingEntries,
+} from '@/domain/stats'
+import type { Category, Entry, Member, Recurrence } from '@/domain/types'
+import { useStore } from './store'
+
+/* --- Tranches brutes ------------------------------------------------------*/
+
+export const useEntries = (): Entry[] => useStore((s) => s.data.entries)
+export const useRecurrences = (): Recurrence[] => useStore((s) => s.data.recurrences)
+export const useCategories = (): Category[] => useStore((s) => s.data.categories)
+export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
+export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
+export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
+export const useMemberFilter = (): string | undefined => useStore((s) => s.memberFilter)
+export const useCurrencyCode = (): string => useStore((s) => s.data.settings.currency)
+
+/** Les catégories utilisables : les archivées ne sont plus proposées. */
+export function useActiveCategories(direction?: 'in' | 'out'): Category[] {
+  const categories = useCategories()
+  return useMemo(
+    () =>
+      categories.filter((c) => !c.archived && (direction === undefined || c.direction === direction)),
+    [categories, direction],
+  )
+}
+
+export function useCategoryMap(): Map<string, Category> {
+  const categories = useCategories()
+  return useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
+}
+
+export function useMemberMap(): Map<string, Member> {
+  const members = useMembers()
+  return useMemo(() => new Map(members.map((m) => [m.id, m])), [members])
+}
+
+/* --- Le mois --------------------------------------------------------------*/
+
+export function useMonthEntries(ym?: YearMonth): Entry[] {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const member = useMemberFilter()
+  const month = ym ?? current
+  return useMemo(() => entriesOfMonth(entries, month, member), [entries, month, member])
+}
+
+export function useMonthTotals(ym?: YearMonth): MonthTotals {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const member = useMemberFilter()
+  const month = ym ?? current
+  return useMemo(() => monthTotals(entries, month, member), [entries, month, member])
+}
+
+export function useRestToLive(): Money {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const member = useMemberFilter()
+  return useMemo(() => restToLive(entries, month, today(), member), [entries, month, member])
+}
+
+export function useCategoryBreakdown(direction: 'in' | 'out' = 'out'): CategorySlice[] {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const member = useMemberFilter()
+  return useMemo(
+    () => breakdownByCategory(entries, month, direction, member),
+    [entries, month, direction, member],
+  )
+}
+
+export function useDailyBreakdown(direction: 'in' | 'out' = 'out'): DayTotals[] {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const member = useMemberFilter()
+  return useMemo(
+    () => dailyBreakdown(entries, month, direction, member),
+    [entries, month, direction, member],
+  )
+}
+
+export function useUpcoming(limit = 5): Upcoming[] {
+  const entries = useEntries()
+  const member = useMemberFilter()
+  return useMemo(() => upcomingEntries(entries, today(), limit, member), [entries, limit, member])
+}
+
+export function useMonthProgress(): number {
+  const month = useCurrentYm()
+  return useMemo(() => monthProgress(month, today()), [month])
+}
+
+/* --- Abonnements ----------------------------------------------------------*/
+
+export function useSubscriptionTotals(): SubscriptionTotals {
+  const recurrences = useRecurrences()
+  const entries = useEntries()
+  return useMemo(() => {
+    const now = today()
+    return subscriptionTotals(
+      recurrences,
+      (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
+      now,
+    )
+  }, [recurrences, entries])
+}
+
+/* --- Historique -----------------------------------------------------------*/
+
+export function useTrailingMonths(count = 12): MonthPoint[] {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const member = useMemberFilter()
+  return useMemo(() => trailingMonths(entries, month, count, member), [entries, month, count, member])
+}
+
+/** Bornes de navigation : on ne remonte pas avant la première donnée. */
+export function useMonthBounds(): { min: YearMonth; max: YearMonth } {
+  const entries = useEntries()
+  const months = useStore((s) => s.data.months)
+  return useMemo(() => {
+    const covered = coveredMonths({ entries, months })
+    const now = today().slice(0, 7)
+    const first = covered[0] ?? now
+    const last = covered.at(-1) ?? now
+    // Un mois d'avance est toujours accessible : c'est ce qui permet d'ouvrir
+    // le mois suivant et d'y voir tomber les échéances.
+    return {
+      min: first < now ? first : now,
+      max: addMonthsToYm(last > now ? last : now, 1),
+    }
+  }, [entries, months])
+}
+
+export function useHasAnyData(): boolean {
+  const entries = useEntries()
+  const recurrences = useRecurrences()
+  return entries.length > 0 || recurrences.length > 0
+}
