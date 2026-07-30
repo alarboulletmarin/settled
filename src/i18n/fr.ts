@@ -111,6 +111,23 @@ export const fr = {
     states: 'États',
   },
 
+  /** Jeu de catégories créé au premier lancement, modifiable ensuite. */
+  defaultCategories: {
+    housing: 'Logement',
+    groceries: 'Courses',
+    transport: 'Transport',
+    health: 'Santé',
+    leisure: 'Loisirs',
+    subscriptions: 'Abonnements',
+    misc: 'Divers',
+    salary: 'Salaire',
+    otherIncome: 'Autres revenus',
+  },
+
+  defaults: {
+    householdName: 'Maison',
+  },
+
   a11y: {
     skipToContent: 'Aller au contenu',
     ringLabel: 'Anneau de progression',
