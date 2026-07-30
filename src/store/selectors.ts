@@ -7,10 +7,12 @@
  * ==========================================================================*/
 
 import { useMemo } from 'react'
-import { type YearMonth, addMonthsToYm, today } from '@/domain/date'
+import { type ISODate, type YearMonth, addMonthsToYm, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
 import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
 import type { Money } from '@/domain/money'
+import { type PriceChange, detectPriceChange } from '@/domain/priceHistory'
+import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
   type CategorySlice,
   type DayTotals,
@@ -128,6 +130,46 @@ export function useSubscriptionTotals(): SubscriptionTotals {
       (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
       now,
     )
+  }, [recurrences, entries])
+}
+
+export type RecurrenceRow = {
+  recurrence: Recurrence
+  /** Prochaine échéance à venir, ou null si la récurrence est terminée. */
+  next: ISODate | null
+  monthly: Money | null
+  annual: Money | null
+  priceChange: PriceChange | null
+  stopped: boolean
+}
+
+/**
+ * La liste des abonnements, triée par prochaine échéance. Ceux qui n'ont plus
+ * d'échéance passent à la fin : ils ne se disputent pas l'attention.
+ */
+export function useRecurrenceRows(): RecurrenceRow[] {
+  const recurrences = useRecurrences()
+  const entries = useEntries()
+  return useMemo(() => {
+    const now = today()
+    const rows = recurrences.map((recurrence) => {
+      const resolved =
+        recurrence.amount ?? lastConfirmedAmount(entries, recurrence.id, now)
+      const priced: Recurrence = { ...recurrence, amount: resolved }
+      return {
+        recurrence,
+        next: nextOccurrence(recurrence, now)?.date ?? null,
+        monthly: monthlyEquivalent(priced),
+        annual: annualCost(priced),
+        priceChange: detectPriceChange(entries, recurrence.id),
+        stopped: recurrence.endedOn !== undefined && recurrence.endedOn < now,
+      }
+    })
+    return rows.sort((a, b) => {
+      if (a.next === null) return b.next === null ? 0 : 1
+      if (b.next === null) return -1
+      return a.next < b.next ? -1 : a.next > b.next ? 1 : 0
+    })
   }, [recurrences, entries])
 }
 

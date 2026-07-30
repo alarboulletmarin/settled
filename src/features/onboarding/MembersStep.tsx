@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Member } from '@/domain/types'
+import { tpl } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { Button, IconButton } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
@@ -72,7 +73,7 @@ export function MembersStep({
               <Dot color={member.color} />
               <span className="t-body truncate">{member.name}</span>
               <IconButton
-                label={fr.onboarding.membersRemove.replace('%s', member.name)}
+                label={tpl(fr.onboarding.membersRemove, member.name)}
                 className="ml-auto"
                 onClick={() => {
                   onRemove(member.id)

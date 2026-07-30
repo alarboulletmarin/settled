@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { tpl } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { addMember, removeMember, setHouseholdName } from '@/store/actions'
 import { useHouseholdName, useMembers } from '@/store/selectors'
@@ -21,7 +22,7 @@ export function OnboardingPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-5 py-10">
       <header className="flex flex-col gap-1">
         <span className="t-eyebrow text-muted">{fr.app.name}</span>
-        <span className="t-label">{fr.onboarding.step.replace('%s', String(step))}</span>
+        <span className="t-label">{tpl(fr.onboarding.step, step)}</span>
       </header>
 
       <Tile>

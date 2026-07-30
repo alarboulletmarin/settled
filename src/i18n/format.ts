@@ -86,6 +86,16 @@ export function formatDelta(value: number | null, digits = 0): string {
   return `${sign}${(Math.abs(value) * 100).toFixed(digits).replace('.', ',')}${NBSP_NARROW}%`
 }
 
+/** Remplit les « %s » d'un gabarit de `fr.ts`, dans l'ordre. */
+export function tpl(template: string, ...values: (string | number)[]): string {
+  let index = 0
+  return template.replace(/%s/g, () => {
+    const value = values[index]
+    index += 1
+    return value === undefined ? '' : String(value)
+  })
+}
+
 /* --- Dates ----------------------------------------------------------------*/
 
 export function monthName(month: number): string {
