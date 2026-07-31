@@ -19,6 +19,7 @@ import {
   restToLive,
   subscriptionTotals,
   upcomingEntries,
+  upcomingRows,
 } from './stats'
 
 const july = [
@@ -192,6 +193,66 @@ describe('prochaines échéances', () => {
 
   it('ignore les entrées confirmées : elles ne sont plus à venir', () => {
     expect(upcomingEntries(july, '2026-07-01').every((u) => u.entry.status === 'planned')).toBe(true)
+  })
+})
+
+describe('prochaines échéances, prêtes à afficher', () => {
+  const sameDay = [
+    makeEntry({
+      date: '2026-09-01',
+      label: 'Apple Music',
+      amount: eur(1699),
+      status: 'planned',
+    }),
+    makeEntry({
+      date: '2026-09-05',
+      label: 'Freebox',
+      amount: eur(3499),
+      status: 'planned',
+    }),
+    makeEntry({
+      date: '2026-09-01',
+      label: 'Salaire',
+      direction: 'in',
+      amount: eur(200000),
+      status: 'planned',
+    }),
+    makeEntry({
+      date: '2026-09-01',
+      label: 'Free Mobile',
+      amount: eur(4198),
+      status: 'planned',
+    }),
+  ]
+
+  const rows = upcomingRows(upcomingEntries(sameDay, '2026-08-01'))
+
+  it('ne porte le délai que sur la première échéance de chaque jour', () => {
+    expect(rows.map((r) => r.leadsDay)).toEqual([true, false, false, true])
+  })
+
+  it('range le plus gros mouvement d’abord, dans un même jour', () => {
+    expect(rows.slice(0, 3).map((r) => r.entry.label)).toEqual([
+      'Salaire',
+      'Free Mobile',
+      'Apple Music',
+    ])
+  })
+
+  it('garde l’ordre chronologique des jours', () => {
+    expect(rows.map((r) => r.entry.date)).toEqual([
+      '2026-09-01',
+      '2026-09-01',
+      '2026-09-01',
+      '2026-09-05',
+    ])
+  })
+
+  it('garde exactement les mêmes échéances, avec leur délai', () => {
+    const source = upcomingEntries(sameDay, '2026-08-01')
+    expect(rows).toHaveLength(source.length)
+    expect(new Set(rows.map((r) => r.entry.id))).toEqual(new Set(source.map((u) => u.entry.id)))
+    expect(rows.every((r) => r.daysLeft === (r.entry.date === '2026-09-01' ? 31 : 35))).toBe(true)
   })
 })
 

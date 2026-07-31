@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { RECURRENCE_NEW_PATH } from '@/app/routes'
 import { totalDue } from '@/domain/split'
 import type { MemberShare } from '@/domain/split'
-import type { Entry } from '@/domain/types'
+import type { Entry, Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDayMonthShort, formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { useCategoryMap, useMemberMap, useMembers, useMonthSplit } from '@/store/selectors'
@@ -22,6 +22,28 @@ import { useCurrency } from '@/ui/currency'
 function enumerate(names: readonly string[]): string {
   if (names.length <= 1) return names[0] ?? ''
   return `${names.slice(0, -1).join(', ')} et ${names.at(-1) ?? ''}`
+}
+
+/**
+ * « de Camille », mais « d'Alice ». L'élision dépend du prénom : le gabarit de
+ * `fr.ts` ne peut pas la décider, elle est donc portée ici. Le h est traité
+ * comme muet — « d'Hugo » se dit, « de Hugo » ne se dit pas.
+ */
+function de(name: string): string {
+  return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(name) ? `d’${name}` : `de ${name}`
+}
+
+/**
+ * Ce qui manque pour répartir, nommé.
+ *
+ * Sans personne à nommer, le prorata bloque quand même : chacun porte une
+ * ressource, mais toutes à zéro. La phrase le disait alors sans sujet —
+ * « Ajoute le revenu de  pour répartir les charges ».
+ */
+function missingIncomes(unknown: readonly Member[]): string {
+  const names = unknown.map((member) => member.name)
+  if (names.length === 0) return fr.split.missingNone
+  return tpl(names.length === 1 ? fr.split.missingOne : fr.split.missingMany, de(enumerate(names)))
 }
 
 function ShareRow({ share }: { share: MemberShare }) {
@@ -92,15 +114,11 @@ export function SplitPage() {
   }
 
   if (shares === null) {
-    const names = unknown.map((m) => m.name)
     return (
       <>
         <PageTitle title={fr.split.title} />
         <EmptyState
-          message={tpl(
-            names.length === 1 ? fr.split.missingOne : fr.split.missingMany,
-            enumerate(names),
-          )}
+          message={missingIncomes(unknown)}
           actionLabel={fr.split.goToIncome}
           onAction={() => {
             void navigate(RECURRENCE_NEW_PATH)

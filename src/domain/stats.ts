@@ -334,6 +334,41 @@ export function upcomingEntries(
     .map((entry) => ({ entry, daysLeft: diffDays(from, entry.date) }))
 }
 
+export type UpcomingRow = Upcoming & {
+  /** Première échéance de son jour : c'est elle qui porte le délai. */
+  leadsDay: boolean
+}
+
+/**
+ * Les mêmes échéances, prêtes à s'afficher.
+ *
+ * Quatre échéances qui tombent le même jour affichaient quatre fois « dans 32
+ * jours » : la répétition prenait la largeur qui manquait aux libellés, sans
+ * rien apprendre. Le délai n'est donc porté que par la première de chaque jour,
+ * les suivantes se lisant sous elle.
+ *
+ * Dans un jour, le plus gros mouvement d'abord — c'est la règle que se donne
+ * déjà `groupEntries` : c'est ce qu'on vient chercher. L'ordre des jours, lui,
+ * reste celui de `upcomingEntries`, chronologique.
+ *
+ * Le tri s'applique après la coupe : il change l'ordre d'affichage, jamais
+ * quelles échéances sont retenues.
+ */
+export function upcomingRows(upcoming: readonly Upcoming[]): UpcomingRow[] {
+  const days = new Map<ISODate, Upcoming[]>()
+  for (const item of upcoming) {
+    const bucket = days.get(item.entry.date)
+    if (bucket === undefined) days.set(item.entry.date, [item])
+    else bucket.push(item)
+  }
+
+  return [...days.values()].flatMap((day) =>
+    [...day]
+      .sort((a, b) => b.entry.amount - a.entry.amount)
+      .map((item, index) => ({ ...item, leadsDay: index === 0 })),
+  )
+}
+
 /* --- Abonnements ----------------------------------------------------------*/
 
 export type SubscriptionTotals = {

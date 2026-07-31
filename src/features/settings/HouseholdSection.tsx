@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RECURRENCE_NEW_PATH } from '@/app/routes'
+import { RECURRENCE_NEW_PATH, SPLIT_PATH } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { addMember, removeMember, setHouseholdName } from '@/store/actions'
@@ -125,6 +125,17 @@ export function HouseholdSection() {
             {fr.settings.memberIncomeLink}
           </Link>
         </p>
+
+        {/* Sous deux membres il n'y a rien à répartir, et l'écran renverrait
+            ici même : le lien ne s'affiche qu'une fois le foyer partagé. */}
+        {members.length > 1 && (
+          <Link
+            to={SPLIT_PATH}
+            className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"
+          >
+            {fr.settings.splitLink}
+          </Link>
+        )}
       </div>
     </Tile>
   )

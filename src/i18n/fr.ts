@@ -131,6 +131,10 @@ export const fr = {
       'Le revenu de chacun se lit sur ses abonnements de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
     memberShareOf: '%s des charges communes',
+    /* La seule porte de la répartition était une tuile du mois, qui se retire
+       sous un filtre par membre. Ici elle est toujours là, et c'est l'endroit
+       où l'on se demande qui verse quoi : les coefficients sont juste au-dessus. */
+    splitLink: 'Voir la répartition du mois',
 
     categories: 'Catégories',
     families: 'Familles',
@@ -325,6 +329,7 @@ export const fr = {
     empty: 'Aucune échéance ce mois-ci.',
     more: '+%s',
     today: 'Aujourd’hui',
+    closeDay: 'Fermer le jour',
   },
 
   month: {
@@ -414,6 +419,10 @@ export const fr = {
     resumed: 'Abonnement repris',
     deleted: 'Abonnement supprimé',
     empty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
+    /* La seule porte des crédits était une tuile du mois qui se retire tant
+       qu'aucun crédit n'est suivi : on ne pouvait donc jamais créer le premier.
+       Elle est ici, parce que c'est un abonnement qui pose les mensualités. */
+    creditsHint: 'Une mensualité de crédit est un abonnement comme un autre. Pour suivre en plus le capital qu’il reste à devoir :',
     emptyStopped: 'Aucun abonnement arrêté.',
     showStopped: 'Voir les abonnements arrêtés',
     hideStopped: 'Masquer les abonnements arrêtés',
@@ -519,8 +528,14 @@ export const fr = {
     nothing: 'Aucune charge commune ce mois-ci.',
     /* Ce qui manque est nommé plutôt que remplacé par un zéro : un prorata au
        dénominateur incomplet ne vaut pas zéro, il ne veut rien dire. */
-    missingOne: 'Ajoute le revenu de %s pour répartir les charges.',
-    missingMany: 'Ajoute les revenus de %s pour répartir les charges.',
+    /* Le « de » vit dans le nom, pas dans le gabarit : « d'Alice » et
+       « de Camille » ne s'écrivent pas pareil, et la phrase ne peut pas
+       en décider — c'est `SplitPage` qui l'élide. */
+    missingOne: 'Ajoute le revenu %s pour répartir les charges.',
+    missingMany: 'Ajoute les revenus %s pour répartir les charges.',
+    /* Chacun porte bien une ressource, mais toutes à zéro : personne n'est à
+       nommer, et le prorata n'a pas de dénominateur pour autant. */
+    missingNone: 'Ajoute un revenu à chacun pour répartir les charges.',
     missingHint:
       'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance confirmée.',
     goToIncome: 'Ajouter un revenu',
