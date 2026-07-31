@@ -5,7 +5,7 @@
  * métier ne vit ici, et encore moins dans un composant.
  * ==========================================================================*/
 
-import { type ISODate, type YearMonth, today } from '@/domain/date'
+import { type ISODate, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
 import type { Money } from '@/domain/money'
 import type { Category, Entry, Member, Recurrence, Settings } from '@/domain/types'
@@ -60,22 +60,29 @@ export function archiveCategory(id: string, archived = true): void {
 
 /* --- Récurrences ----------------------------------------------------------*/
 
+/* Toute écriture sur une récurrence réaligne ses échéances dans la foulée :
+   poser la règle et en tirer les faits sont un seul geste pour qui l'utilise,
+   ce ne sont pas deux commandes dont la seconde s'oublie. */
+
 export function addRecurrence(input: Omit<Recurrence, 'id'>): Recurrence {
   const recurrence: Recurrence = { ...input, id: makeId() }
-  mutate((data) => updates.addRecurrence(data, recurrence))
+  mutate((data) =>
+    updates.syncRecurrenceEntries(updates.addRecurrence(data, recurrence), recurrence.id, makeId),
+  )
   return recurrence
 }
 
 export function updateRecurrence(id: string, patch: Partial<Recurrence>): void {
-  mutate((data) => updates.updateRecurrence(data, id, patch))
+  mutate((data) => updates.syncRecurrenceEntries(updates.updateRecurrence(data, id, patch), id, makeId))
 }
 
 export function stopRecurrence(id: string, on: ISODate = today()): void {
+  // `stopRecurrence` retire déjà les prévues postérieures : rien à replanifier.
   mutate((data) => updates.stopRecurrence(data, id, on))
 }
 
 export function resumeRecurrence(id: string): void {
-  mutate((data) => updates.resumeRecurrence(data, id))
+  mutate((data) => updates.syncRecurrenceEntries(updates.resumeRecurrence(data, id), id, makeId))
 }
 
 export function removeRecurrence(id: string): void {
@@ -109,20 +116,6 @@ export function confirmEntry(id: string, amount?: Money): void {
 
 export function confirmEntries(ids: readonly string[]): void {
   mutate((data) => updates.confirmEntries(data, ids))
-}
-
-/* --- Mois -----------------------------------------------------------------*/
-
-export type OpenMonthOutcome = { created: number; variable: number }
-
-export function openMonth(ym: YearMonth): OpenMonthOutcome {
-  let outcome: OpenMonthOutcome = { created: 0, variable: 0 }
-  mutate((data) => {
-    const result = updates.openMonth(data, ym, makeId, today())
-    outcome = { created: result.created, variable: result.variable }
-    return result.data
-  })
-  return outcome
 }
 
 /* --- Réglages -------------------------------------------------------------*/

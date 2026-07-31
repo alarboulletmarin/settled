@@ -6,7 +6,7 @@
  * confirmée est arrêtée, pas effacée ; un membre retiré libère ses entrées).
  * ==========================================================================*/
 
-import { type ISODate, type YearMonth, today } from './date'
+import { type ISODate, type YearMonth, today, ymOf } from './date'
 import { planMonth } from './month'
 import type { Category, Data, Entry, Member, Recurrence, Settings } from './types'
 
@@ -74,6 +74,48 @@ export function updateRecurrence(data: Data, id: string, patch: Partial<Recurren
     ...data,
     recurrences: data.recurrences.map((r) => (r.id === id ? { ...r, ...patch } : r)),
   }
+}
+
+/**
+ * Réaligne les échéances d'une récurrence sur sa définition courante, dans
+ * tous les mois déjà ouverts à partir de `from`.
+ *
+ * Un abonnement est une règle, une échéance est un fait : c'est la règle qui
+ * fabrique les faits, donc la changer doit refaire ceux qui n'ont pas encore
+ * eu lieu. Les prévues à venir sont jetées puis régénérées — leur date, leur
+ * montant ou leur libellé peuvent tous avoir bougé. Les confirmées restent
+ * intactes : elles ont eu lieu, et l'historique ne se réécrit pas (cahier §3).
+ *
+ * Rejouer l'opération ne duplique rien : `planMonth` reconnaît une échéance
+ * déjà posée à sa paire récurrence + date.
+ */
+export function syncRecurrenceEntries(
+  data: Data,
+  recurrenceId: string,
+  makeId: () => string,
+  from: ISODate = today(),
+): Data {
+  const fromMonth = ymOf(from)
+  let next: Data = {
+    ...data,
+    entries: data.entries.filter(
+      (entry) =>
+        !(
+          entry.recurrenceId === recurrenceId &&
+          entry.status === 'planned' &&
+          ymOf(entry.date) >= fromMonth
+        ),
+    ),
+  }
+
+  for (const state of data.months) {
+    if (state.ym < fromMonth) continue
+    // `planMonth` lit `next.entries`, qui s'enrichit à chaque tour : les mois
+    // se plannifient en cascade sans se marcher dessus.
+    next = { ...next, entries: [...next.entries, ...planMonth(next, state.ym, makeId).created] }
+  }
+
+  return next
 }
 
 /**

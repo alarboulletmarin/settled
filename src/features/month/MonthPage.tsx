@@ -8,7 +8,6 @@ import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
 import { EntriesSection } from './EntriesSection'
-import { OpenMonthNotice, RegenerateEntriesButton } from './OpenMonth'
 import { PendingSection } from './PendingSection'
 
 export function MonthPage() {
@@ -25,8 +24,6 @@ export function MonthPage() {
     <>
       <h1 className="sr-only">{fr.month.title}</h1>
       <MonthHeader />
-
-      <OpenMonthNotice />
 
       {/* Les deux sens sont deux boutons, jamais un seul. Passer par « Ajouter
           une dépense » pour saisir un salaire obligeait à découvrir, une fois
@@ -50,7 +47,6 @@ export function MonthPage() {
             <Plus size={18} />
             {fr.entry.newIn}
           </Button>
-          <RegenerateEntriesButton />
         </div>
       )}
 
@@ -73,7 +69,6 @@ export function MonthPage() {
               {fr.entry.addIn}
             </Button>
           </div>
-          <RegenerateEntriesButton />
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">

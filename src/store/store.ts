@@ -36,8 +36,11 @@ export type StoreActions = {
   setMemberFilter: (memberId: string | undefined) => void
   setTheme: (theme: ThemeSetting) => void
   finishOnboarding: () => void
-  /** Ouvre le mois courant s'il ne l'a jamais été. Idempotent. */
-  ensureCurrentMonthOpen: () => void
+  /**
+   * Ouvre un mois s'il ne l'a jamais été, à condition qu'il ne soit pas passé.
+   * Idempotent.
+   */
+  ensureMonthOpen: (ym?: YearMonth) => void
   replaceData: (data: Data) => Promise<void>
   resetAll: () => Promise<void>
   setError: (message: string | null) => void
@@ -74,7 +77,7 @@ export const useStore = create<Store>()((set, get) => ({
       storePreference(stored.settings.theme)
       set({ status: 'ready', data: stored })
       // Cahier §4.3 : l'ouverture est déclenchée au premier lancement du mois.
-      get().ensureCurrentMonthOpen()
+      get().ensureMonthOpen()
     } catch {
       set({
         status: 'onboarding',
@@ -91,6 +94,10 @@ export const useStore = create<Store>()((set, get) => ({
 
   setYm(ym) {
     set({ ym })
+    // Consulter un mois à venir suffit à le peupler. Sans quoi il s'affiche
+    // vide — pas d'échéance au calendrier, rien dans le prévisionnel — alors
+    // que les abonnements qui doivent y tomber sont déjà connus.
+    get().ensureMonthOpen(ym)
   },
 
   setMemberFilter(memberId) {
@@ -104,12 +111,15 @@ export const useStore = create<Store>()((set, get) => ({
 
   finishOnboarding() {
     set({ status: 'ready' })
-    get().ensureCurrentMonthOpen()
+    get().ensureMonthOpen()
     writer.schedule(get().data)
   },
 
-  ensureCurrentMonthOpen() {
-    const ym = currentYm()
+  ensureMonthOpen(ym = currentYm()) {
+    // Un mois passé ne s'ouvre pas tout seul : y faire apparaître des
+    // échéances qui n'ont jamais été confirmées inventerait un historique.
+    if (ym < currentYm()) return
+    if (get().status !== 'ready') return
     if (get().data.months.some((m) => m.ym === ym)) return
     get().mutate((data) => openMonth(data, ym, makeId, today()).data)
   },
@@ -118,7 +128,9 @@ export const useStore = create<Store>()((set, get) => ({
     writer.cancel()
     storePreference(data.settings.theme)
     set({ data, status: 'ready', error: null, ym: currentYm(), memberFilter: undefined })
-    await saveDocument(data)
+    // Le fichier importé peut dater : le mois courant n'y est pas forcément.
+    get().ensureMonthOpen()
+    await saveDocument(get().data)
   },
 
   async resetAll() {

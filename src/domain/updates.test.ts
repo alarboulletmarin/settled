@@ -12,6 +12,8 @@ import {
   resumeRecurrence,
   setHouseholdName,
   stopRecurrence,
+  syncRecurrenceEntries,
+  updateRecurrence,
   updateSettings,
 } from './updates'
 
@@ -174,5 +176,81 @@ describe('réglages', () => {
   it('modifie un réglage sans écraser les autres', () => {
     const after = updateSettings(makeData(), { theme: 'dark' })
     expect(after.settings).toEqual({ theme: 'dark', currency: 'EUR', monthStartsOn: 1 })
+  })
+})
+
+describe('synchronisation d’une récurrence', () => {
+  /** Deux mois ouverts et un abonnement mensuel qui n'y a encore rien posé. */
+  function twoOpenMonths() {
+    return makeData({
+      recurrences: [
+        makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 10 } }),
+      ],
+      months: [
+        { ym: '2026-07', openedAt: '2026-07-01', closed: false },
+        { ym: '2026-08', openedAt: '2026-08-01', closed: false },
+      ],
+    })
+  }
+
+  it('pose les échéances dans tous les mois ouverts à partir du mois courant', () => {
+    const after = syncRecurrenceEntries(twoOpenMonths(), 'r1', sequentialIds(), '2026-07-15')
+    expect(after.entries.map((e) => e.date)).toEqual(['2026-07-10', '2026-08-10'])
+    expect(after.entries.every((e) => e.status === 'planned')).toBe(true)
+  })
+
+  it('ne remonte pas dans un mois antérieur au mois de référence', () => {
+    const data = makeData({
+      ...twoOpenMonths(),
+      months: [
+        { ym: '2026-05', openedAt: '2026-05-01', closed: false },
+        { ym: '2026-08', openedAt: '2026-08-01', closed: false },
+      ],
+    })
+    const after = syncRecurrenceEntries(data, 'r1', sequentialIds(), '2026-07-15')
+    expect(after.entries.map((e) => e.date)).toEqual(['2026-08-10'])
+  })
+
+  it('refait les prévues à venir quand la règle change', () => {
+    const before = syncRecurrenceEntries(twoOpenMonths(), 'r1', sequentialIds(), '2026-07-15')
+    const moved = updateRecurrence(before, 'r1', {
+      period: { unit: 'month', every: 1, anchorDay: 25 },
+    })
+    const after = syncRecurrenceEntries(moved, 'r1', sequentialIds('b'), '2026-07-15')
+    expect(after.entries.map((e) => e.date)).toEqual(['2026-07-25', '2026-08-25'])
+  })
+
+  it('ne touche jamais une échéance confirmée', () => {
+    const data = {
+      ...twoOpenMonths(),
+      entries: [
+        makeEntry({ id: 'paid', recurrenceId: 'r1', date: '2026-07-10', status: 'confirmed' }),
+      ],
+    }
+    const after = syncRecurrenceEntries(data, 'r1', sequentialIds(), '2026-07-15')
+    expect(after.entries.find((e) => e.id === 'paid')).toBeDefined()
+    // Juillet est déjà servi par l'échéance confirmée : rien n'y est ajouté.
+    expect(after.entries.filter((e) => e.date.startsWith('2026-07'))).toHaveLength(1)
+  })
+
+  it('est rejouable sans rien dupliquer', () => {
+    const once = syncRecurrenceEntries(twoOpenMonths(), 'r1', sequentialIds(), '2026-07-15')
+    const twice = syncRecurrenceEntries(once, 'r1', sequentialIds('b'), '2026-07-15')
+    expect(twice.entries.map((e) => e.date)).toEqual(once.entries.map((e) => e.date))
+  })
+
+  it('laisse tranquilles les échéances des autres récurrences', () => {
+    const data = {
+      ...twoOpenMonths(),
+      recurrences: [
+        makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 10 } }),
+        makeRecurrence({ id: 'r2', period: { unit: 'month', every: 1, anchorDay: 20 } }),
+      ],
+      entries: [
+        makeEntry({ id: 'autre', recurrenceId: 'r2', date: '2026-08-20', status: 'planned' }),
+      ],
+    }
+    const after = syncRecurrenceEntries(data, 'r1', sequentialIds(), '2026-07-15')
+    expect(after.entries.find((e) => e.id === 'autre')).toBeDefined()
   })
 })

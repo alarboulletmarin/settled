@@ -220,12 +220,6 @@ export const fr = {
 
   month: {
     title: 'Le mois',
-    open: 'Ouvrir le mois',
-    reopen: 'Régénérer les échéances',
-    openedSome: '%s échéance%s ajoutée%s',
-    openedNone: 'Aucune nouvelle échéance à ajouter',
-    notOpenedTitle: 'Mois pas encore ouvert',
-    notOpened: 'Ce mois n’a pas encore été ouvert. Ouvre-le pour y poser les échéances de tes abonnements.',
     toConfirm: 'À confirmer',
     confirmAll: 'Confirmer le mois',
     confirmedAll: 'Mois confirmé',
