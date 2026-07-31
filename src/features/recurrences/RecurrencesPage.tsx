@@ -14,7 +14,7 @@ import { useCurrency } from '@/ui/currency'
 import { RecurrenceRow } from './RecurrenceRow'
 
 function Totals() {
-  const totals = useSubscriptionTotals()
+  const totals = useSubscriptionTotals('out')
   const currency = useCurrency()
   return (
     <Tile variant="accent" className="mb-4">
@@ -32,6 +32,41 @@ function Totals() {
           )}
         </p>
       )}
+    </Tile>
+  )
+}
+
+/**
+ * Une section par sens.
+ *
+ * Un salaire et un abonnement de streaming ne se distinguaient que par le « + »
+ * que le DS §3 accorde aux entrées — trop peu dans une liste qui les mêle, et
+ * d'autant plus que la pastille prend la teinte de la catégorie et non du sens.
+ * Le titre porte le sens, et le total du sens : l'accent de la page, lui, ne
+ * compte que les sorties, et il faut que ça se voie.
+ */
+function DirectionSection({
+  direction,
+  rows,
+  onOpen,
+}: {
+  direction: 'in' | 'out'
+  rows: ReturnType<typeof useRecurrenceRows>
+  onOpen: (id: string) => void
+}) {
+  const totals = useSubscriptionTotals(direction)
+  const currency = useCurrency()
+  if (rows.length === 0) return null
+
+  return (
+    <Tile className="p-2! md:p-2!">
+      <div className="mx-1 mt-1 mb-2 flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow>{direction === 'in' ? fr.recurrences.inflow : fr.recurrences.outflow}</Eyebrow>
+        <span className="t-axis tnum">
+          {tpl(fr.recurrences.perMonth, formatMoney(totals.monthly, currency, false))}
+        </span>
+      </div>
+      <RowList rows={rows} onOpen={onOpen} />
     </Tile>
   )
 }
@@ -98,9 +133,17 @@ export function RecurrencesPage() {
       ) : (
         <div className="flex max-w-3xl flex-col gap-4">
           <Totals />
-          <Tile className="p-2! md:p-2!">
-            <RowList rows={active} onOpen={openDetail} />
-          </Tile>
+          {/* Les sorties d'abord : c'est ce que la tuile d'accent chiffre. */}
+          <DirectionSection
+            direction="out"
+            rows={active.filter((row) => row.recurrence.direction === 'out')}
+            onOpen={openDetail}
+          />
+          <DirectionSection
+            direction="in"
+            rows={active.filter((row) => row.recurrence.direction === 'in')}
+            onOpen={openDetail}
+          />
 
           {stopped.length > 0 && (
             <Tile className="p-2! md:p-2!">

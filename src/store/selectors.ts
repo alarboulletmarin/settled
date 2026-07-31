@@ -10,7 +10,7 @@ import { useMemo } from 'react'
 import { type ISODate, type YearMonth, addMonthsToYm, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
 import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
-import { type Money, ZERO } from '@/domain/money'
+import { type Money, ZERO, sum } from '@/domain/money'
 import { type PriceChange, detectPriceChange } from '@/domain/priceHistory'
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
@@ -38,7 +38,7 @@ import {
   type MemberShare,
   memberIncomes,
   memberShares,
-  sharedTotal,
+  sharedEntries,
 } from '@/domain/split'
 import {
   type Category,
@@ -248,6 +248,8 @@ export function useSpendingByFamily(limit?: number): CategorySlice[] {
 export type MonthSplit = {
   /** Ce qui est à répartir : charges et crédits communs du mois. */
   total: Money
+  /** Le détail de ce total, pour que le chiffre s'ouvre au lieu d'être cru. */
+  entries: Entry[]
   /** `null` tant que le prorata ne peut pas se calculer — voir `memberShares`. */
   shares: MemberShare[] | null
   /** Les membres dont le revenu n'est pas connu, pour pouvoir les nommer. */
@@ -307,10 +309,12 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
   const month = ym ?? current
 
   return useMemo(() => {
-    const total = sharedTotal(entries, month, kindOf)
+    const shared = sharedEntries(entries, month, kindOf)
+    const total = sum(shared.map((e) => e.amount))
     const missing = new Set(incomes.filter((i) => i.income === null).map((i) => i.memberId))
     return {
       total,
+      entries: shared,
       shares: memberShares(incomes, total),
       unknown: members.filter((m) => missing.has(m.id)),
     }
@@ -359,7 +363,7 @@ export function useMonthProgress(): number {
 
 /* --- Abonnements ----------------------------------------------------------*/
 
-export function useSubscriptionTotals(): SubscriptionTotals {
+export function useSubscriptionTotals(direction: 'in' | 'out' = 'out'): SubscriptionTotals {
   const recurrences = useRecurrences()
   const entries = useEntries()
   return useMemo(() => {
@@ -368,8 +372,9 @@ export function useSubscriptionTotals(): SubscriptionTotals {
       recurrences,
       (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
       now,
+      direction,
     )
-  }, [recurrences, entries])
+  }, [recurrences, entries, direction])
 }
 
 export type MonthPending = {

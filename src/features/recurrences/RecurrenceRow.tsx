@@ -1,4 +1,5 @@
 import { diffDays, today } from '@/domain/date'
+import { isCostly } from '@/domain/priceHistory'
 import { fr } from '@/i18n/fr'
 import { formatDayMonthShort, formatMoney, formatRelativeDays, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
@@ -45,8 +46,19 @@ export function RecurrenceRow({
         <span className={cn('t-body truncate', stopped && 'text-muted')}>{recurrence.label}</span>
         <span className="t-axis truncate">{meta(row)}</span>
         {priceChange !== null && (
-          <span className="t-label mt-0.5 flex items-center gap-1 text-danger-text">
-            <Warning size={14} className="shrink-0" />
+          /* L'alerte ne se déclenche que quand le changement coûte : une charge
+             qui monte, un revenu qui baisse. Un salaire augmenté en rouge avec
+             un panneau d'avertissement dirait le contraire de ce qui arrive —
+             et le DS §2.3 réserve le rouge aux dépassements et aux erreurs. */
+          <span
+            className={cn(
+              't-label mt-0.5 flex items-center gap-1',
+              isCostly(priceChange, recurrence.direction) && 'text-danger-text',
+            )}
+          >
+            {isCostly(priceChange, recurrence.direction) && (
+              <Warning size={14} className="shrink-0" />
+            )}
             <span className="tnum truncate">
               {tpl(
                 fr.recurrences.priceChanged,

@@ -301,21 +301,26 @@ export type SubscriptionTotals = {
 }
 
 /**
- * Coût des récurrences sortantes actives, amorti au mois et à l'année.
+ * Coût des récurrences actives d'un sens, amorti au mois et à l'année.
  * Une récurrence à montant variable est estimée à sa dernière échéance
  * confirmée ; faute de quoi elle est comptée comme inconnue plutôt qu'à zéro.
+ *
+ * Le sens est un paramètre parce que la liste des récurrences mêle les deux :
+ * un total qui ne compterait que les sorties sans le dire décrirait mal la
+ * liste qu'il surplombe.
  */
 export function subscriptionTotals(
   recurrences: readonly Recurrence[],
   resolveVariable: (recurrence: Recurrence) => Money | null,
   on: ISODate,
+  direction: Direction = 'out',
 ): SubscriptionTotals {
   let monthly = ZERO
   let annual = ZERO
   let unknownCount = 0
 
   for (const recurrence of recurrences) {
-    if (recurrence.direction !== 'out') continue
+    if (recurrence.direction !== direction) continue
     if (recurrence.endedOn !== undefined && recurrence.endedOn < on) continue
 
     const resolved =

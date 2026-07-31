@@ -103,11 +103,24 @@ export function sharedTotal(
   kindOf: KindOf,
   memberId?: MemberFilter,
 ): Money {
-  return sum(
-    entriesOfMonth(entries, month, memberId)
-      .filter((e) => e.direction === 'out' && isSharedEntry(e, kindOf(e.categoryId)))
-      .map((e) => e.amount),
-  )
+  return sum(sharedEntries(entries, month, kindOf, memberId).map((e) => e.amount))
+}
+
+/**
+ * Le détail de ce total, du plus lourd au plus léger.
+ *
+ * Un chiffre de répartition qu'on ne peut pas ouvrir ne se vérifie pas, et une
+ * dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
+ */
+export function sharedEntries(
+  entries: readonly Entry[],
+  month: YearMonth,
+  kindOf: KindOf,
+  memberId?: MemberFilter,
+): Entry[] {
+  return entriesOfMonth(entries, month, memberId)
+    .filter((e) => e.direction === 'out' && isSharedEntry(e, kindOf(e.categoryId)))
+    .sort((a, b) => b.amount - a.amount)
 }
 
 /* --- Le revenu d'un membre ------------------------------------------------*/

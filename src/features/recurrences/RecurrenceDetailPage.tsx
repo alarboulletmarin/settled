@@ -1,8 +1,10 @@
 import { type ReactNode, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { today } from '@/domain/date'
+import { isCostly } from '@/domain/priceHistory'
 import { fr } from '@/i18n/fr'
 import { formatDate, formatMoney, tpl } from '@/i18n/format'
+import { cn } from '@/lib/cn'
 import { removeRecurrence, resumeRecurrence, stopRecurrence } from '@/store/actions'
 import { useRecurrenceRow } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
@@ -56,10 +58,20 @@ export function RecurrenceDetailPage() {
         {stopped && <Eyebrow className="shrink-0">{fr.recurrences.stoppedBadge}</Eyebrow>}
       </div>
 
+      {/* Rouge et panneau seulement quand le changement coûte : une charge qui
+          monte, un revenu qui baisse. Le DS §2.3 réserve le rouge aux
+          dépassements et aux erreurs — une augmentation de salaire n'en est pas. */}
       {priceChange !== null && (
-        <p className="tile flex items-start gap-2 p-4 text-danger-text">
-          <Warning size={18} className="mt-0.5 shrink-0" />
-          <span className="t-label text-danger-text">
+        <p
+          className={cn(
+            'tile flex items-start gap-2 p-4',
+            isCostly(priceChange, recurrence.direction) && 'text-danger-text',
+          )}
+        >
+          {isCostly(priceChange, recurrence.direction) && (
+            <Warning size={18} className="mt-0.5 shrink-0" />
+          )}
+          <span className="t-label">
             {tpl(
               fr.recurrences.priceChanged,
               formatMoney(priceChange.previous, currency),

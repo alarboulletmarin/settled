@@ -339,6 +339,11 @@ export const fr = {
     perYear: '%s par an',
     totalMonthly: 'Total abonnements',
     totalAnnual: 'Total annuel',
+    perMonth: '%s par mois',
+    /* Le sens en titre de section : dans une liste qui les mêle, le « + » des
+       entrées ne suffit pas à distinguer un salaire d'un abonnement. */
+    inflow: 'Ce qui rentre',
+    outflow: 'Ce qui sort',
     unknownAmounts: '%s à montant variable, non chiffré%s',
     variable: 'Montant variable',
     variableHint: 'Le montant sera demandé à chaque échéance.',
@@ -399,6 +404,10 @@ export const fr = {
     income: 'Revenu',
     checkTotal: 'Total des parts',
     checkHint: 'La somme des parts vaut le total au centime près.',
+    detail: 'Ce qui est partagé',
+    detailCountOne: '%s ligne',
+    detailCount: '%s lignes',
+    advancedBy: 'avancé par %s',
     method: 'Comment c’est calculé',
     methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
     /* Le revenu est dérivé des abonnements de ressources, jamais déclaré à

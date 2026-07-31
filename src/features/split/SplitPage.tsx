@@ -1,15 +1,19 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RECURRENCE_NEW_PATH } from '@/app/routes'
 import { totalDue } from '@/domain/split'
 import type { MemberShare } from '@/domain/split'
+import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
-import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { useMemberMap, useMembers, useMonthSplit } from '@/store/selectors'
+import { formatDayMonthShort, formatMoney, formatPercent, tpl } from '@/i18n/format'
+import { useCategoryMap, useMemberMap, useMembers, useMonthSplit } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
+import { Disclosure } from '@/ui/Disclosure'
 import { Dot } from '@/ui/Dot'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { SplitIcon } from '@/ui/Icons'
+import { ListRow } from '@/ui/ListRow'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
@@ -53,10 +57,20 @@ function ShareRow({ share }: { share: MemberShare }) {
  * de l'affirmer.
  */
 export function SplitPage() {
-  const { total, shares, unknown } = useMonthSplit()
+  const { total, entries, shares, unknown } = useMonthSplit()
   const members = useMembers()
+  const memberMap = useMemberMap()
+  const categories = useCategoryMap()
   const currency = useCurrency()
   const navigate = useNavigate()
+  const [detail, setDetail] = useState(false)
+
+  /** La date, et le nom de qui a avancé la dépense quand il y en a un. */
+  const metaOf = (entry: Entry): string => {
+    const day = formatDayMonthShort(entry.date)
+    const name = entry.memberId === undefined ? undefined : memberMap.get(entry.memberId)?.name
+    return name === undefined ? day : `${day} · ${tpl(fr.split.advancedBy, name)}`
+  }
 
   const goToSettings = (): void => {
     void navigate('/reglages')
@@ -120,6 +134,41 @@ export function SplitPage() {
                 <ShareRow key={share.memberId} share={share} />
               ))}
             </div>
+
+            {/* Le chiffre s'ouvre : une dépense qui n'a rien à faire dans le
+                pot commun ne se repère qu'en la voyant. */}
+            <Tile className="p-2! md:p-2!">
+              <Disclosure
+                open={detail}
+                onOpenChange={setDetail}
+                title={
+                  <span className="flex min-w-0 items-baseline gap-2">
+                    <span className="t-body truncate">{fr.split.detail}</span>
+                    <span className="t-axis shrink-0">
+                      {tpl(
+                        entries.length > 1 ? fr.split.detailCount : fr.split.detailCountOne,
+                        entries.length,
+                      )}
+                    </span>
+                  </span>
+                }
+                trailing={<Amount value={total} size="body" direction="out" />}
+              >
+                <ul className="flex flex-col">
+                  {entries.map((entry) => (
+                    <li key={entry.id}>
+                      <ListRow
+                        color={categories.get(entry.categoryId)?.color ?? 'var(--cat-rest)'}
+                        label={entry.label}
+                        meta={metaOf(entry)}
+                        planned={entry.status === 'planned'}
+                        trailing={<Amount value={entry.amount} direction="out" />}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </Disclosure>
+            </Tile>
 
             <Tile className="gap-2">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { eur, makeEntry, makeMember, makeRecurrence } from './fixtures'
-import { money } from './money'
+import { money, sum } from './money'
 import {
   allocate,
   isSharedEntry,
@@ -8,6 +8,7 @@ import {
   memberIncomes,
   memberShares,
   monthlyIncome,
+  sharedEntries,
   sharedTotal,
   totalDue,
 } from './split'
@@ -147,6 +148,12 @@ describe('total des charges communes', () => {
       e.memberId === 'm-1' ? { ...e, shared: true } : e,
     )
     expect(sharedTotal(withFlag, '2026-07', kindOf)).toBe(141_000)
+  })
+
+  it('détaille le total, du plus lourd au plus léger', () => {
+    const detail = sharedEntries(july, '2026-07', kindOf)
+    expect(detail.map((e) => e.categoryId)).toEqual(['logement', 'auto', 'courses'])
+    expect(sum(detail.map((e) => e.amount))).toBe(sharedTotal(july, '2026-07', kindOf))
   })
 })
 

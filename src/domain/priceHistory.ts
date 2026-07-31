@@ -8,7 +8,7 @@
 
 import type { ISODate } from './date'
 import { type Money, sub } from './money'
-import type { Entry } from './types'
+import type { Direction, Entry } from './types'
 
 export type PricePoint = { date: ISODate; amount: Money }
 
@@ -27,6 +27,17 @@ export type PriceChange = {
   delta: Money
   /** Date de l'échéance qui porte le nouveau montant. */
   since: ISODate
+}
+
+/**
+ * Vrai quand le changement pèse : une sortie qui monte, une entrée qui baisse.
+ *
+ * Le sens en décide, sinon l'app signalerait une augmentation de salaire comme
+ * une mauvaise nouvelle — et le DS §2.3 réserve le rouge aux dépassements et
+ * aux erreurs. Un changement qui ne coûte rien se lit quand même, sans alarme.
+ */
+export function isCostly(change: PriceChange, direction: Direction): boolean {
+  return direction === 'out' ? change.delta > 0 : change.delta < 0
 }
 
 /**
