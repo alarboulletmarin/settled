@@ -51,14 +51,31 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           'rounded-t-tile sm:rounded-tile',
         )}
       >
-        <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+        {/* La poignée dit qu'on est sur une feuille montante, et donne au pouce
+            un repère au bord de l'écran. Sans objet sur une boîte centrée. */}
+        <div
+          aria-hidden="true"
+          className="mx-auto mt-2.5 h-1 w-9 shrink-0 rounded-chip bg-surface-2 sm:hidden"
+        />
+
+        <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
           <h2 className="t-section min-w-0 truncate">{title}</h2>
           <IconButton label={fr.common.close} onClick={onClose}>
             <Close />
           </IconButton>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        {/* Sans pied de feuille, c'est le contenu qui doit passer au-dessus de
+            l'indicateur d'accueil : il colle sinon au bord bas de l'écran, où
+            le système le recouvre. */}
+        <div
+          className={cn(
+            'min-h-0 flex-1 overflow-y-auto px-5',
+            footer === undefined ? 'pb-[max(1.5rem,env(safe-area-inset-bottom))]' : 'pb-5',
+          )}
+        >
+          {children}
+        </div>
 
         {/* Les actions se partagent la largeur à parts égales : `w-full` sur
             chacune les ferait déborder du pied de feuille. */}
