@@ -10,7 +10,7 @@
  * la nature d'une catégorie sous forme de fonction, comme `stats.ts`.
  * ==========================================================================*/
 
-import type { ISODate, YearMonth } from './date'
+import type { YearMonth } from './date'
 import { type Money, ZERO, add, money, sum } from './money'
 import { monthlyEquivalent } from './recurrence'
 import { type KindOf, type MemberFilter, entriesOfMonth } from './stats'
@@ -20,7 +20,7 @@ import {
   type Entry,
   type Member,
   type Recurrence,
-  isActiveOn,
+  isRunningIn,
   isSpending,
 } from './types'
 
@@ -205,6 +205,12 @@ export type MemberIncome = IncomeWeight & MemberIncomeValue
  * même fonction que pour le total des abonnements : le salaire qui pèse dans le
  * prorata est au centime celui que la liste des abonnements affiche.
  *
+ * Le revenu se lit **sur un mois**, jamais sur un jour. Lu au jour où l'on
+ * regarde, un salaire dont la première échéance tombe le 1er du mois suivant
+ * n'existait pas encore : le foyer qui venait de poser ses deux salaires
+ * n'avait aucune répartition, et en aurait eu une le lendemain. Un chiffre de
+ * partage ne peut pas dépendre du moment où on ouvre l'écran.
+ *
  * `null` quand rien ne permet de le dire : un revenu qu'on ne sait pas encore
  * ne vaut pas zéro. Le `gap` dit laquelle des deux raisons c'est.
  */
@@ -213,7 +219,7 @@ export function monthlyIncome(
   memberId: string,
   kindOf: KindOf,
   amountOf: (recurrence: Recurrence) => Money | null,
-  on: ISODate,
+  month: YearMonth,
 ): MemberIncomeValue {
   let total = ZERO
   let found = false
@@ -221,7 +227,7 @@ export function monthlyIncome(
   for (const recurrence of recurrences) {
     if (recurrence.memberId !== memberId) continue
     if (kindOf(recurrence.categoryId) !== 'resource') continue
-    if (!isActiveOn(recurrence, on)) continue
+    if (!isRunningIn(recurrence, month)) continue
 
     found = true
     const amount = amountOf(recurrence)
@@ -238,11 +244,11 @@ export function memberIncomes(
   recurrences: readonly Recurrence[],
   kindOf: KindOf,
   amountOf: (recurrence: Recurrence) => Money | null,
-  on: ISODate,
+  month: YearMonth,
 ): MemberIncome[] {
   return members.map((member) => ({
     memberId: member.id,
-    ...monthlyIncome(recurrences, member.id, kindOf, amountOf, on),
+    ...monthlyIncome(recurrences, member.id, kindOf, amountOf, month),
   }))
 }
 
@@ -260,13 +266,13 @@ export function memberIncomes(
 export function unassignedIncomes(
   recurrences: readonly Recurrence[],
   kindOf: KindOf,
-  on: ISODate,
+  month: YearMonth,
 ): Recurrence[] {
   return recurrences.filter(
     (recurrence) =>
       recurrence.memberId === undefined &&
       kindOf(recurrence.categoryId) === 'resource' &&
-      isActiveOn(recurrence, on),
+      isRunningIn(recurrence, month),
   )
 }
 

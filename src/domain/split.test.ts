@@ -176,9 +176,9 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
      le montant. */
   const unpriced: Parameters<typeof monthlyIncome>[3] = (r) => r.amount
   const income = (recurrences: Parameters<typeof monthlyIncome>[0], amountOf = unpriced) =>
-    monthlyIncome(recurrences, 'm-1', kindOf, amountOf, '2026-07-15').income
+    monthlyIncome(recurrences, 'm-1', kindOf, amountOf, '2026-07').income
   const gap = (recurrences: Parameters<typeof monthlyIncome>[0], amountOf = unpriced) =>
-    monthlyIncome(recurrences, 'm-1', kindOf, amountOf, '2026-07-15').gap
+    monthlyIncome(recurrences, 'm-1', kindOf, amountOf, '2026-07').gap
 
   it('somme les ressources du membre', () => {
     const apl = makeRecurrence({
@@ -213,8 +213,18 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
     expect(income([salaire, autre])).toBe(250_000)
   })
 
-  it('ignore un salaire arrêté avant la date', () => {
+  it('ignore un salaire arrêté avant le mois', () => {
     expect(income([{ ...salaire, endedOn: '2026-03-31' }])).toBeNull()
+  })
+
+  it('compte un salaire arrêté en cours de mois : il a bien couru', () => {
+    expect(income([{ ...salaire, endedOn: '2026-07-15' }])).toBe(250_000)
+  })
+
+  it('compte un salaire dont la première échéance est encore à venir', () => {
+    // Le foyer qui vient de poser ses salaires au 1er du mois prochain n'a pas
+    // à attendre ce 1er pour savoir dans quelle proportion il partage.
+    expect(income([{ ...salaire, startedOn: '2026-09-01' }])).toBe(250_000)
   })
 
   it('ne sait rien dire sans aucune ressource', () => {
@@ -248,7 +258,7 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
         [salaire, autre],
         kindOf,
         unpriced,
-        '2026-07-15',
+        '2026-07',
       ),
     ).toEqual([
       { memberId: 'm-1', income: 250_000, gap: null },
@@ -268,14 +278,14 @@ describe('ressources que personne ne porte', () => {
   it('signale un revenu resté au foyer entier', () => {
     // Il rentre bien sur le mois, mais ne pèse dans la part de personne : c'est
     // la première explication d'une répartition qui ne se calcule pas.
-    expect(unassignedIncomes([commun], kindOf, '2026-07-15').map((r) => r.id)).toEqual(['r-caf'])
+    expect(unassignedIncomes([commun], kindOf, '2026-07').map((r) => r.id)).toEqual(['r-caf'])
   })
 
   it('ignore ce qui est attribué, ce qui n’est pas une ressource, et ce qui est arrêté', () => {
     const àQuelquun = { ...commun, id: 'r-1', memberId: 'm-1' }
     const charge = { ...commun, id: 'r-2', categoryId: 'logement' }
     const arrêté = { ...commun, id: 'r-3', endedOn: '2026-03-31' }
-    expect(unassignedIncomes([àQuelquun, charge, arrêté], kindOf, '2026-07-15')).toEqual([])
+    expect(unassignedIncomes([àQuelquun, charge, arrêté], kindOf, '2026-07')).toEqual([])
   })
 })
 
@@ -582,7 +592,7 @@ describe('un foyer à salaires variables se répartit', () => {
   /** Le câblage réel : `amountOn` répond, `memberIncomes` en déduit les parts. */
   const parts = (recurrences: Recurrence[], entries: Entry[], on: string) =>
     memberShares(
-      memberIncomes(foyer, recurrences, kindOf, (r) => amountOn(r, entries, on), on),
+      memberIncomes(foyer, recurrences, kindOf, (r) => amountOn(r, entries, on), ymOf(on)),
       [eur(100_000)],
     )
 
@@ -617,6 +627,19 @@ describe('un foyer à salaires variables se répartit', () => {
     // l'écran doit nommer qui manque plutôt qu'afficher une part fausse.
     const recurrences = [salaire('r-1', 'm-1', { estimate: eur(250_000) }), salaire('r-2', 'm-2')]
     expect(parts(recurrences, [], '2026-07-15')).toBeNull()
+  })
+
+  it('même quand la première échéance tombe le mois suivant', () => {
+    /* Le foyer qui se met en place le 31 juillet pose ses salaires au 1er août.
+       Lu au jour dit, aucun des deux n'existait encore : les deux membres se
+       lisaient « aucun revenu enregistré », le montant habituel n'était même
+       pas consulté, et la répartition serait apparue le lendemain. Un chiffre
+       de partage ne peut pas dépendre du moment où on ouvre l'écran. */
+    const recurrences = [
+      salaire('r-1', 'm-1', { startedOn: '2026-08-01', estimate: eur(250_000) }),
+      salaire('r-2', 'm-2', { startedOn: '2026-08-01', estimate: eur(200_000) }),
+    ]
+    expect(parts(recurrences, [], '2026-07-31')?.map((s) => s.shareBp)).toEqual([5556, 4444])
   })
 
   it('et l’échéance réelle l’emporte sur le montant habituel', () => {
