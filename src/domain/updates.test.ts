@@ -19,6 +19,8 @@ import {
   removeMember,
   removeRecurrence,
   renameMember,
+  replaceEntry,
+  replaceRecurrence,
   resumeRecurrence,
   setHouseholdName,
   stopRecurrence,
@@ -167,6 +169,28 @@ describe('récurrences', () => {
     expect(after.recurrences[0]?.endedOn).toBe('2026-07-15')
     expect(after.entries.some((e) => e.id === 'passe')).toBe(true)
   })
+
+  /* Le formulaire envoie l'état complet de ce qu'il montre : remettre un
+     abonnement à « tout le foyer » doit effacer le membre, pas le laisser. */
+  it('rend l’abonnement au foyer quand le formulaire n’envoie plus de membre', () => {
+    const owned = makeData({
+      recurrences: [
+        makeRecurrence({
+          id: 'r1',
+          memberId: 'm1',
+          shared: false,
+          note: 'à moi',
+          period: { unit: 'month', every: 1, anchorDay: 5 },
+        }),
+      ],
+    })
+    const { id: _dropped, memberId: _m, shared: _s, note: _n, ...kept } = owned.recurrences[0]!
+    const after = replaceRecurrence(owned, 'r1', kept)
+    expect(after.recurrences[0]).not.toHaveProperty('memberId')
+    expect(after.recurrences[0]).not.toHaveProperty('shared')
+    expect(after.recurrences[0]).not.toHaveProperty('note')
+    expect(after.recurrences[0]?.id).toBe('r1')
+  })
 })
 
 describe('entrées', () => {
@@ -185,6 +209,20 @@ describe('entrées', () => {
     })
     const after = confirmEntries(before, ['a', 'c'])
     expect(after.entries.map((e) => e.status)).toEqual(['confirmed', 'planned', 'confirmed'])
+  })
+
+  it('efface le membre vidé sans couper l’entrée de sa récurrence', () => {
+    const before = makeData({
+      entries: [
+        makeEntry({ id: 'e1', recurrenceId: 'r1', date: '2026-07-05', memberId: 'm1', shared: false }),
+      ],
+    })
+    const { id: _dropped, recurrenceId: _link, memberId: _m, shared: _s, ...kept } =
+      before.entries[0]!
+    const after = replaceEntry(before, 'e1', kept)
+    expect(after.entries[0]).not.toHaveProperty('memberId')
+    expect(after.entries[0]).not.toHaveProperty('shared')
+    expect(after.entries[0]?.recurrenceId).toBe('r1')
   })
 
   it('ajoute une saisie ponctuelle', () => {
@@ -292,6 +330,65 @@ describe('synchronisation d’une récurrence', () => {
     expect(after.entries.find((e) => e.id === 'paid')).toBeDefined()
     // Juillet est déjà servi par l'échéance confirmée : rien n'y est ajouté.
     expect(after.entries.filter((e) => e.date.startsWith('2026-07'))).toHaveLength(1)
+  })
+
+  /** Confirmer d'avance dit qu'une échéance aura lieu, pas qu'elle a eu lieu. */
+  describe('échéance confirmée d’avance', () => {
+    const owned = () =>
+      makeData({
+        ...twoOpenMonths(),
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            memberId: 'm1',
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+        entries: [
+          makeEntry({
+            id: 'juillet',
+            recurrenceId: 'r1',
+            date: '2026-07-10',
+            status: 'confirmed',
+            memberId: 'm1',
+            amount: eur(1500),
+          }),
+          makeEntry({
+            id: 'aout',
+            recurrenceId: 'r1',
+            date: '2026-08-10',
+            status: 'confirmed',
+            memberId: 'm1',
+            amount: eur(1500),
+          }),
+        ],
+      })
+
+    it('suit la règle quand l’abonnement passe au foyer', () => {
+      const { id: _dropped, memberId: _m, ...household } = owned().recurrences[0]!
+      const moved = replaceRecurrence(owned(), 'r1', household)
+      const after = syncRecurrenceEntries(moved, 'r1', sequentialIds(), '2026-07-15')
+
+      expect(after.entries.find((e) => e.id === 'aout')).not.toHaveProperty('memberId')
+      // Le passé, lui, ne se réécrit pas : juillet a eu lieu (cahier §3).
+      expect(after.entries.find((e) => e.id === 'juillet')?.memberId).toBe('m1')
+    })
+
+    it('garde le montant et la date saisis à la main', () => {
+      const { id: _dropped, ...rule } = owned().recurrences[0]!
+      const relabelled = replaceRecurrence(owned(), 'r1', {
+        ...rule,
+        label: 'Nouveau nom',
+        amount: eur(9900),
+      })
+      const after = syncRecurrenceEntries(relabelled, 'r1', sequentialIds(), '2026-07-15')
+      const aout = after.entries.find((e) => e.id === 'aout')
+
+      expect(aout?.label).toBe('Nouveau nom')
+      expect(aout?.amount).toBe(eur(1500))
+      expect(aout?.date).toBe('2026-08-10')
+      expect(aout?.status).toBe('confirmed')
+    })
   })
 
   it('est rejouable sans rien dupliquer', () => {

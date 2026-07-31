@@ -1,7 +1,7 @@
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { Recurrence } from '@/domain/types'
 import { fr } from '@/i18n/fr'
-import { addRecurrence, updateRecurrence } from '@/store/actions'
+import { addRecurrence, replaceRecurrence } from '@/store/actions'
 import { useMembers, useRecurrenceRow } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
 import { Field, TextInput } from '@/ui/Field'
@@ -32,7 +32,7 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
       addRecurrence(payload)
       toast(fr.recurrences.added)
     } else {
-      updateRecurrence(recurrence.id, payload)
+      replaceRecurrence(recurrence.id, payload)
       toast(fr.recurrences.updated)
     }
     onDone()
