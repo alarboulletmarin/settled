@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
+import { Link, useNavigate } from 'react-router-dom'
+import { CREDITS_PATH, RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
 import { NO_MEMBER, type RecurrenceGroupBy, groupRecurrences } from '@/domain/grouping'
 import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
@@ -249,6 +249,20 @@ export function RecurrencesPage() {
           {stopped.length > 0 && <StoppedList rows={stopped} onOpen={openDetail} />}
         </div>
       )}
+
+      {/* Hors du branchement : sans abonnement non plus, on n'avait aucun
+          chemin vers les crédits — et un crédit s'enregistre très bien avant
+          l'abonnement qui le rembourse. Le lien est un bloc et non un mot dans
+          la phrase : dans le fil du texte, sa cible tombe à dix-huit pixels. */}
+      <div className="mt-4 flex max-w-3xl flex-col">
+        <p className="t-label">{fr.recurrences.creditsHint}</p>
+        <Link
+          to={CREDITS_PATH}
+          className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"
+        >
+          {fr.credits.title}
+        </Link>
+      </div>
     </>
   )
 }

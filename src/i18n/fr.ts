@@ -419,6 +419,10 @@ export const fr = {
     resumed: 'Abonnement repris',
     deleted: 'Abonnement supprimé',
     empty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
+    /* La seule porte des crédits était une tuile du mois qui se retire tant
+       qu'aucun crédit n'est suivi : on ne pouvait donc jamais créer le premier.
+       Elle est ici, parce que c'est un abonnement qui pose les mensualités. */
+    creditsHint: 'Une mensualité de crédit est un abonnement comme un autre. Pour suivre en plus le capital qu’il reste à devoir :',
     emptyStopped: 'Aucun abonnement arrêté.',
     showStopped: 'Voir les abonnements arrêtés',
     hideStopped: 'Masquer les abonnements arrêtés',
