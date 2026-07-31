@@ -250,6 +250,17 @@ export const fr = {
     split: 'Répartition',
     splitHint: 'charges communes du mois',
 
+    /* La contrepartie de la tuile Répartition, sous un filtre par membre :
+       celle-ci montre les parts de tout le monde, celle-là ce que la personne
+       filtrée porte du pot commun — et le coefficient qui le produit, qui
+       n'apparaissait nulle part sur son mois. */
+    memberShare: 'Part du foyer',
+    memberShareMine: 'Sa part',
+    memberShareCommon: 'Communes',
+    memberShareOwn: 'Personnelles',
+    memberShareHint: 'au prorata des revenus',
+    srMemberShare: 'Part de %s dans les charges communes : %s, soit %s sur %s.',
+
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
        dit son calcul, puis ce qui le sépare de son voisin — c'est la question
        qu'on se pose devant la grille, pas la définition isolée. */

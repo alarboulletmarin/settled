@@ -329,3 +329,65 @@ export function scopeToMember(
 export function totalDue(shares: readonly MemberShare[]): Money {
   return shares.reduce((acc, share) => add(acc, share.due), ZERO)
 }
+
+/* --- Ce qu'un membre porte du mois ----------------------------------------*/
+
+/** Les charges du mois d'un membre, de part et d'autre du partage. */
+export type MemberCharges = {
+  /** Ce qu'il porte seul : les charges et les crédits à son nom. */
+  own: Money
+  /** Sa part des charges communes, au prorata des revenus. */
+  common: Money
+  /** Le total commun dont cette part est tirée, pour que le chiffre se vérifie. */
+  commonTotal: Money
+  /** Le coefficient qui la produit, en points de base. 5556 = 55,56 %. */
+  shareBp: number
+}
+
+/**
+ * Ce que le mois coûte à un membre, ses charges d'un côté et sa part du foyer
+ * de l'autre.
+ *
+ * `scopeToMember` fond déjà les deux dans un même jeu d'entrées — c'est ce qui
+ * fait qu'un mois filtré ne se lit pas comme si son membre vivait sans loyer.
+ * Mais une fois fondues, plus rien ne dit ce qui vient du pot commun : le total
+ * des charges d'une personne mêle ses courses et sa part de l'électricité sans
+ * qu'on puisse les séparer, et le coefficient qui produit la seconde ne se lit
+ * nulle part sur son mois. C'est le même découpage, lu au lieu d'être fondu.
+ *
+ * `own` s'arrête aux natures que `spendingFlow` compte — charges et crédits :
+ * les deux morceaux redonnent alors exactement le total des charges du mois
+ * filtré, et une tuile qui annoncerait un tout plus grand que la somme de ses
+ * parts ne vaudrait pas mieux qu'un chiffre faux.
+ *
+ * `null` tant que le prorata ne se calcule pas, comme partout ailleurs : une
+ * part au dénominateur incomplet ne vaut pas zéro, elle ne veut rien dire.
+ */
+export function memberCharges(
+  entries: readonly Entry[],
+  month: YearMonth,
+  memberId: string,
+  kindOf: KindOf,
+  incomes: readonly MemberIncome[],
+): MemberCharges | null {
+  const weights = prorataWeights(incomes)
+  const index = incomes.findIndex((income) => income.memberId === memberId)
+  if (weights === null || index < 0) return null
+
+  let own = ZERO
+  let common = ZERO
+  let commonTotal = ZERO
+
+  for (const entry of entriesOfMonth(entries, month)) {
+    if (isCommon(entry, kindOf)) {
+      commonTotal = add(commonTotal, entry.amount)
+      common = add(common, allocate(entry.amount, weights)[index] ?? ZERO)
+      continue
+    }
+    if (entry.memberId !== memberId) continue
+    if (entry.direction !== 'out' || !isSpending(kindOf(entry.categoryId))) continue
+    own = add(own, entry.amount)
+  }
+
+  return { own, common, commonTotal, shareBp: largestRemainder(10_000, weights)[index] ?? 0 }
+}
