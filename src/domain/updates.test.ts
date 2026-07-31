@@ -1,0 +1,178 @@
+import { describe, expect, it } from 'vitest'
+import { eur, makeCategory, makeData, makeEntry, makeRecurrence, sequentialIds } from './fixtures'
+import {
+  addEntry,
+  addMember,
+  archiveCategory,
+  confirmEntries,
+  confirmEntry,
+  openMonth,
+  removeMember,
+  removeRecurrence,
+  resumeRecurrence,
+  setHouseholdName,
+  stopRecurrence,
+  updateSettings,
+} from './updates'
+
+describe('foyer et membres', () => {
+  it('renomme le foyer sans toucher au reste', () => {
+    const before = makeData({ entries: [makeEntry({ date: '2026-07-01' })] })
+    const after = setHouseholdName(before, 'Chez nous')
+    expect(after.household.name).toBe('Chez nous')
+    expect(after.entries).toBe(before.entries)
+  })
+
+  it('ajoute un membre', () => {
+    const after = addMember(makeData(), { id: 'm1', name: 'Alix', color: 'c' })
+    expect(after.household.members).toHaveLength(1)
+  })
+
+  it('retirer un membre libère ses entrées au lieu de les perdre', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
+      entries: [
+        makeEntry({ id: 'e1', date: '2026-07-01', memberId: 'm1' }),
+        makeEntry({ id: 'e2', date: '2026-07-02', memberId: 'm2' }),
+      ],
+      recurrences: [
+        makeRecurrence({
+          id: 'r1',
+          memberId: 'm1',
+          period: { unit: 'month', every: 1, anchorDay: 1 },
+        }),
+      ],
+    })
+    const after = removeMember(before, 'm1')
+    expect(after.household.members).toEqual([])
+    expect(after.entries).toHaveLength(2)
+    expect(after.entries[0]).not.toHaveProperty('memberId')
+    expect(after.entries[1]?.memberId).toBe('m2')
+    expect(after.recurrences[0]).not.toHaveProperty('memberId')
+  })
+})
+
+describe('catégories', () => {
+  it('archive plutôt que d’effacer', () => {
+    const before = makeData({ categories: [makeCategory({ id: 'c1' })] })
+    const after = archiveCategory(before, 'c1')
+    expect(after.categories[0]?.archived).toBe(true)
+    expect(after.categories).toHaveLength(1)
+  })
+})
+
+describe('récurrences', () => {
+  const base = makeData({
+    recurrences: [
+      makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 5 } }),
+    ],
+    entries: [
+      makeEntry({ id: 'passe', recurrenceId: 'r1', date: '2026-06-05', status: 'confirmed' }),
+      makeEntry({ id: 'futur', recurrenceId: 'r1', date: '2026-08-05', status: 'planned' }),
+    ],
+  })
+
+  it('arrête une récurrence et retire ses échéances seulement prévues', () => {
+    const after = stopRecurrence(base, 'r1', '2026-07-15')
+    expect(after.recurrences[0]?.endedOn).toBe('2026-07-15')
+    expect(after.entries.map((e) => e.id)).toEqual(['passe'])
+  })
+
+  it('garde les échéances confirmées : elles ont eu lieu', () => {
+    const after = stopRecurrence(base, 'r1', '2026-01-01')
+    expect(after.entries.some((e) => e.id === 'passe')).toBe(true)
+  })
+
+  it('relance une récurrence arrêtée', () => {
+    const stopped = stopRecurrence(base, 'r1', '2026-07-15')
+    expect(resumeRecurrence(stopped, 'r1').recurrences[0]).not.toHaveProperty('endedOn')
+  })
+
+  it('supprime vraiment une récurrence sans aucune échéance confirmée', () => {
+    const fresh = makeData({
+      recurrences: [makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 5 } })],
+      entries: [makeEntry({ id: 'p', recurrenceId: 'r1', date: '2026-08-05', status: 'planned' })],
+    })
+    const after = removeRecurrence(fresh, 'r1', '2026-07-15')
+    expect(after.recurrences).toEqual([])
+    expect(after.entries).toEqual([])
+  })
+
+  it('arrête au lieu de supprimer dès qu’une échéance a été confirmée', () => {
+    const after = removeRecurrence(base, 'r1', '2026-07-15')
+    expect(after.recurrences).toHaveLength(1)
+    expect(after.recurrences[0]?.endedOn).toBe('2026-07-15')
+    expect(after.entries.some((e) => e.id === 'passe')).toBe(true)
+  })
+})
+
+describe('entrées', () => {
+  it('confirme une échéance', () => {
+    const before = makeData({ entries: [makeEntry({ id: 'e1', date: '2026-07-01', status: 'planned' })] })
+    expect(confirmEntry(before, 'e1').entries[0]?.status).toBe('confirmed')
+  })
+
+  it('confirme en bloc, sans toucher aux autres', () => {
+    const before = makeData({
+      entries: [
+        makeEntry({ id: 'a', date: '2026-07-01', status: 'planned' }),
+        makeEntry({ id: 'b', date: '2026-07-02', status: 'planned' }),
+        makeEntry({ id: 'c', date: '2026-07-03', status: 'planned' }),
+      ],
+    })
+    const after = confirmEntries(before, ['a', 'c'])
+    expect(after.entries.map((e) => e.status)).toEqual(['confirmed', 'planned', 'confirmed'])
+  })
+
+  it('ajoute une saisie ponctuelle', () => {
+    const entry = makeEntry({ id: 'x', date: '2026-07-09', amount: eur(2350) })
+    expect(addEntry(makeData(), entry).entries).toEqual([entry])
+  })
+})
+
+describe('ouverture du mois', () => {
+  const data = makeData({
+    recurrences: [
+      makeRecurrence({ id: 'loyer', amount: eur(95000), period: { unit: 'month', every: 1, anchorDay: 5 } }),
+    ],
+  })
+
+  it('génère les échéances et enregistre l’ouverture', () => {
+    const result = openMonth(data, '2026-07', sequentialIds(), '2026-07-01')
+    expect(result.created).toBe(1)
+    expect(result.data.entries).toHaveLength(1)
+    expect(result.data.months).toEqual([{ ym: '2026-07', openedAt: '2026-07-01', closed: false }])
+  })
+
+  it('est rejouable sans rien dupliquer', () => {
+    const once = openMonth(data, '2026-07', sequentialIds(), '2026-07-01')
+    const twice = openMonth(once.data, '2026-07', sequentialIds(), '2026-07-20')
+    expect(twice.created).toBe(0)
+    expect(twice.data.entries).toHaveLength(1)
+    expect(twice.data.months).toHaveLength(1)
+    // La date d'ouverture d'origine n'est pas réécrite.
+    expect(twice.data.months[0]?.openedAt).toBe('2026-07-01')
+  })
+
+  it('compte les échéances à montant variable', () => {
+    const withVariable = makeData({
+      recurrences: [
+        makeRecurrence({ id: 'elec', amount: null, period: { unit: 'month', every: 1, anchorDay: 12 } }),
+      ],
+    })
+    expect(openMonth(withVariable, '2026-07', sequentialIds()).variable).toBe(1)
+  })
+
+  it('ouvre un mois sans aucune échéance sans rien créer', () => {
+    const result = openMonth(makeData(), '2026-07', sequentialIds(), '2026-07-01')
+    expect(result.created).toBe(0)
+    expect(result.data.months).toHaveLength(1)
+  })
+})
+
+describe('réglages', () => {
+  it('modifie un réglage sans écraser les autres', () => {
+    const after = updateSettings(makeData(), { theme: 'dark' })
+    expect(after.settings).toEqual({ theme: 'dark', currency: 'EUR', monthStartsOn: 1 })
+  })
+})

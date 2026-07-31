@@ -1,0 +1,166 @@
+/* Base et échelle typographique — DS §3 et §8.
+ * Aucun token n'est déclaré ici, uniquement consommé. */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    color-scheme: light;
+  }
+
+  html[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* DS §8 — focus clavier visible sur tout élément interactif. */
+  :focus-visible {
+    outline: 2px solid var(--accent-2);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  svg {
+    display: block;
+  }
+}
+
+@layer components {
+  /* --- Échelle typographique — DS §3 ------------------------------------ */
+
+  .t-hero {
+    font-family: var(--font-sans);
+    font-size: 56px;
+    font-weight: 700;
+    font-stretch: 112%;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  @media (min-width: 768px) {
+    .t-hero {
+      font-size: 72px;
+    }
+  }
+
+  /* Variante du chiffre héros pour une tuile étroite : mêmes bornes que le DS,
+     mais ramenée à la largeur du conteneur plutôt que de déborder. Un solde à
+     quatre chiffres ne tient pas à 72px dans une tuile 2×2. */
+  .t-hero-fit {
+    font-family: var(--font-sans);
+    font-size: clamp(28px, 15cqi, 56px);
+    font-weight: 700;
+    font-stretch: 112%;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  @media (min-width: 1024px) {
+    .t-hero-fit {
+      font-size: clamp(32px, 15cqi, 72px);
+    }
+  }
+
+  .t-tile-num {
+    font-family: var(--font-sans);
+    font-size: 32px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  .t-section {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .t-body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .t-label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--text-muted);
+  }
+
+  .t-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .t-axis {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text-muted);
+  }
+
+  /* --- Chiffres — DS §3 -------------------------------------------------- */
+
+  /* tabular-nums sur tout montant affiché, sans exception. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* --- Divers ------------------------------------------------------------ */
+
+  /* Lecture accessible d'un graphique : présente pour un lecteur d'écran,
+     invisible à l'œil (DS §8). */
+  .sr-only-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Cible tactile minimale 44px — DS §8. */
+  .hit {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* DS §4 — tout est neutralisé sous prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

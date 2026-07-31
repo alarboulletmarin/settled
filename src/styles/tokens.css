@@ -1,0 +1,227 @@
+/* ============================================================================
+ * Settled — tokens du design system.
+ *
+ * Ce fichier est la SEULE déclaration des tokens. Quatre couches, dans l'ordre :
+ *
+ *   1. Palette de base      — valeurs brutes. Jamais consommée par un composant.
+ *   2. Tokens sémantiques   — la seule couche que les composants consomment.
+ *   3. Couche dérivée       — tokens sémantiques déduits d'une règle du DS.
+ *   4. Exposition Tailwind  — @theme inline, pour les utilitaires.
+ *
+ * Règle : un composant qui écrit `var(--pine-500)` est un bug.
+ * ==========================================================================*/
+
+@import 'tailwindcss';
+
+/* Le thème est porté par [data-theme] sur <html>. Cette variante sert aux rares
+   cas où un token ne suffit pas (masques SVG, états de piste d'anneau). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---------------------------------------------------------------------------
+ * 1. Palette de base — DS §2.1. Ces valeurs ne changent jamais.
+ * -------------------------------------------------------------------------*/
+:root {
+  /* Sapin — la couleur d'identité */
+  --pine-900: #0e1f1a;
+  --pine-700: #1b3b31;
+  --pine-500: #2f5d4c;
+  --pine-100: #dce9e2;
+  --pine-50: #f0f5f2;
+
+  /* Accents — remplissage uniquement */
+  --lime-500: #d8f84e;
+  --lime-600: #c2e432;
+  --violet-500: #8478f2;
+  --violet-600: #6e60e8;
+
+  /* Neutres */
+  --ink-950: #0b0e0d;
+  --ink-800: #161a19;
+  --ink-400: #7c8783;
+  --paper: #fafaf7;
+
+  /* Alerte — réservée aux dépassements et erreurs */
+  --alert-500: #e5484d;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2. Tokens sémantiques — DS §2.2.
+ * -------------------------------------------------------------------------*/
+[data-theme='light'] {
+  --bg: var(--pine-50);
+  --surface: #ffffff;
+  --surface-2: var(--pine-100);
+  --border: rgb(11 14 13 / 0.08);
+  --text: var(--ink-950);
+  /* Écart assumé au DS §2.2, qui prescrit var(--ink-400) : #7C8783 plafonne à
+     3,72:1 sur --surface, 3,37 sur --bg et 2,97 sur --surface-2, sous le
+     plancher AA de 4,5:1 imposé par le DS §8. Même teinte assombrie à 75 % :
+     5,99 / 5,44 / 4,79. À rebasculer sur --ink-400 si l'écart n'est pas voulu. */
+  --text-muted: #5d6562;
+  --shadow:
+    0 1px 2px rgb(11 14 13 / 0.04), 0 8px 24px rgb(11 14 13 / 0.06);
+}
+
+[data-theme='dark'] {
+  --bg: var(--pine-500);
+  --surface: var(--ink-950);
+  --surface-2: var(--ink-800);
+  --border: rgb(255 255 255 / 0.08);
+  --text: var(--pine-50);
+  /* Le DS prescrit #8FA09A : 7,08:1 sur --surface, mais 2,75 sur --bg, qui est
+     du sapin et non du noir. --text-muted vaut donc par défaut la valeur
+     valable sur le fond de page ; les surfaces la repointent (voir plus bas). */
+  --text-muted: var(--pine-100);
+  --shadow: none;
+}
+
+/* Identiques dans les deux thèmes — c'est volontaire (DS §2.2). */
+:root {
+  --accent: var(--lime-500);
+  --accent-fg: var(--ink-950);
+  /* Écart assumé au DS §2.2, qui prescrit var(--violet-500). Le DS §2.3 affirme
+     que « texte blanc sur violet » passe AA : c'est faux sur --violet-500
+     (3,53:1). --violet-600, déjà présent dans la palette de base, donne 4,67:1
+     et rend la règle vraie sans introduire de couleur nouvelle. */
+  --accent-2: var(--violet-600);
+  --accent-2-fg: #ffffff;
+
+  /* Alerte, exposée en sémantique : dépassements et erreurs uniquement.
+     --danger est un remplissage non textuel (barres, pastilles). Dès qu'un
+     texte se pose dessus, c'est --danger-fill : blanc sur --alert-500 ne donne
+     que 3,91:1, contre 5,69:1 sur la même teinte assombrie. */
+  --danger: var(--alert-500);
+  --danger-fill: #b73a3e;
+  --danger-fg: #ffffff;
+
+  /* Palette catégories — DS §2.4. Six teintes, dans cet ordre. */
+  --cat-1: #d8f84e;
+  --cat-2: #8478f2;
+  --cat-3: #4fc3a1;
+  --cat-4: #f5b575;
+  --cat-5: #f09bb5;
+  --cat-6: #7fb8e8;
+  /* Au-delà de six catégories : gris, regroupées sous « Autres ». */
+  --cat-rest: var(--ink-400);
+
+  /* Sens du flux — DS §2.3 : entrées = lime, sorties = violet.
+     Remplissage uniquement, jamais une `color`. */
+  --flow-in: var(--accent);
+  --flow-in-fg: var(--accent-fg);
+  --flow-out: var(--accent-2);
+  --flow-out-fg: var(--accent-2-fg);
+}
+
+/* ---------------------------------------------------------------------------
+ * 3. Couche dérivée — conséquences directes d'une règle du DS, exprimées en
+ *    token pour qu'aucun composant n'ait à connaître le thème courant.
+ * -------------------------------------------------------------------------*/
+[data-theme='light'] {
+  /* DS §6 : « bordure 1px en thème sombre, ombre en thème clair ». */
+  --tile-border: transparent;
+  /* Piste des anneaux et fonds de graphique sur une surface accentuée. */
+  --track-on-accent: rgb(11 14 13 / 0.16);
+  /* Une seule valeur passe AA partout en clair : rien à repointer. */
+  --text-muted-on-surface: var(--text-muted);
+  /* --alert-500 en texte plafonne à 3,55:1 sur --bg. Même teinte assombrie à
+     80 % : 5,69 sur --surface, 5,16 sur --bg, 4,55 sur --surface-2. Le token
+     --danger, lui, reste la valeur du DS et sert de remplissage. */
+  --danger-text: #b73a3e;
+  --danger-text-on-surface: var(--danger-text);
+}
+
+[data-theme='dark'] {
+  --tile-border: var(--border);
+  --track-on-accent: rgb(11 14 13 / 0.16);
+  /* Valeur du DS, valable dès qu'on est dans une surface : 7,08:1 sur
+     --surface, 6,41 sur --surface-2. `.tile` la remet en place. */
+  --text-muted-on-surface: #8fa09a;
+  /* Même partage pour l'alerte : la valeur par défaut tient sur le sapin
+     (5,04:1), les surfaces reprennent un rouge plus franc (6,39:1). */
+  --danger-text: #f7c8ca;
+  --danger-text-on-surface: #ea6d71;
+}
+
+/* ---------------------------------------------------------------------------
+ * 4. Formes, mouvement, typographie — DS §3 et §4.
+ * -------------------------------------------------------------------------*/
+:root {
+  --font-sans: 'Archivo Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --r-tile: 24px;
+  --r-inner: 14px;
+  --r-input: 12px;
+  --r-chip: 999px;
+
+  /* Mouvement — 160ms par défaut, 240ms pour l'entrée d'une vue. */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 160ms;
+  --dur-view: 240ms;
+
+  /* Épaisseur de l'anneau signature — DS §6. */
+  --ring-width: 12px;
+
+  /* Atténuation du symbole monétaire. Le DS pose 0.5 ; 0.6 est le minimum qui
+     tienne le 4,5:1. Une tuile dont la couleur de texte n'a pas de marge peut
+     le repointer à 1 (voir .tile--accent-2). */
+  --amount-symbol-opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+    --dur-view: 0ms;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 5. Exposition à Tailwind.
+ *
+ * `inline` est indispensable : sans lui, `--color-bg: var(--bg)` serait résolu
+ * une fois sur :root et un sous-arbre portant [data-theme] ne suivrait plus.
+ * Avec `inline`, l'utilitaire émet directement `var(--bg)`.
+ * -------------------------------------------------------------------------*/
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-2: var(--accent-2);
+  --color-accent-2-fg: var(--accent-2-fg);
+  --color-danger: var(--danger);
+  --color-danger-fill: var(--danger-fill);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-text: var(--danger-text);
+
+  --color-flow-in: var(--flow-in);
+  --color-flow-out: var(--flow-out);
+
+  --color-cat-1: var(--cat-1);
+  --color-cat-2: var(--cat-2);
+  --color-cat-3: var(--cat-3);
+  --color-cat-4: var(--cat-4);
+  --color-cat-5: var(--cat-5);
+  --color-cat-6: var(--cat-6);
+  --color-cat-rest: var(--cat-rest);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-tile: var(--r-tile);
+  --radius-inner: var(--r-inner);
+  --radius-input: var(--r-input);
+  --radius-chip: var(--r-chip);
+
+  --shadow-tile: var(--shadow);
+
+  --ease-ds: var(--ease);
+
+  /* Échelle d'espacement — base 4px : 4 8 12 16 20 24 32 40 56 72 (DS §4). */
+  --spacing: 4px;
+}

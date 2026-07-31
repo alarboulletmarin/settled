@@ -1,0 +1,274 @@
+import { describe, expect, it } from 'vitest'
+import { eur, makeEntry, makeRecurrence } from './fixtures'
+import {
+  OTHER_CATEGORY,
+  breakdownByCategory,
+  dailyBreakdown,
+  entriesOfMonth,
+  monthProgress,
+  monthTotals,
+  nextIncomeDate,
+  restToLive,
+  subscriptionTotals,
+  upcomingEntries,
+} from './stats'
+
+const july = [
+  makeEntry({ date: '2026-07-01', direction: 'in', amount: eur(240000), categoryId: 'salaire' }),
+  makeEntry({ date: '2026-07-05', direction: 'out', amount: eur(95000), categoryId: 'logement' }),
+  makeEntry({ date: '2026-07-08', direction: 'out', amount: eur(12000), categoryId: 'courses' }),
+  makeEntry({
+    date: '2026-07-20',
+    direction: 'out',
+    amount: eur(3000),
+    categoryId: 'loisirs',
+    status: 'planned',
+  }),
+  makeEntry({
+    date: '2026-07-28',
+    direction: 'in',
+    amount: eur(50000),
+    categoryId: 'prime',
+    status: 'planned',
+  }),
+  makeEntry({ date: '2026-08-02', direction: 'out', amount: eur(9999), categoryId: 'courses' }),
+]
+
+describe('totaux du mois', () => {
+  it('sépare le réalisé du prévisionnel', () => {
+    const totals = monthTotals(july, '2026-07')
+    expect(totals.confirmedIn).toBe(240000)
+    expect(totals.confirmedOut).toBe(107000)
+    expect(totals.plannedIn).toBe(50000)
+    expect(totals.plannedOut).toBe(3000)
+  })
+
+  it('calcule le solde sur les seules entrées confirmées', () => {
+    expect(monthTotals(july, '2026-07').balance).toBe(133000)
+  })
+
+  it('calcule le solde prévisionnel en incluant les échéances prévues', () => {
+    expect(monthTotals(july, '2026-07').forecastBalance).toBe(180000)
+  })
+
+  it('ne déborde pas sur le mois suivant', () => {
+    expect(entriesOfMonth(july, '2026-07')).toHaveLength(5)
+    expect(monthTotals(july, '2026-08').confirmedOut).toBe(9999)
+  })
+
+  it('rend tout à zéro sur un mois sans aucune donnée', () => {
+    expect(monthTotals(july, '2026-01')).toEqual({
+      confirmedIn: 0,
+      confirmedOut: 0,
+      plannedIn: 0,
+      plannedOut: 0,
+      balance: 0,
+      forecastBalance: 0,
+    })
+  })
+
+  it('filtre par membre', () => {
+    const entries = [
+      makeEntry({ date: '2026-07-01', direction: 'in', amount: eur(1000), memberId: 'a' }),
+      makeEntry({ date: '2026-07-02', direction: 'in', amount: eur(2000), memberId: 'b' }),
+      makeEntry({ date: '2026-07-03', direction: 'in', amount: eur(4000) }),
+    ]
+    expect(monthTotals(entries, '2026-07', 'a').confirmedIn).toBe(1000)
+    expect(monthTotals(entries, '2026-07').confirmedIn).toBe(7000)
+  })
+})
+
+describe('reste à vivre', () => {
+  it('s’arrête juste avant la prochaine rentrée d’argent', () => {
+    // Confirmé au 10 juillet : 2 400 − 1 070 = 1 330 €.
+    // Reste à payer avant la prime du 28 : 30 € de loisirs le 20.
+    expect(restToLive(july, '2026-07', '2026-07-10')).toBe(130000)
+  })
+
+  it('trouve la prochaine rentrée d’argent, strictement après la date', () => {
+    expect(nextIncomeDate(july, '2026-07-01')).toBe('2026-07-28')
+    // Le 2 août est une sortie : plus aucune rentrée après le 28 juillet.
+    expect(nextIncomeDate(july, '2026-07-28')).toBeNull()
+    expect(nextIncomeDate([], '2026-07-01')).toBeNull()
+  })
+
+  it('va jusqu’à la fin du mois quand plus aucune rentrée n’est en vue', () => {
+    const entries = [
+      makeEntry({ date: '2026-07-01', direction: 'in', amount: eur(200000) }),
+      makeEntry({ date: '2026-07-25', direction: 'out', amount: eur(5000), status: 'planned' }),
+    ]
+    expect(restToLive(entries, '2026-07', '2026-07-10')).toBe(195000)
+  })
+
+  it('vaut zéro sur un mois vide', () => {
+    expect(restToLive([], '2026-07', '2026-07-10')).toBe(0)
+  })
+})
+
+describe('répartition par catégorie', () => {
+  it('classe les sorties par poids décroissant', () => {
+    const slices = breakdownByCategory(july, '2026-07', 'out')
+    expect(slices.map((s) => s.categoryId)).toEqual(['logement', 'courses', 'loisirs'])
+    expect(slices[0]?.total).toBe(95000)
+  })
+
+  it('donne des parts qui somment à 1', () => {
+    const slices = breakdownByCategory(july, '2026-07', 'out')
+    const total = slices.reduce((acc, s) => acc + s.share, 0)
+    expect(total).toBeCloseTo(1, 10)
+  })
+
+  it('regroupe le surplus sous « Autres » au-delà de six catégories', () => {
+    const entries = Array.from({ length: 9 }, (_, i) =>
+      makeEntry({
+        date: '2026-07-01',
+        direction: 'out',
+        amount: eur((9 - i) * 1000),
+        categoryId: `cat-${String(i)}`,
+      }),
+    )
+    const slices = breakdownByCategory(entries, '2026-07', 'out')
+    expect(slices).toHaveLength(7)
+    expect(slices.at(-1)?.categoryId).toBe(OTHER_CATEGORY)
+    // 3 000 + 2 000 + 1 000 pour les trois dernières.
+    expect(slices.at(-1)?.total).toBe(6000)
+  })
+
+  it('ne renvoie rien sur un mois vide, plutôt qu’une part à zéro', () => {
+    expect(breakdownByCategory(july, '2026-01', 'out')).toEqual([])
+  })
+})
+
+describe('dépenses par jour', () => {
+  it('produit un point par jour, y compris les jours vides', () => {
+    const days = dailyBreakdown(july, '2026-07')
+    expect(days).toHaveLength(31)
+    expect(days[0]?.date).toBe('2026-07-01')
+    expect(days[0]?.total).toBe(0)
+    expect(days[4]?.total).toBe(95000)
+  })
+
+  it('empile les catégories d’un même jour', () => {
+    const entries = [
+      makeEntry({ date: '2026-07-03', amount: eur(1000), categoryId: 'a' }),
+      makeEntry({ date: '2026-07-03', amount: eur(2000), categoryId: 'b' }),
+      makeEntry({ date: '2026-07-03', amount: eur(500), categoryId: 'a' }),
+    ]
+    const day = dailyBreakdown(entries, '2026-07')[2]
+    expect(day?.total).toBe(3500)
+    expect(day?.slices).toHaveLength(2)
+  })
+
+  it('compte 28 barres en février, 29 en année bissextile', () => {
+    expect(dailyBreakdown([], '2026-02')).toHaveLength(28)
+    expect(dailyBreakdown([], '2024-02')).toHaveLength(29)
+    expect(dailyBreakdown([], '2026-04')).toHaveLength(30)
+  })
+})
+
+describe('prochaines échéances', () => {
+  it('renvoie les suivantes avec le nombre de jours restants', () => {
+    const upcoming = upcomingEntries(july, '2026-07-10', 5)
+    expect(upcoming).toHaveLength(2)
+    expect(upcoming[0]?.daysLeft).toBe(10)
+    expect(upcoming[1]?.daysLeft).toBe(18)
+  })
+
+  it('inclut une échéance tombant le jour même', () => {
+    expect(upcomingEntries(july, '2026-07-20')[0]?.daysLeft).toBe(0)
+  })
+
+  it('se limite au nombre demandé', () => {
+    expect(upcomingEntries(july, '2026-07-01', 1)).toHaveLength(1)
+  })
+
+  it('ignore les entrées confirmées : elles ne sont plus à venir', () => {
+    expect(upcomingEntries(july, '2026-07-01').every((u) => u.entry.status === 'planned')).toBe(true)
+  })
+})
+
+describe('total des abonnements', () => {
+  const never = () => null
+
+  it('additionne les sorties récurrentes, amorties au mois et à l’année', () => {
+    const recurrences = [
+      makeRecurrence({ id: 'a', amount: eur(999), period: { unit: 'month', every: 1, anchorDay: 1 } }),
+      makeRecurrence({
+        id: 'b',
+        amount: eur(11988),
+        period: { unit: 'year', every: 1, anchorDay: 1 },
+      }),
+    ]
+    const totals = subscriptionTotals(recurrences, never, '2026-07-01')
+    expect(totals.monthly).toBe(1998)
+    expect(totals.annual).toBe(23976)
+  })
+
+  it('ignore les entrées d’argent : ce ne sont pas des abonnements', () => {
+    const recurrences = [
+      makeRecurrence({
+        id: 'salaire',
+        direction: 'in',
+        amount: eur(240000),
+        period: { unit: 'month', every: 1, anchorDay: 28 },
+      }),
+    ]
+    expect(subscriptionTotals(recurrences, never, '2026-07-01').monthly).toBe(0)
+  })
+
+  it('ignore une récurrence arrêtée', () => {
+    const recurrences = [
+      makeRecurrence({
+        id: 'a',
+        amount: eur(999),
+        period: { unit: 'month', every: 1, anchorDay: 1 },
+        endedOn: '2026-05-31',
+      }),
+    ]
+    expect(subscriptionTotals(recurrences, never, '2026-07-01').monthly).toBe(0)
+  })
+
+  it('compte une variable non estimable plutôt que de la valoriser à zéro', () => {
+    const recurrences = [
+      makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
+    ]
+    const totals = subscriptionTotals(recurrences, never, '2026-07-01')
+    expect(totals.unknownCount).toBe(1)
+    expect(totals.monthly).toBe(0)
+  })
+
+  it('estime une variable à sa dernière échéance confirmée', () => {
+    const recurrences = [
+      makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
+    ]
+    const totals = subscriptionTotals(recurrences, () => eur(8450), '2026-07-01')
+    expect(totals.monthly).toBe(8450)
+    expect(totals.unknownCount).toBe(0)
+  })
+
+  it('vaut zéro sans aucune récurrence', () => {
+    expect(subscriptionTotals([], never, '2026-07-01')).toEqual({
+      monthly: 0,
+      annual: 0,
+      unknownCount: 0,
+    })
+  })
+})
+
+describe('progression du mois', () => {
+  it('vaut 1/31 au premier jour et 1 au dernier', () => {
+    expect(monthProgress('2026-07', '2026-07-01')).toBeCloseTo(1 / 31, 10)
+    expect(monthProgress('2026-07', '2026-07-31')).toBe(1)
+  })
+
+  it('tient compte de la longueur du mois', () => {
+    expect(monthProgress('2026-02', '2026-02-28')).toBe(1)
+    expect(monthProgress('2024-02', '2024-02-29')).toBe(1)
+    expect(monthProgress('2026-02', '2026-02-14')).toBeCloseTo(14 / 28, 10)
+  })
+
+  it('borne à 0 avant le mois et à 1 après', () => {
+    expect(monthProgress('2026-07', '2026-06-30')).toBe(0)
+    expect(monthProgress('2026-07', '2026-08-01')).toBe(1)
+  })
+})
