@@ -1,20 +1,33 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
+import { entryNewPath, entryPath } from '@/app/routes'
 import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDate } from '@/i18n/format'
 import { useCategoryMap, useMemberMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
+import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { Plus } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
 import { Tile } from '@/ui/Tile'
-import { EntrySheet } from '@/features/month/EntrySheet'
 import { CalendarGrid } from './CalendarGrid'
 import { useCalendarDays } from './useCalendarDays'
 
 /** Les entrées du jour sélectionné. */
-function DayPanel({ entries, date, onOpen }: { entries: Entry[]; date: string; onOpen: (e: Entry) => void }) {
+function DayPanel({
+  entries,
+  date,
+  onOpen,
+  onAdd,
+}: {
+  entries: Entry[]
+  date: string
+  onOpen: (e: Entry) => void
+  onAdd: (direction: 'in' | 'out') => void
+}) {
   const categories = useCategoryMap()
   const members = useMemberMap()
 
@@ -42,14 +55,43 @@ function DayPanel({ entries, date, onOpen }: { entries: Entry[]; date: string; o
           })}
         </ul>
       )}
+      {/* Le jour choisi est déjà la réponse à « quelle date ? » : la saisie
+          s'ouvre dessus plutôt que de la redemander. Et le sens se choisit
+          ici, pas dans un formulaire intitulé « dépense ». */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            onAdd('out')
+          }}
+        >
+          <Plus size={16} />
+          {fr.entry.newOut}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            onAdd('in')
+          }}
+        >
+          <Plus size={16} />
+          {fr.entry.newIn}
+        </Button>
+      </div>
     </Tile>
   )
 }
 
 export function CalendarPage() {
   const month = useCalendarDays()
+  const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
-  const [editing, setEditing] = useState<Entry | null>(null)
+
+  const create = (direction: 'in' | 'out', date?: string): void => {
+    void navigate(entryNewPath(date === undefined ? { direction } : { direction, date }))
+  }
 
   const hasAny = month.days.some((day) => day.entries.length > 0)
   // La sélection est dérivée, pas synchronisée : un jour d'un autre mois ne se
@@ -65,17 +107,42 @@ export function CalendarPage() {
         </Tile>
 
         {day !== undefined ? (
-          <DayPanel entries={day.entries} date={day.date} onOpen={setEditing} />
+          <DayPanel
+            entries={day.entries}
+            date={day.date}
+            onOpen={(entry) => {
+              void navigate(entryPath(entry.id))
+            }}
+            onAdd={(direction) => {
+              create(direction, day.date)
+            }}
+          />
         ) : (
-          !hasAny && <EmptyState message={fr.calendar.empty} />
+          // L'invitation portait une action — « ouvre le mois » — que cet écran
+          // n'offre pas. Elle porte maintenant celle qu'il sait faire.
+          !hasAny && (
+            <EmptyState message={fr.calendar.empty}>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  onClick={() => {
+                    create('out')
+                  }}
+                >
+                  {fr.entry.addOut}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    create('in')
+                  }}
+                >
+                  {fr.entry.addIn}
+                </Button>
+              </div>
+            </EmptyState>
+          )
         )}
       </div>
-
-      <EntrySheet
-        open={editing !== null}
-        entry={editing}
-        onClose={() => { setEditing(null) }}
-      />
     </>
   )
 }

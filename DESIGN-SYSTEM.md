@@ -8,7 +8,7 @@ Direction visuelle de l'app de finances. Dérivée de la référence « Finance 
 
 Une app de finances qui ressemble à un tableau de bord, pas à un relevé bancaire. Trois partis pris :
 
-- **Le chiffre est l'image.** Pas d'illustration, pas d'icône décorative. Les grands nombres portent la page.
+- **Le chiffre est l'image.** Pas d'illustration, pas d'icône décorative. Les grands nombres portent la page. L'icône n'est admise que comme outil : agir, ou se repérer (§9).
 - **La couleur est un remplissage, jamais une encre.** Lime et violet ne servent qu'à peindre des surfaces. Ça permet aux tuiles accentuées d'être strictement identiques dans les deux thèmes.
 - **Le vert sapin est la marque.** C'est lui qui distingue l'app d'un énième dashboard noir à accent fluo.
 
@@ -178,7 +178,11 @@ Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une
 
 **Tile** — `background: var(--surface)`, `border-radius: var(--r-tile)`, bordure 1px en thème sombre, ombre en thème clair. Variante `accent` : fond lime, texte encre. Variante `accent-2` : fond violet, texte blanc. Une seule tuile accentuée par écran.
 
-**Eyebrow** — mono 11px majuscules dans une pilule `--surface-2`, ancrée en haut à gauche de la tuile. C'est ce qui donne le rythme de la référence : la tuile n'a pas de titre, elle a une étiquette.
+**Eyebrow** — mono 11px majuscules dans une pilule `--surface-2`, ancrée en haut à gauche de la tuile. C'est ce qui donne le rythme de la référence : la tuile n'a pas de titre, elle a une étiquette. Elle accepte un repère (§9) à sa gauche, 13px. L'étiquette tient toujours sur une ligne : sur une tuile trop étroite elle resserre d'abord ses marges et son interlettrage, et n'abandonne le repère qu'ensuite — c'est le libellé qui porte le sens.
+
+**Field** — libellé, contrôle, aide ou erreur. Le libellé porte la mention `· obligatoire` ou `· facultatif`, dans la même graisse atténuée. Elle vit dans le `<label>`, donc dans le nom accessible du contrôle : aucun `aria-required` à poser en plus. On la met sur les formulaires qui créent ou modifient une entité, pas sur les rangées d'ajout à un seul champ — un bouton désactivé tant que le champ est vide y dit déjà tout.
+
+**Écrans de saisie** — un formulaire ou une fiche est un écran plein avec son URL, jamais une feuille modale : chevron de retour et titre en haut, le formulaire dans une tuile, les actions dessous dans le flux. Rien à faire glisser, rien à refermer pour revenir.
 
 **Amount** — composant unique pour tout montant. Props : valeur en centimes, taille, sens. Gère seul le tabular-nums, le symbole, les centimes réduits et la couleur.
 
@@ -207,3 +211,29 @@ Une erreur dit ce qui s'est passé et quoi faire, sans s'excuser. Un écran vide
 ## 8. Plancher de qualité
 
 Contraste AA sur tout texte. Focus clavier visible sur tout élément interactif, anneau 2px `--accent-2` avec 2px de décalage. Cible tactile minimale 44px. Chaque graphique est doublé d'une lecture accessible aux lecteurs d'écran. Les deux thèmes sont testés sur chaque écran avant de considérer l'écran terminé.
+
+---
+
+## 9. Icônes
+
+Phosphor, graisse `bold` — celle qui retombe sur le trait de 2px du reste du système. Jamais `fill` : le glyphe est un trait, pas une tache.
+
+Un seul point d'entrée, `ui/Icons.tsx`, qui réexporte sous des noms à nous. Aucun composant n'importe Phosphor directement : changer de bibliothèque ne doit toucher qu'un fichier. Import par chemin (`@phosphor-icons/react/dist/csr/<Nom>`) et non depuis l'index, dont le barrel de neuf mille icônes ralentit le démarrage en dev.
+
+### 9.1 Deux emplois, et pas un de plus
+
+| Emploi | Où | Taille |
+|---|---|---|
+| **Action** | Sur un contrôle qui fait quelque chose : chevron, plus, croix, coche | 16–20px |
+| **Repère** | Sur un onglet, une tuile, une section — pour la retrouver à l'œil sans relire son libellé | 13px dans un eyebrow, 18px en navigation |
+
+Rien en dehors. Une icône qui n'aide ni à agir ni à se repérer décore, et §1 ne veut pas de décor. En particulier : jamais d'icône sur une ligne de liste — la pastille de catégorie y tient déjà ce rôle, et deux marqueurs côte à côte n'en font plus aucun.
+
+### 9.2 Règles
+
+| Règle | Pourquoi |
+|---|---|
+| `aria-hidden` systématique | Le libellé adjacent porte déjà le sens ; annoncer le glyphe le dirait deux fois |
+| Un glyphe par destination, déclaré une seule fois (`app/routes.ts`) | La barre d'onglets et la colonne latérale ne peuvent pas diverger |
+| L'onglet actif est une pilule `--accent` derrière le glyphe | Lime reste un remplissage, jamais une `color` (§2.3) |
+| Le même concept garde le même glyphe partout | « Abonnements » est le même cycle en navigation, en tuile et en total |

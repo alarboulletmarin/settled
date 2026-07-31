@@ -62,6 +62,31 @@
   .eyebrow-pill {
     background-color: var(--eyebrow-bg, var(--surface-2));
     color: var(--eyebrow-fg, var(--text-muted));
+    /* Une étiquette sur deux lignes pousse le chiffre hors de sa tuile : elle
+       tient sur une ligne, et c'est la tuile qui décide ce qu'elle peut y
+       mettre — voir la requête de conteneur plus bas. */
+    white-space: nowrap;
+  }
+
+  /* Les 2×1 de la grille mobile n'offrent qu'une centaine de pixels utiles : à
+     onze pixels en mono espacé, « PRÉVISIONNEL » y consomme déjà toute la
+     place. La tuile est déclarée `container-type: inline-size`, ces requêtes
+     visent donc sa boîte de contenu — largeur moins le rembourrage.
+     Deux paliers, du moins coûteux au plus coûteux : d'abord l'étiquette
+     resserre ses marges et son interlettrage, ensuite seulement le glyphe
+     s'efface. Le libellé porte le sens, le repère ne fait que l'accélérer :
+     c'est lui qu'on sacrifie en dernier, jamais le texte. */
+  @container (max-width: 200px) {
+    .eyebrow-pill {
+      padding-inline: 6px;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  @container (max-width: 124px) {
+    .eyebrow-pill > svg {
+      display: none;
+    }
   }
 
   /* --- Grille bento — DS §5 --------------------------------------------- */

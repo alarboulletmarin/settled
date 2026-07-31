@@ -16,25 +16,29 @@ export function UpdatePrompt() {
   if (!needRefresh) return null
 
   return (
-    <div className="surface fixed inset-x-4 bottom-20 z-50 mx-auto flex max-w-md items-center gap-3 rounded-tile border border-border bg-surface p-4 shadow-tile md:bottom-6">
+    // Deux boutons `shrink-0` sur une seule ligne ne laissent pas 320px de
+    // large au message : il s'empile au-dessus tant que la place manque.
+    <div className="surface fixed inset-x-4 bottom-20 z-50 mx-auto flex max-w-md flex-col gap-3 rounded-tile border border-border bg-surface p-4 shadow-tile sm:flex-row sm:items-center md:bottom-6">
       <p className="t-body min-w-0 flex-1">{fr.settings.updateAvailable}</p>
-      <Button
-        size="sm"
-        onClick={() => {
-          void updateServiceWorker(true)
-        }}
-      >
-        {fr.settings.updateAction}
-      </Button>
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={() => {
-          setNeedRefresh(false)
-        }}
-      >
-        {fr.common.close}
-      </Button>
+      <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+        <Button
+          size="sm"
+          onClick={() => {
+            void updateServiceWorker(true)
+          }}
+        >
+          {fr.settings.updateAction}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            setNeedRefresh(false)
+          }}
+        >
+          {fr.common.close}
+        </Button>
+      </div>
     </div>
   )
 }

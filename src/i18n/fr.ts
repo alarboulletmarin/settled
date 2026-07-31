@@ -85,6 +85,7 @@ export const fr = {
 
   nav: {
     label: 'Navigation principale',
+    credits: 'Crédits',
     month: 'Le mois',
     calendar: 'Calendrier',
     subscriptions: 'Abonnements',
@@ -104,16 +105,25 @@ export const fr = {
 
     household: 'Foyer',
     householdName: 'Nom du foyer',
+    householdPlaceholder: 'Maison',
     members: 'Membres',
     memberAdd: 'Ajouter un membre',
     memberName: 'Prénom',
+    memberPlaceholder: 'Alix',
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
 
     categories: 'Catégories',
+    families: 'Familles',
+    familyAdd: 'Ajouter une famille',
+    familyName: 'Nom de la famille',
+    familyPlaceholder: 'Animaux',
+    familyKind: 'Nature',
+    familyOf: 'Famille',
     categoryAdd: 'Ajouter une catégorie',
     categoryName: 'Libellé',
+    categoryPlaceholder: 'Loisirs',
     categoryArchive: 'Archiver %s',
     categoryRestore: 'Réactiver %s',
     archive: 'Archiver',
@@ -141,8 +151,10 @@ export const fr = {
     resetDone: 'Données effacées',
 
     reminderTitle: 'Ton dernier export date de plus de 30 jours.',
+    reminderTitleNever: 'Tes données ne sont enregistrées que dans ce navigateur.',
     reminderBody: 'Les données vivent dans ce navigateur. Un export les met à l’abri.',
     reminderDismiss: 'Plus tard',
+    reminderLabel: 'Rappel de sauvegarde — balaie vers le haut pour l’écarter',
 
     updateAvailable: 'Une nouvelle version est prête.',
     updateAction: 'Recharger',
@@ -193,6 +205,18 @@ export const fr = {
     noUpcoming: 'Plus d’échéance ce mois-ci.',
     noDaily: 'Aucune dépense ce mois-ci.',
     progress: 'Jour %s sur %s',
+    monthAhead: 'Mois à venir',
+    monthDone: 'Mois terminé',
+    capacity: 'Capacité d’épargne',
+    capacityHint: 'ressources − charges − crédits',
+    savingRate: '%s de tes ressources mises de côté',
+    savingRateNone: 'aucune ressource ce mois-ci',
+    spending: 'Où part l’argent',
+    spendingHint: 'charges et crédits, hors épargne',
+    savedThisMonth: 'Mis de côté : %s',
+    credits: 'Crédits',
+    creditsRemaining: 'capital restant dû',
+    noCredits: 'Aucun crédit en cours.',
     srBreakdown: 'Répartition des sorties : %s',
     srDaily: 'Jours les plus dépensiers : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
@@ -206,18 +230,13 @@ export const fr = {
     someEntries: '%s échéances',
     selected: 'Jour sélectionné',
     emptyDay: 'Rien ce jour-là.',
-    empty: 'Aucune échéance ce mois-ci. Ouvre le mois ou ajoute une dépense.',
+    empty: 'Aucune échéance ce mois-ci.',
     more: '+%s',
     today: 'Aujourd’hui',
   },
 
   month: {
     title: 'Le mois',
-    open: 'Ouvrir le mois',
-    reopen: 'Régénérer les échéances',
-    openedSome: '%s échéance%s ajoutée%s',
-    openedNone: 'Aucune nouvelle échéance à ajouter',
-    notOpened: 'Ce mois n’a pas encore été ouvert. Ouvre-le pour y poser tes échéances.',
     toConfirm: 'À confirmer',
     confirmAll: 'Confirmer le mois',
     confirmedAll: 'Mois confirmé',
@@ -227,7 +246,7 @@ export const fr = {
     variableHint: 'Le montant du mois précédent est proposé. Ajuste-le avant de confirmer.',
     done: 'Tout est confirmé pour ce mois.',
     entries: 'Ce mois',
-    empty: 'Rien pour ce mois. Ajoute une dépense, ou ouvre le mois pour y poser tes échéances.',
+    empty: 'Rien pour ce mois. Ajoute ta première dépense.',
     balance: 'Solde',
     forecast: 'Prévisionnel',
     remaining: 'Reste à vivre',
@@ -237,16 +256,28 @@ export const fr = {
 
   entry: {
     add: 'Ajouter une dépense',
+    addOut: 'Ajouter une dépense',
+    addIn: 'Ajouter un revenu',
+    /* Formes courtes des barres d'action, où les deux sens tiennent côte à
+       côte. Le sens ne se devine plus derrière un libellé unique. */
+    newOut: 'Dépense',
+    newIn: 'Revenu',
     edit: 'Modifier l’entrée',
-    added: 'Dépense ajoutée',
-    updated: 'Entrée modifiée',
-    removed: 'Entrée supprimée',
+    editOut: 'Modifier la dépense',
+    editIn: 'Modifier le revenu',
+    addedOut: 'Dépense ajoutée',
+    addedIn: 'Revenu ajouté',
+    updatedOut: 'Dépense modifiée',
+    updatedIn: 'Revenu modifié',
+    removedOut: 'Dépense supprimée',
+    removedIn: 'Revenu supprimé',
     remove: 'Supprimer l’entrée',
     amount: 'Montant',
     category: 'Catégorie',
     date: 'Date',
     label: 'Libellé',
     labelPlaceholder: 'Courses',
+    categoryPlaceholder: 'Choisis une catégorie',
     member: 'Membre',
     note: 'Note',
     direction: 'Sens',
@@ -261,6 +292,10 @@ export const fr = {
     title: 'Abonnements',
     add: 'Ajouter un abonnement',
     edit: 'Modifier l’abonnement',
+    added: 'Abonnement ajouté',
+    updated: 'Abonnement modifié',
+    resumed: 'Abonnement repris',
+    deleted: 'Abonnement supprimé',
     empty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
     emptyStopped: 'Aucun abonnement arrêté.',
     showStopped: 'Voir les abonnements arrêtés',
@@ -300,6 +335,8 @@ export const fr = {
       monthDay: 'Jour du mois',
       startedOn: 'Première échéance',
       note: 'Note',
+      notePlaceholder: 'Résiliable en ligne',
+      categoryPlaceholder: 'Choisis une catégorie',
       labelRequired: 'Donne un libellé à cet abonnement.',
       amountRequired: 'Indique un montant, ou choisis « montant variable ».',
       categoryRequired: 'Choisis une catégorie.',
@@ -320,11 +357,47 @@ export const fr = {
     },
   },
 
+  credits: {
+    title: 'Crédits et dettes',
+    add: 'Ajouter un crédit',
+    edit: 'Modifier le crédit',
+    added: 'Crédit ajouté',
+    updated: 'Crédit modifié',
+    removed: 'Crédit retiré du suivi',
+    remove: 'Retirer du suivi',
+    removeConfirm:
+      'Les mensualités déjà versées sont conservées, ainsi que l’abonnement qui les pose. Seul le suivi du capital s’arrête. Retirer ce crédit ?',
+    empty: 'Aucun crédit suivi. Ajoute le premier pour voir ce qu’il te reste à devoir.',
+    remaining: 'Capital restant dû',
+    principal: 'Capital emprunté',
+    paid: 'Déjà versé',
+    monthly: 'Mensualité',
+    rate: 'Taux annuel',
+    ratePlaceholder: '4,5',
+    rateHint: 'Laisse vide pour un prêt sans intérêt : le capital décroît alors du montant versé, exactement.',
+    startedOn: 'Première mensualité',
+    endsOn: 'Dernière mensualité',
+    monthsLeft: '%s mensualité%s restante%s',
+    settled: 'Soldé',
+    linked: 'Abonnement qui le rembourse',
+    linkedNone: 'Aucun — le capital ne bougera pas',
+    linkedHint:
+      'C’est l’abonnement qui pose les mensualités et fait décroître le capital. Sans lui, seul le montant emprunté est connu.',
+    total: 'Reste à devoir',
+    totalMonthly: 'Mensualités',
+    progress: '%s remboursé',
+    labelPlaceholder: 'Prêt voiture',
+    principalRequired: 'Indique le capital emprunté.',
+    labelRequired: 'Donne un libellé à ce crédit.',
+    categoryRequired: 'Choisis une catégorie.',
+  },
+
   onboarding: {
     step: 'Étape %s sur 2',
     householdTitle: 'Comment s’appelle ton foyer ?',
     householdHint: 'Tu pourras le changer plus tard.',
     householdLabel: 'Nom du foyer',
+    householdPlaceholder: 'Maison',
     householdEmpty: 'Donne un nom à ton foyer pour continuer.',
     membersTitle: 'Qui vit ici ?',
     membersHint:
@@ -349,6 +422,8 @@ export const fr = {
       type: 'Échelle typographique',
       shapes: 'Formes et mouvement',
       components: 'Composants',
+      icons: 'Icônes',
+      kinds: 'Natures',
       bento: 'Grille bento',
     },
     baseNote: 'Ces valeurs ne sont jamais consommées directement par un composant.',
@@ -358,6 +433,12 @@ export const fr = {
     typeNote: 'Archivo pour ce qui se lit, Geist Mono pour les libellés utilitaires.',
     shapesNote: 'Base 4px. Mouvement 160ms, 240ms à l’entrée d’une vue.',
     bentoNote: 'Formats autorisés : 2×1, 2×2, 4×1, 4×2, 6×2. Rien d’autre.',
+    iconsNote:
+      'Phosphor, graisse bold. Deux emplois et pas un de plus : agir, ou se repérer.',
+    iconAction: 'Action — sur un contrôle',
+    iconMarker: 'Repère — onglet, tuile, section',
+    kindsNote:
+      'Le sens dit si l’argent entre ou sort ; la nature dit ce qu’il devient. Une famille porte la nature, ses catégories en héritent.',
     themePreview: 'Aperçu forcé',
     sampleAmount: 'Montant',
     sampleRing: 'Anneau',
@@ -367,16 +448,109 @@ export const fr = {
     states: 'États',
   },
 
-  /** Jeu de catégories créé au premier lancement, modifiable ensuite. */
-  defaultCategories: {
+  /** Les quatre natures, telles qu'elles se disent à l'écran. */
+  kinds: {
+    resource: 'Ressources',
+    charge: 'Charges',
+    debt: 'Crédits et dettes',
+    saving: 'Versements',
+    resourceShort: 'Ressources',
+    chargeShort: 'Charges',
+    debtShort: 'Crédits',
+    savingShort: 'Épargne',
+  },
+
+  /**
+   * Jeu de familles et de catégories créé au premier lancement, modifiable
+   * ensuite. Les libellés suivent le vocabulaire d'un budget familial, pas
+   * celui d'un plan comptable.
+   */
+  defaultFamilies: {
+    resources: 'Ressources',
     housing: 'Logement',
-    groceries: 'Courses',
+    communication: 'Communication',
     transport: 'Transport',
+    daily: 'Vie courante',
     health: 'Santé',
-    leisure: 'Loisirs',
-    subscriptions: 'Abonnements',
+    family: 'Famille et scolarité',
+    taxes: 'Impôts et taxes',
+    leisure: 'Loisirs et divers',
+    credits: 'Crédits et dettes',
+    savings: 'Versements',
+  },
+
+  defaultCategories: {
+    // Ressources
+    salary: 'Salaires, retraites ou indemnités',
+    benefits: 'Allocations diverses',
+    familyBenefits: 'Prestations familiales',
+    alimonyIn: 'Pensions alimentaires reçues',
+    housingAid: 'Aide au logement',
+    rentalIncome: 'Revenus fonciers',
+
+    // Logement
+    rent: 'Loyer et charges',
+    energy: 'Énergies (électricité, gaz, eau)',
+    homeInsurance: 'Assurance habitation',
+    housingTax: 'Taxe d’habitation',
+    propertyTax: 'Taxe foncière',
+
+    // Communication
+    mobile: 'Téléphone mobile',
+    internet: 'Internet et téléphone fixe',
+    streaming: 'Abonnements TV et streaming',
+
+    // Transport
+    fuel: 'Carburant',
+    carInsurance: 'Assurance véhicule',
+    carMaintenance: 'Entretien et réparations',
+    publicTransport: 'Transports en commun',
+    tolls: 'Péages et stationnement',
+
+    // Vie courante
+    groceries: 'Alimentation',
+    clothing: 'Habillement',
+    household: 'Produits d’entretien',
+    hygiene: 'Coiffure et hygiène',
+
+    // Santé
+    healthInsurance: 'Mutuelle',
+    medical: 'Frais médicaux',
+    pharmacy: 'Pharmacie',
+
+    // Famille et scolarité
+    childcare: 'Frais de garde',
+    school: 'Scolarité et études',
+    alimonyOut: 'Pensions alimentaires versées',
+    childActivities: 'Activités des enfants',
+
+    // Impôts et taxes
+    incomeTax: 'Impôt sur le revenu',
+    otherTaxes: 'Redevance et autres taxes',
+
+    // Loisirs et divers
+    outings: 'Sorties et vacances',
+    culture: 'Sport et culture',
+    gifts: 'Dons et cadeaux',
     misc: 'Divers',
-    salary: 'Salaire',
+
+    // Crédits et dettes
+    carLoan: 'Automobile',
+    mortgage: 'Immobilier',
+    leasing: 'Location longue durée',
+    consumerLoan: 'Crédits d’achat',
+    otherLoan: 'Autres crédits',
+
+    // Versements
+    passbook: 'Livrets (A, LEP, CSL)',
+    plans: 'Plans (PEL, PEA, compte-titres)',
+    lifeInsurance: 'Assurance vie',
+    retirement: 'Épargne retraite',
+    companySavings: 'Épargne entreprise',
+
+    // Conservées pour les documents antérieurs aux familles
+    legacyLeisure: 'Loisirs',
+    legacySubscriptions: 'Abonnements',
     otherIncome: 'Autres revenus',
   },
 

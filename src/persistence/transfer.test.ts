@@ -11,6 +11,8 @@ import {
   readLastExport,
   serializeData,
   shouldRemindExport,
+  dismissReminder,
+  readReminderDismissed,
 } from './transfer'
 
 /** Un document qui exerce tous les champs du modèle, y compris les optionnels. */
@@ -201,5 +203,96 @@ describe('rappel d’export', () => {
   it('relit la date qu’il a écrite', () => {
     markExported('2026-07-30')
     expect(readLastExport()).toBe('2026-07-30')
+  })
+
+  it('se tait tant que l’écart tient, puis rappelle de nouveau', () => {
+    expect(shouldRemindExport(null, '2026-07-30', true, '2026-07-30')).toBe(false)
+    expect(shouldRemindExport(null, '2026-08-29', true, '2026-07-30')).toBe(false)
+    expect(shouldRemindExport(null, '2026-08-30', true, '2026-07-30')).toBe(true)
+  })
+
+  it('garde l’écart d’un rendu à l’autre', () => {
+    dismissReminder('2026-07-30')
+    expect(readReminderDismissed()).toBe('2026-07-30')
+  })
+
+  it('oublie l’écart dès qu’un export a lieu', () => {
+    dismissReminder('2026-07-30')
+    markExported('2026-07-31')
+    expect(readReminderDismissed()).toBeNull()
+  })
+})
+
+describe('migration vers les familles', () => {
+  /** Un document tel qu'écrit avant l'introduction des familles. */
+  function legacy() {
+    return JSON.stringify({
+      schemaVersion: 1,
+      household: { name: 'Maison', members: [] },
+      categories: [
+        { id: 'housing', label: 'Logement', icon: '', color: 'c', direction: 'out', archived: false },
+        { id: 'groceries', label: 'Courses', icon: '', color: 'c', direction: 'out', archived: false },
+        { id: 'salary', label: 'Salaire', icon: '', color: 'c', direction: 'in', archived: false },
+        { id: 'perso', label: 'Ma catégorie', icon: '', color: 'c', direction: 'out', archived: false },
+      ],
+      entries: [
+        { id: 'e1', label: 'Loyer', categoryId: 'housing', direction: 'out', amount: 85000, date: '2026-06-05', status: 'confirmed' },
+      ],
+      recurrences: [],
+      months: [],
+      settings: { theme: 'dark', currency: 'EUR', monthStartsOn: 1 },
+    })
+  }
+
+  it('signale la migration et atteint la version courante', () => {
+    const result = parseImport(legacy())
+    expect(result.from).toBe(1)
+    expect(result.migrated).toBe(true)
+    expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+  })
+
+  it('range chaque catégorie connue sous sa famille', () => {
+    const { categories } = parseImport(legacy()).data
+    const familyOf = (id: string) => categories.find((c) => c.id === id)?.familyId
+    expect(familyOf('housing')).toBe('fam-housing')
+    expect(familyOf('groceries')).toBe('fam-daily')
+    expect(familyOf('salary')).toBe('fam-resources')
+  })
+
+  it('accueille une catégorie inconnue selon son sens', () => {
+    const { categories } = parseImport(legacy()).data
+    expect(categories.find((c) => c.id === 'perso')?.familyId).toBe('fam-leisure')
+  })
+
+  it('conserve les catégories existantes et leurs entrées', () => {
+    const { categories, entries } = parseImport(legacy()).data
+    expect(categories.find((c) => c.id === 'housing')?.label).toBe('Logement')
+    expect(entries[0]?.categoryId).toBe('housing')
+  })
+
+  it('ajoute le catalogue par défaut à côté, sans doublon d’identifiant', () => {
+    const { categories, families } = parseImport(legacy()).data
+    expect(families.length).toBeGreaterThan(4)
+    expect(categories.filter((c) => c.id === 'groceries')).toHaveLength(1)
+    // Le catalogue est bien venu s'ajouter : des catégories qui n'existaient pas.
+    expect(categories.some((c) => c.id === 'mortgage')).toBe(true)
+    expect(categories.some((c) => c.id === 'passbook')).toBe(true)
+  })
+
+  it('n’écrase pas des familles déjà présentes', () => {
+    const already = JSON.stringify({
+      schemaVersion: 1,
+      families: [{ id: 'f1', label: 'La mienne', kind: 'charge' }],
+      categories: [],
+    })
+    expect(parseImport(already).data.families).toEqual([
+      { id: 'f1', label: 'La mienne', kind: 'charge' },
+    ])
+  })
+
+  it('donne une nature lisible à chaque famille du catalogue', () => {
+    const { families } = parseImport(legacy()).data
+    const kinds = new Set(families.map((f) => f.kind))
+    expect(kinds).toEqual(new Set(['resource', 'charge', 'debt', 'saving']))
   })
 })

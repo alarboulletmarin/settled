@@ -1,76 +1,101 @@
-/* Traits fonctionnels uniquement — chevrons, croix, plus, coche. Le DS interdit
- * l'icône décorative : aucun de ces glyphes n'apparaît sans rôle d'action. */
+/* Adaptateur au-dessus de Phosphor. Les composants gardent des noms à nous et
+ * une signature à nous : le reste de l'app ne sait pas d'où viennent les
+ * glyphes, et changer de bibliothèque ne toucherait que ce fichier.
+ *
+ * Import par chemin direct plutôt que depuis l'index : le barrel expose neuf
+ * mille icônes, que Vite doit toutes analyser au démarrage en dev même si le
+ * build final n'en garde qu'une vingtaine.
+ *
+ * Deux familles, et pas une de plus (DS §9) :
+ *   — ACTION, sur un contrôle qui fait quelque chose ;
+ *   — REPÈRE, sur un onglet, une tuile ou une section, pour qu'on la retrouve
+ *     à l'œil sans relire son libellé.
+ * Rien en dehors : une icône qui n'aide ni à agir ni à se repérer décore, et
+ * le DS ne veut pas de décor. */
 
-type IconProps = { className?: string; size?: number }
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
+import { ArrowsClockwise } from '@phosphor-icons/react/dist/csr/ArrowsClockwise'
+import { CalendarBlank } from '@phosphor-icons/react/dist/csr/CalendarBlank'
+import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown'
+import { CaretLeft } from '@phosphor-icons/react/dist/csr/CaretLeft'
+import { CaretRight } from '@phosphor-icons/react/dist/csr/CaretRight'
+import { ChartBar } from '@phosphor-icons/react/dist/csr/ChartBar'
+import { ChartLine } from '@phosphor-icons/react/dist/csr/ChartLine'
+import { ChartLineUp } from '@phosphor-icons/react/dist/csr/ChartLineUp'
+import { ChartPieSlice } from '@phosphor-icons/react/dist/csr/ChartPieSlice'
+import { Check as PhCheck } from '@phosphor-icons/react/dist/csr/Check'
+import { CheckCircle } from '@phosphor-icons/react/dist/csr/CheckCircle'
+import { Clock } from '@phosphor-icons/react/dist/csr/Clock'
+import { Bank } from '@phosphor-icons/react/dist/csr/Bank'
+import { Database } from '@phosphor-icons/react/dist/csr/Database'
+import { GearSix } from '@phosphor-icons/react/dist/csr/GearSix'
+import { HandCoins } from '@phosphor-icons/react/dist/csr/HandCoins'
+import { House } from '@phosphor-icons/react/dist/csr/House'
+import { ListBullets } from '@phosphor-icons/react/dist/csr/ListBullets'
+import { Palette } from '@phosphor-icons/react/dist/csr/Palette'
+import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
+import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
+import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
+import { Wallet } from '@phosphor-icons/react/dist/csr/Wallet'
+import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle'
+import { X } from '@phosphor-icons/react/dist/csr/X'
 
-function svgProps(size: number) {
-  return {
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    fill: 'none' as const,
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true,
-    focusable: false,
+export type IconProps = { className?: string; size?: number }
+/** Ce que consomment `Eyebrow` et la navigation pour recevoir un repère. */
+export type IconComponent = (props: IconProps) => React.JSX.Element
+
+/* `bold` est la graisse qui retombe sur le trait de 2px du DS ; `regular`
+   maigrirait à côté du texte, et `fill` contredirait « trait fonctionnel ». */
+const WEIGHT = 'bold' as const
+
+function adapt(Glyph: PhosphorIcon): IconComponent {
+  return function Adapted({ className, size = 20 }: IconProps) {
+    return (
+      <Glyph
+        size={size}
+        weight={WEIGHT}
+        className={className}
+        aria-hidden="true"
+        focusable={false}
+      />
+    )
   }
 }
 
-export function ChevronLeft({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M15 5 8 12l7 7" />
-    </svg>
-  )
-}
+/* --- Action ---------------------------------------------------------------*/
 
-export function ChevronRight({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="m9 5 7 7-7 7" />
-    </svg>
-  )
-}
+export const ChevronLeft = adapt(CaretLeft)
+export const ChevronRight = adapt(CaretRight)
+export const ChevronDown = adapt(CaretDown)
+export const Plus = adapt(PhPlus)
+export const Close = adapt(X)
+export const Check = adapt(PhCheck)
+export const Warning = adapt(WarningCircle)
 
-export function ChevronDown({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="m5 9 7 7 7-7" />
-    </svg>
-  )
-}
+/* --- Repère — navigation --------------------------------------------------*/
 
-export function Plus({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
+export const NavMonth = adapt(SquaresFour)
+export const NavCalendar = adapt(CalendarBlank)
+export const NavSubscriptions = adapt(ArrowsClockwise)
+export const NavHistory = adapt(ChartLine)
+export const NavSettings = adapt(GearSix)
 
-export function Close({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  )
-}
+/* --- Repère — tuiles et sections ------------------------------------------*/
 
-export function Check({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="m5 13 4.5 4.5L19 7" />
-    </svg>
-  )
-}
-
-export function Warning({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M12 8v5M12 17h.01" />
-      <circle cx="12" cy="12" r="9" />
-    </svg>
-  )
-}
+export const BalanceIcon = adapt(Wallet)
+export const ForecastIcon = adapt(ChartLineUp)
+export const RemainingIcon = adapt(HandCoins)
+export const BreakdownIcon = adapt(ChartPieSlice)
+export const UpcomingIcon = adapt(Clock)
+export const SubscriptionsIcon = adapt(ArrowsClockwise)
+export const DailyIcon = adapt(ChartBar)
+export const CreditsIcon = adapt(Bank)
+export const ToConfirmIcon = adapt(CheckCircle)
+export const EntriesIcon = adapt(ListBullets)
+export const HouseholdIcon = adapt(House)
+export const CategoriesIcon = adapt(Tag)
+export const ThemeIcon = adapt(Palette)
+export const DataIcon = adapt(Database)
+export const TrailingIcon = adapt(ChartLine)
+export const CompareIcon = adapt(ChartBar)
+export const YearsIcon = adapt(ChartLineUp)

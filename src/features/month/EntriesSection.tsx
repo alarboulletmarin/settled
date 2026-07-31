@@ -4,6 +4,7 @@ import { formatDayFull } from '@/i18n/format'
 import { useCategoryMap, useMemberMap, useMonthConfirmed } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { EntriesIcon } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
 import { Tile } from '@/ui/Tile'
 
@@ -37,7 +38,7 @@ export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
 
   return (
     <Tile className="flex flex-col gap-3">
-      <Eyebrow>{fr.month.entries}</Eyebrow>
+      <Eyebrow icon={EntriesIcon}>{fr.month.entries}</Eyebrow>
       {groupByDay(entries).map(([date, ofDay]) => (
         <section key={date} className="flex flex-col">
           <h3 className="t-axis mb-1 px-3">{formatDayFull(date)}</h3>

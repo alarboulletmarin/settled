@@ -1,5 +1,6 @@
-import type { Category, Member } from '@/domain/types'
+import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
+import { CategorySelect } from '@/ui/CategorySelect'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { Segmented } from '@/ui/Segmented'
 import { PERIOD_OPTIONS } from './period'
@@ -19,14 +20,13 @@ export type FieldsProps = {
   draft: RecurrenceDraft
   patch: (next: Partial<RecurrenceDraft>) => void
   errors: DraftErrors
-  categories: Category[]
   members: Member[]
 }
 
-export function IdentityFields({ draft, patch, errors, categories, members }: FieldsProps) {
+export function IdentityFields({ draft, patch, errors, members }: FieldsProps) {
   return (
     <>
-      <Field label={fr.recurrences.form.label} {...(errors.label ? { error: errors.label } : {})}>
+      <Field label={fr.recurrences.form.label} required {...(errors.label ? { error: errors.label } : {})}>
         {(id, describedBy) => (
           <TextInput
             id={id}
@@ -53,24 +53,19 @@ export function IdentityFields({ draft, patch, errors, categories, members }: Fi
 
       <Field
         label={fr.recurrences.form.category}
+        required
         {...(errors.category ? { error: errors.category } : {})}
       >
         {(id, describedBy) => (
-          <Select
+          <CategorySelect
             id={id}
             aria-describedby={describedBy}
+            direction={draft.direction}
             value={draft.categoryId}
             onChange={(e) => {
               patch({ categoryId: e.target.value })
             }}
-          >
-            <option value="">—</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.label}
-              </option>
-            ))}
-          </Select>
+          />
         )}
       </Field>
 
@@ -98,7 +93,7 @@ export function IdentityFields({ draft, patch, errors, categories, members }: Fi
   )
 }
 
-export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'categories' | 'members'>) {
+export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'members'>) {
   return (
     <>
       <Segmented
@@ -115,6 +110,7 @@ export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'catego
       ) : (
         <Field
           label={fr.recurrences.form.amount}
+          required
           {...(errors.amount ? { error: errors.amount } : {})}
         >
           {(id, describedBy) => (
@@ -138,7 +134,7 @@ export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'catego
 export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patch'>) {
   return (
     <>
-      <Field label={fr.recurrences.form.period}>
+      <Field label={fr.recurrences.form.period} required>
         {(id) => (
           <Select
             id={id}
@@ -156,7 +152,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
         )}
       </Field>
 
-      <Field label={fr.recurrences.form.startedOn}>
+      <Field label={fr.recurrences.form.startedOn} required>
         {(id) => (
           <TextInput
             id={id}
@@ -170,7 +166,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
       </Field>
 
       {draft.kind === 'weekly' && (
-        <Field label={fr.recurrences.form.weekday}>
+        <Field label={fr.recurrences.form.weekday} required>
           {(id) => (
             <Select
               id={id}
@@ -190,7 +186,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
       )}
 
       {draft.kind === 'everyNMonths' && (
-        <Field label={fr.recurrences.form.everyMonths}>
+        <Field label={fr.recurrences.form.everyMonths} required>
           {(id) => (
             <TextInput
               id={id}
@@ -207,7 +203,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
       )}
 
       {draft.kind !== 'weekly' && draft.kind !== 'yearly' && (
-        <Field label={fr.recurrences.form.monthDay} hint={fr.recurrences.form.monthDayHint}>
+        <Field label={fr.recurrences.form.monthDay} required hint={fr.recurrences.form.monthDayHint}>
           {(id, describedBy) => (
             <TextInput
               id={id}

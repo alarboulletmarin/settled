@@ -1,50 +1,75 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import { type ISODate, type YearMonth, startOfMonth, today, ymOf } from '@/domain/date'
-import type { Entry } from '@/domain/types'
+import { entryNewPath, entryPath } from '@/app/routes'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
-import { useCurrentYm, useIsMonthOpened, useMonthEntries } from '@/store/selectors'
+import { useMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
 import { EntriesSection } from './EntriesSection'
-import { EntrySheet } from './EntrySheet'
-import { OpenMonthCard } from './OpenMonthCard'
 import { PendingSection } from './PendingSection'
 
-/** La date proposée par défaut : aujourd'hui si on est dans le mois affiché. */
-function defaultDateFor(ym: YearMonth): ISODate {
-  const now = today()
-  return ymOf(now) === ym ? now : startOfMonth(ym)
-}
-
 export function MonthPage() {
-  const ym = useCurrentYm()
   const entries = useMonthEntries()
-  const opened = useIsMonthOpened()
-  const [editing, setEditing] = useState<Entry | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const navigate = useNavigate()
 
-  const openCreate = (): void => {
-    setEditing(null)
-    setSheetOpen(true)
+  const create = (direction: 'in' | 'out'): void => {
+    void navigate(entryNewPath({ direction }))
   }
+
+  const isEmpty = entries.length === 0
 
   return (
     <>
+      <h1 className="sr-only">{fr.month.title}</h1>
       <MonthHeader />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <OpenMonthCard />
-        <Button onClick={openCreate}>
-          <Plus size={18} />
-          {fr.entry.add}
-        </Button>
-      </div>
+      {/* Les deux sens sont deux boutons, jamais un seul. Passer par « Ajouter
+          une dépense » pour saisir un salaire obligeait à découvrir, une fois
+          le formulaire ouvert, une bascule dont rien n'annonçait l'existence. */}
+      {!isEmpty && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Button
+            onClick={() => {
+              create('out')
+            }}
+          >
+            <Plus size={18} />
+            {fr.entry.newOut}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              create('in')
+            }}
+          >
+            <Plus size={18} />
+            {fr.entry.newIn}
+          </Button>
+        </div>
+      )}
 
-      {entries.length === 0 && opened ? (
-        <EmptyState message={fr.month.empty} actionLabel={fr.entry.add} onAction={openCreate} />
+      {isEmpty ? (
+        <EmptyState message={fr.month.empty}>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button
+              onClick={() => {
+                create('out')
+              }}
+            >
+              {fr.entry.addOut}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                create('in')
+              }}
+            >
+              {fr.entry.addIn}
+            </Button>
+          </div>
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
           <Dashboard />
@@ -52,22 +77,12 @@ export function MonthPage() {
             <PendingSection />
             <EntriesSection
               onOpen={(entry) => {
-                setEditing(entry)
-                setSheetOpen(true)
+                void navigate(entryPath(entry.id))
               }}
             />
           </div>
         </div>
       )}
-
-      <EntrySheet
-        open={sheetOpen}
-        entry={editing}
-        defaultDate={defaultDateFor(ym)}
-        onClose={() => {
-          setSheetOpen(false)
-        }}
-      />
     </>
   )
 }

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { Recurrence } from '@/domain/types'
+import { useNavigate } from 'react-router-dom'
+import { RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { useCategoryMap, useRecurrenceRows, useSubscriptionTotals } from '@/store/selectors'
@@ -7,20 +7,18 @@ import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { Plus } from '@/ui/Icons'
+import { Plus, SubscriptionsIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
-import { RecurrenceDetail } from './RecurrenceDetail'
 import { RecurrenceRow } from './RecurrenceRow'
-import { RecurrenceSheet } from './RecurrenceSheet'
 
 function Totals() {
   const totals = useSubscriptionTotals()
   const currency = useCurrency()
   return (
     <Tile variant="accent" className="mb-4">
-      <Eyebrow>{fr.recurrences.totalMonthly}</Eyebrow>
+      <Eyebrow icon={SubscriptionsIcon}>{fr.recurrences.totalMonthly}</Eyebrow>
       <Amount value={totals.monthly} size="tile" className="mt-3" />
       <p className="t-label mt-1 tnum">
         {tpl(fr.recurrences.perYear, formatMoney(totals.annual, currency, false))}
@@ -65,26 +63,30 @@ function RowList({
 
 export function RecurrencesPage() {
   const rows = useRecurrenceRows()
-  const [editing, setEditing] = useState<Recurrence | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [detailId, setDetailId] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   const active = rows.filter((row) => !row.stopped)
   const stopped = rows.filter((row) => row.stopped)
-  const detail = rows.find((row) => row.recurrence.id === detailId) ?? null
 
   const openCreate = (): void => {
-    setEditing(null)
-    setSheetOpen(true)
+    void navigate(RECURRENCE_NEW_PATH)
+  }
+
+  const openDetail = (id: string): void => {
+    void navigate(recurrencePath(id))
   }
 
   return (
     <>
+      {/* L'état vide porte déjà le même bouton : le garder en titre l'affiche
+          deux fois dans le même écran. */}
       <PageTitle title={fr.recurrences.title}>
-        <Button onClick={openCreate}>
-          <Plus size={18} />
-          {fr.common.add}
-        </Button>
+        {rows.length > 0 && (
+          <Button onClick={openCreate}>
+            <Plus size={18} />
+            {fr.common.add}
+          </Button>
+        )}
       </PageTitle>
 
       {rows.length === 0 ? (
@@ -97,37 +99,17 @@ export function RecurrencesPage() {
         <div className="flex max-w-3xl flex-col gap-4">
           <Totals />
           <Tile className="p-2! md:p-2!">
-            <RowList rows={active} onOpen={setDetailId} />
+            <RowList rows={active} onOpen={openDetail} />
           </Tile>
 
           {stopped.length > 0 && (
             <Tile className="p-2! md:p-2!">
               <Eyebrow className="mx-1 mt-1 mb-2">{fr.recurrences.stoppedBadge}</Eyebrow>
-              <RowList rows={stopped} onOpen={setDetailId} />
+              <RowList rows={stopped} onOpen={openDetail} />
             </Tile>
           )}
         </div>
       )}
-
-      <RecurrenceDetail
-        row={detail}
-        onClose={() => {
-          setDetailId(null)
-        }}
-        onEdit={(recurrence) => {
-          setDetailId(null)
-          setEditing(recurrence)
-          setSheetOpen(true)
-        }}
-      />
-
-      <RecurrenceSheet
-        open={sheetOpen}
-        recurrence={editing}
-        onClose={() => {
-          setSheetOpen(false)
-        }}
-      />
     </>
   )
 }

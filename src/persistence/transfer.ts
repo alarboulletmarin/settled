@@ -61,13 +61,45 @@ export function readLastExport(): ISODate | null {
   }
 }
 
-/** Vrai si le dernier export date de plus de 30 jours — ou n'a jamais eu lieu. */
+/**
+ * Date à laquelle le rappel a été écarté. Écarter est un choix, pas un
+ * clignement : il survit au changement d'écran et au rechargement.
+ */
+export const REMINDER_DISMISSED_KEY = 'settled.reminderDismissed'
+
+export function readReminderDismissed(): ISODate | null {
+  try {
+    return localStorage.getItem(REMINDER_DISMISSED_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function dismissReminder(on: ISODate = today()): void {
+  try {
+    localStorage.setItem(REMINDER_DISMISSED_KEY, on)
+  } catch {
+    // Sans miroir, la bannière reviendra au prochain écran : c'est le
+    // comportement le moins mauvais, et il n'y a rien à en dire.
+  }
+}
+
+/**
+ * Vrai si le dernier export date de plus de 30 jours — ou n'a jamais eu lieu —
+ * et que le rappel n'a pas été écarté depuis moins de 30 jours.
+ *
+ * L'écart n'est pas définitif : un refus vaut pour un cycle, pas pour toujours.
+ * Sans quoi une seule croix, le premier jour, condamnerait au silence des
+ * données qui ne sont sauvegardées nulle part.
+ */
 export function shouldRemindExport(
   last: ISODate | null,
   now: ISODate,
   hasData: boolean,
+  dismissedOn: ISODate | null = null,
 ): boolean {
   if (!hasData) return false
+  if (dismissedOn !== null && diffDays(dismissedOn, now) <= EXPORT_REMINDER_DAYS) return false
   if (last === null) return true
   return diffDays(last, now) > EXPORT_REMINDER_DAYS
 }
@@ -75,6 +107,9 @@ export function shouldRemindExport(
 export function markExported(on: ISODate = today()): void {
   try {
     localStorage.setItem(LAST_EXPORT_KEY, on)
+    // Un export remet le compteur à zéro : le prochain rappel, dans trente
+    // jours, ne doit pas être avalé par un refus qui date d'avant.
+    localStorage.removeItem(REMINDER_DISMISSED_KEY)
   } catch {
     // Sans miroir, la bannière réapparaîtra : c'est le comportement le moins
     // mauvais, et il n'y a rien à dire à l'utilisateur là-dessus.

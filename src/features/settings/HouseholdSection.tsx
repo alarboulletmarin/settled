@@ -7,7 +7,7 @@ import { Button, IconButton } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, TextInput } from '@/ui/Field'
-import { Close } from '@/ui/Icons'
+import { Close, HouseholdIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 
 export function HouseholdSection() {
@@ -18,13 +18,14 @@ export function HouseholdSection() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.settings.household}</Eyebrow>
+      <Eyebrow icon={HouseholdIcon}>{fr.settings.household}</Eyebrow>
 
-      <Field label={fr.settings.householdName}>
+      <Field label={fr.settings.householdName} required>
         {(id) => (
           <TextInput
             id={id}
             value={name}
+            placeholder={fr.settings.householdPlaceholder}
             maxLength={40}
             onChange={(event) => {
               setHouseholdName(event.target.value)
@@ -35,7 +36,9 @@ export function HouseholdSection() {
 
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <h3 className="t-body font-medium">{fr.settings.members}</h3>
-        <p className="t-label">{fr.settings.memberRemoveHint}</p>
+        {/* La phrase explique ce que fait le retrait : sans personne à retirer,
+            elle parle d'un « ses » qui ne désigne rien. */}
+        {members.length > 0 && <p className="t-label">{fr.settings.memberRemoveHint}</p>}
 
         {members.length === 0 ? (
           <p className="t-label">{fr.settings.membersEmpty}</p>
@@ -75,6 +78,7 @@ export function HouseholdSection() {
               <TextInput
                 id={id}
                 value={newMember}
+                placeholder={fr.settings.memberPlaceholder}
                 maxLength={24}
                 onChange={(event) => {
                   setNewMember(event.target.value)

@@ -4,6 +4,7 @@ import { useCategoryMap, useUpcoming } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { UpcomingIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 
 /** Les cinq prochaines échéances, avec le nombre de jours restants. */
@@ -13,7 +14,7 @@ export function UpcomingTile() {
 
   return (
     <Tile span="4x2" className="gap-2">
-      <Eyebrow>{fr.dashboard.upcoming}</Eyebrow>
+      <Eyebrow icon={UpcomingIcon}>{fr.dashboard.upcoming}</Eyebrow>
       {upcoming.length === 0 ? (
         <p className="t-label">{fr.dashboard.noUpcoming}</p>
       ) : (

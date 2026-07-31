@@ -1,9 +1,14 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
+import { CreditFormPage } from '@/features/credits/CreditFormPage'
+import { CreditsPage } from '@/features/credits/CreditsPage'
 import { HistoryPage } from '@/features/history/HistoryPage'
+import { EntryPage } from '@/features/month/EntryPage'
 import { MonthPage } from '@/features/month/MonthPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
+import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPage'
+import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
 import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { useStore } from '@/store/store'
@@ -21,8 +26,16 @@ function AppRoutes() {
     <AppShell>
       <Routes>
         <Route path="/" element={<MonthPage />} />
+        <Route path="/depense" element={<EntryPage />} />
+        <Route path="/depense/:id" element={<EntryPage />} />
         <Route path="/calendrier" element={<CalendarPage />} />
         <Route path="/abonnements" element={<RecurrencesPage />} />
+        <Route path="/abonnements/nouveau" element={<RecurrenceFormPage />} />
+        <Route path="/abonnements/:id" element={<RecurrenceDetailPage />} />
+        <Route path="/abonnements/:id/modifier" element={<RecurrenceFormPage />} />
+        <Route path="/credits" element={<CreditsPage />} />
+        <Route path="/credits/nouveau" element={<CreditFormPage />} />
+        <Route path="/credits/:id" element={<CreditFormPage />} />
         <Route path="/historique" element={<HistoryPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

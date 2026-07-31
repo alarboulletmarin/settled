@@ -6,6 +6,7 @@ import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { useEntries, useMemberFilter } from '@/store/selectors'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { YearsIcon } from '@/ui/Icons'
 import { Field, Select } from '@/ui/Field'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
@@ -38,7 +39,7 @@ export function YearCompare() {
   if (years.length === 0) {
     return (
       <Tile className="gap-3">
-        <Eyebrow>{fr.history.years}</Eyebrow>
+        <Eyebrow icon={YearsIcon}>{fr.history.years}</Eyebrow>
         <p className="t-label">{fr.history.yearsEmpty}</p>
       </Tile>
     )
@@ -66,7 +67,7 @@ export function YearCompare() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.history.years}</Eyebrow>
+      <Eyebrow icon={YearsIcon}>{fr.history.years}</Eyebrow>
 
       <Field label={fr.history.year} className="max-w-40">
         {(id) => (

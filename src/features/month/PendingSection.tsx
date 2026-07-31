@@ -10,7 +10,7 @@ import { Button } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { AmountInput } from '@/ui/Field'
-import { Check } from '@/ui/Icons'
+import { Check, ToConfirmIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 
@@ -97,7 +97,9 @@ export function PendingSection() {
   return (
     <Tile className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Eyebrow>{tpl(`${fr.month.toConfirm} · %s`, fixed.length + variable.length)}</Eyebrow>
+        <Eyebrow icon={ToConfirmIcon}>
+          {tpl(`${fr.month.toConfirm} · %s`, fixed.length + variable.length)}
+        </Eyebrow>
         {fixed.length > 0 && <Button onClick={confirmAll}>{fr.month.confirmAll}</Button>}
       </div>
 

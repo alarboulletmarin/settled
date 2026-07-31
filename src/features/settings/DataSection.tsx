@@ -14,6 +14,7 @@ import {
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { DataIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 
@@ -62,7 +63,7 @@ export function DataSection() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.settings.data}</Eyebrow>
+      <Eyebrow icon={DataIcon}>{fr.settings.data}</Eyebrow>
 
       <div className="flex flex-col gap-2">
         <p className="t-label">{fr.settings.exportHint}</p>

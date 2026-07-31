@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eur, makeData, makeEntry } from '@/domain/fixtures'
 import { clearDocument, closeDb, createWriter, loadDocument, saveDocument } from './db'
 import { emptyData } from './defaults'
+import { CURRENT_SCHEMA_VERSION } from './schema'
 
 describe('document IndexedDB', () => {
   beforeEach(async () => {
@@ -37,7 +38,7 @@ describe('document IndexedDB', () => {
     // Un document écrit par une version antérieure, sans schemaVersion.
     await saveDocument({ household: { name: 'Ancien' } } as never)
     const loaded = await loadDocument()
-    expect(loaded?.schemaVersion).toBe(1)
+    expect(loaded?.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(loaded?.household.name).toBe('Ancien')
   })
 

@@ -20,18 +20,26 @@ export function Sidebar({ householdName }: { householdName: string }) {
         <span className="t-section truncate">{householdName}</span>
       </div>
 
-      {NAV_ROUTES.map((route) => (
-        <NavLink
-          key={route.path}
-          to={route.path}
-          end={route.path === '/'}
-          className={({ isActive }) =>
-            cn(ITEM, 'h-11 justify-start', isActive ? 'bg-accent text-accent-fg' : 'hover:bg-surface-2')
-          }
-        >
-          {route.label}
-        </NavLink>
-      ))}
+      {NAV_ROUTES.map((route) => {
+        const Icon = route.icon
+        return (
+          <NavLink
+            key={route.path}
+            to={route.path}
+            end={route.path === '/'}
+            className={({ isActive }) =>
+              cn(
+                ITEM,
+                'h-11 justify-start gap-3',
+                isActive ? 'bg-accent text-accent-fg' : 'hover:bg-surface-2',
+              )
+            }
+          >
+            <Icon size={18} className="shrink-0" />
+            {route.label}
+          </NavLink>
+        )
+      })}
 
       <NavLink
         to={STYLEGUIDE_ROUTE.path}
@@ -60,34 +68,43 @@ export function TabBar() {
       )}
     >
       <ul className="flex">
-        {NAV_ROUTES.map((route) => (
-          <li key={route.path} className="min-w-0 flex-1">
-            <NavLink
-              to={route.path}
-              end={route.path === '/'}
-              className={({ isActive }) =>
-                cn(
-                  'flex h-14 flex-col items-center justify-center gap-1 px-1 text-center',
-                  'text-[11px] leading-tight',
-                  isActive ? 'text-text' : 'text-muted',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'h-1 w-6 rounded-chip transition-colors duration-[var(--dur)] ease-ds',
-                      isActive ? 'bg-accent' : 'bg-transparent',
-                    )}
-                  />
-                  <span className="truncate">{route.label}</span>
-                </>
-              )}
-            </NavLink>
-          </li>
-        ))}
+        {NAV_ROUTES.map((route) => {
+          const Icon = route.icon
+          return (
+            <li key={route.path} className="min-w-0 flex-1">
+              <NavLink
+                to={route.path}
+                end={route.path === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    'flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-center',
+                    'text-[11px] leading-tight',
+                    isActive ? 'text-text' : 'text-muted',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {/* L'onglet actif est une pilule lime derrière le glyphe.
+                        Le DS interdit lime en `color` — faute de contraste sur
+                        les deux fonds — mais pas en remplissage, et c'est
+                        justement là que la marque doit se voir. */}
+                    <span
+                      className={cn(
+                        'flex h-7 w-12 items-center justify-center rounded-chip',
+                        'transition-colors duration-[var(--dur)] ease-ds',
+                        isActive && 'bg-accent text-accent-fg',
+                      )}
+                    >
+                      <Icon size={18} />
+                    </span>
+                    <span className="w-full truncate">{route.label}</span>
+                  </>
+                )}
+              </NavLink>
+            </li>
+          )
+        })}
       </ul>
     </nav>
   )
