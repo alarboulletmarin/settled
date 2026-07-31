@@ -41,7 +41,14 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         if (event.target === ref.current) onClose()
       }}
       className={cn(
-        'surface m-0 max-h-dvh w-full bg-transparent p-0 text-text backdrop:bg-black/40',
+        'surface m-0 w-full bg-transparent p-0 text-text backdrop:bg-black/40',
+        // La feuille de style du navigateur pose `max-width` et `max-height:
+        // calc(100% - 6px - 2em)` sur tout dialog modal — bordure et padding
+        // par défaut comptés en dur, que `p-0` ne retire pas du calcul. Comme
+        // `max-width` l'emporte sur `width`, `w-full` seul laisse 38px de vide
+        // au bord. Les neutraliser rend la taille à nos classes : la largeur
+        // ici, la hauteur au `max-h-[90dvh]` du contenu.
+        'max-h-none max-w-none',
         'mt-auto sm:m-auto sm:max-w-lg',
       )}
     >
