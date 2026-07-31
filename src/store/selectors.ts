@@ -224,7 +224,7 @@ export function useKindTotals(forecast = false): KindTotals {
  * famille. L'épargne en est exclue : elle sort du compte mais reste au foyer,
  * et la mêler aux dépenses ferait passer un bon mois pour un mois dispendieux.
  */
-export function useSpendingByFamily(): CategorySlice[] {
+export function useSpendingByFamily(limit?: number): CategorySlice[] {
   const entries = useEntries()
   const month = useCurrentYm()
   const member = useMemberFilter()
@@ -238,8 +238,9 @@ export function useSpendingByFamily(): CategorySlice[] {
       (categoryId) => familyOf.get(categoryId) ?? '',
       (categoryId) => isSpending(kindOf(categoryId)),
       member,
+      limit,
     )
-  }, [entries, month, categories, kindOf, member])
+  }, [entries, month, categories, kindOf, member, limit])
 }
 
 /* --- Répartition entre membres --------------------------------------------*/

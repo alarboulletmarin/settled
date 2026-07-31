@@ -4,6 +4,7 @@ import { fr } from '@/i18n/fr'
 import { addMember, removeMember, setHouseholdName } from '@/store/actions'
 import { useHouseholdName, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
+import { ImportControl } from '@/features/settings/ImportControl'
 import { Tile } from '@/ui/Tile'
 import { HouseholdStep } from './HouseholdStep'
 import { MembersStep } from './MembersStep'
@@ -45,6 +46,14 @@ export function OnboardingPage() {
           />
         )}
       </Tile>
+
+      {/* Restaurer une sauvegarde ne doit pas passer par la création d'un foyer
+          qu'on remplacera dans la foulée. C'est aussi ce que le message d'erreur
+          de l'hydratation promet déjà quand les données sont illisibles. */}
+      <div className="flex flex-col items-start gap-2 border-t border-border pt-5">
+        <p className="t-label">{fr.onboarding.importHint}</p>
+        <ImportControl />
+      </div>
 
       <p className="t-label">{fr.onboarding.privacy}</p>
     </div>

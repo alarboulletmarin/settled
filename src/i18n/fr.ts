@@ -463,6 +463,7 @@ export const fr = {
     membersRemove: 'Retirer %s',
     solo: 'Je suis seul·e',
     start: 'Commencer',
+    importHint: 'Tu as déjà un fichier Settled ? Restaure-le sans passer par ici.',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
   },
 
