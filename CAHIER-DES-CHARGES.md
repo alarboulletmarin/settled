@@ -156,7 +156,7 @@ Tout est modifiable : renommer une famille, en créer une avec sa nature, ajoute
 
 ### 4.2 Récurrences
 
-- Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable ».
+- Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable », membre selon la même règle que la saisie ponctuelle (§4.7 ter). Un abonnement pose une échéance par période : sans propriétaire ni partage, il creuserait le trou à chaque fois.
 - Périodicités : hebdomadaire, mensuelle, trimestrielle, annuelle, ou tous les *n* mois.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
 - Liste regroupée sur un axe au choix : **sens**, **catégorie** ou **personne**, chaque groupe portant son nombre d'abonnements et son solde mensuel. Par sens, les deux groupes s'ouvrent — le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d'un abonnement dans une liste qui les mêle, d'autant que la pastille prend la teinte de la catégorie et pas du sens. Sur les deux autres axes ils se replient. Le total en tête de page, lui, ne compte que les sorties.
@@ -184,7 +184,9 @@ Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 ### 4.4 Saisie ponctuelle
 
-Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre optionnel. Créée directement en `confirmed`.
+Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre. Créée directement en `confirmed`.
+
+Le membre est **facultatif tant que le partage prend la ligne en charge, obligatoire dès qu'il ne la prend pas** — voir « à quelqu'un, ou à tout le monde » en §4.7 ter. Le champ le dit à l'ouverture, avec la raison, et pas seulement après un échec d'enregistrement.
 
 Une bascule **Ponctuel / Abonnement** y siège, à la création seulement. En abonnement, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en abonnement réécrirait un historique.
 
@@ -207,6 +209,8 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 ### 4.6 Dashboards du mois
 
 - **Solde du mois** : entrées confirmées − sorties confirmées.
+- **Revenus** : ce que le mois fait rentrer — les ressources, `planned` comprises —, avec ce qui reste à tomber en seconde lecture.
+- **Charges** : ce que le mois fait payer — charges et crédits, `planned` compris —, avec le reste à payer en seconde lecture. L'épargne en est exclue, comme partout : un versement sort du compte mais reste au foyer, et personne ne le réclame.
 - **Solde prévisionnel** : en incluant les `planned` restantes.
 - **Reste à vivre** : solde prévisionnel jusqu'à la prochaine entrée d'argent.
 - **Capacité d'épargne** : ressources − charges − crédits, donc avant versements, avec le taux d'épargne en seconde lecture. C'est ce que le solde ne dit pas : lui compte un versement comme une sortie, si bien qu'un mois où l'on met 300 € de côté se lit comme un mois où l'on a dépensé 300 € de plus.
@@ -216,9 +220,11 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Prochaines échéances**, les 5 suivantes avec le nombre de jours restants.
 - **Total abonnements**, mensuel et annualisé.
 
-Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose. Chaque tuile s'ouvre sur une feuille qui donne son calcul et, surtout, ce qui la sépare de ses voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
+Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose, et aucun ne répond à « combien je gagne, combien je paie » : un solde a déjà fait la soustraction. C'est pourquoi les deux totaux qu'il combine se lisent à côté de lui, avant les trois autres. Les six tuiles s'ouvrent sur une feuille qui donne leur calcul et, surtout, ce qui les sépare de leurs voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
 
-Tous les dashboards acceptent un filtre par membre.
+Tous les dashboards acceptent un filtre par membre. Filtrer sur quelqu'un ne se réduit pas à ne garder que ses lignes : une charge commune n'appartient à personne, donc aucune ne passerait le filtre, et chacun se lirait comme s'il vivait sans loyer ni électricité — capacité d'épargne à peine inférieure au salaire, « aucune sortie ce mois-ci » sur la répartition. Un membre voit donc **ses lignes et sa part de chaque charge commune**, au prorata des revenus (§4.7 ter). L'en-tête le dit là où le filtre se choisit, et nomme ce qui manque quand le prorata ne se calcule pas — on retombe alors sur ses seules lignes, faute de mieux, mais on le sait.
+
+Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, calendrier montrent les échéances réelles, en entier. On confirme une échéance, jamais une part.
 
 ### 4.7 Historique et comparatifs
 
@@ -232,8 +238,9 @@ Tous les dashboards acceptent un filtre par membre.
 
 Un crédit se déclare avec son capital emprunté, ses dates de première et dernière mensualité, un taux annuel facultatif, et l'abonnement qui le rembourse.
 
-- Le **capital restant dû** est dérivé, jamais saisi : `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1) / i`, où `n` est le nombre de mensualités effectivement confirmées.
-- Sans taux, le capital décroît exactement du montant versé.
+- Le **capital restant dû** est dérivé, jamais saisi : `Rₖ = Rₖ₋₁(1+i) − Mₖ`, appliqué à chaque mensualité **effectivement confirmée**, à son montant à elle. C'est la formule d'amortissement classique — `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1)/i` — écrite sous forme de récurrence : les deux donnent le même chiffre à mensualité constante, mais seule la récurrence accepte qu'un versement diffère des autres. Une renégociation, un différé, un remboursement anticipé changent le montant en cours de route, et rejouer le passé à la mensualité d'aujourd'hui inventerait un historique. La mensualité de l'abonnement lié ne sert donc qu'à annoncer la suite.
+- Une échéance **antérieure à la date de début** du crédit ne le rembourse pas : l'abonnement a pu servir à autre chose avant d'y être rattaché.
+- Sans taux, le capital décroît exactement de ce qui a été versé.
 - Sans abonnement lié, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
 - Retirer un crédit du suivi n'efface ni les mensualités versées ni l'abonnement qui les pose. Seul le suivi du capital s'arrête.
 
@@ -246,9 +253,11 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 - **Charges communes** : les sorties de nature `charge` ou `debt` que personne ne s'est attribuées, plus celles cochées « à partager ». C'est la frontière de la capacité d'épargne, et pour la même raison : un versement sort du compte mais reste à qui le fait, il n'a rien à faire dans un partage.
 - Les échéances **prévues** comptent : la question est « combien verser ce mois-ci », pas « combien a déjà été payé ». Répondre au réalisé ferait grimper la part de chacun au fil du mois.
 - La somme des parts vaut **exactement** le total, au centime. Arrondir chaque part dans son coin ne le garantirait pas ; les centimes restants vont aux plus forts restes, et l'écran affiche le total des parts pour qu'on le vérifie.
+- Le partage se fait **charge par charge**, et non sur leur somme. Les deux donnent le même total au centime près, mais seul le découpage par charge se recompose : la part d'un poste, d'un jour ou d'une moitié de mois s'additionne alors exactement pour redonner la part du mois. C'est ce qui permet à l'écran du mois filtré sur quelqu'un et à celui-ci d'annoncer le même chiffre, et non deux chiffres à un centime l'un de l'autre.
 - Le calcul ne se fait pas tant qu'un membre n'a aucune ressource récurrente à son nom, ou qu'il n'y en a qu'un. L'écran **nomme ce qui manque** au lieu d'afficher un zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
 - Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, et sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre.
 - Le total **s'ouvre** sur la liste de ce qu'il compte, de la plus lourde à la plus légère. Un chiffre de répartition qu'on ne peut pas vérifier ne se vérifie pas, et une dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
+- **À quelqu'un, ou à tout le monde.** Une ligne sans propriétaire et hors partage sort du compte du foyer sans apparaître dans le mois de personne : la somme des soldes individuels cesse alors de valoir celui du foyer, sans que rien ne le dise. C'est le cas d'un versement d'épargne que personne ne revendique — l'épargne ne se partage jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle est, et de toute entrée d'argent, qui ne se partage pas davantage. La saisie exige donc le membre dans ces cas-là, et seulement dans ces cas-là : ailleurs, la règle de partage sait déjà où ranger la ligne. C'est une contrainte de saisie, pas une validation d'import : un document plus ancien garde ses lignes telles quelles, et les corriger se fait en les rouvrant.
 - La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
 
 ### 4.8 Données

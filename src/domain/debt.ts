@@ -22,28 +22,36 @@ function monthlyRate(rateBp: number): number {
 }
 
 /**
- * Capital restant après `paid` mensualités de `monthly`.
+ * Capital restant après les mensualités `payments`, dans l'ordre où elles ont
+ * été versées.
  *
- * Formule d'amortissement classique : `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1) / i`.
+ * C'est la formule d'amortissement classique — `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1)/i`
+ * — écrite sous forme de récurrence : `Rₖ = Rₖ₋₁(1+i) − Mₖ`. Les deux donnent
+ * le même chiffre à mensualité constante, mais seule la récurrence accepte que
+ * les versements diffèrent. Or ils diffèrent : une renégociation, un différé,
+ * un remboursement anticipé changent le montant en cours de route, et rejouer
+ * tout le passé à la mensualité d'aujourd'hui inventerait un historique. C'est
+ * chaque échéance confirmée qui fait foi, à son montant à elle.
+ *
  * Le résultat est borné à [0, P] — un arrondi ne doit jamais faire apparaître
  * une dette négative ni un capital qui remonte au-dessus de l'emprunt.
  */
 export function remainingPrincipal(
   principal: Money,
-  monthly: Money | null,
+  payments: readonly Money[],
   rateBp: number,
-  payments: number,
 ): Money {
-  if (payments <= 0) return principal
-  if (monthly === null || monthly <= 0) return principal
+  if (payments.length === 0) return principal
 
   if (rateBp <= 0) {
-    return money(Math.max(0, Math.min(principal, principal - monthly * payments)))
+    return money(Math.max(0, Math.min(principal, principal - sum(payments))))
   }
 
   const i = monthlyRate(rateBp)
-  const growth = (1 + i) ** payments
-  const remaining = principal * growth - (monthly * (growth - 1)) / i
+  let remaining: number = principal
+  for (const payment of payments) {
+    remaining = remaining * (1 + i) - payment
+  }
   return money(Math.max(0, Math.min(principal, Math.round(remaining))))
 }
 
@@ -69,9 +77,14 @@ export type DebtStatus = {
  * L'état d'un crédit à une date donnée.
  *
  * `monthly` vient de la récurrence liée, pas du crédit : c'est elle qui fait
- * foi, et la changer doit se répercuter sans avoir à ressaisir le crédit.
- * Sans récurrence liée, le capital ne peut pas décroître — on le dit plutôt
- * que de deviner.
+ * foi, et la changer doit se répercuter sans avoir à ressaisir le crédit. Elle
+ * ne sert qu'à annoncer la prochaine échéance : le capital, lui, se calcule sur
+ * les montants réellement versés. Sans récurrence liée, il ne peut pas
+ * décroître — on le dit plutôt que de deviner.
+ *
+ * Une échéance antérieure au crédit ne le rembourse pas : un abonnement peut
+ * avoir servi à autre chose avant d'être rattaché, et les mensualités qu'il a
+ * posées alors n'amortissent rien ici.
  */
 export function debtStatus(
   debt: Debt,
@@ -82,16 +95,23 @@ export function debtStatus(
   const paidEntries =
     debt.recurrenceId === undefined
       ? []
-      : entries.filter(
-          (entry) =>
-            entry.recurrenceId === debt.recurrenceId &&
-            entry.status === 'confirmed' &&
-            entry.date <= on,
-        )
+      : entries
+          .filter(
+            (entry) =>
+              entry.recurrenceId === debt.recurrenceId &&
+              entry.status === 'confirmed' &&
+              entry.date >= debt.startedOn &&
+              entry.date <= on,
+          )
+          .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
 
   const payments = paidEntries.length
-  const paid = money(paidEntries.reduce((total, entry) => total + entry.amount, 0))
-  const remaining = remainingPrincipal(debt.principal, monthly, debt.rateBp ?? 0, payments)
+  const paid = sum(paidEntries.map((entry) => entry.amount))
+  const remaining = remainingPrincipal(
+    debt.principal,
+    paidEntries.map((entry) => entry.amount),
+    debt.rateBp ?? 0,
+  )
   const monthsLeft = Math.max(0, diffMonths(ymOf(on), ymOf(debt.endsOn)))
 
   return {

@@ -98,6 +98,17 @@ export const fr = {
     loading: 'Ouverture de tes données',
     filterByMember: 'Filtrer par membre',
     everyone: 'Tout le foyer',
+    /* Les chiffres d'un membre comprennent sa part des charges communes : sans
+       elle, chacun se lirait comme s'il vivait sans loyer. La liste des
+       échéances, elle, garde les lignes réelles — on confirme une échéance
+       entière, jamais une part. */
+    prorata: 'Chiffres à la part de %s : sa part des charges communes est comprise, au prorata des revenus. Les listes gardent les échéances entières.',
+    prorataMissingOne:
+      'Charges communes non réparties, faute de connaître le revenu de %s : seules les lignes à son nom sont comptées.',
+    prorataMissingMany:
+      'Charges communes non réparties, faute de connaître les revenus de %s : seules les lignes à son nom sont comptées.',
+    prorataOnlyOwn:
+      'Charges communes non réparties : seules les lignes à son nom sont comptées.',
   },
 
   settings: {
@@ -199,6 +210,14 @@ export const fr = {
 
   dashboard: {
     balance: 'Solde du mois',
+    income: 'Revenus',
+    incomeLeft: 'dont %s encore à venir',
+    incomeAllIn: 'tout est déjà rentré',
+    incomeNone: 'aucun revenu ce mois-ci',
+    charges: 'Charges',
+    chargesLeft: 'reste %s à payer',
+    chargesAllPaid: 'tout est payé',
+    chargesNone: 'rien à payer ce mois-ci',
     forecast: 'Prévisionnel',
     forecastHint: 'échéances prévues comprises',
     remaining: 'Reste à vivre',
@@ -245,6 +264,20 @@ export const fr = {
         calculation: 'Les entrées confirmées, moins les sorties confirmées.',
         apart:
           'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte.',
+      },
+      income: {
+        lead: 'Ce que le mois te fait gagner, avant que quoi que ce soit n’en sorte.',
+        calculation:
+          'Tout ce qui rentre ce mois-ci — salaires, primes, aides —, échéances encore prévues comprises.',
+        apart:
+          'Le solde du mois a déjà retranché les sorties : il dit ce qu’il te reste, pas ce que tu gagnes. Celui-ci ne compte que ce qui rentre.',
+      },
+      charges: {
+        lead: 'Ce que le mois te coûte, du premier au dernier jour.',
+        calculation:
+          'Les charges et les mensualités de crédit du mois, échéances encore prévues comprises. Un virement sur un livret n’en fait pas partie : il sort du compte mais reste chez toi.',
+        apart:
+          '« Où part l’argent » montre le même total réparti par poste ; celui-ci le pose en clair et dit combien il en reste à payer.',
       },
       forecast: {
         lead: 'Là où le mois atterrit si tout ce qui est prévu se passe comme prévu.',
@@ -345,6 +378,10 @@ export const fr = {
     amountRequired: 'Indique un montant supérieur à zéro.',
     categoryRequired: 'Choisis une catégorie.',
     labelRequired: 'Donne un libellé à cette entrée.',
+    /* Sans propriétaire ni partage, la ligne n'apparaîtrait dans le mois de
+       personne, et la somme des soldes cesserait de valoir celui du foyer. */
+    memberRequired:
+      'Dis à qui est cette ligne : elle n’entre pas dans les charges communes, donc sans propriétaire elle n’apparaîtrait dans le mois de personne.',
     planned: 'Prévue',
     confirmed: 'Confirmée',
 
@@ -423,6 +460,10 @@ export const fr = {
       labelRequired: 'Donne un libellé à cet abonnement.',
       amountRequired: 'Indique un montant, ou choisis « montant variable ».',
       categoryRequired: 'Choisis une catégorie.',
+      /* Un abonnement pose une échéance par mois : sans propriétaire ni
+         partage, il creuse le trou à chaque fois. */
+      memberRequired:
+        'Dis à qui est cet abonnement : il n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
       monthDayHint: 'Un jour qui n’existe pas est ramené au dernier jour du mois.',
     },
     periods: {

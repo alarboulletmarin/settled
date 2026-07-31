@@ -14,7 +14,15 @@ import type { ISODate, YearMonth } from './date'
 import { type Money, ZERO, add, money, sum } from './money'
 import { monthlyEquivalent } from './recurrence'
 import { type KindOf, type MemberFilter, entriesOfMonth } from './stats'
-import { type CategoryKind, type Entry, type Member, type Recurrence, isActiveOn, isSpending } from './types'
+import {
+  type CategoryKind,
+  type Direction,
+  type Entry,
+  type Member,
+  type Recurrence,
+  isActiveOn,
+  isSpending,
+} from './types'
 
 /* --- Répartition d'un entier ----------------------------------------------*/
 
@@ -90,6 +98,34 @@ export function defaultShared(kind: CategoryKind, memberId?: string): boolean {
 }
 
 /**
+ * Une ligne doit être à quelqu'un, ou à tout le monde.
+ *
+ * Sans propriétaire et hors partage, elle sort bien du compte du foyer, mais
+ * n'apparaît dans le mois de personne : la somme des soldes individuels cesse
+ * alors de valoir celui du foyer, sans que rien ne le dise. C'est le cas d'un
+ * versement d'épargne que personne ne revendique — l'épargne ne se partage
+ * jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle
+ * est, et de toute entrée d'argent, qui ne se partage pas davantage.
+ *
+ * La saisie l'exige donc là, et seulement là : partout ailleurs, le membre
+ * reste facultatif parce que la règle de partage sait déjà où ranger la ligne.
+ */
+export function memberRequired(
+  direction: Direction,
+  kind: CategoryKind,
+  memberId: string,
+  shared: boolean | undefined,
+): boolean {
+  if (memberId !== '') return false
+  return !(direction === 'out' && (shared ?? defaultShared(kind, memberId)))
+}
+
+/** La même frontière que `sharedEntries`, en un seul endroit. */
+function isCommon(entry: Entry, kindOf: KindOf): boolean {
+  return entry.direction === 'out' && isSharedEntry(entry, kindOf(entry.categoryId))
+}
+
+/**
  * Total des charges communes du mois.
  *
  * Les échéances prévues comptent : la question posée est « combien chacun
@@ -119,7 +155,7 @@ export function sharedEntries(
   memberId?: MemberFilter,
 ): Entry[] {
   return entriesOfMonth(entries, month, memberId)
-    .filter((e) => e.direction === 'out' && isSharedEntry(e, kindOf(e.categoryId)))
+    .filter((e) => isCommon(e, kindOf))
     .sort((a, b) => b.amount - a.amount)
 }
 
@@ -192,18 +228,15 @@ export type MemberShare = {
 }
 
 /**
- * Ce que chaque membre doit sur `total`, au prorata des revenus.
+ * Les poids du prorata : les revenus, quand ils permettent de répartir.
  *
- * Renvoie `null` — et non des parts à zéro — dans trois cas : moins de deux
- * membres, un membre dont le revenu n'est pas connu, ou des revenus tous nuls.
- * Un prorata dont le dénominateur est incomplet ne vaut pas zéro, il ne veut
- * rien dire ; c'est le raisonnement de `savingRate`, et l'écran doit dire ce
- * qui manque plutôt qu'afficher un chiffre faux.
+ * `null` — et non des poids à zéro — dans trois cas : moins de deux membres, un
+ * membre dont le revenu n'est pas connu, ou des revenus tous nuls. Un prorata
+ * dont le dénominateur est incomplet ne vaut pas zéro, il ne veut rien dire ;
+ * c'est le raisonnement de `savingRate`, et l'écran doit dire ce qui manque
+ * plutôt qu'afficher un chiffre faux.
  */
-export function memberShares(
-  incomes: readonly MemberIncome[],
-  total: Money,
-): MemberShare[] | null {
+function prorataWeights(incomes: readonly MemberIncome[]): Money[] | null {
   if (incomes.length < 2) return null
 
   const known: Money[] = []
@@ -211,17 +244,85 @@ export function memberShares(
     if (entry.income === null) return null
     known.push(entry.income)
   }
-  if (sum(known) <= 0) return null
+  return sum(known) <= 0 ? null : known
+}
 
-  const shares = largestRemainder(10_000, known)
-  const dues = allocate(total, known)
+/**
+ * Ce que chaque membre doit sur des charges communes, au prorata des revenus.
+ *
+ * Réparti charge par charge, et non sur leur somme. Les deux donnent le même
+ * total au centime près — c'est ce que garantit `allocate` — mais seul le
+ * découpage par charge se recompose : la part d'un poste, d'un jour ou d'une
+ * moitié de mois s'additionne alors exactement pour redonner la part du mois.
+ * Répartir la somme laisserait l'écran du mois filtré sur quelqu'un et l'écran
+ * Répartition annoncer deux chiffres à un centime l'un de l'autre.
+ */
+export function memberShares(
+  incomes: readonly MemberIncome[],
+  amounts: readonly Money[],
+): MemberShare[] | null {
+  const weights = prorataWeights(incomes)
+  if (weights === null) return null
+
+  const shares = largestRemainder(10_000, weights)
+  const dues = weights.map(() => 0)
+  for (const amount of amounts) {
+    const parts = largestRemainder(amount, weights)
+    for (const [index, part] of parts.entries()) {
+      dues[index] = (dues[index] ?? 0) + part
+    }
+  }
 
   return incomes.map((entry, index) => ({
     memberId: entry.memberId,
-    income: known[index] ?? ZERO,
+    income: weights[index] ?? ZERO,
     shareBp: shares[index] ?? 0,
-    due: dues[index] ?? ZERO,
+    due: money(dues[index] ?? 0),
   }))
+}
+
+/* --- Le mois vu par un membre ---------------------------------------------*/
+
+/**
+ * Les entrées telles que les lit un membre : les siennes, et sa part de chaque
+ * charge commune.
+ *
+ * Sans cette réécriture, filtrer sur quelqu'un ne garde que ce qu'il s'est
+ * attribué — une charge commune n'appartient par définition à personne. Le
+ * loyer, l'électricité et les crédits disparaissaient donc du filtre, et
+ * chacun se lisait comme s'il vivait sans charges : capacité d'épargne à peine
+ * inférieure au salaire, « aucune sortie ce mois-ci » sur la répartition.
+ *
+ * La part remplace le montant, et l'entrée est attribuée au membre : tout ce
+ * qui lit ces entrées — totaux, natures, répartition par poste, par jour —
+ * répond dès lors à sa part sans avoir à connaître le prorata. Les listes sur
+ * lesquelles on agit, elles, gardent les entrées réelles : on confirme une
+ * échéance entière, jamais une part.
+ *
+ * `null` tant que le prorata ne se calcule pas — l'appelant dit ce qui manque.
+ */
+export function scopeToMember(
+  entries: readonly Entry[],
+  memberId: string,
+  kindOf: KindOf,
+  incomes: readonly MemberIncome[],
+): Entry[] | null {
+  const weights = prorataWeights(incomes)
+  const index = incomes.findIndex((income) => income.memberId === memberId)
+  if (weights === null || index < 0) return null
+
+  const scoped: Entry[] = []
+  for (const entry of entries) {
+    if (isCommon(entry, kindOf)) {
+      const part = allocate(entry.amount, weights)[index] ?? ZERO
+      // Une part nulle n'est pas une ligne : elle ferait apparaître un poste à
+      // zéro dans la répartition sans rien ajouter à aucun total.
+      if (part > 0) scoped.push({ ...entry, amount: part, memberId })
+      continue
+    }
+    if (entry.memberId === memberId) scoped.push(entry)
+  }
+  return scoped
 }
 
 /** Somme des parts. Vaut le total réparti — c'est ce que `allocate` garantit. */

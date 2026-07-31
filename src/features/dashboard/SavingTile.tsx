@@ -6,6 +6,7 @@ import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { RemainingIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
+import type { Metric } from './MetricInfo'
 
 /**
  * Capacité d'épargne : ressources − charges − crédits, donc avant versements.
@@ -16,10 +17,14 @@ import { Tile } from '@/ui/Tile'
  * l'autre question : combien pouvais-je mettre de côté, et combien l'ai-je
  * effectivement fait.
  */
-export function SavingTile({ onExplain }: { onExplain: () => void }) {
+export function SavingTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
   const totals = useKindTotals()
   const capacity = savingCapacity(totals)
   const rate = savingRate(totals)
+  const hint =
+    rate === null
+      ? fr.dashboard.savingRateNone
+      : tpl(fr.dashboard.savingRate, formatPercent(rate))
 
   return (
     // 4×1 et non 2×1 : « CAPACITÉ D'ÉPARGNE » ne tient pas dans la centaine de
@@ -28,17 +33,15 @@ export function SavingTile({ onExplain }: { onExplain: () => void }) {
     <Tile
       span="4x1"
       className="justify-between"
-      onClick={onExplain}
+      onClick={() => {
+        onExplain({ key: 'capacity', value: capacity, hint })
+      }}
       label={tpl(fr.dashboard.explain, fr.dashboard.capacity)}
     >
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.capacity}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={capacity} size="tile-fit" tone={capacity < 0 ? 'danger' : 'default'} />
-        <span className="t-label max-lg:sr-only">
-          {rate === null
-            ? fr.dashboard.savingRateNone
-            : tpl(fr.dashboard.savingRate, formatPercent(rate))}
-        </span>
+        <span className="t-label max-lg:sr-only">{hint}</span>
       </div>
     </Tile>
   )

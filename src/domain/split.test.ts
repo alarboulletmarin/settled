@@ -6,8 +6,10 @@ import {
   isSharedEntry,
   largestRemainder,
   memberIncomes,
+  memberRequired,
   memberShares,
   monthlyIncome,
+  scopeToMember,
   sharedEntries,
   sharedTotal,
   totalDue,
@@ -247,46 +249,183 @@ describe('parts au prorata des revenus', () => {
   ]
 
   it('donne le coefficient de chacun en points de base', () => {
-    const shares = memberShares(foyer, eur(200_000))
+    const shares = memberShares(foyer, [eur(200_000)])
     expect(shares?.map((s) => s.shareBp)).toEqual([5556, 4444])
   })
 
   it('répartit les charges au centime près', () => {
-    const shares = memberShares(foyer, eur(200_000))
+    const shares = memberShares(foyer, [eur(200_000)])
     expect(shares?.map((s) => s.due)).toEqual([money(111_111), money(88_889)])
     expect(shares && totalDue(shares)).toBe(200_000)
   })
 
   it('la somme des parts vaut toujours le total, quel qu’il soit', () => {
     for (const total of [1, 7, 99, 100_001, 333_333]) {
-      const shares = memberShares(foyer, money(total))
+      const shares = memberShares(foyer, [money(total)])
       expect(shares && totalDue(shares)).toBe(total)
     }
   })
 
   it('ne dit rien tant qu’un revenu n’est pas connu', () => {
-    expect(memberShares([foyer[0]!, { memberId: 'm-2', income: null }], eur(200_000))).toBeNull()
+    expect(memberShares([foyer[0]!, { memberId: 'm-2', income: null }], [eur(200_000)])).toBeNull()
   })
 
   it('ne dit rien avec un seul membre', () => {
-    expect(memberShares([foyer[0]!], eur(200_000))).toBeNull()
+    expect(memberShares([foyer[0]!], [eur(200_000)])).toBeNull()
   })
 
   it('ne dit rien quand tous les revenus sont à zéro', () => {
     const shares = memberShares(
       [{ memberId: 'm-1', income: eur(0) }, { memberId: 'm-2', income: eur(0) }],
-      eur(200_000),
+      [eur(200_000)],
     )
     expect(shares).toBeNull()
   })
 
   it('donne tout à celui qui gagne, si l’autre est à zéro', () => {
-    const shares = memberShares([foyer[0]!, { memberId: 'm-2', income: eur(0) }], eur(200_000))
+    const shares = memberShares([foyer[0]!, { memberId: 'm-2', income: eur(0) }], [eur(200_000)])
     expect(shares?.map((s) => s.due)).toEqual([money(200_000), money(0)])
   })
 
   it('garde l’ordre du foyer', () => {
-    const shares = memberShares([foyer[1]!, foyer[0]!], eur(200_000))
+    const shares = memberShares([foyer[1]!, foyer[0]!], [eur(200_000)])
     expect(shares?.map((s) => s.memberId)).toEqual(['m-2', 'm-1'])
+  })
+
+  it('répartit charge par charge, et la somme des parts vaut le total', () => {
+    const amounts = [money(1), money(7), money(99), money(100_001), money(333_333)]
+    const shares = memberShares(foyer, amounts)
+    expect(shares && totalDue(shares)).toBe(sum(amounts))
+  })
+})
+
+/* --- À quelqu'un, ou à tout le monde ---------------------------------------*/
+
+describe('une ligne doit être à quelqu’un, ou à tout le monde', () => {
+  it('laisse le membre facultatif sur ce que le partage prendra en charge', () => {
+    expect(memberRequired('out', 'charge', '', undefined)).toBe(false)
+    expect(memberRequired('out', 'debt', '', undefined)).toBe(false)
+  })
+
+  it('exige un membre sur une dépense sortie du partage à la main', () => {
+    expect(memberRequired('out', 'charge', '', false)).toBe(true)
+  })
+
+  it('exige un membre sur un versement d’épargne : il ne se partage jamais', () => {
+    expect(memberRequired('out', 'saving', '', undefined)).toBe(true)
+  })
+
+  it('exige un membre sur une entrée d’argent : elle ne se partage pas davantage', () => {
+    expect(memberRequired('in', 'resource', '', undefined)).toBe(true)
+    // Cocher « à partager » sur une entrée n'y change rien : seules les sorties
+    // se répartissent.
+    expect(memberRequired('in', 'resource', '', true)).toBe(true)
+  })
+
+  it('n’exige plus rien dès que la ligne est à quelqu’un', () => {
+    expect(memberRequired('out', 'saving', 'm-1', undefined)).toBe(false)
+    expect(memberRequired('in', 'resource', 'm-1', undefined)).toBe(false)
+    expect(memberRequired('out', 'charge', 'm-1', false)).toBe(false)
+  })
+
+  it('couvre exactement ce qui n’apparaîtrait dans le mois de personne', () => {
+    const orphan = (kind: CategoryKind, shared?: boolean): boolean => {
+      const entry = makeEntry({
+        date: '2026-07-10',
+        direction: kind === 'resource' ? 'in' : 'out',
+        categoryId: kind,
+        ...(shared === undefined ? {} : { shared }),
+      })
+      const scoped = scopeToMember([entry], 'm-1', () => kind, [
+        { memberId: 'm-1', income: eur(250_000) },
+        { memberId: 'm-2', income: eur(200_000) },
+      ])
+      return scoped?.length === 0
+    }
+
+    for (const [kind, shared] of [
+      ['charge', undefined],
+      ['charge', false],
+      ['saving', undefined],
+      ['resource', undefined],
+    ] as [CategoryKind, boolean | undefined][]) {
+      expect(orphan(kind, shared)).toBe(
+        memberRequired(kind === 'resource' ? 'in' : 'out', kind, '', shared),
+      )
+    }
+  })
+})
+
+/* --- Le mois vu par un membre ---------------------------------------------*/
+
+describe('le mois vu par un membre', () => {
+  const foyer = [
+    { memberId: 'm-1', income: eur(250_000) },
+    { memberId: 'm-2', income: eur(200_000) },
+  ]
+
+  const july = [
+    /* Communes : personne ne se les est attribuées. */
+    makeEntry({ id: 'loyer', date: '2026-07-05', amount: eur(95_000), categoryId: 'logement' }),
+    makeEntry({ id: 'pret', date: '2026-07-10', amount: eur(30_000), categoryId: 'auto' }),
+    /* À lui, à elle, et un versement d'épargne qui ne se partage pas. */
+    makeEntry({ id: 'sien', date: '2026-07-15', amount: eur(4_000), categoryId: 'courses', memberId: 'm-1' }),
+    makeEntry({ id: 'elle', date: '2026-07-16', amount: eur(6_000), categoryId: 'courses', memberId: 'm-2' }),
+    makeEntry({ id: 'livret', date: '2026-07-12', amount: eur(20_000), categoryId: 'livret', memberId: 'm-1' }),
+    makeEntry({ id: 'paie', date: '2026-07-01', direction: 'in', amount: eur(250_000), categoryId: 'salaire', memberId: 'm-1' }),
+  ]
+
+  const forM1 = scopeToMember(july, 'm-1', kindOf, foyer)
+
+  it('garde ses lignes et sa part de chaque charge commune', () => {
+    expect(forM1?.map((e) => e.id).sort()).toEqual(['livret', 'loyer', 'paie', 'pret', 'sien'])
+    // 55,56 % de 950 € et de 300 €.
+    expect(forM1?.find((e) => e.id === 'loyer')?.amount).toBe(52_778)
+    expect(forM1?.find((e) => e.id === 'pret')?.amount).toBe(16_667)
+  })
+
+  it('laisse les lignes des autres dehors, et ne touche pas aux siennes', () => {
+    expect(forM1?.find((e) => e.id === 'elle')).toBeUndefined()
+    expect(forM1?.find((e) => e.id === 'sien')?.amount).toBe(4_000)
+    expect(forM1?.find((e) => e.id === 'paie')?.amount).toBe(250_000)
+  })
+
+  it('ne partage pas un versement d’épargne : il reste à qui le fait', () => {
+    expect(forM1?.find((e) => e.id === 'livret')?.amount).toBe(20_000)
+    expect(scopeToMember(july, 'm-2', kindOf, foyer)?.find((e) => e.id === 'livret')).toBeUndefined()
+  })
+
+  it('partage une dépense avancée par quelqu’un dès qu’elle est cochée', () => {
+    const avancee = july.map((e) => (e.id === 'sien' ? { ...e, shared: true } : e))
+    expect(scopeToMember(avancee, 'm-1', kindOf, foyer)?.find((e) => e.id === 'sien')?.amount).toBe(
+      2_222,
+    )
+    expect(scopeToMember(avancee, 'm-2', kindOf, foyer)?.find((e) => e.id === 'sien')?.amount).toBe(
+      1_778,
+    )
+  })
+
+  it('les parts de tous redonnent exactement chaque charge commune', () => {
+    const part = (member: string, id: string): number =>
+      scopeToMember(july, member, kindOf, foyer)?.find((e) => e.id === id)?.amount ?? 0
+    expect(part('m-1', 'loyer') + part('m-2', 'loyer')).toBe(95_000)
+    expect(part('m-1', 'pret') + part('m-2', 'pret')).toBe(30_000)
+  })
+
+  it('donne le même chiffre que l’écran Répartition, au centime près', () => {
+    const commun = sharedEntries(july, '2026-07', kindOf)
+    const due = memberShares(foyer, commun.map((e) => e.amount))?.[0]?.due
+    const sienne = sum(
+      (forM1 ?? [])
+        .filter((e) => commun.some((c) => c.id === e.id))
+        .map((e) => e.amount),
+    )
+    expect(sienne).toBe(due)
+  })
+
+  it('ne dit rien tant que le prorata ne se calcule pas', () => {
+    expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!, { memberId: 'm-2', income: null }])).toBeNull()
+    expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!])).toBeNull()
+    expect(scopeToMember(july, 'm-3', kindOf, foyer)).toBeNull()
   })
 })

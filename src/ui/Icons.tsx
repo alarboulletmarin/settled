@@ -27,6 +27,7 @@ import { Check as PhCheck } from '@phosphor-icons/react/dist/csr/Check'
 import { CheckCircle } from '@phosphor-icons/react/dist/csr/CheckCircle'
 import { Clock } from '@phosphor-icons/react/dist/csr/Clock'
 import { Bank } from '@phosphor-icons/react/dist/csr/Bank'
+import { Coins } from '@phosphor-icons/react/dist/csr/Coins'
 import { Database } from '@phosphor-icons/react/dist/csr/Database'
 import { GearSix } from '@phosphor-icons/react/dist/csr/GearSix'
 import { HandCoins } from '@phosphor-icons/react/dist/csr/HandCoins'
@@ -34,6 +35,7 @@ import { House } from '@phosphor-icons/react/dist/csr/House'
 import { ListBullets } from '@phosphor-icons/react/dist/csr/ListBullets'
 import { Palette } from '@phosphor-icons/react/dist/csr/Palette'
 import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
+import { Receipt } from '@phosphor-icons/react/dist/csr/Receipt'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
 import { UsersThree } from '@phosphor-icons/react/dist/csr/UsersThree'
@@ -84,6 +86,9 @@ export const NavSettings = adapt(GearSix)
 /* --- Repère — tuiles et sections ------------------------------------------*/
 
 export const BalanceIcon = adapt(Wallet)
+export const IncomeIcon = adapt(Coins)
+/* La quittance, et non une flèche : c'est ce qu'on doit, pas une variation. */
+export const ChargesIcon = adapt(Receipt)
 export const ForecastIcon = adapt(ChartLineUp)
 export const RemainingIcon = adapt(HandCoins)
 export const BreakdownIcon = adapt(ChartPieSlice)

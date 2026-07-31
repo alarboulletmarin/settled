@@ -21,9 +21,11 @@ export type FieldsProps = {
   patch: (next: Partial<RecurrenceDraft>) => void
   errors: DraftErrors
   members: Member[]
+  /** La règle « à quelqu'un, ou à tout le monde » s'applique-t-elle ici ? */
+  needsMember?: boolean
 }
 
-export function IdentityFields({ draft, patch, errors, members }: FieldsProps) {
+export function IdentityFields({ draft, patch, errors, members, needsMember = false }: FieldsProps) {
   return (
     <>
       <Field label={fr.recurrences.form.label} required {...(errors.label ? { error: errors.label } : {})}>
@@ -70,11 +72,22 @@ export function IdentityFields({ draft, patch, errors, members }: FieldsProps) {
       </Field>
 
       {members.length > 0 && (
-        <Field label={fr.recurrences.form.member} optional>
-          {(id) => (
+        /* La phrase sert d'aide tant qu'on n'a pas essayé d'enregistrer, puis
+           d'erreur : c'est la même, et elle dit pourquoi ce champ, facultatif
+           ailleurs, ne l'est pas ici. */
+        <Field
+          label={fr.recurrences.form.member}
+          {...(needsMember
+            ? { required: true, hint: fr.recurrences.form.memberRequired }
+            : { optional: true })}
+          {...(errors.member ? { error: errors.member } : {})}
+        >
+          {(id, describedBy) => (
             <Select
               id={id}
+              aria-describedby={describedBy}
               value={draft.memberId}
+              invalid={Boolean(errors.member)}
               onChange={(e) => {
                 patch({ memberId: e.target.value })
               }}

@@ -10,12 +10,13 @@ import { useMemo } from 'react'
 import { type ISODate, type YearMonth, addMonthsToYm, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
 import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
-import { type Money, ZERO, sum } from '@/domain/money'
+import { type Money, sum } from '@/domain/money'
 import { type PriceChange, detectPriceChange } from '@/domain/priceHistory'
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
   type CategorySlice,
   type DayTotals,
+  type Flow,
   type KindOf,
   type KindTotals,
   type MonthTotals,
@@ -25,9 +26,11 @@ import {
   breakdownByFamily,
   dailyBreakdown,
   entriesOfMonth,
+  incomeFlow,
   monthProgress,
   monthTotals,
   restToLive,
+  spendingFlow,
   subscriptionTotals,
   totalsByKind,
   upcomingEntries,
@@ -38,6 +41,7 @@ import {
   type MemberShare,
   memberIncomes,
   memberShares,
+  scopeToMember,
   sharedEntries,
 } from '@/domain/split'
 import {
@@ -157,6 +161,53 @@ export function useEntry(id: string | undefined): Entry | null {
   )
 }
 
+export type MonthScope = {
+  /** Les entrées à lire : celles du foyer, ou celles du membre sélectionné. */
+  entries: Entry[]
+  /** Un membre est sélectionné, et sa part des charges communes est comptée. */
+  prorated: boolean
+  /**
+   * Un membre est sélectionné, mais le prorata ne se calcule pas : on retombe
+   * sur ses seules lignes, et l'écran doit dire ce qui manque.
+   */
+  partial: boolean
+}
+
+/**
+ * La portée de lecture des chiffres du mois — le seul endroit où le filtre par
+ * membre s'applique.
+ *
+ * Filtrer sur quelqu'un ne peut pas se réduire à ne garder que ses lignes : une
+ * charge commune n'appartient à personne, donc aucune ne passerait le filtre, et
+ * chacun se lirait sans loyer ni électricité. Un membre voit donc ses lignes et
+ * sa part de chaque charge commune, au prorata des revenus — le même partage
+ * que l'écran Répartition, à la même règle et au même centime.
+ */
+export function useMonthScope(): MonthScope {
+  const entries = useEntries()
+  const member = useMemberFilter()
+  const kindOf = useKindOf()
+  const incomes = useMemberIncomes()
+
+  return useMemo(() => {
+    if (member === undefined) return { entries, prorated: false, partial: false }
+    const scoped = scopeToMember(entries, member, kindOf, incomes)
+    if (scoped !== null) return { entries: scoped, prorated: true, partial: false }
+    return {
+      entries: entries.filter((entry) => entry.memberId === member),
+      prorated: false,
+      partial: true,
+    }
+  }, [entries, member, kindOf, incomes])
+}
+
+/**
+ * Les entrées réelles du mois affiché, filtrées sur le membre sélectionné.
+ *
+ * Ce sont celles des listes sur lesquelles on agit : une échéance se confirme
+ * en entier, jamais à la part de quelqu'un. Les chiffres, eux, passent par
+ * `useMonthScope`.
+ */
 export function useMonthEntries(ym?: YearMonth): Entry[] {
   const entries = useEntries()
   const current = useCurrentYm()
@@ -165,57 +216,87 @@ export function useMonthEntries(ym?: YearMonth): Entry[] {
   return useMemo(() => entriesOfMonth(entries, month, member), [entries, month, member])
 }
 
-export function useMonthTotals(ym?: YearMonth): MonthTotals {
-  const entries = useEntries()
+/** Les entrées du mois affiché, à la portée de lecture courante. */
+export function useScopedMonthEntries(ym?: YearMonth): Entry[] {
+  const { entries } = useMonthScope()
   const current = useCurrentYm()
-  const member = useMemberFilter()
   const month = ym ?? current
-  return useMemo(() => monthTotals(entries, month, member), [entries, month, member])
+  return useMemo(() => entriesOfMonth(entries, month), [entries, month])
+}
+
+export function useMonthTotals(ym?: YearMonth): MonthTotals {
+  const { entries } = useMonthScope()
+  const current = useCurrentYm()
+  const month = ym ?? current
+  return useMemo(() => monthTotals(entries, month), [entries, month])
 }
 
 export function useRestToLive(): Money {
-  const entries = useEntries()
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
-  const member = useMemberFilter()
-  return useMemo(() => restToLive(entries, month, today(), member), [entries, month, member])
+  return useMemo(() => restToLive(entries, month, today()), [entries, month])
 }
 
 export function useCategoryBreakdown(direction: 'in' | 'out' = 'out'): CategorySlice[] {
-  const entries = useEntries()
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
-  const member = useMemberFilter()
   return useMemo(
-    () => breakdownByCategory(entries, month, direction, member),
-    [entries, month, direction, member],
+    () => breakdownByCategory(entries, month, direction),
+    [entries, month, direction],
   )
 }
 
 export function useDailyBreakdown(direction: 'in' | 'out' = 'out'): DayTotals[] {
-  const entries = useEntries()
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
-  const member = useMemberFilter()
-  return useMemo(
-    () => dailyBreakdown(entries, month, direction, member),
-    [entries, month, direction, member],
-  )
+  return useMemo(() => dailyBreakdown(entries, month, direction), [entries, month, direction])
 }
 
+/**
+ * Les prochaines échéances. Elle se lit, elle ne s'actionne pas : une charge
+ * commune y figure donc à la part du membre sélectionné, comme les totaux.
+ */
 export function useUpcoming(limit = 5): Upcoming[] {
-  const entries = useEntries()
-  const member = useMemberFilter()
-  return useMemo(() => upcomingEntries(entries, today(), limit, member), [entries, limit, member])
+  const { entries } = useMonthScope()
+  return useMemo(() => upcomingEntries(entries, today(), limit), [entries, limit])
 }
 
 /* --- Lecture par nature ---------------------------------------------------*/
 
 export function useKindTotals(forecast = false): KindTotals {
-  const entries = useEntries()
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
-  const member = useMemberFilter()
   const kindOf = useKindOf()
   return useMemo(
-    () => totalsByKind(entries, month, kindOf, member, forecast),
-    [entries, month, kindOf, member, forecast],
+    () => totalsByKind(entries, month, kindOf, undefined, forecast),
+    [entries, month, kindOf, forecast],
+  )
+}
+
+export type MonthFlows = {
+  /** Ce que le mois fait rentrer. */
+  income: Flow
+  /** Ce qu'il fait payer — charges et crédits, hors épargne. */
+  spending: Flow
+}
+
+/**
+ * Les deux chiffres que les soldes combinent sans jamais les dire : ce qu'on
+ * gagne et ce qu'on paie, chacun avec la part déjà tombée.
+ *
+ * Ils se lisent sur les mêmes totaux par nature que la capacité d'épargne — la
+ * lecture confirmée et la lecture prévisionnelle — et le filtre par membre de
+ * l'en-tête vaut pour eux comme pour le reste du tableau de bord.
+ */
+export function useMonthFlows(): MonthFlows {
+  const confirmed = useKindTotals()
+  const forecast = useKindTotals(true)
+  return useMemo(
+    () => ({
+      income: incomeFlow(confirmed, forecast),
+      spending: spendingFlow(confirmed, forecast),
+    }),
+    [confirmed, forecast],
   )
 }
 
@@ -225,9 +306,8 @@ export function useKindTotals(forecast = false): KindTotals {
  * et la mêler aux dépenses ferait passer un bon mois pour un mois dispendieux.
  */
 export function useSpendingByFamily(limit?: number): CategorySlice[] {
-  const entries = useEntries()
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
-  const member = useMemberFilter()
   const categories = useCategories()
   const kindOf = useKindOf()
   return useMemo(() => {
@@ -237,10 +317,10 @@ export function useSpendingByFamily(limit?: number): CategorySlice[] {
       month,
       (categoryId) => familyOf.get(categoryId) ?? '',
       (categoryId) => isSpending(kindOf(categoryId)),
-      member,
+      undefined,
       limit,
     )
-  }, [entries, month, categories, kindOf, member, limit])
+  }, [entries, month, categories, kindOf, limit])
 }
 
 /* --- Répartition entre membres --------------------------------------------*/
@@ -286,7 +366,9 @@ export function useMemberIncomes(): MemberIncome[] {
 export function useMemberSharesOfIncome(): Map<string, number> | null {
   const incomes = useMemberIncomes()
   return useMemo(() => {
-    const shares = memberShares(incomes, ZERO)
+    // Aucune charge à répartir : c'est le coefficient qu'on lit ici, pas ce
+    // que chacun doit sur un mois donné.
+    const shares = memberShares(incomes, [])
     if (shares === null) return null
     return new Map(shares.map((s) => [s.memberId, s.shareBp]))
   }, [incomes])
@@ -310,12 +392,12 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
 
   return useMemo(() => {
     const shared = sharedEntries(entries, month, kindOf)
-    const total = sum(shared.map((e) => e.amount))
+    const amounts = shared.map((e) => e.amount)
     const missing = new Set(incomes.filter((i) => i.income === null).map((i) => i.memberId))
     return {
-      total,
+      total: sum(amounts),
       entries: shared,
-      shares: memberShares(incomes, total),
+      shares: memberShares(incomes, amounts),
       unknown: members.filter((m) => missing.has(m.id)),
     }
   }, [entries, month, kindOf, members, incomes])
@@ -469,10 +551,9 @@ export function useRecurrenceRows(): RecurrenceRow[] {
 /* --- Historique -----------------------------------------------------------*/
 
 export function useTrailingMonths(count = 12): MonthPoint[] {
-  const entries = useEntries()
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
-  const member = useMemberFilter()
-  return useMemo(() => trailingMonths(entries, month, count, member), [entries, month, count, member])
+  return useMemo(() => trailingMonths(entries, month, count), [entries, month, count])
 }
 
 /** Bornes de navigation : on ne remonte pas avant la première donnée. */

@@ -49,13 +49,19 @@ export type MoneyParts = {
 /**
  * Découpe un montant pour l'affichage. La partie décimale est rendue à part
  * parce que le DS la réduit à 0.5em sur un chiffre héros.
+ *
+ * `rounded` sert aux lectures sans centimes : l'unité y est arrondie, jamais
+ * tronquée. Tronquer ferait lire « reste 56 € à payer » sur 56,69 € — une
+ * erreur systématiquement en faveur de qui la lit, ce qui est la mauvaise
+ * direction pour un reste à payer.
  */
-export function moneyParts(value: Money, currency: string): MoneyParts {
+export function moneyParts(value: Money, currency: string, rounded = false): MoneyParts {
   const negative = value < 0
   const cents = Math.abs(value)
+  const units = rounded ? Math.round(cents / 100) : Math.trunc(cents / 100)
   return {
     sign: negative ? '−' : '',
-    integer: groupFormatter.format(Math.trunc(cents / 100)),
+    integer: groupFormatter.format(units),
     fraction: String(cents % 100).padStart(2, '0'),
     symbol: currencySymbol(currency),
   }
@@ -63,7 +69,7 @@ export function moneyParts(value: Money, currency: string): MoneyParts {
 
 /** Montant en une seule chaîne — pour un `aria-label` ou un titre SVG. */
 export function formatMoney(value: Money, currency: string, withCents = true): string {
-  const p = moneyParts(value, currency)
+  const p = moneyParts(value, currency, !withCents)
   const body = withCents ? `${p.integer},${p.fraction}` : p.integer
   return `${p.sign}${body}${NBSP_NARROW}${p.symbol}`
 }

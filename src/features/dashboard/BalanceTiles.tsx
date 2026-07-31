@@ -8,6 +8,7 @@ import { BalanceIcon, ForecastIcon, RemainingIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { nextIncomeDate } from '@/domain/stats'
 import { useMonthEntries } from '@/store/selectors'
+import type { Metric } from './MetricInfo'
 
 /**
  * Solde du mois : entrées confirmées − sorties confirmées. C'est l'unique
@@ -25,12 +26,13 @@ function progressLabel(ym: string, progress: number, days: number): string {
   return tpl(fr.dashboard.progress, Math.round(progress * days), days)
 }
 
-export function BalanceTile({ onExplain }: { onExplain: () => void }) {
+export function BalanceTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
   const totals = useMonthTotals()
   const ym = useCurrentYm()
   const progress = useMonthProgress()
   const { y, m } = parseYm(ym)
   const days = daysInMonth(y, m)
+  const hint = progressLabel(ym, progress, days)
 
   return (
     /* La tuile entière ouvre l'explication : sur une 2×1, un bouton « i » et
@@ -39,7 +41,9 @@ export function BalanceTile({ onExplain }: { onExplain: () => void }) {
       span="2x2"
       variant="accent"
       className="justify-between"
-      onClick={onExplain}
+      onClick={() => {
+        onExplain({ key: 'balance', value: totals.balance, hint })
+      }}
       label={tpl(fr.dashboard.explain, fr.dashboard.balance)}
     >
       <Eyebrow icon={BalanceIcon}>{fr.dashboard.balance}</Eyebrow>
@@ -47,20 +51,26 @@ export function BalanceTile({ onExplain }: { onExplain: () => void }) {
           tuile porte selon le DS §5. L'anneau signature vit sur la répartition. */}
       <div className="flex flex-col gap-1">
         <Amount value={totals.balance} size="hero-fit" className="min-w-0" />
-        <span className="t-label">{progressLabel(ym, progress, days)}</span>
+        <span className="t-label">{hint}</span>
       </div>
     </Tile>
   )
 }
 
 /** Solde prévisionnel : en incluant les échéances encore prévues. */
-export function ForecastTile({ onExplain }: { onExplain: () => void }) {
+export function ForecastTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
   const totals = useMonthTotals()
   return (
     <Tile
       span="2x1"
       className="justify-between"
-      onClick={onExplain}
+      onClick={() => {
+        onExplain({
+          key: 'forecast',
+          value: totals.forecastBalance,
+          hint: fr.dashboard.forecastHint,
+        })
+      }}
       label={tpl(fr.dashboard.explain, fr.dashboard.forecast)}
     >
       <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
@@ -75,24 +85,25 @@ export function ForecastTile({ onExplain }: { onExplain: () => void }) {
 }
 
 /** Reste à vivre : le prévisionnel arrêté à la prochaine rentrée d'argent. */
-export function RemainingTile({ onExplain }: { onExplain: () => void }) {
+export function RemainingTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
   const remaining = useRestToLive()
   const entries = useMonthEntries()
   const hasIncome = nextIncomeDate(entries, today()) !== null
+  const hint = hasIncome ? fr.dashboard.remainingHint : fr.dashboard.remainingNoIncome
 
   return (
     <Tile
       span="2x1"
       className="justify-between"
-      onClick={onExplain}
+      onClick={() => {
+        onExplain({ key: 'remaining', value: remaining, hint })
+      }}
       label={tpl(fr.dashboard.explain, fr.dashboard.remaining)}
     >
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={remaining} size="tile-fit" tone={remaining < 0 ? 'danger' : 'default'} />
-        <span className="t-label max-lg:sr-only">
-          {hasIncome ? fr.dashboard.remainingHint : fr.dashboard.remainingNoIncome}
-        </span>
+        <span className="t-label max-lg:sr-only">{hint}</span>
       </div>
     </Tile>
   )
