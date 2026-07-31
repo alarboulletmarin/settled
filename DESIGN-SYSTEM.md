@@ -120,7 +120,9 @@ Deux familles, pas trois. La largeur variable d'Archivo remplace un troisième f
 | Rôle | Fonte | Taille | Graisse | Détails |
 |---|---|---|---|---|
 | Chiffre héros | sans | 56 / 72px | 700 | `stretch: 112%`, `tracking: -0.03em` |
-| Chiffre de tuile | sans | 32px | 650 | `tracking: -0.02em` ; ramené à la largeur de sa tuile dans la grille, et à 26px sur une rangée simple |
+| Chiffre de tuile | sans | 32px | 700 | ramené à la largeur de sa tuile dans la grille, et à 26px sur une rangée simple |
+| Montant de ligne | sans | 15px | 700 | |
+| Montant secondaire | sans | 13px | 700 | |
 | Titre de section | sans | 20px | 600 | |
 | Corps | sans | 15px | 400 | `line-height: 1.5` |
 | Libellé secondaire | sans | 13px | 400 | `color: var(--text-muted)` |
@@ -130,6 +132,8 @@ Deux familles, pas trois. La largeur variable d'Archivo remplace un troisième f
 ### Chiffres
 
 `font-variant-numeric: tabular-nums` sur **tout** montant, sans exception. Une colonne de montants qui danse à chaque mise à jour est le défaut le plus visible d'une app de finances.
+
+**Une seule lettre pour tous les montants.** Les quatre tailles ci-dessus sont le même chiffre à quatre échelles : 700, `stretch: 112%`, `tracking: -0.03em`. Seule la taille varie. Un montant de liste et un solde héros doivent se reconnaître comme deux tailles du même chiffre — les faire diverger de graisse et de largeur donne l'impression de deux polices sur le même écran.
 
 Le symbole monétaire se pose à 0.55em de la taille du nombre, aligné en haut, opacité 0.5. Les centimes d'un chiffre héros passent à 0.5em. Le signe n'est affiché que pour les entrées (`+`), une sortie se lit à sa couleur et à son contexte.
 

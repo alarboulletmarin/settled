@@ -30,8 +30,8 @@ const SIZE_CLASS: Record<AmountSize, string> = {
   'hero-fit': 't-hero-fit',
   tile: 't-tile-num',
   'tile-fit': 't-tile-fit',
-  body: 't-body font-medium',
-  label: 't-label',
+  body: 't-num-body',
+  label: 't-num-label',
 }
 
 /** Les centimes d'un chiffre héros passent à 0.5em (DS §3). */
@@ -54,6 +54,11 @@ const TONE_CLASS: Record<AmountTone, string> = {
  * Le composant unique pour tout montant. Il porte seul le tabular-nums, le
  * symbole, les centimes réduits et le signe : aucun autre composant ne met
  * un montant en forme.
+ *
+ * Les six tailles ne diffèrent que par leur taille : la lettre — Archivo 700
+ * élargie à 112 % — est la même partout, déclarée d'un seul bloc dans
+ * `base.css`. Un montant de liste et un solde héros doivent se reconnaître
+ * comme deux tailles du même chiffre, pas comme deux polices.
  */
 export function Amount({
   value,

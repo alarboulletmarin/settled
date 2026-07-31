@@ -43,12 +43,26 @@
 @layer components {
   /* --- Échelle typographique — DS §3 ------------------------------------ */
 
-  .t-hero {
+  /* Un montant a la même lettre partout : Archivo 700, élargie à 112 %,
+     serrée à -0.03em. Seule la taille varie d'un emplacement à l'autre.
+     C'est ce qui manquait à l'écran du mois — le solde portait ce traitement,
+     et tous les autres chiffres un plus étroit et plus léger, si bien qu'ils
+     semblaient d'une autre police. La déclaration est groupée pour qu'aucune
+     taille ne puisse dériver des autres. */
+  .t-hero,
+  .t-hero-fit,
+  .t-tile-num,
+  .t-tile-fit,
+  .t-num-body,
+  .t-num-label {
     font-family: var(--font-sans);
-    font-size: 56px;
     font-weight: 700;
     font-stretch: 112%;
     letter-spacing: -0.03em;
+  }
+
+  .t-hero {
+    font-size: 56px;
     line-height: 1;
   }
 
@@ -62,11 +76,7 @@
      mais ramenée à la largeur du conteneur plutôt que de déborder. Un solde à
      quatre chiffres ne tient pas à 72px dans une tuile 2×2. */
   .t-hero-fit {
-    font-family: var(--font-sans);
     font-size: clamp(28px, 15cqi, 56px);
-    font-weight: 700;
-    font-stretch: 112%;
-    letter-spacing: -0.03em;
     line-height: 1;
   }
 
@@ -77,10 +87,7 @@
   }
 
   .t-tile-num {
-    font-family: var(--font-sans);
     font-size: 32px;
-    font-weight: 650;
-    letter-spacing: -0.02em;
     line-height: 1.05;
   }
 
@@ -90,11 +97,21 @@
      symbole monétaire coupé au bord. La borne haute est celle du DS, donc une
      tuile large ne change pas d'un pixel. */
   .t-tile-fit {
-    font-family: var(--font-sans);
     font-size: clamp(16px, 16cqi, 32px);
-    font-weight: 650;
-    letter-spacing: -0.02em;
     line-height: 1.05;
+  }
+
+  /* Les deux tailles courantes d'un montant : une ligne de liste, une lecture
+     secondaire. Elles ne reprennent plus `t-body` ni `t-label`, dont la lettre
+     est celle du texte et non celle d'un chiffre. */
+  .t-num-body {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .t-num-label {
+    font-size: 13px;
+    line-height: 1.4;
   }
 
   /* Dans une tuile d'une seule rangée, la contrainte n'est plus la largeur mais
