@@ -241,7 +241,11 @@ export const fr = {
 
   entry: {
     add: 'Ajouter une dépense',
+    addOut: 'Ajouter une dépense',
+    addIn: 'Ajouter un revenu',
     edit: 'Modifier l’entrée',
+    editOut: 'Modifier la dépense',
+    editIn: 'Modifier le revenu',
     added: 'Dépense ajoutée',
     updated: 'Entrée modifiée',
     removed: 'Entrée supprimée',

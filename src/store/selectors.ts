@@ -64,6 +64,15 @@ export function useMemberMap(): Map<string, Member> {
 
 /* --- Le mois --------------------------------------------------------------*/
 
+/** Une entrée par son identifiant. `null` si elle n'existe pas (ou plus). */
+export function useEntry(id: string | undefined): Entry | null {
+  const entries = useEntries()
+  return useMemo(
+    () => (id === undefined ? null : (entries.find((entry) => entry.id === id) ?? null)),
+    [entries, id],
+  )
+}
+
 export function useMonthEntries(ym?: YearMonth): Entry[] {
   const entries = useEntries()
   const current = useCurrentYm()

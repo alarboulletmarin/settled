@@ -12,3 +12,8 @@ export const NAV_ROUTES: RouteDef[] = [
 ]
 
 export const STYLEGUIDE_ROUTE: RouteDef = { path: '/styleguide', label: fr.nav.styleguide }
+
+/* La saisie d'une entrée est un écran plein, pas une feuille : elle a donc une
+   URL. Elle ne figure pas dans la navigation, on n'y va que par une action. */
+export const ENTRY_NEW_PATH = '/depense'
+export const entryPath = (id: string): string => `${ENTRY_NEW_PATH}/${id}`

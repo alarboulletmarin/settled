@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
 import { HistoryPage } from '@/features/history/HistoryPage'
+import { EntryPage } from '@/features/month/EntryPage'
 import { MonthPage } from '@/features/month/MonthPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
@@ -21,6 +22,8 @@ function AppRoutes() {
     <AppShell>
       <Routes>
         <Route path="/" element={<MonthPage />} />
+        <Route path="/depense" element={<EntryPage />} />
+        <Route path="/depense/:id" element={<EntryPage />} />
         <Route path="/calendrier" element={<CalendarPage />} />
         <Route path="/abonnements" element={<RecurrencesPage />} />
         <Route path="/historique" element={<HistoryPage />} />

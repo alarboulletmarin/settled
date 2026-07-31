@@ -1,27 +1,22 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import type { Entry } from '@/domain/types'
+import { ENTRY_NEW_PATH, entryPath } from '@/app/routes'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
-import { useCurrentYm, useMonthEntries } from '@/store/selectors'
+import { useMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
 import { EntriesSection } from './EntriesSection'
-import { EntrySheet } from './EntrySheet'
-import { defaultDateFor } from './defaultDate'
 import { OpenMonthNotice, RegenerateEntriesButton } from './OpenMonth'
 import { PendingSection } from './PendingSection'
 
 export function MonthPage() {
-  const ym = useCurrentYm()
   const entries = useMonthEntries()
-  const [editing, setEditing] = useState<Entry | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const navigate = useNavigate()
 
   const openCreate = (): void => {
-    setEditing(null)
-    setSheetOpen(true)
+    void navigate(ENTRY_NEW_PATH)
   }
 
   const isEmpty = entries.length === 0
@@ -57,22 +52,12 @@ export function MonthPage() {
             <PendingSection />
             <EntriesSection
               onOpen={(entry) => {
-                setEditing(entry)
-                setSheetOpen(true)
+                void navigate(entryPath(entry.id))
               }}
             />
           </div>
         </div>
       )}
-
-      <EntrySheet
-        open={sheetOpen}
-        entry={editing}
-        defaultDate={defaultDateFor(ym)}
-        onClose={() => {
-          setSheetOpen(false)
-        }}
-      />
     </>
   )
 }
