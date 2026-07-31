@@ -25,7 +25,7 @@ export function CreditsTile() {
     <Tile span="2x2" className="justify-between">
       <Eyebrow icon={CreditsIcon}>{fr.dashboard.credits}</Eyebrow>
       <div className="flex flex-col gap-1">
-        <Amount value={remaining} size="tile" />
+        <Amount value={remaining} size="tile-fit" />
         <span className="t-label">{fr.dashboard.creditsRemaining}</span>
         <Link
           to={CREDITS_PATH}

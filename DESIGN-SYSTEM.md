@@ -120,7 +120,7 @@ Deux familles, pas trois. La largeur variable d'Archivo remplace un troisième f
 | Rôle | Fonte | Taille | Graisse | Détails |
 |---|---|---|---|---|
 | Chiffre héros | sans | 56 / 72px | 700 | `stretch: 112%`, `tracking: -0.03em` |
-| Chiffre de tuile | sans | 32px | 650 | `tracking: -0.02em` |
+| Chiffre de tuile | sans | 32px | 650 | `tracking: -0.02em` ; ramené à la largeur de sa tuile dans la grille, et à 26px sur une rangée simple |
 | Titre de section | sans | 20px | 600 | |
 | Corps | sans | 15px | 400 | `line-height: 1.5` |
 | Libellé secondaire | sans | 13px | 400 | `color: var(--text-muted)` |
@@ -171,6 +171,8 @@ mobile (2 col)          desktop (6 col)
 Formats autorisés : `2×1`, `2×2`, `4×1`, `4×2`, `6×2`. Rien d'autre, sinon la grille se délite.
 
 Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une visualisation. Si elle en demande un cinquième, c'est deux tuiles.
+
+Ce maximum n'est pas un dû : une tuile d'une seule rangée fait 88px, dont 56 utiles, et l'eyebrow avec un chiffre de 32px en demandent 57 à eux deux. Les formats `2×1` et `4×1` resserrent donc leur cadre à 16px et ramènent leur chiffre à 26px — une demi-tuile porte un demi-chiffre. Un contenu qui déborde quand même se coupe **par le bas** : une liste ancrée au centre remonte sur son eyebrow, ce qui est le seul débordement qui se voie vraiment.
 
 ---
 

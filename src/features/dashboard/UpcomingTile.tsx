@@ -18,9 +18,13 @@ export function UpcomingTile() {
       {upcoming.length === 0 ? (
         <p className="t-label">{fr.dashboard.noUpcoming}</p>
       ) : (
-        <ul className="flex min-h-0 flex-1 flex-col justify-center">
+        /* `justify-center` sur une liste plus haute que sa boîte la faisait
+           déborder des deux côtés : la première ligne passait sous l'eyebrow.
+           Ancrée en haut, un débordement éventuel se coupe par le bas, là où
+           il ne recouvre rien. */
+        <ul className="flex min-h-0 flex-1 flex-col">
           {upcoming.map(({ entry, daysLeft }) => (
-            <li key={entry.id} className="flex items-center gap-2 py-1">
+            <li key={entry.id} className="flex items-center gap-2 py-0.5">
               <Dot color={categories.get(entry.categoryId)?.color ?? 'var(--cat-rest)'} outlined />
               <span className="t-label min-w-0 flex-1 truncate text-text">{entry.label}</span>
               <span className="t-axis shrink-0">

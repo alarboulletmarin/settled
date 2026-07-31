@@ -4,7 +4,7 @@ import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { useCurrency } from './currency'
 
-export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'body' | 'label'
+export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'tile-fit' | 'body' | 'label'
 export type AmountTone = 'default' | 'muted' | 'danger'
 
 export type AmountProps = {
@@ -29,6 +29,7 @@ const SIZE_CLASS: Record<AmountSize, string> = {
   hero: 't-hero',
   'hero-fit': 't-hero-fit',
   tile: 't-tile-num',
+  'tile-fit': 't-tile-fit',
   body: 't-body font-medium',
   label: 't-label',
 }
@@ -38,6 +39,7 @@ const CENTS_EM: Record<AmountSize, string> = {
   hero: '0.5em',
   'hero-fit': '0.5em',
   tile: '1em',
+  'tile-fit': '1em',
   body: '1em',
   label: '1em',
 }

@@ -84,6 +84,28 @@
     line-height: 1.05;
   }
 
+  /* Même chiffre, ramené à la largeur de sa tuile — comme `t-hero-fit` l'est
+     pour le chiffre héros. Une 2×1 n'offre que la moitié de la largeur, et
+     « −1 767,47 € » n'y tient pas à 32px : il débordait par la droite, le
+     symbole monétaire coupé au bord. La borne haute est celle du DS, donc une
+     tuile large ne change pas d'un pixel. */
+  .t-tile-fit {
+    font-family: var(--font-sans);
+    font-size: clamp(16px, 16cqi, 32px);
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+
+  /* Dans une tuile d'une seule rangée, la contrainte n'est plus la largeur mais
+     la hauteur : 88px dont 56 utiles, que l'eyebrow et un chiffre de 32px
+     dépassent à eux deux. La borne haute descend donc — c'est une demi-tuile,
+     elle porte un demi-chiffre. */
+  .span-2x1 .t-tile-fit,
+  .span-4x1 .t-tile-fit {
+    font-size: clamp(16px, 16cqi, 26px);
+  }
+
   .t-section {
     font-family: var(--font-sans);
     font-size: 20px;
