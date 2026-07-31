@@ -6,7 +6,7 @@ import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Debt } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { addDebt, removeDebt, updateDebt } from '@/store/actions'
+import { addDebt, removeDebt, replaceDebt } from '@/store/actions'
 import { useDebtStatus, useRecurrenceRows } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
@@ -96,7 +96,7 @@ function Form({ debt, onDone }: { debt: Debt | null; onDone: () => void }) {
       addDebt(payload)
       toast(fr.credits.added)
     } else {
-      updateDebt(debt.id, payload)
+      replaceDebt(debt.id, payload)
       toast(fr.credits.updated)
     }
     onDone()

@@ -80,8 +80,10 @@ export function addDebt(input: Omit<Debt, 'id'>): Debt {
   return debt
 }
 
-export function updateDebt(id: string, patch: Partial<Debt>): void {
-  mutate((data) => updates.updateDebt(data, id, patch))
+/* Un formulaire pose l'état complet de ce qu'il montre, jamais un correctif :
+   voir `updates.replaceRecurrence`. */
+export function replaceDebt(id: string, next: Omit<Debt, 'id'>): void {
+  mutate((data) => updates.replaceDebt(data, id, next))
 }
 
 export function removeDebt(id: string): void {
@@ -131,8 +133,10 @@ export function addRecurrencePaidOn(input: Omit<Recurrence, 'id'>, on: ISODate):
   return recurrence
 }
 
-export function updateRecurrence(id: string, patch: Partial<Recurrence>): void {
-  mutate((data) => updates.syncRecurrenceEntries(updates.updateRecurrence(data, id, patch), id, makeId))
+export function replaceRecurrence(id: string, next: Omit<Recurrence, 'id'>): void {
+  mutate((data) =>
+    updates.syncRecurrenceEntries(updates.replaceRecurrence(data, id, next), id, makeId),
+  )
 }
 
 export function stopRecurrence(id: string, on: ISODate = today()): void {
@@ -156,8 +160,8 @@ export function addEntry(input: Omit<Entry, 'id'>): Entry {
   return entry
 }
 
-export function updateEntry(id: string, patch: Partial<Entry>): void {
-  mutate((data) => updates.updateEntry(data, id, patch))
+export function replaceEntry(id: string, next: Omit<Entry, 'id' | 'recurrenceId'>): void {
+  mutate((data) => updates.replaceEntry(data, id, next))
 }
 
 export function removeEntry(id: string): void {

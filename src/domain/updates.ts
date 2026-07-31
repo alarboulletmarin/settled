@@ -87,6 +87,15 @@ export function updateDebt(data: Data, id: string, patch: Partial<Debt>): Data {
 }
 
 /**
+ * Réécrit un crédit de bout en bout — même raison que `replaceRecurrence` :
+ * sans cela, détacher la mensualité, remettre le taux à zéro ou vider la note
+ * n'a aucun effet.
+ */
+export function replaceDebt(data: Data, id: string, next: Omit<Debt, 'id'>): Data {
+  return { ...data, debts: data.debts.map((d) => (d.id === id ? { ...next, id } : d)) }
+}
+
+/**
  * Supprime le crédit, jamais sa récurrence ni ses échéances : les mensualités
  * déjà versées ont eu lieu. Cesser de suivre un capital ne réécrit pas ce qui
  * est sorti du compte.
@@ -109,14 +118,62 @@ export function updateRecurrence(data: Data, id: string, patch: Partial<Recurren
 }
 
 /**
+ * Réécrit une récurrence de bout en bout, son identifiant mis à part.
+ *
+ * Un formulaire n'envoie pas un correctif, il envoie l'état complet de ce qu'il
+ * montre : ce qui n'y figure pas, l'utilisateur l'a vidé. Une fusion —
+ * `{ ...r, ...patch }` — ne sait pas distinguer « inchangé » d'« effacé », et
+ * garde donc en place le membre qu'on vient de remettre à « tout le foyer » ou
+ * la case « à partager » qu'on vient de rendre à la règle. L'écran annonce alors
+ * une modification que le document n'a pas prise. La réécriture, elle, efface ce
+ * qui a été effacé.
+ */
+export function replaceRecurrence(data: Data, id: string, next: Omit<Recurrence, 'id'>): Data {
+  return {
+    ...data,
+    recurrences: data.recurrences.map((r) => (r.id === id ? { ...next, id } : r)),
+  }
+}
+
+/**
+ * Recolle une échéance sur la règle qui l'a posée : sous quel libellé et quelle
+ * catégorie elle se lit, dans quel sens, à qui elle est et si elle se partage.
+ *
+ * Tout le reste lui appartient — son montant, sa date, son statut, sa note :
+ * ce sont les seuls champs qu'une échéance peut porter contre sa règle, et les
+ * réécrire effacerait une saisie.
+ */
+function requalify(entry: Entry, recurrence: Recurrence): Entry {
+  const { memberId: _member, shared: _shared, ...rest } = entry
+  return {
+    ...rest,
+    label: recurrence.label,
+    categoryId: recurrence.categoryId,
+    direction: recurrence.direction,
+    ...(recurrence.memberId === undefined ? {} : { memberId: recurrence.memberId }),
+    ...(recurrence.shared === undefined ? {} : { shared: recurrence.shared }),
+  }
+}
+
+/**
  * Réaligne les échéances d'une récurrence sur sa définition courante, dans
  * tous les mois déjà ouverts à partir de `from`.
  *
  * Un abonnement est une règle, une échéance est un fait : c'est la règle qui
  * fabrique les faits, donc la changer doit refaire ceux qui n'ont pas encore
  * eu lieu. Les prévues à venir sont jetées puis régénérées — leur date, leur
- * montant ou leur libellé peuvent tous avoir bougé. Les confirmées restent
- * intactes : elles ont eu lieu, et l'historique ne se réécrit pas (cahier §3).
+ * montant ou leur libellé peuvent tous avoir bougé.
+ *
+ * Une échéance déjà confirmée mais **datée dans le futur** est requalifiée sans
+ * être refaite : confirmer d'avance dit qu'elle aura lieu, pas qu'elle a eu
+ * lieu, et la règle du cahier §3 — « une `Entry` confirmée s'en détache, elle a
+ * eu lieu » — ne s'applique donc pas encore. Sans cela, un foyer qui valide son
+ * mois à venir ne peut plus corriger l'abonnement qui l'a produit : le membre
+ * change sur la règle, et chaque graphique continue de lire l'ancien.
+ *
+ * Le passé, lui, ne bouge pas : ni ce qui est daté d'aujourd'hui ou d'avant, ni
+ * le montant, la date ou le statut d'une confirmée — ceux-là ont pu être saisis
+ * à la main, et les réécrire perdrait la saisie.
  *
  * Rejouer l'opération ne duplique rien : `planMonth` reconnaît une échéance
  * déjà posée à sa paire récurrence + date.
@@ -128,16 +185,27 @@ export function syncRecurrenceEntries(
   from: ISODate = today(),
 ): Data {
   const fromMonth = ymOf(from)
+  const recurrence = data.recurrences.find((r) => r.id === recurrenceId)
+
+  const kept = data.entries.filter(
+    (entry) =>
+      !(
+        entry.recurrenceId === recurrenceId &&
+        entry.status === 'planned' &&
+        ymOf(entry.date) >= fromMonth
+      ),
+  )
+
   let next: Data = {
     ...data,
-    entries: data.entries.filter(
-      (entry) =>
-        !(
-          entry.recurrenceId === recurrenceId &&
-          entry.status === 'planned' &&
-          ymOf(entry.date) >= fromMonth
-        ),
-    ),
+    entries:
+      recurrence === undefined
+        ? kept
+        : kept.map((entry) =>
+            entry.recurrenceId === recurrenceId && entry.date > from
+              ? requalify(entry, recurrence)
+              : entry,
+          ),
   }
 
   for (const state of data.months) {
@@ -198,6 +266,33 @@ export function addEntry(data: Data, entry: Entry): Data {
 
 export function updateEntry(data: Data, id: string, patch: Partial<Entry>): Data {
   return { ...data, entries: data.entries.map((e) => (e.id === id ? { ...e, ...patch } : e)) }
+}
+
+/**
+ * Réécrit une entrée de bout en bout — même raison que `replaceRecurrence` :
+ * un champ vidé dans le formulaire doit disparaître du document.
+ *
+ * Le lien vers la récurrence qui l'a posée survit à la réécriture : il ne se
+ * saisit nulle part, et le perdre couperait l'échéance de son abonnement, donc
+ * l'historique de prix et l'amortissement d'un crédit avec elle.
+ */
+export function replaceEntry(
+  data: Data,
+  id: string,
+  next: Omit<Entry, 'id' | 'recurrenceId'>,
+): Data {
+  return {
+    ...data,
+    entries: data.entries.map((e) =>
+      e.id === id
+        ? {
+            ...next,
+            id,
+            ...(e.recurrenceId === undefined ? {} : { recurrenceId: e.recurrenceId }),
+          }
+        : e,
+    ),
+  }
 }
 
 export function removeEntry(data: Data, id: string): Data {

@@ -5,7 +5,7 @@ import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Direction, Entry } from '@/domain/types'
 import { DIRECTION_PARAM, directionFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
-import { addEntry, addRecurrencePaidOn, removeEntry, updateEntry } from '@/store/actions'
+import { addEntry, addRecurrencePaidOn, removeEntry, replaceEntry } from '@/store/actions'
 import { memberRequired } from '@/domain/split'
 import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
@@ -182,7 +182,7 @@ function EntryForm({
       addEntry(payload)
       toast(TOAST.added[draft.direction])
     } else {
-      updateEntry(entry.id, payload)
+      replaceEntry(entry.id, payload)
       toast(TOAST.updated[draft.direction])
     }
     onDone()
