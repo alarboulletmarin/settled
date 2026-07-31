@@ -106,7 +106,9 @@ lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir c
 qui est replié. L'en-tête garde une lecture visible même replié — un total, un
 compte : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait
 gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
-personne, et les réglages de 4 779 px à 1 137 px.
+personne, les abonnements de 1 518 px à 708 px, et les réglages de 4 779 px à
+1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
+seule fois pour les trois écrans.
 
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.

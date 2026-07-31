@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Category, CategoryKind } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
@@ -6,6 +6,7 @@ import { addCategory, addFamily, archiveCategory, renameFamily, updateCategory }
 import { useAllCategoriesByFamily, useFamilies } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { Disclosure } from '@/ui/Disclosure'
+import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, Select, TextInput } from '@/ui/Field'
@@ -226,22 +227,15 @@ function AddFamily() {
 export function CategoriesSection() {
   const groups = useAllCategoriesByFamily()
   const families = useFamilies()
-  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set())
-
-  const anyOpen = groups.some((g) => opened.has(g.family.id))
+  const keys = useMemo(() => groups.map((g) => g.family.id), [groups])
+  const disclosure = useDisclosureGroup(keys, false)
 
   return (
     <Tile className="gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Eyebrow icon={CategoriesIcon}>{fr.settings.categories}</Eyebrow>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setOpened(anyOpen ? new Set() : new Set(groups.map((g) => g.family.id)))
-          }}
-        >
-          {anyOpen ? fr.settings.collapseAll : fr.settings.expandAll}
+        <Button size="sm" variant="ghost" onClick={disclosure.toggleAll}>
+          {disclosure.anyOpen ? fr.settings.collapseAll : fr.settings.expandAll}
         </Button>
       </div>
       <p className="t-label">{fr.settings.categoriesHint}</p>
@@ -254,15 +248,9 @@ export function CategoriesSection() {
             label={group.family.label}
             kind={group.family.kind}
             categories={group.categories}
-            open={opened.has(group.family.id)}
+            open={disclosure.isOpen(group.family.id)}
             onOpenChange={(open) => {
-              setOpened((current) => {
-                if (open === current.has(group.family.id)) return current
-                const next = new Set(current)
-                if (open) next.add(group.family.id)
-                else next.delete(group.family.id)
-                return next
-              })
+              disclosure.setOpen(group.family.id, open)
             }}
           />
         ))}

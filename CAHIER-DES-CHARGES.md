@@ -159,7 +159,8 @@ Tout est modifiable : renommer une famille, en créer une avec sa nature, ajoute
 - Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable ».
 - Périodicités : hebdomadaire, mensuelle, trimestrielle, annuelle, ou tous les *n* mois.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
-- **Une section par sens**, chacune avec son total mensuel. Le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d'un abonnement dans une liste qui les mêle — d'autant que la pastille prend la teinte de la catégorie, pas du sens. Le total en tête de page, lui, ne compte que les sorties.
+- Liste regroupée sur un axe au choix : **sens**, **catégorie** ou **personne**, chaque groupe portant son nombre d'abonnements et son solde mensuel. Par sens, les deux groupes s'ouvrent — le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d'un abonnement dans une liste qui les mêle, d'autant que la pastille prend la teinte de la catégorie et pas du sens. Sur les deux autres axes ils se replient. Le total en tête de page, lui, ne compte que les sorties.
+- Un groupe dont tout est à montant variable affiche « montant variable » plutôt qu'un zéro, et un groupe qui n'en contient qu'une partie ne compte que ce qu'il sait chiffrer.
 - Les périodicités non mensuelles sont amorties au mois dans toutes les statistiques.
 - Une récurrence peut être arrêtée sans être supprimée.
 - Créer, modifier ou reprendre une récurrence réaligne ses échéances à venir dans la foulée, dans tous les mois ouverts à partir du mois courant. L'utilisateur n'a jamais à demander cette régénération : poser la règle et en tirer les échéances sont un seul geste.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { eur, makeEntry } from './fixtures'
-import { NO_MEMBER, groupEntries } from './grouping'
+import { eur, makeEntry, makeRecurrence } from './fixtures'
+import { NO_MEMBER, groupEntries, groupRecurrences } from './grouping'
+import type { Recurrence } from './types'
 
 const july = [
   makeEntry({ id: 'a', date: '2026-07-05', amount: eur(95_000), categoryId: 'logement' }),
@@ -54,6 +55,59 @@ describe('regroupement par membre', () => {
 
   it('range le plus gros mouvement en tête, entrée ou sortie', () => {
     expect(groupEntries(july, 'member')[0]?.key).toBe('m-2')
+  })
+})
+
+describe('regroupement des récurrences', () => {
+  const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 5 }
+  const priced = (over: Partial<Recurrence> & { id: string }, monthly: number | null) => ({
+    recurrence: makeRecurrence({ period: MONTHLY, ...over }),
+    monthly: monthly === null ? null : eur(monthly),
+  })
+
+  const rows = [
+    priced({ id: 'loyer', categoryId: 'logement' }, 95_000),
+    priced({ id: 'netflix', categoryId: 'loisirs', memberId: 'm-1' }, 1_399),
+    priced({ id: 'elec', categoryId: 'logement' }, 9_310),
+    priced({ id: 'salaire', categoryId: 'salaire', direction: 'in', memberId: 'm-2' }, 250_000),
+  ]
+
+  it('met ce qui sort avant ce qui rentre', () => {
+    expect(groupRecurrences(rows, 'direction').map((g) => g.key)).toEqual(['out', 'in'])
+  })
+
+  it('rend un solde mensuel par groupe', () => {
+    const groups = groupRecurrences(rows, 'direction')
+    expect(groups[0]?.monthly).toBe(-105_709)
+    expect(groups[1]?.monthly).toBe(250_000)
+  })
+
+  it('cumule une famille de charges sous sa catégorie', () => {
+    const logement = groupRecurrences(rows, 'category').find((g) => g.key === 'logement')
+    expect(logement?.rows).toHaveLength(2)
+    expect(logement?.monthly).toBe(-104_310)
+  })
+
+  it('range le plus gros mouvement en tête, hors regroupement par sens', () => {
+    expect(groupRecurrences(rows, 'category')[0]?.key).toBe('salaire')
+    expect(groupRecurrences(rows, 'member')[0]?.key).toBe('m-2')
+  })
+
+  it('range ce que personne ne porte sous une clé à part', () => {
+    const foyer = groupRecurrences(rows, 'member').find((g) => g.key === NO_MEMBER)
+    expect(foyer?.rows.map((r) => r.recurrence.id)).toEqual(['loyer', 'elec'])
+  })
+
+  it('compte à part ce qu’on ne sait pas chiffrer, plutôt que de le valoriser à zéro', () => {
+    const withUnknown = [...rows, priced({ id: 'eau', categoryId: 'logement' }, null)]
+    const logement = groupRecurrences(withUnknown, 'category').find((g) => g.key === 'logement')
+    expect(logement?.unknownCount).toBe(1)
+    expect(logement?.monthly).toBe(-104_310)
+  })
+
+  it('garde l’ordre reçu à l’intérieur d’un groupe', () => {
+    const logement = groupRecurrences(rows, 'category').find((g) => g.key === 'logement')
+    expect(logement?.rows.map((r) => r.recurrence.id)).toEqual(['loyer', 'elec'])
   })
 })
 

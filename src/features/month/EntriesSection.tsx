@@ -7,6 +7,7 @@ import { useCategoryMap, useMemberMap, useMonthConfirmed } from '@/store/selecto
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { Disclosure } from '@/ui/Disclosure'
+import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { EntriesIcon } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
@@ -42,31 +43,12 @@ export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
   const categories = useCategoryMap()
   const members = useMemberMap()
   const [by, setBy] = useState<GroupBy>('day')
-  /* `null` = personne n'a rien touché, le défaut de l'axe s'applique. Changer
-     d'axe y revient, sans avoir à recalculer quoi que ce soit. */
-  const [opened, setOpened] = useState<ReadonlySet<string> | null>(null)
 
   const groups = useMemo(() => groupEntries(entries, by), [entries, by])
-  const effective = useMemo(
-    () => opened ?? new Set(OPEN_BY_DEFAULT[by] ? groups.map((g) => g.key) : []),
-    [opened, by, groups],
-  )
+  const keys = useMemo(() => groups.map((g) => g.key), [groups])
+  const disclosure = useDisclosureGroup(keys, OPEN_BY_DEFAULT[by])
 
   if (entries.length === 0) return null
-
-  const isOpen = (key: string): boolean => effective.has(key)
-
-  const setOpen = (key: string, open: boolean): void => {
-    // `<details>` émet aussi un `toggle` quand c'est nous qui l'avons piloté :
-    // sans ce garde, chaque rendu produirait un Set neuf, donc un autre rendu.
-    if (open === isOpen(key)) return
-    const next = new Set(effective)
-    if (open) next.add(key)
-    else next.delete(key)
-    setOpened(next)
-  }
-
-  const anyOpen = groups.some((g) => isOpen(g.key))
 
   const titleOf = (key: string): string => {
     if (by === 'day') return formatDayFull(key)
@@ -78,14 +60,8 @@ export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
     <Tile className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Eyebrow icon={EntriesIcon}>{fr.month.entries}</Eyebrow>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setOpened(anyOpen ? new Set() : new Set(groups.map((g) => g.key)))
-          }}
-        >
-          {anyOpen ? fr.month.collapseAll : fr.month.expandAll}
+        <Button size="sm" variant="ghost" onClick={disclosure.toggleAll}>
+          {disclosure.anyOpen ? fr.month.collapseAll : fr.month.expandAll}
         </Button>
       </div>
 
@@ -94,7 +70,7 @@ export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
         value={by}
         onChange={(next) => {
           setBy(next)
-          setOpened(null)
+          disclosure.reset()
         }}
         label={fr.month.groupBy}
         className="self-start"
@@ -104,9 +80,9 @@ export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
         {groups.map((group) => (
           <Disclosure
             key={group.key}
-            open={isOpen(group.key)}
+            open={disclosure.isOpen(group.key)}
             onOpenChange={(open) => {
-              setOpen(group.key, open)
+              disclosure.setOpen(group.key, open)
             }}
             title={
               <span className="flex min-w-0 items-baseline gap-2">
