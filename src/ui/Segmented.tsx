@@ -14,10 +14,10 @@ export type SegmentedProps<T extends string> = {
  * Bascule à quelques positions — sens d'un flux, choix de thème, axe de
  * regroupement.
  *
- * Elle passe à la ligne plutôt que de déborder : à quatre positions, la barre
- * dépasse la largeur d'une tuile sur un petit écran, et le dernier axe sortait
- * du cadre. Un débordement horizontal aurait rogné le focus clavier, dont
- * l'`outline-offset` mord de deux pixels hors du bouton.
+ * Elle passe à la ligne plutôt que de déborder : trois positions aux libellés
+ * un peu longs frôlent déjà la largeur d'une tuile sur un écran de 320px, et la
+ * dernière sortait du cadre. Un débordement horizontal aurait rogné le focus
+ * clavier, dont l'`outline-offset` mord de deux pixels hors du bouton.
  */
 export function Segmented<T extends string>({
   options,

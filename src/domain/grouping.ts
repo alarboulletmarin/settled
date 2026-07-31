@@ -8,13 +8,13 @@
 import { type Money, ZERO, add, sub } from './money'
 import type { Entry, Recurrence } from './types'
 
-export type GroupBy = 'day' | 'direction' | 'category' | 'member'
+export type GroupBy = 'day' | 'category' | 'member'
 
 /** Clé du groupe qui rassemble ce que personne ne s'est attribué. */
 export const NO_MEMBER = '__nobody__'
 
 export type EntryGroup = {
-  /** Date ISO, `'in'` / `'out'`, identifiant de catégorie, ou de membre. */
+  /** Date ISO, identifiant de catégorie, ou identifiant de membre. */
   key: string
   entries: Entry[]
   /** Solde du groupe : ce qui entre moins ce qui sort. */
@@ -25,8 +25,6 @@ function keyOf(entry: Entry, by: GroupBy): string {
   switch (by) {
     case 'day':
       return entry.date
-    case 'direction':
-      return entry.direction
     case 'category':
       return entry.categoryId
     case 'member':
@@ -43,10 +41,8 @@ function keyOf(entry: Entry, by: GroupBy): string {
  * la même chose.
  *
  * Par jour, l'ordre est chronologique inverse — c'est celui de la lecture, et
- * le mois se lit du plus récent. Par sens, l'ordre est fixe : ce qui sort
- * d'abord, comme sur les abonnements et comme les tuiles du tableau de bord.
- * Sur les deux autres axes, le plus gros mouvement d'abord : c'est ce qu'on
- * vient chercher.
+ * le mois se lit du plus récent. Sur les deux autres axes, le plus gros
+ * mouvement d'abord : c'est ce qu'on vient chercher.
  */
 export function groupEntries(entries: readonly Entry[], by: GroupBy): EntryGroup[] {
   const groups = new Map<string, Entry[]>()
@@ -67,9 +63,6 @@ export function groupEntries(entries: readonly Entry[], by: GroupBy): EntryGroup
   }))
 
   if (by === 'day') return built.sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0))
-  if (by === 'direction') {
-    return built.sort((a, b) => (a.key === b.key ? 0 : a.key === 'out' ? -1 : 1))
-  }
   return built.sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
 }
 

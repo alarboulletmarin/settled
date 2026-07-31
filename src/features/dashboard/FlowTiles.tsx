@@ -20,9 +20,11 @@ export type ShowFlow = (direction: 'in' | 'out') => void
  * répondrait « presque rien » en début de mois. Ce qui reste à tomber se lit
  * en seconde lecture, là où les autres tuiles plates mettent la leur.
  *
- * Le clic mène aux lignes du mois, regroupées sur ce sens-là. Il ouvrait une
- * feuille qui définissait le chiffre : devant « Charges : 1 166 € », la
- * question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
+ * Le clic filtre la liste du mois sur ce sens-là et l'amène sous les yeux. Il
+ * ouvrait une feuille qui définissait le chiffre : devant « Charges : 1 166 € »,
+ * la question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
+ * Le rangement de la liste n'y touche pas — filtrer n'est pas ranger, et l'axe
+ * choisi est celui de l'utilisateur.
  *
  * Sans ligne confirmée de ce sens, la tuile n'est pas cliquable : mieux vaut
  * qu'elle ne réponde pas que de mener à une liste où son chiffre n'est pas.

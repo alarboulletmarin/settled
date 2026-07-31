@@ -2,14 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { entryNewPath, entryPath } from '@/app/routes'
-import type { GroupBy } from '@/domain/grouping'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
 import { useScopedMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
-import { EntriesSection, type FlowFocus } from './EntriesSection'
+import { EntriesSection, type FlowFilter } from './EntriesSection'
 import { PendingSection } from './PendingSection'
 
 export function MonthPage() {
@@ -18,22 +17,16 @@ export function MonthPage() {
   const entries = useScopedMonthEntries()
   const navigate = useNavigate()
 
-  /* L'axe de la liste se pilote de deux endroits — ses propres onglets, et les
-     deux tuiles de flux. Il vit donc ici, entre les deux. */
-  const [by, setBy] = useState<GroupBy>('day')
-  const [focus, setFocus] = useState<FlowFocus | null>(null)
-
-  const groupBy = (next: GroupBy): void => {
-    setBy(next)
-    // Changer d'axe à la main annule la demande : sans quoi revenir sur les
-    // charges et revenus ferait défiler la page vers un groupe qu'on n'a pas
-    // redemandé.
-    setFocus(null)
-  }
+  /* Le sens montré se pilote de deux endroits — les pilules de la liste, et les
+     deux tuiles de flux. Il vit donc ici, entre les deux. L'axe, lui, ne se
+     pilote que de la liste et y reste : une tuile filtre ce qu'on voit, elle ne
+     range pas la liste autrement que l'utilisateur l'a rangée. */
+  const [flow, setFlow] = useState<FlowFilter>(null)
+  const [focus, setFocus] = useState(0)
 
   const showFlow = (direction: 'in' | 'out'): void => {
-    setBy('direction')
-    setFocus((previous) => ({ direction, seq: (previous?.seq ?? 0) + 1 }))
+    setFlow(direction)
+    setFocus((previous) => previous + 1)
   }
 
   const create = (direction: 'in' | 'out'): void => {
@@ -97,12 +90,9 @@ export function MonthPage() {
           <Dashboard onShowFlow={showFlow} />
           <div className="flex max-w-3xl flex-col gap-4">
             <PendingSection />
-            {/* Remontée à chaque changement d'axe : les groupes repartent du
-                défaut du nouvel axe, sans état à réinitialiser à la main. */}
             <EntriesSection
-              key={by}
-              by={by}
-              onGroupBy={groupBy}
+              flow={flow}
+              onFlow={setFlow}
               focus={focus}
               onOpen={(entry) => {
                 void navigate(entryPath(entry.id))

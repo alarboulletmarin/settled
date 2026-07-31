@@ -348,19 +348,19 @@ export const fr = {
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',
     groupBy: 'Regrouper par',
     byDay: 'Jour',
-    /* Les trois autres onglets nomment une dimension et laissent deviner ses
-       valeurs — un jour, un poste, quelqu'un, on sait à quoi s'attendre.
-       Celui-ci n'a pas ce luxe : « Sens » est le mot de l'app pour dire si
-       l'argent entre ou sort, mais il ne se lit qu'une fois qu'on le sait.
-       Il n'y a que deux valeurs : autant les écrire. */
-    byDirection: 'Charges / Revenus',
     byCategory: 'Catégorie',
     byMember: 'Personne',
-    /* Les mots des deux tuiles de flux, juste au-dessus dans la même page :
-       « Ce qui rentre » et « Ce qui sort », employés sur les abonnements,
-       nommeraient ici une deuxième fois les chiffres déjà lus plus haut. */
-    inflow: 'Revenus',
-    outflow: 'Charges',
+    /* Le sens ne regroupe pas, il filtre. Un axe de plus aurait rendu une
+       lecture — deux blocs dont le tableau de bord donne déjà les totaux ;
+       un filtre les multiplie, puisqu'il se combine aux trois axes : les
+       charges par poste, les revenus par personne, les charges au jour le
+       jour. Les mots sont ceux des deux tuiles, juste au-dessus. */
+    show: 'Montrer',
+    showAll: 'Tout',
+    showOut: 'Charges',
+    showIn: 'Revenus',
+    showEmptyOut: 'Aucune charge confirmée ce mois-ci.',
+    showEmptyIn: 'Aucun revenu confirmé ce mois-ci.',
     groupCountOne: '%s ligne',
     groupCount: '%s lignes',
     collapseAll: 'Tout replier',
