@@ -7,7 +7,8 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { ChargesIcon, type IconComponent, IncomeIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
-import type { Metric, MetricKey } from './MetricInfo'
+/** Ce qu'une tuile de flux fait au clic, quand il y a des lignes à montrer. */
+export type ShowFlow = (direction: 'in' | 'out') => void
 
 /**
  * Les deux chiffres que les quatre soldes combinent sans jamais les dire :
@@ -18,32 +19,43 @@ import type { Metric, MetricKey } from './MetricInfo'
  * question se pose le 3 comme le 28, et un total qui s'arrêterait au confirmé
  * répondrait « presque rien » en début de mois. Ce qui reste à tomber se lit
  * en seconde lecture, là où les autres tuiles plates mettent la leur.
+ *
+ * Le clic filtre la liste du mois sur ce sens-là et l'amène sous les yeux. Il
+ * ouvrait une feuille qui définissait le chiffre : devant « Charges : 1 166 € »,
+ * la question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
+ * Le rangement de la liste n'y touche pas — filtrer n'est pas ranger, et l'axe
+ * choisi est celui de l'utilisateur.
+ *
+ * Sans ligne confirmée de ce sens, la tuile n'est pas cliquable : mieux vaut
+ * qu'elle ne réponde pas que de mener à une liste où son chiffre n'est pas.
  */
 function FlowTile({
-  metricKey,
   label,
   icon,
   flow,
   direction,
   hint,
-  onExplain,
+  onShow,
 }: {
-  metricKey: MetricKey
   label: string
   icon: IconComponent
   flow: Flow
   direction: 'in' | 'out'
   hint: string
-  onExplain: (metric: Metric) => void
+  onShow?: ShowFlow
 }) {
   return (
     <Tile
       span="2x1"
       className="justify-between"
-      onClick={() => {
-        onExplain({ key: metricKey, value: flow.total, direction, hint })
-      }}
-      label={tpl(fr.dashboard.explain, label)}
+      {...(onShow === undefined
+        ? {}
+        : {
+            onClick: () => {
+              onShow(direction)
+            },
+            label: tpl(fr.dashboard.showLines, label),
+          })}
     >
       <Eyebrow icon={icon}>{label}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -59,7 +71,7 @@ function FlowTile({
   )
 }
 
-export function IncomeTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
+export function IncomeTile({ onShow }: { onShow?: ShowFlow }) {
   const { income } = useMonthFlows()
   const currency = useCurrency()
 
@@ -72,18 +84,17 @@ export function IncomeTile({ onExplain }: { onExplain: (metric: Metric) => void 
 
   return (
     <FlowTile
-      metricKey="income"
       label={fr.dashboard.income}
       icon={IncomeIcon}
       flow={income}
       direction="in"
       hint={hint}
-      onExplain={onExplain}
+      {...(onShow === undefined ? {} : { onShow })}
     />
   )
 }
 
-export function ChargesTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
+export function ChargesTile({ onShow }: { onShow?: ShowFlow }) {
   const { spending } = useMonthFlows()
   const currency = useCurrency()
 
@@ -96,13 +107,12 @@ export function ChargesTile({ onExplain }: { onExplain: (metric: Metric) => void
 
   return (
     <FlowTile
-      metricKey="charges"
       label={fr.dashboard.charges}
       icon={ChargesIcon}
       flow={spending}
       direction="out"
       hint={hint}
-      onExplain={onExplain}
+      {...(onShow === undefined ? {} : { onShow })}
     />
   )
 }

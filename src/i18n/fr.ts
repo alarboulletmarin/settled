@@ -279,6 +279,9 @@ export const fr = {
        dit son calcul, puis ce qui le sépare de son voisin — c'est la question
        qu'on se pose devant la grille, pas la définition isolée. */
     explain: 'Comprendre : %s',
+    /* Les deux flux, eux, ne s'expliquent pas : ils mènent à leurs lignes. Un
+       total dont on peut lire le détail n'a pas besoin qu'on le définisse. */
+    showLines: 'Voir les lignes : %s',
     info: {
       /* La phrase avant le calcul : lire d'abord la formule, c'est ouvrir sur
          du vocabulaire qu'on n'a pas encore de quoi comprendre. */
@@ -289,20 +292,6 @@ export const fr = {
         calculation: 'Les entrées confirmées, moins les sorties confirmées.',
         apart:
           'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte.',
-      },
-      income: {
-        lead: 'Ce que le mois te fait gagner, avant que quoi que ce soit n’en sorte.',
-        calculation:
-          'Tout ce qui rentre ce mois-ci — salaires, primes, aides —, échéances encore prévues comprises.',
-        apart:
-          'Le solde du mois a déjà retranché les sorties : il dit ce qu’il te reste, pas ce que tu gagnes. Celui-ci ne compte que ce qui rentre.',
-      },
-      charges: {
-        lead: 'Ce que le mois te coûte, du premier au dernier jour.',
-        calculation:
-          'Les charges et les mensualités de crédit du mois, échéances encore prévues comprises. Un virement sur un livret n’en fait pas partie : il sort du compte mais reste chez toi.',
-        apart:
-          '« Où part l’argent » montre le même total réparti par poste ; celui-ci le pose en clair et dit combien il en reste à payer.',
       },
       forecast: {
         lead: 'Là où le mois atterrit si tout ce qui est prévu se passe comme prévu.',
@@ -361,6 +350,17 @@ export const fr = {
     byDay: 'Jour',
     byCategory: 'Catégorie',
     byMember: 'Personne',
+    /* Le sens ne regroupe pas, il filtre. Un axe de plus aurait rendu une
+       lecture — deux blocs dont le tableau de bord donne déjà les totaux ;
+       un filtre les multiplie, puisqu'il se combine aux trois axes : les
+       charges par poste, les revenus par personne, les charges au jour le
+       jour. Les mots sont ceux des deux tuiles, juste au-dessus. */
+    show: 'Montrer',
+    showAll: 'Tout',
+    showOut: 'Charges',
+    showIn: 'Revenus',
+    showEmptyOut: 'Aucune charge confirmée ce mois-ci.',
+    showEmptyIn: 'Aucun revenu confirmé ce mois-ci.',
     groupCountOne: '%s ligne',
     groupCount: '%s lignes',
     collapseAll: 'Tout replier',
