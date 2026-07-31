@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import { ENTRY_NEW_PATH, entryPath } from '@/app/routes'
+import { entryNewPath, entryPath } from '@/app/routes'
 import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDate } from '@/i18n/format'
@@ -26,7 +26,7 @@ function DayPanel({
   entries: Entry[]
   date: string
   onOpen: (e: Entry) => void
-  onAdd: () => void
+  onAdd: (direction: 'in' | 'out') => void
 }) {
   const categories = useCategoryMap()
   const members = useMemberMap()
@@ -56,11 +56,30 @@ function DayPanel({
         </ul>
       )}
       {/* Le jour choisi est déjà la réponse à « quelle date ? » : la saisie
-          s'ouvre dessus plutôt que de la redemander. */}
-      <Button variant="secondary" size="sm" className="self-start" onClick={onAdd}>
-        <Plus size={16} />
-        {fr.entry.add}
-      </Button>
+          s'ouvre dessus plutôt que de la redemander. Et le sens se choisit
+          ici, pas dans un formulaire intitulé « dépense ». */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            onAdd('out')
+          }}
+        >
+          <Plus size={16} />
+          {fr.entry.newOut}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            onAdd('in')
+          }}
+        >
+          <Plus size={16} />
+          {fr.entry.newIn}
+        </Button>
+      </div>
     </Tile>
   )
 }
@@ -70,8 +89,8 @@ export function CalendarPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
 
-  const create = (date?: string): void => {
-    void navigate(date === undefined ? ENTRY_NEW_PATH : `${ENTRY_NEW_PATH}?date=${date}`)
+  const create = (direction: 'in' | 'out', date?: string): void => {
+    void navigate(entryNewPath(date === undefined ? { direction } : { direction, date }))
   }
 
   const hasAny = month.days.some((day) => day.entries.length > 0)
@@ -94,21 +113,33 @@ export function CalendarPage() {
             onOpen={(entry) => {
               void navigate(entryPath(entry.id))
             }}
-            onAdd={() => {
-              create(day.date)
+            onAdd={(direction) => {
+              create(direction, day.date)
             }}
           />
         ) : (
           // L'invitation portait une action — « ouvre le mois » — que cet écran
           // n'offre pas. Elle porte maintenant celle qu'il sait faire.
           !hasAny && (
-            <EmptyState
-              message={fr.calendar.empty}
-              actionLabel={fr.entry.add}
-              onAction={() => {
-                create()
-              }}
-            />
+            <EmptyState message={fr.calendar.empty}>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button
+                  onClick={() => {
+                    create('out')
+                  }}
+                >
+                  {fr.entry.addOut}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    create('in')
+                  }}
+                >
+                  {fr.entry.addIn}
+                </Button>
+              </div>
+            </EmptyState>
           )
         )}
       </div>

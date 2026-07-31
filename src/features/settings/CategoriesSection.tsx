@@ -98,6 +98,7 @@ export function CategoriesSection() {
             <TextInput
               id={id}
               value={label}
+              placeholder={fr.settings.categoryPlaceholder}
               maxLength={30}
               onChange={(event) => {
                 setLabel(event.target.value)

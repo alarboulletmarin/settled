@@ -11,6 +11,8 @@ import {
   readLastExport,
   serializeData,
   shouldRemindExport,
+  dismissReminder,
+  readReminderDismissed,
 } from './transfer'
 
 /** Un document qui exerce tous les champs du modèle, y compris les optionnels. */
@@ -201,5 +203,22 @@ describe('rappel d’export', () => {
   it('relit la date qu’il a écrite', () => {
     markExported('2026-07-30')
     expect(readLastExport()).toBe('2026-07-30')
+  })
+
+  it('se tait tant que l’écart tient, puis rappelle de nouveau', () => {
+    expect(shouldRemindExport(null, '2026-07-30', true, '2026-07-30')).toBe(false)
+    expect(shouldRemindExport(null, '2026-08-29', true, '2026-07-30')).toBe(false)
+    expect(shouldRemindExport(null, '2026-08-30', true, '2026-07-30')).toBe(true)
+  })
+
+  it('garde l’écart d’un rendu à l’autre', () => {
+    dismissReminder('2026-07-30')
+    expect(readReminderDismissed()).toBe('2026-07-30')
+  })
+
+  it('oublie l’écart dès qu’un export a lieu', () => {
+    dismissReminder('2026-07-30')
+    markExported('2026-07-31')
+    expect(readReminderDismissed()).toBeNull()
   })
 })

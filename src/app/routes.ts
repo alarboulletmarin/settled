@@ -18,6 +18,24 @@ export const STYLEGUIDE_ROUTE: RouteDef = { path: '/styleguide', label: fr.nav.s
 export const ENTRY_NEW_PATH = '/depense'
 export const entryPath = (id: string): string => `${ENTRY_NEW_PATH}/${id}`
 
+/* Le sens voyage dans l'URL, en clair : une saisie de revenu s'ouvre déjà
+   réglée sur « Entrée » au lieu de demander de corriger un formulaire de
+   dépense. `date` sert au calendrier, qui connaît déjà le jour visé. */
+export const DIRECTION_PARAM = 'sens'
+const DIRECTION_VALUE = { in: 'entree', out: 'sortie' } as const
+
+export function directionFromParam(value: string | null): 'in' | 'out' {
+  return value === DIRECTION_VALUE.in ? 'in' : 'out'
+}
+
+export function entryNewPath(options: { direction?: 'in' | 'out'; date?: string } = {}): string {
+  const params = new URLSearchParams()
+  if (options.direction !== undefined) params.set(DIRECTION_PARAM, DIRECTION_VALUE[options.direction])
+  if (options.date !== undefined) params.set('date', options.date)
+  const query = params.toString()
+  return query === '' ? ENTRY_NEW_PATH : `${ENTRY_NEW_PATH}?${query}`
+}
+
 const RECURRENCES_PATH = '/abonnements'
 /* Segment fixe : React Router le classe avant `/abonnements/:id`, un
    abonnement ne peut donc pas éclipser le formulaire de création. */

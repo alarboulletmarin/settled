@@ -16,11 +16,27 @@ export type FieldProps = {
   hint?: string
   error?: string
   optional?: boolean
+  /** Marque le champ comme obligatoire, en pendant exact de `optional`. */
+  required?: boolean
   className?: string
 }
 
-/** Enveloppe libellé + aide + erreur. Le contrôle reste piloté par l'appelant. */
-export function Field({ label, children, hint, error, optional, className }: FieldProps) {
+/**
+ * Enveloppe libellé + aide + erreur. Le contrôle reste piloté par l'appelant.
+ *
+ * La mention se lit dans le libellé, donc dans le nom accessible du contrôle :
+ * un lecteur d'écran annonce « Montant · obligatoire » sans qu'on ait à poser
+ * un `aria-required` en plus.
+ */
+export function Field({
+  label,
+  children,
+  hint,
+  error,
+  optional,
+  required,
+  className,
+}: FieldProps) {
   const id = useId()
   const helpId = `${id}-help`
   const describedBy = error ?? hint ? helpId : undefined
@@ -29,6 +45,7 @@ export function Field({ label, children, hint, error, optional, className }: Fie
     <div className={cn('flex flex-col gap-1.5', className)}>
       <label htmlFor={id} className="t-label text-text">
         {label}
+        {required === true && <span className="text-muted"> · {fr.common.required}</span>}
         {optional === true && <span className="text-muted"> · {fr.common.optional}</span>}
       </label>
       {children(id, describedBy)}

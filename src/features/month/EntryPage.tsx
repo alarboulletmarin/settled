@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from '
 import { type ISODate, isValidISO } from '@/domain/date'
 import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Direction, Entry } from '@/domain/types'
+import { DIRECTION_PARAM, directionFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { addEntry, removeEntry, updateEntry } from '@/store/actions'
 import { useActiveCategories, useCurrentYm, useEntry, useMembers } from '@/store/selectors'
@@ -29,10 +30,10 @@ type Draft = {
   note: string
 }
 
-function initial(entry: Entry | null, defaultDate: ISODate): Draft {
+function initial(entry: Entry | null, defaultDate: ISODate, defaultDirection: Direction): Draft {
   return {
     amountText: entry ? toAmountInput(entry.amount) : '',
-    direction: entry?.direction ?? 'out',
+    direction: entry?.direction ?? defaultDirection,
     categoryId: entry?.categoryId ?? '',
     date: entry?.date ?? defaultDate,
     label: entry?.label ?? '',
@@ -47,6 +48,14 @@ function titleFor(entry: Entry | null, direction: Direction): string {
   return direction === 'in' ? fr.entry.editIn : fr.entry.editOut
 }
 
+/** Et la confirmation aussi : annoncer « Dépense ajoutée » après un salaire
+ *  ferait douter de ce qui vient d'être enregistré. */
+const TOAST = {
+  added: { in: fr.entry.addedIn, out: fr.entry.addedOut },
+  updated: { in: fr.entry.updatedIn, out: fr.entry.updatedOut },
+  removed: { in: fr.entry.removedIn, out: fr.entry.removedOut },
+} as const
+
 /**
  * Formulaire court du cahier §4.4 : montant, catégorie, date, libellé, membre.
  * Une saisie ponctuelle est créée directement en `confirmed`.
@@ -57,15 +66,17 @@ function titleFor(entry: Entry | null, direction: Direction): string {
 function EntryForm({
   entry,
   defaultDate,
+  defaultDirection,
   onDone,
 }: {
   entry: Entry | null
   defaultDate: ISODate
+  defaultDirection: Direction
   onDone: () => void
 }) {
   const categories = useActiveCategories()
   const members = useMembers()
-  const [draft, setDraft] = useState<Draft>(() => initial(entry, defaultDate))
+  const [draft, setDraft] = useState<Draft>(() => initial(entry, defaultDate, defaultDirection))
   const [showErrors, setShowErrors] = useState(false)
 
   const amount = parseAmount(draft.amountText)
@@ -96,10 +107,10 @@ function EntryForm({
     }
     if (entry === null) {
       addEntry(payload)
-      toast(fr.entry.added)
+      toast(TOAST.added[draft.direction])
     } else {
       updateEntry(entry.id, payload)
-      toast(fr.entry.updated)
+      toast(TOAST.updated[draft.direction])
     }
     onDone()
   }
@@ -131,7 +142,7 @@ function EntryForm({
             className="self-start"
           />
 
-          <Field label={fr.entry.amount} {...(shown.amount ? { error: shown.amount } : {})}>
+          <Field label={fr.entry.amount} required {...(shown.amount ? { error: shown.amount } : {})}>
             {(id, describedBy) => (
               <AmountInput
                 id={id}
@@ -147,7 +158,7 @@ function EntryForm({
             )}
           </Field>
 
-          <Field label={fr.entry.category} {...(shown.category ? { error: shown.category } : {})}>
+          <Field label={fr.entry.category} required {...(shown.category ? { error: shown.category } : {})}>
             {(id, describedBy) => (
               <Select
                 id={id}
@@ -157,7 +168,7 @@ function EntryForm({
                   patch({ categoryId: e.target.value })
                 }}
               >
-                <option value="">—</option>
+                <option value="">{fr.entry.categoryPlaceholder}</option>
                 {forDirection.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.label}
@@ -167,7 +178,7 @@ function EntryForm({
             )}
           </Field>
 
-          <Field label={fr.entry.date}>
+          <Field label={fr.entry.date} required>
             {(id) => (
               <TextInput
                 id={id}
@@ -180,7 +191,7 @@ function EntryForm({
             )}
           </Field>
 
-          <Field label={fr.entry.label} {...(shown.label ? { error: shown.label } : {})}>
+          <Field label={fr.entry.label} required {...(shown.label ? { error: shown.label } : {})}>
             {(id, describedBy) => (
               <TextInput
                 id={id}
@@ -235,7 +246,7 @@ function EntryForm({
             variant="ghost"
             onClick={() => {
               removeEntry(entry.id)
-              toast(fr.entry.removed)
+              toast(TOAST.removed[entry.direction])
               onDone()
             }}
           >
@@ -278,6 +289,7 @@ export function EntryPage() {
       key={entry?.id ?? 'new'}
       entry={entry}
       defaultDate={defaultDate}
+      defaultDirection={directionFromParam(params.get(DIRECTION_PARAM))}
       onDone={goBack}
     />
   )

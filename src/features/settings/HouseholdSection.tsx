@@ -20,11 +20,12 @@ export function HouseholdSection() {
     <Tile className="gap-4">
       <Eyebrow>{fr.settings.household}</Eyebrow>
 
-      <Field label={fr.settings.householdName}>
+      <Field label={fr.settings.householdName} required>
         {(id) => (
           <TextInput
             id={id}
             value={name}
+            placeholder={fr.settings.householdPlaceholder}
             maxLength={40}
             onChange={(event) => {
               setHouseholdName(event.target.value)
@@ -77,6 +78,7 @@ export function HouseholdSection() {
               <TextInput
                 id={id}
                 value={newMember}
+                placeholder={fr.settings.memberPlaceholder}
                 maxLength={24}
                 onChange={(event) => {
                   setNewMember(event.target.value)

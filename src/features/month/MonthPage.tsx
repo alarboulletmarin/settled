@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import { ENTRY_NEW_PATH, entryPath } from '@/app/routes'
+import { entryNewPath, entryPath } from '@/app/routes'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
 import { useMonthEntries } from '@/store/selectors'
@@ -15,8 +15,8 @@ export function MonthPage() {
   const entries = useMonthEntries()
   const navigate = useNavigate()
 
-  const openCreate = (): void => {
-    void navigate(ENTRY_NEW_PATH)
+  const create = (direction: 'in' | 'out'): void => {
+    void navigate(entryNewPath({ direction }))
   }
 
   const isEmpty = entries.length === 0
@@ -28,21 +28,51 @@ export function MonthPage() {
 
       <OpenMonthNotice />
 
-      {/* Mois vide, toutes les actions vivent dans l'état vide : les répéter
-          au-dessus afficherait deux fois « Ajouter une dépense » d'un coup
-          d'œil, et laisserait la régénération seule au sommet de l'écran. */}
+      {/* Les deux sens sont deux boutons, jamais un seul. Passer par « Ajouter
+          une dépense » pour saisir un salaire obligeait à découvrir, une fois
+          le formulaire ouvert, une bascule dont rien n'annonçait l'existence. */}
       {!isEmpty && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Button onClick={openCreate}>
+          <Button
+            onClick={() => {
+              create('out')
+            }}
+          >
             <Plus size={18} />
-            {fr.entry.add}
+            {fr.entry.newOut}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              create('in')
+            }}
+          >
+            <Plus size={18} />
+            {fr.entry.newIn}
           </Button>
           <RegenerateEntriesButton />
         </div>
       )}
 
       {isEmpty ? (
-        <EmptyState message={fr.month.empty} actionLabel={fr.entry.add} onAction={openCreate}>
+        <EmptyState message={fr.month.empty}>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button
+              onClick={() => {
+                create('out')
+              }}
+            >
+              {fr.entry.addOut}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                create('in')
+              }}
+            >
+              {fr.entry.addIn}
+            </Button>
+          </div>
           <RegenerateEntriesButton />
         </EmptyState>
       ) : (

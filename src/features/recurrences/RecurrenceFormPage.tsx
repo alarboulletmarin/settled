@@ -71,6 +71,7 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
               <TextInput
                 id={id}
                 value={draft.note}
+                placeholder={fr.recurrences.form.notePlaceholder}
                 maxLength={140}
                 onChange={(e) => {
                   patch({ note: e.target.value })

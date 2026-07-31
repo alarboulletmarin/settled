@@ -1,76 +1,48 @@
-/* Traits fonctionnels uniquement — chevrons, croix, plus, coche. Le DS interdit
- * l'icône décorative : aucun de ces glyphes n'apparaît sans rôle d'action. */
+/* Adaptateur au-dessus de Phosphor. Les composants gardent les noms et la
+ * signature d'avant : le reste de l'app ne sait pas d'où viennent les glyphes,
+ * et changer de bibliothèque ne touchera que ce fichier.
+ *
+ * Import par chemin direct plutôt que depuis l'index : le barrel expose neuf
+ * mille icônes, que Vite doit toutes analyser au démarrage en dev même si le
+ * build final n'en garde que sept.
+ *
+ * Le DS interdit l'icône décorative : aucun de ces glyphes n'apparaît sans
+ * rôle d'action. C'est cette règle qui limite le catalogue, pas la
+ * bibliothèque — elle, elle est là pour le jour où il s'allonge. */
+
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
+import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown'
+import { CaretLeft } from '@phosphor-icons/react/dist/csr/CaretLeft'
+import { CaretRight } from '@phosphor-icons/react/dist/csr/CaretRight'
+import { Check as PhCheck } from '@phosphor-icons/react/dist/csr/Check'
+import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
+import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle'
+import { X } from '@phosphor-icons/react/dist/csr/X'
 
 type IconProps = { className?: string; size?: number }
 
-function svgProps(size: number) {
-  return {
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    fill: 'none' as const,
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true,
-    focusable: false,
+/* `bold` est la graisse qui retombe sur le trait de 2px du DS ; `regular`
+   maigrirait à côté du texte, et `fill` contredirait « trait fonctionnel ». */
+const WEIGHT = 'bold' as const
+
+function adapt(Glyph: PhosphorIcon) {
+  return function Adapted({ className, size = 20 }: IconProps) {
+    return (
+      <Glyph
+        size={size}
+        weight={WEIGHT}
+        className={className}
+        aria-hidden="true"
+        focusable={false}
+      />
+    )
   }
 }
 
-export function ChevronLeft({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M15 5 8 12l7 7" />
-    </svg>
-  )
-}
-
-export function ChevronRight({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="m9 5 7 7-7 7" />
-    </svg>
-  )
-}
-
-export function ChevronDown({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="m5 9 7 7 7-7" />
-    </svg>
-  )
-}
-
-export function Plus({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
-export function Close({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M6 6l12 12M18 6 6 18" />
-    </svg>
-  )
-}
-
-export function Check({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="m5 13 4.5 4.5L19 7" />
-    </svg>
-  )
-}
-
-export function Warning({ className, size = 20 }: IconProps) {
-  return (
-    <svg {...svgProps(size)} className={className}>
-      <path d="M12 8v5M12 17h.01" />
-      <circle cx="12" cy="12" r="9" />
-    </svg>
-  )
-}
+export const ChevronLeft = adapt(CaretLeft)
+export const ChevronRight = adapt(CaretRight)
+export const ChevronDown = adapt(CaretDown)
+export const Plus = adapt(PhPlus)
+export const Close = adapt(X)
+export const Check = adapt(PhCheck)
+export const Warning = adapt(WarningCircle)

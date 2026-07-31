@@ -26,7 +26,7 @@ export type FieldsProps = {
 export function IdentityFields({ draft, patch, errors, categories, members }: FieldsProps) {
   return (
     <>
-      <Field label={fr.recurrences.form.label} {...(errors.label ? { error: errors.label } : {})}>
+      <Field label={fr.recurrences.form.label} required {...(errors.label ? { error: errors.label } : {})}>
         {(id, describedBy) => (
           <TextInput
             id={id}
@@ -53,6 +53,7 @@ export function IdentityFields({ draft, patch, errors, categories, members }: Fi
 
       <Field
         label={fr.recurrences.form.category}
+        required
         {...(errors.category ? { error: errors.category } : {})}
       >
         {(id, describedBy) => (
@@ -64,7 +65,7 @@ export function IdentityFields({ draft, patch, errors, categories, members }: Fi
               patch({ categoryId: e.target.value })
             }}
           >
-            <option value="">—</option>
+            <option value="">{fr.recurrences.form.categoryPlaceholder}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.label}
@@ -115,6 +116,7 @@ export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'catego
       ) : (
         <Field
           label={fr.recurrences.form.amount}
+          required
           {...(errors.amount ? { error: errors.amount } : {})}
         >
           {(id, describedBy) => (
@@ -138,7 +140,7 @@ export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'catego
 export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patch'>) {
   return (
     <>
-      <Field label={fr.recurrences.form.period}>
+      <Field label={fr.recurrences.form.period} required>
         {(id) => (
           <Select
             id={id}
@@ -156,7 +158,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
         )}
       </Field>
 
-      <Field label={fr.recurrences.form.startedOn}>
+      <Field label={fr.recurrences.form.startedOn} required>
         {(id) => (
           <TextInput
             id={id}
@@ -170,7 +172,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
       </Field>
 
       {draft.kind === 'weekly' && (
-        <Field label={fr.recurrences.form.weekday}>
+        <Field label={fr.recurrences.form.weekday} required>
           {(id) => (
             <Select
               id={id}
@@ -190,7 +192,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
       )}
 
       {draft.kind === 'everyNMonths' && (
-        <Field label={fr.recurrences.form.everyMonths}>
+        <Field label={fr.recurrences.form.everyMonths} required>
           {(id) => (
             <TextInput
               id={id}
@@ -207,7 +209,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
       )}
 
       {draft.kind !== 'weekly' && draft.kind !== 'yearly' && (
-        <Field label={fr.recurrences.form.monthDay} hint={fr.recurrences.form.monthDayHint}>
+        <Field label={fr.recurrences.form.monthDay} required hint={fr.recurrences.form.monthDayHint}>
           {(id, describedBy) => (
             <TextInput
               id={id}

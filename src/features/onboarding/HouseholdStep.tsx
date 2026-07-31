@@ -32,6 +32,7 @@ export function HouseholdStep({
 
       <Field
         label={fr.onboarding.householdLabel}
+        required
         {...(invalid ? { error: fr.onboarding.householdEmpty } : {})}
       >
         {(id, describedBy) => (
@@ -40,6 +41,7 @@ export function HouseholdStep({
             aria-describedby={describedBy}
             value={name}
             invalid={invalid}
+            placeholder={fr.onboarding.householdPlaceholder}
             autoFocus
             maxLength={40}
             onChange={(event) => {
