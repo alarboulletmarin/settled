@@ -4,7 +4,7 @@ import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Sheet } from '@/ui/Sheet'
 
-export type MetricKey = 'balance' | 'income' | 'charges' | 'forecast' | 'remaining' | 'capacity'
+export type MetricKey = 'balance' | 'forecast' | 'remaining' | 'capacity'
 
 /**
  * Ce qu'une tuile passe à la feuille en s'ouvrant : sa clé, son chiffre, et la
@@ -14,8 +14,6 @@ export type MetricKey = 'balance' | 'income' | 'charges' | 'forecast' | 'remaini
 export type Metric = {
   key: MetricKey
   value: Money
-  /** Un flux porte son sens ; un solde n'en a pas, il porte son signe. */
-  direction?: 'in' | 'out'
   hint: string
 }
 
@@ -31,8 +29,6 @@ type Explanation = {
 
 const CONTENT: Record<MetricKey, Explanation> = {
   balance: { title: fr.dashboard.balance, ...fr.dashboard.info.balance },
-  income: { title: fr.dashboard.income, ...fr.dashboard.info.income },
-  charges: { title: fr.dashboard.charges, ...fr.dashboard.info.charges },
   forecast: { title: fr.dashboard.forecast, ...fr.dashboard.info.forecast },
   remaining: { title: fr.dashboard.remaining, ...fr.dashboard.info.remaining },
   capacity: { title: fr.dashboard.capacity, ...fr.dashboard.info.capacity },
@@ -42,11 +38,14 @@ const CONTENT: Record<MetricKey, Explanation> = {
  * Ce que dit un chiffre du tableau de bord, et ce qui le distingue de ses
  * voisins.
  *
- * Six tuiles portent un chiffre qui se ressemble à l'œil sans dire la même
- * chose — quatre soldes, plus ce qui rentre et ce qui se paie. Leur lecture
- * secondaire l'explique — mais une tuile d'une rangée fait 88px, et cette ligne
- * n'y tient qu'au-delà de 1024px : sur un téléphone, l'explication existait sans
- * jamais s'afficher.
+ * Quatre soldes portent un chiffre qui se ressemble à l'œil sans dire la même
+ * chose. Leur lecture secondaire l'explique — mais une tuile d'une rangée fait
+ * 88px, et cette ligne n'y tient qu'au-delà de 1024px : sur un téléphone,
+ * l'explication existait sans jamais s'afficher.
+ *
+ * Les deux tuiles de flux ne sont pas de la partie : ce qui rentre et ce qui se
+ * paie n'ont pas besoin d'être définis, ils ont besoin d'être détaillés. Elles
+ * mènent donc à leurs lignes plutôt qu'à une feuille.
  *
  * La feuille reprend donc le chiffre et cette lecture, et pas seulement les
  * phrases : sur téléphone, c'est le seul endroit où « reste 102 € à payer » se
@@ -73,11 +72,7 @@ export function MetricInfo({
       {content !== null && metric !== null && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-baseline gap-x-3">
-            <Amount
-              value={metric.value}
-              size="tile"
-              {...(metric.direction === undefined ? {} : { direction: metric.direction })}
-            />
+            <Amount value={metric.value} size="tile" />
             <span className="t-label">{metric.hint}</span>
           </div>
 

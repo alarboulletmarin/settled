@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { useMonthConfirmed } from '@/store/selectors'
 import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile } from './BreakdownTile'
 import { CreditsTile } from './CreditsTile'
 import { DailyTile } from './DailyTile'
-import { ChargesTile, IncomeTile } from './FlowTiles'
+import { ChargesTile, IncomeTile, type ShowFlow } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
 import { SavingTile } from './SavingTile'
@@ -31,16 +32,29 @@ import { UpcomingTile } from './UpcomingTile'
  *
  * La feuille d'explication vit ici, hors de la grille : un `<dialog>` posé
  * parmi les tuiles en occuperait une case tant qu'il est fermé.
+ *
+ * Les deux tuiles de flux, elles, ne s'expliquent pas : elles mènent aux lignes
+ * du mois. C'est la page qui tient cette liste, pas la grille — d'où le relais.
+ *
+ * Un sens dont rien n'est confirmé n'a aucune ligne à montrer : sa tuile porte
+ * quand même un chiffre, qui compte les échéances encore prévues. Elle ne
+ * s'ouvre alors pas, plutôt que de mener à une liste où son chiffre n'est pas.
  */
-export function Dashboard() {
+export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
   const [metric, setMetric] = useState<Metric | null>(null)
+  const confirmed = useMonthConfirmed()
+
+  const flow = (direction: 'in' | 'out'): { onShow?: ShowFlow } =>
+    onShowFlow !== undefined && confirmed.some((entry) => entry.direction === direction)
+      ? { onShow: onShowFlow }
+      : {}
 
   return (
     <>
       <BentoGrid>
         <BalanceTile onExplain={setMetric} />
-        <IncomeTile onExplain={setMetric} />
-        <ChargesTile onExplain={setMetric} />
+        <IncomeTile {...flow('in')} />
+        <ChargesTile {...flow('out')} />
         <MemberShareTile />
         <BreakdownTile />
         <ForecastTile onExplain={setMetric} />

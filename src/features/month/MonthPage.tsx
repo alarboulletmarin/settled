@@ -1,13 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { entryNewPath, entryPath } from '@/app/routes'
+import type { GroupBy } from '@/domain/grouping'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
 import { useScopedMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
-import { EntriesSection } from './EntriesSection'
+import { EntriesSection, type FlowFocus } from './EntriesSection'
 import { PendingSection } from './PendingSection'
 
 export function MonthPage() {
@@ -15,6 +17,24 @@ export function MonthPage() {
      sa part des charges communes en fait partie. */
   const entries = useScopedMonthEntries()
   const navigate = useNavigate()
+
+  /* L'axe de la liste se pilote de deux endroits — ses propres onglets, et les
+     deux tuiles de flux. Il vit donc ici, entre les deux. */
+  const [by, setBy] = useState<GroupBy>('day')
+  const [focus, setFocus] = useState<FlowFocus | null>(null)
+
+  const groupBy = (next: GroupBy): void => {
+    setBy(next)
+    // Changer d'axe à la main annule la demande : sans quoi revenir sur les
+    // charges et revenus ferait défiler la page vers un groupe qu'on n'a pas
+    // redemandé.
+    setFocus(null)
+  }
+
+  const showFlow = (direction: 'in' | 'out'): void => {
+    setBy('direction')
+    setFocus((previous) => ({ direction, seq: (previous?.seq ?? 0) + 1 }))
+  }
 
   const create = (direction: 'in' | 'out'): void => {
     void navigate(entryNewPath({ direction }))
@@ -74,10 +94,16 @@ export function MonthPage() {
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
-          <Dashboard />
+          <Dashboard onShowFlow={showFlow} />
           <div className="flex max-w-3xl flex-col gap-4">
             <PendingSection />
+            {/* Remontée à chaque changement d'axe : les groupes repartent du
+                défaut du nouvel axe, sans état à réinitialiser à la main. */}
             <EntriesSection
+              key={by}
+              by={by}
+              onGroupBy={groupBy}
+              focus={focus}
               onOpen={(entry) => {
                 void navigate(entryPath(entry.id))
               }}
