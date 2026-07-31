@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CREDITS_PATH, RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
+import { ADVANCE_NEW_PATH, CREDITS_PATH, RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
 import { NO_MEMBER, type RecurrenceGroupBy, groupRecurrences } from '@/domain/grouping'
 import { fr } from '@/i18n/fr'
-import { formatMoney, tpl } from '@/i18n/format'
+import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
+import { removeAdvance } from '@/store/actions'
 import {
+  useAdvanceStatuses,
   useCategoryMap,
   useMemberMap,
   useRecurrenceRows,
@@ -17,11 +19,12 @@ import { Disclosure } from '@/ui/Disclosure'
 import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { Plus, RecurrencesIcon } from '@/ui/Icons'
+import { Plus, RecurrencesIcon, SavingsIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
+import { toast } from '@/ui/toast'
 import { RecurrenceRow } from './RecurrenceRow'
 
 const AXES = [
@@ -217,6 +220,98 @@ function GroupedList({
   )
 }
 
+/**
+ * Les avances en cours — une charge payée en une fois, qu'on se remet sur le
+ * livret mois par mois.
+ *
+ * Ici et non ailleurs parce que ce qu'une avance produit *est* une récurrence :
+ * la mensualité qui reconstitue l'épargne. Elle figure d'ailleurs dans la liste
+ * au-dessus, sous son support. Ce que cette section ajoute, c'est ce que la
+ * mensualité seule ne dit pas — combien a été avancé, et combien il reste à se
+ * rendre.
+ */
+function AdvancesSection({ onCreate }: { onCreate: () => void }) {
+  const statuses = useAdvanceStatuses()
+  const categories = useCategoryMap()
+  const members = useMemberMap()
+  const currency = useCurrency()
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-col gap-1">
+          <Eyebrow icon={SavingsIcon}>{fr.advances.section}</Eyebrow>
+          <p className="t-label">{fr.advances.sectionHint}</p>
+        </div>
+        <Button size="sm" variant="secondary" onClick={onCreate}>
+          <Plus size={18} />
+          {fr.common.add}
+        </Button>
+      </div>
+
+      {statuses.length === 0 ? (
+        <p className="t-label">{fr.advances.empty}</p>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {statuses.map((status) => {
+            const { advance } = status
+            return (
+              <li key={advance.id}>
+                <Tile className="gap-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                    <span className="t-body min-w-0 flex-1 truncate font-medium">
+                      {advance.label}
+                    </span>
+                    <Amount value={status.monthly} size="body" direction="out" />
+                  </div>
+                  <span className="t-axis">
+                    {tpl(fr.advances.monthlyOf, formatMoney(status.monthly, currency, false), status.months)}
+                    {' · '}
+                    {members.get(advance.memberId)?.name ?? ''}
+                    {' · '}
+                    {categories.get(advance.categoryId)?.label ?? fr.common.other}
+                  </span>
+
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border pt-3">
+                    <span className="t-label">
+                      {status.settled ? fr.advances.settled : fr.advances.remaining}
+                    </span>
+                    <Amount
+                      value={status.remaining}
+                      size="body"
+                      tone={status.settled ? 'muted' : 'default'}
+                    />
+                    <span className="t-axis w-full">
+                      {`${fr.advances.restored} ${formatMoney(status.restored, currency)} · ${tpl(
+                        fr.advances.over,
+                        formatYearMonth(advance.from),
+                        formatYearMonth(advance.to),
+                      )}`}
+                    </span>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="self-start"
+                    onClick={() => {
+                      if (!confirm(fr.advances.removeConfirm)) return
+                      removeAdvance(advance.id)
+                      toast(fr.advances.deleted)
+                    }}
+                  >
+                    {fr.advances.remove}
+                  </Button>
+                </Tile>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 function StoppedList({
   rows,
   onOpen,
@@ -284,6 +379,10 @@ export function RecurrencesPage() {
     void navigate(recurrencePath(id))
   }
 
+  const openAdvance = (): void => {
+    void navigate(ADVANCE_NEW_PATH)
+  }
+
   return (
     <>
       {/* L'état vide porte déjà le même bouton : le garder en titre l'affiche
@@ -312,6 +411,12 @@ export function RecurrencesPage() {
           {stopped.length > 0 && <StoppedList rows={stopped} onOpen={openDetail} />}
         </div>
       )}
+
+      {/* Hors du branchement, comme le lien vers les crédits : une avance
+          s'enregistre très bien avant la première récurrence saisie à la main. */}
+      <div className="mt-6 flex max-w-3xl flex-col">
+        <AdvancesSection onCreate={openAdvance} />
+      </div>
 
       {/* Hors du branchement : sans récurrence non plus, on n'avait aucun
           chemin vers les crédits — et un crédit s'enregistre très bien avant

@@ -193,6 +193,7 @@ export function emptyData(): Data {
     recurrences: [],
     entries: [],
     debts: [],
+    advances: [],
     months: [],
     settings: { theme: 'system', currency: 'EUR', monthStartsOn: 1 },
   }

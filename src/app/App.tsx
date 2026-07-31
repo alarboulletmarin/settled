@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AdvanceFormPage } from '@/features/advances/AdvanceFormPage'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
 import { CreditFormPage } from '@/features/credits/CreditFormPage'
 import { CreditsPage } from '@/features/credits/CreditsPage'
@@ -16,7 +17,7 @@ import { SplitPage } from '@/features/split/SplitPage'
 import { useStore } from '@/store/store'
 import { StyleguidePage } from '@/styleguide/StyleguidePage'
 import { useApplyTheme } from '@/theme/useTheme'
-import { RECURRENCES_PATH, RECURRENCE_NEW_PATH } from './routes'
+import { ADVANCE_NEW_PATH, RECURRENCES_PATH, RECURRENCE_NEW_PATH } from './routes'
 import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
 import { AppShell } from './AppShell'
@@ -45,6 +46,7 @@ function AppRoutes() {
         <Route path="/credits/:id" element={<CreditFormPage />} />
         <Route path="/repartition" element={<SplitPage />} />
         <Route path="/epargne" element={<SavingsPage />} />
+        <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
         <Route path="/historique" element={<HistoryPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

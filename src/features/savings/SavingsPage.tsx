@@ -75,18 +75,31 @@ function Capacity({ capacity }: { capacity: Money }) {
   )
 }
 
-/** Où l'épargne du mois se place, du plus gros support au plus petit. */
+/**
+ * Où l'épargne du mois se place, du plus gros support au plus petit.
+ *
+ * Les montants sont signés, et c'est indispensable : une avance reprend 600 €
+ * sur un livret le mois où elle est posée, et un support qui rend plus qu'il ne
+ * reçoit afficherait sinon « 510 € » là où il faut lire « −510 € ». Le « + »
+ * n'est pas décoratif non plus — il dit ce qui entre sur le support, en regard
+ * de ce qui en sort.
+ */
 function Placed({ saved }: { saved: Money }) {
   const slices = useSavingsByCategory()
   const categories = useCategoryMap()
   const unassigned = useUnassignedSavings()
   const filter = useMemberFilter()
 
+  /* Une part n'a de sens qu'entre des mouvements de même signe : sur un mois
+     où l'on reprend plus qu'on ne place, « −24 % » ne veut rien dire, et le
+     montant à côté dit déjà tout ce qu'il y a à savoir. */
+  const shares = saved > ZERO && slices.every((slice) => slice.total > ZERO)
+
   return (
     <Tile className="gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3">
         <Eyebrow>{fr.savings.placed}</Eyebrow>
-        <Amount value={saved} size="body" direction="out" />
+        <Amount value={saved} size="body" signed />
       </div>
 
       {slices.length === 0 ? (
@@ -98,13 +111,17 @@ function Placed({ saved }: { saved: Money }) {
               <ListRow
                 color={categories.get(slice.categoryId)?.color ?? 'var(--cat-rest)'}
                 label={categories.get(slice.categoryId)?.label ?? fr.common.other}
-                meta={formatPercent(slice.share)}
-                trailing={<Amount value={slice.total} direction="out" />}
+                {...(shares ? { meta: formatPercent(slice.share) } : {})}
+                trailing={<Amount value={slice.total} signed />}
               />
             </li>
           ))}
         </ul>
       )}
+
+      {/* Le mois où une avance est posée : le livret a rendu plus qu'il n'a
+          reçu, et le chiffre négatif au-dessus paraîtrait faux sans ça. */}
+      {saved < ZERO && <p className="t-label">{fr.savings.withdrawn}</p>}
 
       {/* Un versement resté « tout le foyer » n'est à personne, et l'épargne ne
           se partage pas : il ne compte dans la capacité de personne, et rien
@@ -142,7 +159,11 @@ function Left({ left, rate }: { left: Money; rate: number | null }) {
             : fr.savings.leftHint}
       </span>
       <span className="t-label">
-        {rate === null ? fr.savings.rateNone : tpl(fr.savings.rate, formatPercent(rate))}
+        {rate === null
+          ? fr.savings.rateNone
+          : rate < 0
+            ? fr.savings.withdrawn
+            : tpl(fr.savings.rate, formatPercent(rate))}
       </span>
     </Tile>
   )
@@ -172,7 +193,12 @@ function MemberRow({ saving }: { saving: MemberSaving }) {
       </div>
       <ul className="flex flex-col gap-1.5 border-t border-border pt-3">
         <Term label={fr.savings.capacity} value={saving.capacity} />
-        <Term label={fr.savings.placedTotal} value={saving.saved} direction="out" />
+        {/* Signé, comme la ventilation : un mois de reprise rend un versé
+            négatif, et le montrer positif serait un chiffre faux. */}
+        <li className="flex items-baseline gap-3">
+          <span className="t-label min-w-0 flex-1 truncate">{fr.savings.placedTotal}</span>
+          <Amount value={saving.saved} size="body" signed className="shrink-0" />
+        </li>
         <li className="flex items-baseline gap-3">
           <span className="t-label min-w-0 flex-1 truncate">
             {over ? fr.savings.over : fr.savings.left}

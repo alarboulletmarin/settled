@@ -498,3 +498,49 @@ describe('ce qui rentre et ce qui se paie', () => {
     expect(spendingFlow(empty, empty)).toEqual({ total: 0, done: 0, left: 0 })
   })
 })
+
+/* Une reprise d'épargne — payer l'assurance de l'année depuis le livret —
+   entre en sens `in` sur une catégorie d'épargne. La compter comme un
+   versement dirait que le mois où l'on a vidé 600 € du livret est un mois où
+   l'on a mis 600 € de côté. */
+describe('une reprise d’épargne se retranche des versements', () => {
+  const kindOf = (id: string): CategoryKind =>
+    id === 'salaire' ? 'resource' : id === 'livret' ? 'saving' : 'charge'
+
+  const month = [
+    makeEntry({ id: 'a', categoryId: 'salaire', direction: 'in', date: '2026-07-01', amount: eur(200000) }),
+    makeEntry({ id: 'b', categoryId: 'loyer', date: '2026-07-05', amount: eur(80000) }),
+    makeEntry({ id: 'c', categoryId: 'livret', date: '2026-07-10', amount: eur(5000) }),
+    makeEntry({ id: 'd', categoryId: 'livret', direction: 'in', date: '2026-07-15', amount: eur(60000) }),
+  ]
+
+  it('rend une épargne nette, versements moins reprises', () => {
+    expect(totalsByKind(month, '2026-07', kindOf).saving).toBe(-55000)
+  })
+
+  it('ne touche ni aux ressources ni aux charges', () => {
+    const totals = totalsByKind(month, '2026-07', kindOf)
+    expect(totals.resource).toBe(200000)
+    expect(totals.charge).toBe(80000)
+    expect(savingCapacity(totals)).toBe(120000)
+  })
+
+  /* Reprendre 600 € et n'en remettre que 50 laisse 550 € à replacer en plus de
+     la capacité du mois : c'est bien ce qu'il faudrait pour être quitte. */
+  it('ajoute au reste à placer ce qui a été repris', () => {
+    expect(savingLeft(totalsByKind(month, '2026-07', kindOf))).toBe(175000)
+  })
+
+  it('rend le support à son solde net, pas à la somme des mouvements', () => {
+    const slices = savingsByCategory(month, '2026-07', kindOf)
+    expect(slices).toEqual([{ categoryId: 'livret', total: -55000, share: 1 }])
+  })
+
+  it('retire un support autant repris que reconstitué : il n’a rien reçu', () => {
+    const wash = [
+      makeEntry({ id: 'x', categoryId: 'livret', date: '2026-07-10', amount: eur(60000) }),
+      makeEntry({ id: 'y', categoryId: 'livret', direction: 'in', date: '2026-07-15', amount: eur(60000) }),
+    ]
+    expect(savingsByCategory(wash, '2026-07', kindOf)).toEqual([])
+  })
+})

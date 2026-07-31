@@ -8,7 +8,17 @@
 
 import { type ISODate, type YearMonth, today, ymOf } from './date'
 import { buildPlannedEntry, planMonth } from './month'
-import type { Category, Data, Debt, Entry, Family, Member, Recurrence, Settings } from './types'
+import type {
+  Advance,
+  Category,
+  Data,
+  Debt,
+  Entry,
+  Family,
+  Member,
+  Recurrence,
+  Settings,
+} from './types'
 
 /* --- Foyer et membres -----------------------------------------------------*/
 
@@ -102,6 +112,26 @@ export function replaceDebt(data: Data, id: string, next: Omit<Debt, 'id'>): Dat
  */
 export function removeDebt(data: Data, id: string): Data {
   return { ...data, debts: data.debts.filter((d) => d.id !== id) }
+}
+
+/* --- Avances --------------------------------------------------------------*/
+
+export function addAdvance(data: Data, advance: Advance): Data {
+  return { ...data, advances: [...data.advances, advance] }
+}
+
+/** Réécrit une avance de bout en bout — même raison que `replaceDebt`. */
+export function replaceAdvance(data: Data, id: string, next: Omit<Advance, 'id'>): Data {
+  return { ...data, advances: data.advances.map((a) => (a.id === id ? { ...next, id } : a)) }
+}
+
+/**
+ * Supprime l'avance, jamais sa récurrence ni ses échéances : ce qui est déjà
+ * revenu sur le livret y est revenu. Cesser de suivre ce qu'on se doit ne
+ * réécrit pas ce qui est sorti du compte.
+ */
+export function removeAdvance(data: Data, id: string): Data {
+  return { ...data, advances: data.advances.filter((a) => a.id !== id) }
 }
 
 /* --- Récurrences ----------------------------------------------------------*/

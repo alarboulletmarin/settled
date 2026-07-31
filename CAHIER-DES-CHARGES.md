@@ -28,10 +28,12 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Catégories rangées en familles, sous quatre natures
 - Membres du foyer comme étiquette
 - Répartition des charges communes entre membres, au prorata des revenus
+- Capacité d'épargne, ventilation par support et reste à placer, par personne
+- Avances : une charge payée en une fois depuis l'épargne, remboursée mois par mois
 - Export / import du fichier de données
 - Thème clair et sombre
 
-**Hors v1** — épargne et objectifs, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
+**Hors v1** — objectifs d'épargne datés, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
 
 ---
 
@@ -50,6 +52,7 @@ type Data = {
   recurrences: Recurrence[]
   entries: Entry[]
   debts: Debt[]
+  advances: Advance[]
   months: MonthState[]
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
@@ -83,6 +86,21 @@ type Debt = {
   startedOn: string
   endsOn: string
   rateBp?: number               // taux annuel en points de base, 450 = 4,50 %
+  note?: string
+}
+
+// Une charge payée en une fois depuis l'épargne, remboursée à soi-même mois
+// par mois. La mensualité est de nature `saving` : la charge a déjà eu lieu.
+type Advance = {
+  id: string
+  label: string
+  categoryId: string            // la nature de la charge avancée
+  memberId: string              // jamais facultatif : une épargne est à quelqu'un
+  amount: Money                 // ce qui a été payé, en une fois
+  paidOn: string                // le jour de la reprise sur le livret
+  from: string                  // "2026-08" — premier mois couvert
+  to: string                    // "2027-07" — dernier mois couvert, inclus
+  recurrenceId?: string         // la mensualité qui reconstitue l'épargne
   note?: string
 }
 
@@ -135,6 +153,8 @@ type MonthState = {
 - Le sens d'une catégorie découle de la nature de sa famille, jamais l'inverse : `resource` entre, les trois autres sortent. Un versement sort du compte exactement comme une charge — c'est la nature, pas le sens, qui les distingue.
 - Un `Debt` ne produit aucun chiffre de trésorerie : ce sont les `Entry` de la récurrence liée qui font sortir l'argent. Il n'ajoute que le capital, que la somme des mensualités ne dit pas dès qu'il y a des intérêts.
 - Le revenu d'un membre est **dérivé de ses récurrences** de nature `resource`, ramenées au mois — jamais stocké à côté. Le déclarer en plus en ferait une seconde vérité, et la première augmentation les ferait diverger. C'est aussi ce qui donne au coefficient sa stabilité : une récurrence est une règle, une prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce qu'on gagne.
+- Un `Advance` ne produit aucun chiffre de trésorerie non plus : la reprise du jour du paiement et les mensualités qui la reconstituent sont des `Entry`. Il n'ajoute que ce qui a été avancé, donc ce qu'il reste à se rendre.
+- **L'épargne se compte en net**, seule des quatre natures : les versements moins les reprises. Une reprise est une `Entry` de sens `in` sur une catégorie `saving` — sans quoi le mois où l'on vide 600 € d'un livret se lirait comme un mois où l'on a mis 600 € de côté.
 - `shared` est une **exception** à la règle de partage, jamais sa copie. Absent, la règle tranche — et c'est ce qui permet à tout ce qui a déjà été saisi de rester exploitable sans être requalifié.
 
 ---
@@ -268,6 +288,22 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 - Le total **s'ouvre** sur la liste de ce qu'il compte, de la plus lourde à la plus légère. Un chiffre de répartition qu'on ne peut pas vérifier ne se vérifie pas, et une dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
 - **À quelqu'un, ou à tout le monde.** Une ligne sans propriétaire et hors partage sort du compte du foyer sans apparaître dans le mois de personne : la somme des soldes individuels cesse alors de valoir celui du foyer, sans que rien ne le dise. C'est le cas d'un versement d'épargne que personne ne revendique — l'épargne ne se partage jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle est, et de toute entrée d'argent, qui ne se partage pas davantage. La saisie exige donc le membre dans ces cas-là, et seulement dans ces cas-là : ailleurs, la règle de partage sait déjà où ranger la ligne. C'est une contrainte de saisie, pas une validation d'import : un document plus ancien garde ses lignes telles quelles, et les corriger se fait en les rouvrant.
 - La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
+
+### 4.7 quater Avances
+
+Une **avance** est une charge payée en une fois depuis l'épargne, et remboursée à soi-même mois par mois. L'assurance auto se règle en un versement de 600 € qui couvre douze mois : la payer depuis un livret et se reverser 50 € chaque mois est le montage le plus courant d'un foyer qui n'encaisse pas un tel coup sur un seul mois.
+
+Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la charge, le support d'épargne repris, qui a avancé, et la période couverte — deux mois, bornes comprises.
+
+- **La mensualité n'est pas une charge.** La charge a eu lieu, une fois. Ce qui se passe ensuite est un retour d'épargne : on remet sur le livret ce qu'on lui a pris. Elle est donc de nature `saving`, ne pèse pas dans les charges du mois, et réduit le reste à placer plutôt que la capacité d'épargne.
+- **La mensualité se déduit, elle ne se saisit pas.** Répartie aux plus forts restes sur les mois couverts : sept mois à 85,71 € laisseraient trois centimes qu'aucune mensualité ne rendrait jamais. Deux chiffres saisis séparément finiraient de toute façon par ne plus se répondre.
+- Comme un crédit, une avance ne produit aucun chiffre de trésorerie par elle-même : c'est **la récurrence liée** qui pose les mensualités, sur le support à reconstituer. Elle figure donc dans la liste des récurrences, sous ce support.
+- **Le jour du paiement, une reprise d'épargne est enregistrée** : une `Entry` de sens `in` sur le support, du montant avancé. Le livret baisse d'autant, et cet argent redevient disponible. La dépense qu'elle a financée se saisit comme les autres — l'app ne l'invente pas à la place de qui l'a faite.
+- **L'épargne se compte donc en net**, seule des quatre natures : ce qu'on y met moins ce qu'on y reprend. Sans quoi le mois où l'on vide 600 € d'un livret se lirait comme un mois où l'on a mis 600 € de côté. Les trois autres natures n'ont qu'un sens possible, il n'y a rien à y compenser.
+- **Ce qui reste à remettre est dérivé**, jamais saisi : le montant avancé moins les échéances **effectivement confirmées**, à leur montant à elles, et jamais négatif. Même raison qu'un crédit — on peut se rembourser plus vite, sauter un mois, corriger un montant, et rejouer le passé au montant d'aujourd'hui inventerait un historique. Une échéance antérieure au paiement ne compte pas.
+- Cochée « à partager », la mensualité entre dans les charges communes : chacun en porte sa part au prorata, et celui qui a avancé se retrouve remboursé.
+- Le membre n'est **jamais facultatif** : une épargne est toujours à quelqu'un, et une avance que personne ne porte ne se reconstituerait sur le livret de personne.
+- **Pas d'écran de reprise** : une avance décrit un paiement qui a eu lieu, une fois. La corriger, c'est la retirer et la reposer. Le retrait emporte la mensualité à venir — une avance qu'on ne suit plus n'a plus de raison de se reverser — mais jamais ce qui est déjà revenu sur le livret.
 
 ### 4.8 Données
 

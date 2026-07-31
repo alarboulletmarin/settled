@@ -93,6 +93,13 @@ const EMPTY_KINDS: KindTotals = { resource: ZERO, charge: ZERO, debt: ZERO, savi
  * `planned` compris ou non selon `forecast` : la lecture réalisée et la
  * lecture prévisionnelle répondent à deux questions différentes, et mélanger
  * les deux donnerait un taux d'épargne qui bouge tout seul au fil du mois.
+ *
+ * L'épargne se compte **en net**, seule des quatre natures : ce qu'on y met
+ * moins ce qu'on y reprend. Une reprise — payer l'assurance de l'année depuis
+ * le livret — entre en sens `in`, et la compter comme un versement dirait que
+ * le mois où l'on a vidé 600 € du livret est un mois où l'on a mis 600 € de
+ * côté. Les trois autres natures n'ont qu'un sens possible, il n'y a rien à
+ * y compenser.
  */
 export function totalsByKind(
   entries: readonly Entry[],
@@ -107,7 +114,10 @@ export function totalsByKind(
   const totals = { ...EMPTY_KINDS }
   for (const entry of scoped) {
     const kind = kindOf(entry.categoryId)
-    totals[kind] = add(totals[kind], entry.amount)
+    totals[kind] =
+      kind === 'saving' && entry.direction === 'in'
+        ? sub(totals[kind], entry.amount)
+        : add(totals[kind], entry.amount)
   }
   return totals
 }
@@ -322,8 +332,18 @@ export function savingsByCategory(
   )
   const byCategory = new Map<string, Money>()
   for (const entry of scoped) {
-    byCategory.set(entry.categoryId, add(byCategory.get(entry.categoryId) ?? ZERO, entry.amount))
+    // Net, comme `totalsByKind` : un livret dans lequel on a repris 600 € et
+    // remis 50 € n'a pas reçu 650 € ce mois-ci.
+    const current = byCategory.get(entry.categoryId) ?? ZERO
+    byCategory.set(
+      entry.categoryId,
+      entry.direction === 'in' ? sub(current, entry.amount) : add(current, entry.amount),
+    )
   }
+
+  // Un support autant repris que reconstitué dans le même mois n'a rien reçu :
+  // l'afficher à zéro ajouterait une ligne qui ne dit rien.
+  for (const [id, total] of byCategory) if (total === ZERO) byCategory.delete(id)
 
   return topSlices(byCategory, limit)
 }

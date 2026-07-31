@@ -6,9 +6,10 @@
  * Ce qui est simplement absent, en revanche, reprend sa valeur par défaut.
  * ==========================================================================*/
 
-import { isValidISO, today } from '@/domain/date'
+import { isValidYm, isValidISO, today, ymOf } from '@/domain/date'
 import { isMoney, type Money } from '@/domain/money'
 import type {
+  Advance,
   Category,
   CategoryKind,
   Data,
@@ -47,6 +48,9 @@ const direction = (v: unknown): Direction => (v === 'in' ? 'in' : 'out')
 
 const isoDate = (v: unknown, fallback: string): string =>
   typeof v === 'string' && isValidISO(v) ? v : fallback
+
+const yearMonth = (v: unknown, fallback: string): string =>
+  typeof v === 'string' && isValidYm(v) ? v : fallback
 
 const array = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
@@ -114,6 +118,37 @@ function debt(raw: unknown, index: number): Debt | null {
     startedOn,
     endsOn: isoDate(raw['endsOn'], startedOn),
     ...(rate > 0 ? { rateBp: rate } : {}),
+    ...(note === undefined ? {} : { note }),
+  }
+}
+
+/**
+ * Une avance sans montant lisible est écartée, comme un crédit sans capital :
+ * c'est le seul chiffre qu'elle apporte, et sans lui il n'y a rien à
+ * reconstituer.
+ *
+ * Le membre, lui, ne peut pas manquer : une épargne est toujours à quelqu'un.
+ * Faute de savoir à qui, on écarte plutôt que d'inventer un porteur.
+ */
+function advance(raw: unknown, index: number): Advance | null {
+  if (!isRecord(raw)) return null
+  if (!isMoney(raw['amount'])) return null
+  const memberId = optionalStr(raw['memberId'])
+  if (memberId === undefined) return null
+  const recurrenceId = optionalStr(raw['recurrenceId'])
+  const note = optionalStr(raw['note'])
+  const paidOn = isoDate(raw['paidOn'], today())
+  const from = yearMonth(raw['from'], ymOf(paidOn))
+  return {
+    id: str(raw['id'], `advance-${String(index)}`),
+    label: str(raw['label'], '—'),
+    categoryId: str(raw['categoryId'], ''),
+    memberId,
+    amount: raw['amount'],
+    paidOn,
+    from,
+    to: yearMonth(raw['to'], from),
+    ...(recurrenceId === undefined ? {} : { recurrenceId }),
     ...(note === undefined ? {} : { note }),
   }
 }
@@ -238,6 +273,7 @@ export function normalizeData(raw: unknown): Data {
     recurrences: compact(array(source['recurrences']), recurrence),
     entries: compact(array(source['entries']), entry),
     debts: compact(array(source['debts']), debt),
+    advances: compact(array(source['advances']), advance),
     months: compact(array(source['months']), monthState),
     settings: settings(source['settings']),
   }

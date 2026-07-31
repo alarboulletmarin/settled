@@ -36,6 +36,7 @@ import {
   totalsByKind,
   upcomingEntries,
 } from '@/domain/stats'
+import { type AdvanceStatus, advanceStatus } from '@/domain/advance'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
 import {
   type MemberCharges,
@@ -49,6 +50,7 @@ import {
   unassignedIncomes,
 } from '@/domain/split'
 import {
+  type Advance,
   type Category,
   type CategoryKind,
   type Debt,
@@ -67,6 +69,7 @@ export const useRecurrences = (): Recurrence[] => useStore((s) => s.data.recurre
 export const useCategories = (): Category[] => useStore((s) => s.data.categories)
 export const useFamilies = (): Family[] => useStore((s) => s.data.families)
 export const useDebts = (): Debt[] => useStore((s) => s.data.debts)
+export const useAdvances = (): Advance[] => useStore((s) => s.data.advances)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
@@ -550,6 +553,49 @@ export function useMemberSavings(): MemberSaving[] {
         ]
       }),
     [members, entries, month, kindOf, incomes],
+  )
+}
+
+/**
+ * Où en est chaque avance, la plus lourde à reconstituer d'abord.
+ *
+ * Sur le mois affiché et non au jour où l'on regarde : ouvrir novembre doit
+ * dire ce qu'il restera à se rembourser fin novembre, pas ce qu'il reste
+ * aujourd'hui. C'est la règle que suit déjà le revenu qui sert au prorata.
+ */
+export function useAdvanceStatuses(): AdvanceStatus[] {
+  const advances = useAdvances()
+  const entries = useEntries()
+  const month = useCurrentYm()
+  return useMemo(
+    () =>
+      advances
+        .map((advance) => advanceStatus(advance, entries, month))
+        .sort((a, b) => b.remaining - a.remaining),
+    [advances, entries, month],
+  )
+}
+
+/** L'état d'une avance. `null` si elle n'existe pas (ou plus). */
+export function useAdvanceStatus(id: string | undefined): AdvanceStatus | null {
+  const statuses = useAdvanceStatuses()
+  return useMemo(
+    () => (id === undefined ? null : (statuses.find((s) => s.advance.id === id) ?? null)),
+    [statuses, id],
+  )
+}
+
+/** Les récurrences que des avances portent : elles se lisent sur leur avance. */
+export function useAdvanceRecurrenceIds(): Set<string> {
+  const advances = useAdvances()
+  return useMemo(
+    () =>
+      new Set(
+        advances.flatMap((advance) =>
+          advance.recurrenceId === undefined ? [] : [advance.recurrenceId],
+        ),
+      ),
+    [advances],
   )
 }
 

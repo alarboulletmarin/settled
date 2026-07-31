@@ -589,6 +589,66 @@ export const fr = {
     srShares: 'Parts de chacun : %s',
   },
 
+  advances: {
+    title: 'Avances',
+    /* Le mot dit le geste : tu as avancé de l'argent, tu te le rembourses. La
+       liste vit sous les récurrences parce que c'en est une — la mensualité
+       qui remet l'épargne en place. */
+    section: 'Avances',
+    sectionHint:
+      'Une charge payée en une fois depuis l’épargne, que tu te remets sur ton livret mois par mois.',
+    add: 'Ajouter une avance',
+    added: 'Avance ajoutée',
+    deleted: 'Avance retirée',
+    empty: 'Aucune avance en cours.',
+
+    label: 'Ce que tu as payé',
+    labelPlaceholder: 'Assurance auto',
+    labelRequired: 'Donne un libellé à cette avance.',
+    amount: 'Montant payé',
+    amountHint: 'Le versement unique, en entier.',
+    amountRequired: 'Indique ce que tu as payé.',
+    paidOn: 'Payé le',
+    category: 'Nature de la charge',
+    categoryRequired: 'Dis de quelle charge il s’agit.',
+    /* Le support est une catégorie d'épargne, et pas n'importe laquelle : c'est
+       celui qu'on a vidé, donc celui qu'on remplit. */
+    savingCategory: 'Repris sur',
+    savingCategoryHint: 'Le livret ou le plan qui a payé, et qu’on reconstitue.',
+    savingCategoryRequired: 'Dis sur quel support tu as pris l’argent.',
+    member: 'Avancé par',
+    memberRequired: 'Dis qui a avancé : une épargne est toujours à quelqu’un.',
+    memberNone: 'Ajoute un membre au foyer pour enregistrer une avance.',
+    from: 'Du mois de',
+    to: 'Au mois de',
+    periodInvalid: 'Le dernier mois ne peut pas précéder le premier.',
+
+    monthly: 'Mensualité',
+    monthlyOf: '%s par mois sur %s mois',
+    restored: 'Déjà remis',
+    remaining: 'Reste à remettre',
+    settled: 'Entièrement reconstituée',
+    over: 'Couvre %s → %s',
+    remove: 'Retirer l’avance',
+    removeConfirm:
+      'Les mensualités déjà remises sur le livret sont conservées. Seule la mensualité à venir s’arrête. Retirer cette avance ?',
+
+    /* Ce que l'écran doit dire une fois, sinon le chiffre paraît sorti de
+       nulle part : la reprise est une entrée d'argent, la dépense qu'elle a
+       financée reste à saisir comme n'importe quelle autre. */
+    method: 'Comment c’est enregistré',
+    methodDrawdown:
+      'Le jour du paiement, l’app enregistre une reprise sur ton épargne : le livret baisse du montant avancé, et cet argent redevient disponible.',
+    methodInstalments:
+      'Chaque mois de la période, une mensualité repart sur le même support. Elle compte dans ton épargne, jamais dans tes charges — la charge, elle, a déjà eu lieu.',
+    methodExpense:
+      'La dépense que cette reprise a financée se saisit comme les autres, à sa date. L’app ne l’invente pas à ta place.',
+    methodShared:
+      'Cochée « à partager », la mensualité entre dans les charges communes : chacun en porte sa part au prorata, et celui qui a avancé se retrouve remboursé.',
+
+    srStatus: '%s : %s remis sur %s, il reste %s.',
+  },
+
   savings: {
     title: 'Épargne',
     subtitle: 'Ce que le mois dégage, et où ça se place.',
@@ -623,6 +683,10 @@ export const fr = {
     overHint: 'les versements dépassent la capacité de %s',
     rate: '%s des ressources mises de côté',
     rateNone: 'aucune ressource ce mois-ci',
+    /* Le mois où une avance est posée : le livret a payé une charge de l'année,
+       et il a donc rendu plus qu'il n'a reçu. Sans cette phrase, le chiffre
+       négatif au-dessus se lit comme une erreur. */
+    withdrawn: 'Plus repris que placé ce mois-ci — une avance est passée par là.',
 
     /* Chacun décide sur son compte : une somme des capacités ne se place nulle
        part. Hors filtre, l'écran montre donc les colonnes plutôt qu'un total. */

@@ -69,6 +69,11 @@ export const SPLIT_PATH = '/repartition'
    question « où je place » se pose. */
 export const SAVINGS_PATH = '/epargne'
 
+/* Une avance se pose depuis la liste des récurrences, où elle vit : sa
+   mensualité en est une. L'écran de saisie est plein, comme tous les
+   formulaires — d'où une URL, hors navigation. */
+export const ADVANCE_NEW_PATH = '/avances/nouveau'
+
 /**
  * Écrans qui n'ont qu'une chose à montrer — une saisie, une fiche. Aucune
  * bannière ne s'y intercale au-dessus du titre.
@@ -76,6 +81,7 @@ export const SAVINGS_PATH = '/epargne'
 export function isFocusScreen(pathname: string): boolean {
   return (
     pathname.startsWith(ENTRY_NEW_PATH) ||
+    pathname.startsWith(ADVANCE_NEW_PATH) ||
     (pathname.startsWith(`${RECURRENCES_PATH}/`) && pathname !== `${RECURRENCES_PATH}/`) ||
     (pathname.startsWith(`${CREDITS_PATH}/`) && pathname !== `${CREDITS_PATH}/`)
   )
