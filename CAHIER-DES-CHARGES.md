@@ -212,7 +212,13 @@ Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 Le membre est **facultatif tant que le partage prend la ligne en charge, obligatoire dès qu'il ne la prend pas** — voir « à quelqu'un, ou à tout le monde » en §4.7 ter. Le champ le dit à l'ouverture, avec la raison, et pas seulement après un échec d'enregistrement.
 
-Une bascule **Ponctuel / Récurrence** y siège, à la création seulement. En récurrence, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en récurrence réécrirait un historique.
+Une bascule **Nature** y siège en tête : **Dépense**, **Revenu**, **Épargne**. Elle ne demande pas le sens de trésorerie, elle demande ce qu'on enregistre — et en déduit le sens. Verser sur un livret sort du compte, donc se saisissait par « Dépense », et il fallait aller chercher « Livrets » entre les courses et le carburant : on ne dépense pas son épargne, on la déplace. Les catégories d'épargne ne figurent donc plus dans la liste d'une dépense, et réciproquement.
+
+En **Épargne**, une seconde bascule dit le mouvement : **Je place** (l'argent quitte le compte pour un support) ou **Je reprends** (il en revient). Le second n'existait nulle part : le sens « entrée » ne proposait que des ressources, et un retrait de livret n'en est pas une. C'est la même écriture que la reprise d'une avance — une `Entry` de sens `in` sur une catégorie `saving` — et l'épargne se comptant en net, elle s'y retranche des versements.
+
+La case « à partager » ne s'affiche pas en Épargne : un versement sort du compte mais reste à qui le fait, et il n'entre jamais dans le pot commun.
+
+Une bascule **Ponctuel / Récurrence** y siège aussi, à la création seulement. En récurrence, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en récurrence réécrirait un historique.
 
 Dépense et revenu sont deux points d'entrée distincts, côte à côte, sur le mois comme sur le calendrier : le sens est choisi avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. Titre et confirmation le suivent — on n'annonce pas « dépense ajoutée » après un salaire.
 

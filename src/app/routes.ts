@@ -49,9 +49,27 @@ export function directionFromParam(value: string | null): 'in' | 'out' {
   return value === DIRECTION_VALUE.in ? 'in' : 'out'
 }
 
-export function entryNewPath(options: { direction?: 'in' | 'out'; date?: string } = {}): string {
+/* La nature voyage à côté du sens, et en clair elle aussi : un virement
+   d'épargne s'ouvre déjà réglé dessus, depuis l'écran du mois comme depuis
+   celui de l'épargne. Le sens reste utile même en épargne — il dit si l'on
+   place ou si l'on reprend. */
+export const NATURE_PARAM = 'nature'
+const SAVING_NATURE = 'epargne'
+
+export function natureFromParam(
+  nature: string | null,
+  direction: string | null,
+): 'expense' | 'income' | 'saving' {
+  if (nature === SAVING_NATURE) return 'saving'
+  return directionFromParam(direction) === 'in' ? 'income' : 'expense'
+}
+
+export function entryNewPath(
+  options: { direction?: 'in' | 'out'; date?: string; saving?: boolean } = {},
+): string {
   const params = new URLSearchParams()
   if (options.direction !== undefined) params.set(DIRECTION_PARAM, DIRECTION_VALUE[options.direction])
+  if (options.saving === true) params.set(NATURE_PARAM, SAVING_NATURE)
   if (options.date !== undefined) params.set('date', options.date)
   const query = params.toString()
   return query === '' ? ENTRY_NEW_PATH : `${ENTRY_NEW_PATH}?${query}`

@@ -1,4 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
+import { entryNewPath } from '@/app/routes'
 import { type Money, ZERO, abs, add } from '@/domain/money'
 import { savingCapacity, savingLeft, savingRate } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
@@ -15,10 +17,11 @@ import {
   useUnassignedSavings,
 } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
+import { Button } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { SavingsIcon } from '@/ui/Icons'
+import { Plus, SavingsIcon } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
@@ -231,6 +234,7 @@ function MemberRow({ saving }: { saving: MemberSaving }) {
  * qu'une somme qui ne se décide nulle part.
  */
 export function SavingsPage() {
+  const navigate = useNavigate()
   const totals = useKindTotals(true)
   const filter = useMemberFilter()
   const members = useMembers()
@@ -243,7 +247,29 @@ export function SavingsPage() {
 
   return (
     <>
-      <PageTitle title={fr.savings.title} />
+      {/* Les deux gestes de l'écran, là où la question se pose : il disait ce
+          qu'on pouvait placer sans offrir de le faire, et reprendre sur un
+          livret n'existait nulle part. */}
+      <PageTitle title={fr.savings.title}>
+        <Button
+          size="sm"
+          onClick={() => {
+            void navigate(entryNewPath({ direction: 'out', saving: true }))
+          }}
+        >
+          <Plus size={18} />
+          {fr.entry.savingIn}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            void navigate(entryNewPath({ direction: 'in', saving: true }))
+          }}
+        >
+          {fr.entry.savingOut}
+        </Button>
+      </PageTitle>
       <MonthHeader prorataNote />
 
       {nothing ? (

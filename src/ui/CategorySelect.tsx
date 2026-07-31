@@ -1,4 +1,4 @@
-import type { Direction } from '@/domain/types'
+import type { CategoryKind, Direction } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { useCategoriesByFamily } from '@/store/selectors'
 import { Select, type SelectProps } from './Field'
@@ -12,9 +12,15 @@ import { kindsOfDirection } from './categoryKinds'
  */
 export function CategorySelect({
   direction,
+  kinds,
   ...rest
-}: { direction: Direction } & Omit<SelectProps, 'children'>) {
-  const groups = useCategoriesByFamily(kindsOfDirection(direction))
+}: {
+  direction: Direction
+  /** Restreint la liste, quand le sens ne suffit pas à la décrire — l'épargne
+   *  sort du compte comme une charge, et ne se choisit pas dans la même liste. */
+  kinds?: readonly CategoryKind[]
+} & Omit<SelectProps, 'children'>) {
+  const groups = useCategoriesByFamily(kinds ?? kindsOfDirection(direction))
 
   return (
     <Select {...rest}>

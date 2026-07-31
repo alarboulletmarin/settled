@@ -33,6 +33,13 @@ export function MonthPage() {
     void navigate(entryNewPath({ direction }))
   }
 
+  /* Une troisième porte, parce que l'épargne se saisissait par « Dépense » :
+     le geste est le même — de l'argent qui sort — mais ce n'est pas ce qu'on
+     croit faire en mettant de côté. */
+  const createSaving = (): void => {
+    void navigate(entryNewPath({ direction: 'out', saving: true }))
+  }
+
   const isEmpty = entries.length === 0
 
   return (
@@ -61,6 +68,10 @@ export function MonthPage() {
           >
             <Plus size={18} />
             {fr.entry.newIn}
+          </Button>
+          <Button variant="secondary" onClick={createSaving}>
+            <Plus size={18} />
+            {fr.entry.newSaving}
           </Button>
         </div>
       )}

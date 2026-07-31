@@ -411,6 +411,28 @@ export const fr = {
     member: 'Membre',
     note: 'Note',
     direction: 'Sens',
+
+    /* L'écran demande ce qu'on enregistre, pas le sens de trésorerie : verser
+       200 € sur un livret sortait du compte, donc se saisissait par
+       « Dépense », et il fallait aller chercher « Livrets » entre les courses
+       et le carburant. On ne dépense pas son épargne, on la déplace. */
+    nature: 'Nature',
+    natureExpense: 'Dépense',
+    natureIncome: 'Revenu',
+    natureSaving: 'Épargne',
+    savingMovement: 'Mouvement',
+    /* Dit du point de vue de l'épargne, pas du compte courant : « je place »
+       et « je reprends » se comprennent sans savoir dans quel sens l'argent
+       traverse. Le second n'existait pas — on pouvait verser sur un livret,
+       jamais y reprendre. */
+    savingIn: 'Je place',
+    savingOut: 'Je reprends',
+    addSaving: 'Mouvement d’épargne',
+    editSaving: 'Modifier le mouvement',
+    addedSaving: 'Mouvement d’épargne enregistré',
+    updatedSaving: 'Mouvement d’épargne modifié',
+    removedSaving: 'Mouvement d’épargne supprimé',
+    newSaving: 'Épargne',
     amountRequired: 'Indique un montant supérieur à zéro.',
     categoryRequired: 'Choisis une catégorie.',
     labelRequired: 'Donne un libellé à cette entrée.',

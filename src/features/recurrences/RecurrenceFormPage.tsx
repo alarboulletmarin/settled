@@ -68,14 +68,18 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
           <AmountFields draft={draft} patch={patch} errors={errors} />
           <PeriodFields draft={draft} patch={patch} />
 
-          <SharedField
-            categoryId={draft.categoryId}
-            memberId={draft.memberId}
-            value={draft.shared}
-            onChange={(shared) => {
-              patch({ shared })
-            }}
-          />
+          {/* L'épargne ne se partage jamais : elle sort du compte, mais elle
+              reste à qui la met de côté. Même règle que la saisie ponctuelle. */}
+          {draft.nature !== 'saving' && (
+            <SharedField
+              categoryId={draft.categoryId}
+              memberId={draft.memberId}
+              value={draft.shared}
+              onChange={(shared) => {
+                patch({ shared })
+              }}
+            />
+          )}
 
           <Field label={fr.recurrences.form.note} optional>
             {(id) => (

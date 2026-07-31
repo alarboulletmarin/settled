@@ -1,14 +1,24 @@
 import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { CategorySelect } from '@/ui/CategorySelect'
+import { kindsOfNature } from '@/ui/categoryKinds'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { Segmented } from '@/ui/Segmented'
 import { PERIOD_OPTIONS, type PeriodDraft } from './period'
 import type { DraftErrors, RecurrenceDraft } from './useRecurrenceForm'
 
-const DIRECTIONS = [
-  { value: 'out' as const, label: fr.direction.out },
-  { value: 'in' as const, label: fr.direction.in },
+/* Les mêmes trois positions que la saisie ponctuelle, et pour la même raison :
+   un virement d'épargne programmé n'est pas un abonnement de plus dans les
+   charges, et il allait se chercher parmi elles. */
+const NATURES = [
+  { value: 'expense' as const, label: fr.entry.natureExpense },
+  { value: 'income' as const, label: fr.entry.natureIncome },
+  { value: 'saving' as const, label: fr.entry.natureSaving },
+]
+
+const MOVEMENTS = [
+  { value: 'out' as const, label: fr.entry.savingIn },
+  { value: 'in' as const, label: fr.entry.savingOut },
 ]
 
 const AMOUNT_KINDS = [
@@ -44,14 +54,30 @@ export function IdentityFields({ draft, patch, errors, members, needsMember = fa
         )}
       </Field>
 
-      <Segmented
-        options={DIRECTIONS}
-        value={draft.direction}
-        onChange={(direction) => {
-          patch({ direction, categoryId: '' })
-        }}
-        label={fr.recurrences.form.direction}
-      />
+      <div className="flex flex-wrap gap-2">
+        <Segmented
+          options={NATURES}
+          value={draft.nature}
+          onChange={(nature) => {
+            patch({
+              nature,
+              direction: nature === 'income' ? 'in' : 'out',
+              categoryId: '',
+            })
+          }}
+          label={fr.entry.nature}
+        />
+        {draft.nature === 'saving' && (
+          <Segmented
+            options={MOVEMENTS}
+            value={draft.direction}
+            onChange={(direction) => {
+              patch({ direction })
+            }}
+            label={fr.entry.savingMovement}
+          />
+        )}
+      </div>
 
       <Field
         label={fr.recurrences.form.category}
@@ -63,6 +89,7 @@ export function IdentityFields({ draft, patch, errors, members, needsMember = fa
             id={id}
             aria-describedby={describedBy}
             direction={draft.direction}
+            kinds={kindsOfNature(draft.nature)}
             value={draft.categoryId}
             onChange={(e) => {
               patch({ categoryId: e.target.value })

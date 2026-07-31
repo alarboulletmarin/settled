@@ -6,12 +6,15 @@ import { today } from '@/domain/date'
 import { type Money, parseAmount, toAmountInput } from '@/domain/money'
 import { memberRequired } from '@/domain/split'
 import type { Direction, Recurrence } from '@/domain/types'
+import type { EntryNature } from '@/ui/categoryKinds'
 import { fr } from '@/i18n/fr'
 import { useKindOf, useMembers } from '@/store/selectors'
 import { type PeriodDraft, defaultsFrom, kindOf, periodOf } from './period'
 
 export type RecurrenceDraft = PeriodDraft & {
   label: string
+  /** Ce que la règle pose. Le sens en découle, sauf en épargne. */
+  nature: EntryNature
   direction: Direction
   categoryId: string
   memberId: string
@@ -28,12 +31,27 @@ export type DraftErrors = Partial<
   Record<'label' | 'amount' | 'estimate' | 'category' | 'member', string>
 >
 
-function draftFrom(recurrence: Recurrence | null, defaultCategoryId: string): RecurrenceDraft {
+function draftFrom(
+  recurrence: Recurrence | null,
+  defaultCategoryId: string,
+  isSaving: (categoryId: string) => boolean,
+): RecurrenceDraft {
   const start = recurrence?.startedOn ?? today()
   const fallbacks = defaultsFrom(start)
+  const direction = recurrence?.direction ?? 'out'
   return {
     label: recurrence?.label ?? '',
-    direction: recurrence?.direction ?? 'out',
+    /* En reprise, la nature se relit sur la catégorie : elle est déjà dans la
+       donnée, et un second champ finirait par en diverger. */
+    nature:
+      recurrence === null
+        ? 'expense'
+        : isSaving(recurrence.categoryId)
+          ? 'saving'
+          : direction === 'in'
+            ? 'income'
+            : 'expense',
+    direction,
     categoryId: recurrence?.categoryId ?? defaultCategoryId,
     memberId: recurrence?.memberId ?? '',
     amountText: recurrence?.amount != null ? toAmountInput(recurrence.amount) : '',
@@ -56,12 +74,12 @@ function draftFrom(recurrence: Recurrence | null, defaultCategoryId: string): Re
 export type SubmitPayload = Omit<Recurrence, 'id'>
 
 export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategoryId: string) {
-  const [draft, setDraft] = useState<RecurrenceDraft>(() =>
-    draftFrom(recurrence, defaultCategoryId),
-  )
-  const [showErrors, setShowErrors] = useState(false)
   const members = useMembers()
   const kindOf = useKindOf()
+  const [draft, setDraft] = useState<RecurrenceDraft>(() =>
+    draftFrom(recurrence, defaultCategoryId, (id) => kindOf(id) === 'saving'),
+  )
+  const [showErrors, setShowErrors] = useState(false)
 
   const amount: Money | null = useMemo(
     () => (draft.variable ? null : parseAmount(draft.amountText)),

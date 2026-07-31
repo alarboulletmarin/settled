@@ -158,7 +158,13 @@ export function RecurrenceDetailPage() {
         {confirmingRemoval ? (
           <div className="flex max-w-sm flex-col gap-2 rounded-inner bg-surface-2 p-3">
             <p className="t-label">{fr.recurrences.removeConfirm}</p>
-            <div className="flex gap-2">
+            {/* Une grille et non une rangée flex : un `Button` porte `shrink-0`
+                pour ne pas se faire écraser dans un flux, et deux boutons
+                pleine largeur qui refusent tous deux de rétrécir font 200 % de
+                leur boîte. Le second sortait donc de l'écran par la droite — on
+                voyait le liseré rouge au bord, et la suppression était
+                inatteignable. Une cellule de grille, elle, borne son contenu. */}
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
                 onClick={() => {
