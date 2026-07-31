@@ -167,8 +167,11 @@ Vérifié sans débordement horizontal de 320 à 1920px sur tous les écrans.
 
 Saisies et fiches sont des écrans pleins avec leur URL, pas des feuilles
 modales : rien à faire glisser, rien à refermer pour revenir. `ui/Sheet.tsx`
-subsiste sans appelant — son sort est une décision de design system, pas de
-ménage.
+sert à ce pour quoi une feuille est faite — une explication qu'on ouvre et
+qu'on referme sans quitter des yeux ce qu'elle explique. C'est le cas des
+quatre soldes du tableau de bord : leur lecture secondaire ne tient pas dans
+une tuile d'une rangée sous 1024px, et l'explication s'y perdait sur
+téléphone.
 
 Le mois se balaie horizontalement au doigt, le rappel d'export se chasse d'un
 balayage vers le haut, et les cibles tactiles font 44px partout.

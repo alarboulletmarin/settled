@@ -25,7 +25,7 @@ function progressLabel(ym: string, progress: number, days: number): string {
   return tpl(fr.dashboard.progress, Math.round(progress * days), days)
 }
 
-export function BalanceTile() {
+export function BalanceTile({ onExplain }: { onExplain: () => void }) {
   const totals = useMonthTotals()
   const ym = useCurrentYm()
   const progress = useMonthProgress()
@@ -33,7 +33,15 @@ export function BalanceTile() {
   const days = daysInMonth(y, m)
 
   return (
-    <Tile span="2x2" variant="accent" className="justify-between">
+    /* La tuile entière ouvre l'explication : sur une 2×1, un bouton « i » et
+       l'eyebrow ne tiennent pas côte à côte dans les 134px utiles. */
+    <Tile
+      span="2x2"
+      variant="accent"
+      className="justify-between"
+      onClick={onExplain}
+      label={tpl(fr.dashboard.explain, fr.dashboard.balance)}
+    >
       <Eyebrow icon={BalanceIcon}>{fr.dashboard.balance}</Eyebrow>
       {/* Un eyebrow, un chiffre, une lecture secondaire — le maximum qu'une
           tuile porte selon le DS §5. L'anneau signature vit sur la répartition. */}
@@ -46,10 +54,15 @@ export function BalanceTile() {
 }
 
 /** Solde prévisionnel : en incluant les échéances encore prévues. */
-export function ForecastTile() {
+export function ForecastTile({ onExplain }: { onExplain: () => void }) {
   const totals = useMonthTotals()
   return (
-    <Tile span="2x1" className="justify-between">
+    <Tile
+      span="2x1"
+      className="justify-between"
+      onClick={onExplain}
+      label={tpl(fr.dashboard.explain, fr.dashboard.forecast)}
+    >
       <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={totals.forecastBalance} size="tile-fit" />
@@ -62,13 +75,18 @@ export function ForecastTile() {
 }
 
 /** Reste à vivre : le prévisionnel arrêté à la prochaine rentrée d'argent. */
-export function RemainingTile() {
+export function RemainingTile({ onExplain }: { onExplain: () => void }) {
   const remaining = useRestToLive()
   const entries = useMonthEntries()
   const hasIncome = nextIncomeDate(entries, today()) !== null
 
   return (
-    <Tile span="2x1" className="justify-between">
+    <Tile
+      span="2x1"
+      className="justify-between"
+      onClick={onExplain}
+      label={tpl(fr.dashboard.explain, fr.dashboard.remaining)}
+    >
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={remaining} size="tile-fit" tone={remaining < 0 ? 'danger' : 'default'} />

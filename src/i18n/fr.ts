@@ -230,6 +230,41 @@ export const fr = {
     noCredits: 'Aucun crédit en cours.',
     split: 'Répartition',
     splitHint: 'charges communes du mois',
+
+    /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
+       dit son calcul, puis ce qui le sépare de son voisin — c'est la question
+       qu'on se pose devant la grille, pas la définition isolée. */
+    explain: 'Comprendre : %s',
+    info: {
+      /* La phrase avant le calcul : lire d'abord la formule, c'est ouvrir sur
+         du vocabulaire qu'on n'a pas encore de quoi comprendre. */
+      calculationLabel: 'Le calcul',
+      apartLabel: 'Ce qui le distingue',
+      balance: {
+        lead: 'Ce qui a réellement eu lieu ce mois-ci, et rien d’autre.',
+        calculation: 'Les entrées confirmées, moins les sorties confirmées.',
+        apart:
+          'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte.',
+      },
+      forecast: {
+        lead: 'Là où le mois atterrit si tout ce qui est prévu se passe comme prévu.',
+        calculation: 'Le solde du mois, plus les échéances encore prévues, des deux côtés.',
+        apart:
+          'Le solde du mois s’en tient à ce qui a eu lieu ; celui-ci y ajoute ce qui doit encore tomber. En début de mois les deux sont très éloignés — c’est normal, presque rien n’a encore eu lieu.',
+      },
+      remaining: {
+        lead: 'Ce dont tu disposes d’ici la prochaine rentrée d’argent, une fois payé tout ce qui tombe avant elle.',
+        calculation: 'Le prévisionnel, arrêté la veille de la prochaine rentrée d’argent.',
+        apart:
+          'C’est le prévisionnel arrêté plus tôt : lui va jusqu’au bout du mois, celui-ci s’arrête au prochain salaire. Sans rentrée en vue, les deux se rejoignent — l’horizon devient la fin du mois.',
+      },
+      capacity: {
+        lead: 'Ce que tu pouvais mettre de côté ce mois-ci, avant de l’avoir fait.',
+        calculation: 'Les ressources, moins les charges et les crédits — donc avant les versements.',
+        apart:
+          'Le solde compte un virement sur un livret comme une sortie, si bien qu’un mois où l’on met 300 € de côté s’y lit comme un mois où l’on a dépensé 300 € de plus. Celui-ci ne s’y laisse pas prendre.',
+      },
+    },
     srBreakdown: 'Répartition des sorties : %s',
     srDaily: 'Jours les plus dépensiers : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',

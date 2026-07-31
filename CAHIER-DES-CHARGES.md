@@ -172,7 +172,7 @@ L'ouverture est un mécanisme interne, jamais une tâche : aucun écran ne deman
 
 1. Un mois s'ouvre dès qu'on l'affiche, s'il n'est pas passé — le mois courant à la première visite, un mois à venir dès qu'on y navigue.
 2. L'app génère une `Entry` `planned` pour chaque échéance de récurrence tombant dans le mois.
-3. Les échéances du mois se lisent en **une seule liste**, par date. Celles à montant variable y portent leur champ de saisie, pré-rempli du montant de la dernière échéance confirmée, et leur ligne le dit — une explication en tête de section est oubliée le temps d'arriver au champ qu'elle décrit.
+3. Les échéances du mois se lisent en **une seule liste**, par date. Celles à montant variable y portent leur champ de saisie, pré-rempli du montant de la dernière échéance confirmée, et leur ligne le dit — une explication en tête de section est oubliée le temps d'arriver au champ qu'elle décrit. Toutes les lignes tiennent sur **un seul niveau**, de 320 à 1920px, et leurs montants — saisis ou non — s'alignent dans une même colonne de largeur fixe. Un libellé trop long tronque ; il ne renvoie jamais à la ligne.
 4. L'utilisateur confirme en bloc ou une par une. « Confirmer le mois » ne touche pas aux montants à saisir, et l'écran le dit avant qu'on l'actionne.
 5. Une échéance prévue **s'ouvre** : elle mène à l'écran de saisie, qui sait corriger un montant, changer une date, réattribuer un membre ou la supprimer. Confirmer n'a jamais été le seul geste possible, seulement le seul qu'on pouvait atteindre. Modifier ne confirme pas : la confirmation a son geste.
 
@@ -215,6 +215,8 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Dépenses par jour**, barres empilées par catégorie.
 - **Prochaines échéances**, les 5 suivantes avec le nombre de jours restants.
 - **Total abonnements**, mensuel et annualisé.
+
+Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose. Chaque tuile s'ouvre sur une feuille qui donne son calcul et, surtout, ce qui la sépare de ses voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
 
 Tous les dashboards acceptent un filtre par membre.
 
