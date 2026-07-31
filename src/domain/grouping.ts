@@ -68,7 +68,15 @@ export function groupEntries(entries: readonly Entry[], by: GroupBy): EntryGroup
 
 /* --- Récurrences ----------------------------------------------------------*/
 
-export type RecurrenceGroupBy = 'direction' | 'category' | 'member'
+/**
+ * Le sens n'est pas un axe : il filtre, comme dans la liste du mois.
+ *
+ * Il rendait deux blocs dont le total de la page donne déjà les chiffres, et
+ * cette lecture-là seulement. En filtre, il se combine aux deux axes qui
+ * restent : les charges par poste, les revenus par personne, ce que chacun
+ * paie sans son salaire au milieu.
+ */
+export type RecurrenceGroupBy = 'category' | 'member'
 
 /** Le minimum dont le regroupement a besoin : la règle et son coût au mois. */
 export type PricedRecurrence = { recurrence: Recurrence; monthly: Money | null }
@@ -87,9 +95,7 @@ export type RecurrenceGroup<T> = {
  * Regroupe des récurrences déjà triées — l'ordre à l'intérieur d'un groupe est
  * celui qu'on reçoit, c'est-à-dire par prochaine échéance.
  *
- * Par sens, l'ordre est fixe : ce qui sort d'abord, parce que c'est ce que
- * chiffre le total de la page. Sur les deux autres axes, le plus gros
- * mouvement d'abord.
+ * Le plus gros mouvement d'abord : c'est ce qu'on vient chercher.
  *
  * Une variable non estimable n'est pas comptée pour zéro : elle est comptée
  * à part, pour que l'écran puisse dire qu'un total est incomplet plutôt que
@@ -99,11 +105,8 @@ export function groupRecurrences<T extends PricedRecurrence>(
   rows: readonly T[],
   by: RecurrenceGroupBy,
 ): RecurrenceGroup<T>[] {
-  const keyOfRow = (row: T): string => {
-    if (by === 'direction') return row.recurrence.direction
-    if (by === 'category') return row.recurrence.categoryId
-    return row.recurrence.memberId ?? NO_MEMBER
-  }
+  const keyOfRow = (row: T): string =>
+    by === 'category' ? row.recurrence.categoryId : (row.recurrence.memberId ?? NO_MEMBER)
 
   const groups = new Map<string, T[]>()
   for (const row of rows) {
@@ -128,8 +131,5 @@ export function groupRecurrences<T extends PricedRecurrence>(
     unknownCount: list.filter((r) => r.monthly === null).length,
   }))
 
-  if (by === 'direction') {
-    return built.sort((a, b) => (a.key === b.key ? 0 : a.key === 'out' ? -1 : 1))
-  }
   return built.sort((a, b) => Math.abs(b.monthly) - Math.abs(a.monthly))
 }

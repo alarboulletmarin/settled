@@ -450,17 +450,27 @@ export const fr = {
     monthlyCost: 'Par mois',
     annualCost: 'Par an',
     perYear: '%s par an',
+    /* Le total suit la pastille : un total qui ne compterait que les sorties
+       sans le dire décrirait mal la liste qu'il surplombe. */
     totalMonthly: 'Total récurrences',
+    totalCharges: 'Total charges',
+    totalIncome: 'Total revenus',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
-    /* Le sens en titre de section : dans une liste qui les mêle, le « + » des
-       entrées ne suffit pas à distinguer un salaire d'une charge. */
-    inflow: 'Ce qui rentre',
-    outflow: 'Ce qui sort',
     groupBy: 'Regrouper par',
-    bySense: 'Sens',
     byCategory: 'Catégorie',
     byMember: 'Personne',
+    /* Le sens ne regroupe pas, il filtre — la règle qu'applique déjà la liste
+       du mois. En axe, il rendait deux blocs dont le total en tête de page
+       donne déjà les chiffres ; en filtre, il se combine aux deux axes qui
+       restent : les charges par poste, les revenus par personne. Les mots sont
+       ceux de la page du mois, à la lettre. */
+    show: 'Montrer',
+    showAll: 'Tout',
+    showOut: 'Charges',
+    showIn: 'Revenus',
+    showEmptyOut: 'Aucune charge récurrente.',
+    showEmptyIn: 'Aucun revenu récurrent.',
     groupCountOne: '%s récurrence',
     groupCount: '%s récurrences',
     collapseAll: 'Tout replier',

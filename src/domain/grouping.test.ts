@@ -72,14 +72,10 @@ describe('regroupement des récurrences', () => {
     priced({ id: 'salaire', categoryId: 'salaire', direction: 'in', memberId: 'm-2' }, 250_000),
   ]
 
-  it('met ce qui sort avant ce qui rentre', () => {
-    expect(groupRecurrences(rows, 'direction').map((g) => g.key)).toEqual(['out', 'in'])
-  })
-
   it('rend un solde mensuel par groupe', () => {
-    const groups = groupRecurrences(rows, 'direction')
-    expect(groups[0]?.monthly).toBe(-105_709)
-    expect(groups[1]?.monthly).toBe(250_000)
+    const groups = groupRecurrences(rows, 'member')
+    expect(groups.find((g) => g.key === 'm-2')?.monthly).toBe(250_000)
+    expect(groups.find((g) => g.key === 'm-1')?.monthly).toBe(-1_399)
   })
 
   it('cumule une famille de charges sous sa catégorie', () => {
@@ -88,7 +84,7 @@ describe('regroupement des récurrences', () => {
     expect(logement?.monthly).toBe(-104_310)
   })
 
-  it('range le plus gros mouvement en tête, hors regroupement par sens', () => {
+  it('range le plus gros mouvement en tête', () => {
     expect(groupRecurrences(rows, 'category')[0]?.key).toBe('salaire')
     expect(groupRecurrences(rows, 'member')[0]?.key).toBe('m-2')
   })
