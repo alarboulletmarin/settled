@@ -7,6 +7,9 @@ import { useToasts } from './toast'
 /**
  * Les confirmations d'action. Le nom d'une action ne change pas dans le flux :
  * le bouton dit « Confirmer le mois », le toast dit « Mois confirmé » (DS §7).
+ *
+ * Un message qui se répète porte son compte plutôt que de se dupliquer, et la
+ * pile est plafonnée : au-delà, elle recouvrirait ce sur quoi on agit.
  */
 export function Toaster() {
   const toasts = useToasts((s) => s.toasts)
@@ -28,6 +31,7 @@ export function Toaster() {
           )}
         >
           <span className="t-body">{item.message}</span>
+          {item.count > 1 && <span className="t-axis tnum shrink-0">· {item.count}</span>}
           <IconButton
             label={fr.common.close}
             onClick={() => {

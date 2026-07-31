@@ -255,8 +255,11 @@ export const fr = {
     confirmedAll: 'Mois confirmé',
     confirmOne: 'Confirmer',
     confirmedOne: 'Échéance confirmée',
-    variableTitle: 'Montants à saisir',
-    variableHint: 'Le montant du mois précédent est proposé. Ajuste-le avant de confirmer.',
+    /* Sur la ligne elle-même, à côté du champ : une explication en tête de
+       section est oubliée le temps d'arriver au champ qu'elle décrit. */
+    toFill: 'à saisir',
+    confirmAllHint: 'Les montants à saisir restent à confirmer un par un.',
+    openEntry: 'Modifier %s',
     done: 'Tout est confirmé pour ce mois.',
     entries: 'Ce mois',
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',

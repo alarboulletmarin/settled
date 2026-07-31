@@ -163,7 +163,9 @@ function EntryForm({
       return
     }
 
-    const payload = { ...common, amount, date: draft.date, status: 'confirmed' as const }
+    /* Reprendre une échéance prévue pour en corriger le montant ne la confirme
+       pas : modifier n'est pas confirmer, et la confirmation a son geste. */
+    const payload = { ...common, amount, date: draft.date, status: entry?.status ?? 'confirmed' }
     if (entry === null) {
       addEntry(payload)
       toast(TOAST.added[draft.direction])
