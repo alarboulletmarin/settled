@@ -91,7 +91,18 @@ export function MemberShareTile() {
        est à un doigt, et un lien de 44px à l'intérieur ferait déborder les
        148px de contenu. */
     <Tile span="4x2" className="gap-3" onClick={open} label={spoken}>
-      <Eyebrow icon={SplitIcon}>{fr.dashboard.memberShare}</Eyebrow>
+      {/* L'eyebrow nomme le chiffre, au lieu qu'un libellé le refasse juste
+          au-dessus : la tuile portait cinq éléments là où le DS §5 en autorise
+          quatre, et les trente pixels de trop se coupaient en haut comme en
+          bas — le libellé remontait sous l'eyebrow, le total à payer sortait
+          par le bas. Le renvoi vers le détail tient sur la même ligne : il ne
+          coûte pas une hauteur puisque l'eyebrow est plus haut que lui. */}
+      <div className="flex items-center justify-between gap-2">
+        <Eyebrow icon={SplitIcon}>{fr.dashboard.memberShare}</Eyebrow>
+        <span className="t-label shrink-0 underline underline-offset-2">
+          {fr.dashboard.memberShareHint}
+        </span>
+      </div>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         {/* Une jauge et non un donut : la question n'est pas comment le pot
             commun se découpe entre tous — c'est la tuile Répartition — mais
@@ -114,9 +125,8 @@ export function MemberShareTile() {
         <div className="flex min-w-0 max-w-xs flex-1 flex-col gap-1">
           {/* Le montant du virement, en corps de tuile : c'est la réponse, et
               on vient la recopier dans une application bancaire. */}
-          <span className="t-label">{fr.dashboard.memberShareToTransfer}</span>
           <Amount value={charges.common} size="tile-fit" direction="out" />
-          <ul className="mt-1 flex flex-col gap-1 border-t border-border pt-2">
+          <ul className="flex flex-col gap-1 border-t border-border pt-2">
             {/* Ce qu'il paie pour lui, puis la somme des deux : la tuile
                 Charges voisine mêle déjà les deux sans les séparer, et le coût
                 réel de son mois se faisait de tête. */}
@@ -125,7 +135,6 @@ export function MemberShareTile() {
           </ul>
         </div>
       </div>
-      <p className="t-label underline underline-offset-2">{fr.dashboard.memberShareHint}</p>
     </Tile>
   )
 }

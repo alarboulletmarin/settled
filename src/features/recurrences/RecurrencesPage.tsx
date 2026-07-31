@@ -59,27 +59,29 @@ const OPEN_BY_DEFAULT: Record<RecurrenceGroupBy, boolean> = {
  * Ce que les récurrences coûtent — ou rapportent — chaque mois.
  *
  * Le chiffre suit la pastille : câblé sur les seules sorties, il décrivait mal
- * la liste qu'il surplombe dès qu'elle montrait les revenus. Hors filtre, il
- * reste celui des charges — c'est la question qu'on pose à cet écran, et un
- * solde des deux sens ne se lit pas en tête de page.
+ * la liste qu'il surplombe dès qu'elle montrait les revenus.
+ *
+ * Et il dit désormais ce qu'il compte, parce qu'un total sans périmètre ne se
+ * vérifie pas : « 2 008,31 € » n'apprenait ni si c'était le foyer entier ou
+ * quelqu'un, ni si l'épargne en faisait partie. Cet écran ne connaît pas le
+ * filtre par membre — il montre les règles du foyer, pas un mois — et le sens
+ * `out` ramasse les charges, les crédits **et** les versements d'épargne. Deux
+ * choses qu'on ne devine pas, et qui tiennent en une ligne.
  */
 function Totals({ flow }: { flow: FlowFilter }) {
   const income = flow === 'in'
   const totals = useRecurrenceTotals(income ? 'in' : 'out')
   const currency = useCurrency()
-  const label =
-    flow === null
-      ? fr.recurrences.totalMonthly
-      : income
-        ? fr.recurrences.totalIncome
-        : fr.recurrences.totalCharges
 
   return (
     <Tile variant="accent" className="mb-4">
-      <Eyebrow icon={RecurrencesIcon}>{label}</Eyebrow>
+      <Eyebrow icon={RecurrencesIcon}>{fr.recurrences.totalMonthly}</Eyebrow>
       <Amount value={totals.monthly} size="tile" className="mt-3" />
       <p className="t-label mt-1 tnum">
         {tpl(fr.recurrences.perYear, formatMoney(totals.annual, currency, false))}
+      </p>
+      <p className="t-label mt-2">
+        {income ? fr.recurrences.totalScopeIn : fr.recurrences.totalScopeOut}
       </p>
       {totals.unknownCount > 0 && (
         <p className="t-label mt-1">
@@ -199,7 +201,7 @@ function GroupedList({
                 )
               }
             >
-              <ul className="flex flex-col">
+              <ul className="flex flex-col gap-0.5">
                 {group.rows.map((row) => (
                   <li key={row.recurrence.id}>
                     <RecurrenceRow
@@ -342,7 +344,7 @@ function StoppedList({
           </span>
         }
       >
-        <ul className="flex flex-col">
+        <ul className="flex flex-col gap-0.5">
           {rows.map((row) => (
             <li key={row.recurrence.id}>
               <RecurrenceRow

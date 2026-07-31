@@ -279,11 +279,13 @@ export const fr = {
        la somme se recopie telle quelle. Le total des charges communes du foyer
        en est parti — c'est un chiffre qu'on ne doit pas, et il se lit encore
        sur l'écran Répartition, qui est fait pour ça. */
-    memberShare: 'Part du foyer',
-    memberShareToTransfer: 'À verser sur le commun',
+    /* L'eyebrow nomme le chiffre plutôt que la tuile : « Part du foyer » puis
+       « À verser sur le commun » juste en dessous disaient deux fois la même
+       chose, et cette redite valait les trente pixels qui débordaient. */
+    memberShare: 'À verser sur le commun',
     memberShareOwn: 'Charges perso',
     memberShareTotal: 'Total à payer',
-    memberShareHint: 'au prorata des revenus',
+    memberShareHint: 'détail',
     srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
@@ -451,10 +453,16 @@ export const fr = {
     annualCost: 'Par an',
     perYear: '%s par an',
     /* Le total suit la pastille : un total qui ne compterait que les sorties
-       sans le dire décrirait mal la liste qu'il surplombe. */
-    totalMonthly: 'Total récurrences',
-    totalCharges: 'Total charges',
-    totalIncome: 'Total revenus',
+       sans le dire décrirait mal la liste qu'il surplombe.
+
+       Et il dit son périmètre, parce qu'un total sans périmètre ne se vérifie
+       pas. Deux questions restaient sans réponse à l'écran : de qui, et de
+       quoi. Cette page ne connaît pas le filtre par membre — elle montre les
+       règles du foyer — et le sens « ce qui sort » ramasse les charges, les
+       crédits et les versements d'épargne. */
+    totalMonthly: 'Total par mois',
+    totalScopeOut: 'Tout le foyer · ce qui sort chaque mois, épargne et crédits compris',
+    totalScopeIn: 'Tout le foyer · ce qui rentre chaque mois',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
     groupBy: 'Regrouper par',
