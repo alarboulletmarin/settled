@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { entryPath } from '@/app/routes'
 import { type Money, parseAmount, toAmountInput } from '@/domain/money'
@@ -60,11 +60,28 @@ function OpenPart({
   )
 }
 
+/**
+ * La colonne de montant, de largeur fixe : c'est elle qui aligne un montant en
+ * clair et un champ de saisie d'une ligne à l'autre, au lieu de les laisser
+ * flotter chacun au bout du sien.
+ */
+function AmountCell({ children }: { children: ReactNode }) {
+  return <span className="flex w-24 shrink-0 justify-end">{children}</span>
+}
+
+/* L'étiquette passe par `aria-label` et non par un `sr-only` adjacent : le
+   `gap-2` du bouton espacerait ce dernier comme un vrai contenu, et lui ferait
+   coûter neuf pixels de large qui manquent au libellé. */
 function ConfirmButton({ onConfirm, disabled }: { onConfirm: () => void; disabled?: boolean }) {
   return (
-    <Button size="sm" {...(disabled === undefined ? {} : { disabled })} onClick={onConfirm}>
+    <Button
+      size="sm"
+      aria-label={fr.month.confirmOne}
+      className="shrink-0"
+      {...(disabled === undefined ? {} : { disabled })}
+      onClick={onConfirm}
+    >
       <Check size={16} />
-      <span className="sr-only">{fr.month.confirmOne}</span>
     </Button>
   )
 }
@@ -74,7 +91,9 @@ function FixedRow({ entry, color, onOpen }: { entry: Entry; color: string; onOpe
   return (
     <li className="flex items-center gap-2">
       <OpenPart entry={entry} color={color} meta={formatDateCompact(entry.date)} onOpen={onOpen} />
-      <Amount value={entry.amount} direction={entry.direction} className="shrink-0" />
+      <AmountCell>
+        <Amount value={entry.amount} direction={entry.direction} />
+      </AmountCell>
       <ConfirmButton
         onConfirm={() => {
           confirmEntry(entry.id)
@@ -104,36 +123,36 @@ function VariableRow({
   const ready = parsed !== null && parsed > 0
 
   return (
-    <li className="flex flex-wrap items-center gap-2">
-      {/* Un plancher de largeur ici seulement : le champ de saisie ne
-          rétrécit pas, et sans lui il écraserait le libellé jusqu'à sa
-          première lettre. En dessous, la ligne passe sur deux niveaux. */}
+    <li className="flex items-center gap-2">
       <OpenPart
         entry={entry}
         color={color}
         meta={`${formatDateCompact(entry.date)} · ${fr.month.toFill}`}
         onOpen={onOpen}
-        className="min-w-36"
       />
-      <span className="ml-auto flex shrink-0 items-center gap-2">
+      {/* La largeur du champ est portée par la colonne, pas par le champ :
+          `AmountInput` a déjà `w-full`, et lui poser une seconde largeur laisse
+          l'ordre de la feuille générée trancher — c'est ce qui lui faisait
+          réclamer toute la ligne, et renvoyer le reste au niveau suivant. */}
+      <AmountCell>
         <AmountInput
           value={text}
           aria-label={`${fr.entry.amount} — ${entry.label}`}
           placeholder="0,00"
-          className="w-24"
+          className="px-2"
           onChange={(e) => {
             setText(e.target.value)
           }}
         />
-        <ConfirmButton
-          disabled={!ready}
-          onConfirm={() => {
-            if (parsed === null) return
-            confirmEntry(entry.id, parsed)
-            toast(fr.month.confirmedOne)
-          }}
-        />
-      </span>
+      </AmountCell>
+      <ConfirmButton
+        disabled={!ready}
+        onConfirm={() => {
+          if (parsed === null) return
+          confirmEntry(entry.id, parsed)
+          toast(fr.month.confirmedOne)
+        }}
+      />
     </li>
   )
 }
