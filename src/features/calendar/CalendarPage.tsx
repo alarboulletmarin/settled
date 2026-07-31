@@ -7,10 +7,10 @@ import { fr } from '@/i18n/fr'
 import { formatDate } from '@/i18n/format'
 import { useCategoryMap, useMemberMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
-import { Button } from '@/ui/Button'
+import { Button, IconButton } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { Plus } from '@/ui/Icons'
+import { Close, Plus } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
 import { Tile } from '@/ui/Tile'
 import { CalendarGrid } from './CalendarGrid'
@@ -22,18 +22,29 @@ function DayPanel({
   date,
   onOpen,
   onAdd,
+  onClose,
 }: {
   entries: Entry[]
   date: string
   onOpen: (e: Entry) => void
   onAdd: (direction: 'in' | 'out') => void
+  onClose: () => void
 }) {
   const categories = useCategoryMap()
   const members = useMemberMap()
 
   return (
     <Tile className="flex flex-col gap-3">
-      <Eyebrow>{formatDate(date)}</Eyebrow>
+      {/* Le panneau se referme, et pas seulement en ouvrant un autre jour : la
+          grille n'avait aucun geste pour revenir à la vue du mois. La croix
+          double le re-clic sur la case, qui promet déjà la bascule par son
+          `aria-pressed` — le geste naturel se découvre mal, la croix se voit. */}
+      <div className="flex items-center justify-between gap-2">
+        <Eyebrow>{formatDate(date)}</Eyebrow>
+        <IconButton label={fr.calendar.closeDay} onClick={onClose}>
+          <Close size={18} />
+        </IconButton>
+      </div>
       {entries.length === 0 ? (
         <p className="t-label">{fr.calendar.emptyDay}</p>
       ) : (
@@ -98,12 +109,19 @@ export function CalendarPage() {
   // retrouve simplement pas dans la grille, sans effet ni remise à zéro.
   const day = month.days.find((d) => d.date === selected)
 
+  /* Une bascule, pas une affectation : la case porte `aria-pressed`, elle doit
+     donc se relâcher. Sans ça, un jour ouvert ne se refermait jamais — on ne
+     pouvait qu'en ouvrir un autre, et la vue du mois seule était perdue. */
+  const toggle = (date: string): void => {
+    setSelected((current) => (current === date ? null : date))
+  }
+
   return (
     <>
       <MonthHeader />
       <div className="flex max-w-2xl flex-col gap-4">
         <Tile>
-          <CalendarGrid month={month} selected={day?.date ?? null} onSelect={setSelected} />
+          <CalendarGrid month={month} selected={day?.date ?? null} onSelect={toggle} />
         </Tile>
 
         {day !== undefined ? (
@@ -115,6 +133,9 @@ export function CalendarPage() {
             }}
             onAdd={(direction) => {
               create(direction, day.date)
+            }}
+            onClose={() => {
+              setSelected(null)
             }}
           />
         ) : (
