@@ -14,7 +14,7 @@ import { ChevronLeft, Warning } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 import { toast } from '@/ui/toast'
-import { recurrenceEditPath } from '@/app/routes'
+import { RECURRENCES_PATH, recurrenceEditPath } from '@/app/routes'
 import { describePeriod } from './period'
 
 function Line({ label, children }: { label: string; children: ReactNode }) {
@@ -27,7 +27,7 @@ function Line({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /**
- * La fiche d'un abonnement : ce qu'il coûte, quand il tombe, comment l'arrêter.
+ * La fiche d’une récurrence : ce qu'elle coûte, quand elle tombe, comment l'arrêter.
  * Écran plein comme le formulaire qu'elle ouvre — une feuille qui se referme
  * pour laisser place à une page ferait faire deux mouvements pour un seul pas.
  */
@@ -39,7 +39,7 @@ export function RecurrenceDetailPage() {
   const [confirmingRemoval, setConfirmingRemoval] = useState(false)
 
   // Supprimé depuis un autre onglet, ou URL fausse.
-  if (row === null) return <Navigate to="/abonnements" replace />
+  if (row === null) return <Navigate to={RECURRENCES_PATH} replace />
 
   const { recurrence, monthly, annual, priceChange, stopped } = row
 
@@ -49,7 +49,7 @@ export function RecurrenceDetailPage() {
         <IconButton
           label={fr.common.back}
           onClick={() => {
-            void navigate('/abonnements')
+            void navigate(RECURRENCES_PATH)
           }}
         >
           <ChevronLeft />
@@ -173,7 +173,7 @@ export function RecurrenceDetailPage() {
                 onClick={() => {
                   removeRecurrence(recurrence.id)
                   toast(fr.recurrences.deleted)
-                  void navigate('/abonnements', { replace: true })
+                  void navigate(RECURRENCES_PATH, { replace: true })
                 }}
                 full
               >

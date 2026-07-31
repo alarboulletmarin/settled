@@ -16,7 +16,7 @@ function meta(row: Row): string {
 }
 
 /**
- * Une ligne d'abonnement : prochaine échéance à gauche, coût mensuel amorti à
+ * Une ligne de récurrence : prochaine échéance à gauche, coût mensuel amorti à
  * droite, coût annuel en seconde lecture. Un changement de prix se signale ici.
  */
 export function RecurrenceRow({

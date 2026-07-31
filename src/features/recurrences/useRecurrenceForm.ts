@@ -1,4 +1,4 @@
-/* État et validation du formulaire d'abonnement. Le composant n'en garde
+/* État et validation du formulaire de récurrence. Le composant n'en garde
  * aucune règle : il lit des champs et appelle `submit`. */
 
 import { useMemo, useState } from 'react'
@@ -90,7 +90,7 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
     if (estimateTyped && (estimate === null || estimate <= 0)) {
       found.estimate = fr.recurrences.form.amountRequired
     }
-    /* Un abonnement qui n'entre pas dans les charges communes doit être à
+    /* Une récurrence qui n'entre pas dans les charges communes doit être à
        quelqu'un : il pose une échéance par période, et chacune manquerait au
        mois de tout le monde. */
     if (

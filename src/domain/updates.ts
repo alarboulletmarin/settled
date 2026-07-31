@@ -159,7 +159,7 @@ function requalify(entry: Entry, recurrence: Recurrence): Entry {
  * Réaligne les échéances d'une récurrence sur sa définition courante, dans
  * tous les mois déjà ouverts à partir de `from`.
  *
- * Un abonnement est une règle, une échéance est un fait : c'est la règle qui
+ * Une récurrence est une règle, une échéance est un fait : c'est la règle qui
  * fabrique les faits, donc la changer doit refaire ceux qui n'ont pas encore
  * eu lieu. Les prévues à venir sont jetées puis régénérées — leur date, leur
  * montant ou leur libellé peuvent tous avoir bougé.
@@ -168,7 +168,7 @@ function requalify(entry: Entry, recurrence: Recurrence): Entry {
  * être refaite : confirmer d'avance dit qu'elle aura lieu, pas qu'elle a eu
  * lieu, et la règle du cahier §3 — « une `Entry` confirmée s'en détache, elle a
  * eu lieu » — ne s'applique donc pas encore. Sans cela, un foyer qui valide son
- * mois à venir ne peut plus corriger l'abonnement qui l'a produit : le membre
+ * mois à venir ne peut plus corriger la récurrence qui l'a produit : le membre
  * change sur la règle, et chaque graphique continue de lire l'ancien.
  *
  * Le passé, lui, ne bouge pas : ni ce qui est daté d'aujourd'hui ou d'avant, ni
@@ -273,7 +273,7 @@ export function updateEntry(data: Data, id: string, patch: Partial<Entry>): Data
  * un champ vidé dans le formulaire doit disparaître du document.
  *
  * Le lien vers la récurrence qui l'a posée survit à la réécriture : il ne se
- * saisit nulle part, et le perdre couperait l'échéance de son abonnement, donc
+ * saisit nulle part, et le perdre couperait l'échéance de sa récurrence, donc
  * l'historique de prix et l'amortissement d'un crédit avec elle.
  */
 export function replaceEntry(
@@ -306,7 +306,7 @@ export function confirmEntry(data: Data, id: string): Data {
 /**
  * Marque comme payée l'échéance d'une récurrence à une date donnée.
  *
- * Sert à la saisie qui pose l'abonnement et la dépense du jour d'un seul geste :
+ * Sert à la saisie qui pose la récurrence et la dépense du jour d'un seul geste :
  * l'utilisateur a dit que celle-là a eu lieu, on ne la lui redemande pas.
  *
  * L'échéance existe presque toujours — `syncRecurrenceEntries` vient de la

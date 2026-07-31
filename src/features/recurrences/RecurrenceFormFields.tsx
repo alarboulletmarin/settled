@@ -173,7 +173,7 @@ export type PeriodFieldsProps = {
   patch: (next: Partial<PeriodDraft>) => void
   /**
    * Faux quand l'écran porte déjà le champ de date. La saisie d'une dépense
-   * bascule en abonnement sans changer de date : celle qu'on vient d'entrer
+   * bascule en récurrence sans changer de date : celle qu'on vient d'entrer
    * *est* la première échéance, et en demander une seconde donnerait deux
    * champs de date pour une seule réponse.
    */

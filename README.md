@@ -59,7 +59,7 @@ non passé l'ouvre. Idempotente — une échéance est reconnue à sa paire réc
 entrée confirmée. Un mois passé ne s'ouvre pas tout seul : y faire apparaître des
 échéances que personne n'a confirmées inventerait un historique.
 
-**Règle et fait.** Un abonnement est une règle, une échéance est un fait. Toute
+**Règle et fait.** Une récurrence est une règle, une échéance est un fait. Toute
 écriture sur une récurrence réaligne ses échéances à venir dans tous les mois
 ouverts, dans la même mutation. Les confirmées ne bougent jamais.
 
@@ -83,7 +83,7 @@ de nature `resource`, ramenées au mois — il n'est stocké nulle part. Le déc
 diverger. La distinction règle / fait tient quand même, et sans doublon : c'est
 la **récurrence** qui est la règle, l'`Entry` qui est le fait. Une prime est une
 entrée ponctuelle, donc elle ne déplace pas la part du loyer ; une augmentation
-se saisit dans l'abonnement, donc elle la déplace. Le calcul refuse de répondre
+se saisit dans la récurrence, donc elle la déplace. Le calcul refuse de répondre
 — `null`, pas zéro — tant qu'un membre n'a aucune ressource à son nom, ou qu'un
 montant variable n'a pas d'échéance confirmée d'où se lire : un prorata au
 dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
@@ -106,7 +106,7 @@ lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir c
 qui est replié. L'en-tête garde une lecture visible même replié — un total, un
 compte : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait
 gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
-personne, les abonnements de 1 518 px à 708 px, et les réglages de 4 779 px à
+personne, les récurrences de 1 518 px à 708 px, et les réglages de 4 779 px à
 1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
 seule fois pour les trois écrans.
 
@@ -196,12 +196,12 @@ Le contraste, les noms accessibles et les cibles tactiles sont audités par scri
 sur toutes les routes, dans les deux thèmes : aucun point en suspens.
 
 Aux cinq destinations de la navigation s'ajoutent les écrans qu'on n'atteint que
-par une action — `/depense`, `/depense/:id`, `/abonnements/nouveau`,
-`/abonnements/:id`, `/abonnements/:id/modifier`, `/credits`, `/credits/nouveau`,
+par une action — `/depense`, `/depense/:id`, `/recurrences/nouveau`,
+`/recurrences/:id`, `/recurrences/:id/modifier`, `/credits`, `/credits/nouveau`,
 `/credits/:id`, `/repartition` — et `/styleguide`.
 
 `/credits` et `/repartition` ne figurent pas dans la navigation : six onglets ne
-tiennent pas à 320px sans tronquer « Abonnements » en « Abonneme… ». On y accède
-par la tuile correspondante de l'écran du mois, comme on accède aux abonnements
+tiennent pas à 320px sans tronquer « Récurrences » en « Récurren… ». On y accède
+par la tuile correspondante de l'écran du mois, comme on accède aux récurrences
 par la sienne. Chacune s'efface quand elle n'a rien à dire — aucun crédit suivi,
 ou pas de quoi calculer un prorata.

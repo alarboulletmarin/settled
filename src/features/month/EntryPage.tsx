@@ -37,7 +37,7 @@ const RHYTHMS = [
 
 /**
  * La périodicité vit dans le brouillon, mais pas sa date de départ : c'est
- * `date` qui la porte. Une dépense qu'on bascule en abonnement a déjà dit
+ * `date` qui la porte. Une dépense qu'on bascule en récurrence a déjà dit
  * quand elle a lieu, et deux champs de date pour une seule réponse feraient
  * douter de laquelle compte.
  */
@@ -134,7 +134,7 @@ function EntryForm({
     setDraft((current) => {
       // Changer la date réaligne les ancres de périodicité tant que
       // l'utilisateur ne les a pas lui-même touchées — c'est la même règle que
-      // sur l'écran des abonnements, et ici la date *est* la première échéance.
+      // sur l'écran des récurrences, et ici la date *est* la première échéance.
       if (next.date !== undefined && next.date !== current.date) {
         return { ...current, ...next, ...defaultsFrom(next.date) }
       }
@@ -162,7 +162,7 @@ function EntryForm({
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
     }
 
-    // Basculé en abonnement, l'écran ne pose plus un fait mais une règle. Elle
+    // Basculé en récurrence, l'écran ne pose plus un fait mais une règle. Elle
     // produit ses échéances dans la foulée, et celle du jour saisi part déjà
     // confirmée : l'utilisateur vient de dire qu'elle a eu lieu.
     if (entry === null && draft.recurring) {
@@ -218,7 +218,7 @@ function EntryForm({
             />
 
             {/* Seulement à la création. Convertir après coup une dépense passée
-                en abonnement — ou l'inverse — réécrirait un historique, et
+                en récurrence — ou l'inverse — réécrirait un historique, et
                 c'est une autre histoire que celle de cet écran. */}
             {entry === null && (
               <Segmented
@@ -263,7 +263,7 @@ function EntryForm({
           </Field>
 
           {/* Un seul champ de date, dont le libellé suit le rythme : en
-              abonnement, la date saisie est la première échéance. */}
+              récurrence, la date saisie est la première échéance. */}
           <Field
             label={draft.recurring ? fr.entry.firstDate : fr.entry.date}
             required

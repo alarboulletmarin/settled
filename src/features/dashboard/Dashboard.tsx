@@ -9,7 +9,7 @@ import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
 import { SavingTile } from './SavingTile'
 import { SplitTile } from './SplitTile'
-import { SubscriptionsTile } from './SubscriptionsTile'
+import { RecurrencesTile } from './RecurrencesTile'
 import { UpcomingTile } from './UpcomingTile'
 
 /**
@@ -61,7 +61,7 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
         <SavingTile />
         <SplitTile />
         <UpcomingTile />
-        <SubscriptionsTile />
+        <RecurrencesTile />
         <CreditsTile />
       </BentoGrid>
 

@@ -160,7 +160,7 @@ describe('montant chiffré le plus proche', () => {
   })
 })
 
-describe('montant en vigueur d’un abonnement', () => {
+describe('montant en vigueur d’une récurrence', () => {
   const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 27 }
   const fixe = makeRecurrence({ id: 'netflix', amount: eur(1099), period: MONTHLY })
   const variable = makeRecurrence({ id: 'netflix', amount: null, period: MONTHLY })
@@ -180,7 +180,7 @@ describe('montant en vigueur d’un abonnement', () => {
 
   it('laisse une échéance chiffrée l’emporter sur le montant habituel', () => {
     // L'estimation ne recouvre jamais un fait : sinon une augmentation resterait
-    // invisible tant qu'on n'a pas pensé à corriger l'abonnement.
+    // invisible tant qu'on n'a pas pensé à corriger la récurrence.
     const estimé = { ...variable, estimate: eur(240_000) }
     expect(amountOn(estimé, [at('2026-06-27', 250_000)], '2026-07-15')).toBe(250_000)
   })

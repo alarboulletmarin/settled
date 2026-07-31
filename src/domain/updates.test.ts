@@ -171,8 +171,8 @@ describe('récurrences', () => {
   })
 
   /* Le formulaire envoie l'état complet de ce qu'il montre : remettre un
-     abonnement à « tout le foyer » doit effacer le membre, pas le laisser. */
-  it('rend l’abonnement au foyer quand le formulaire n’envoie plus de membre', () => {
+     récurrence à « tout le foyer » doit effacer le membre, pas le laisser. */
+  it('rend la récurrence au foyer quand le formulaire n’envoie plus de membre', () => {
     const owned = makeData({
       recurrences: [
         makeRecurrence({
@@ -279,7 +279,7 @@ describe('réglages', () => {
 })
 
 describe('synchronisation d’une récurrence', () => {
-  /** Deux mois ouverts et un abonnement mensuel qui n'y a encore rien posé. */
+  /** Deux mois ouverts et une récurrence mensuelle qui n'y a encore rien posé. */
   function twoOpenMonths() {
     return makeData({
       recurrences: [
@@ -364,7 +364,7 @@ describe('synchronisation d’une récurrence', () => {
         ],
       })
 
-    it('suit la règle quand l’abonnement passe au foyer', () => {
+    it('suit la règle quand la récurrence passe au foyer', () => {
       const { id: _dropped, memberId: _m, ...household } = owned().recurrences[0]!
       const moved = replaceRecurrence(owned(), 'r1', household)
       const after = syncRecurrenceEntries(moved, 'r1', sequentialIds(), '2026-07-15')

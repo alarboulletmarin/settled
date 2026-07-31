@@ -19,7 +19,7 @@ import {
   type KindOf,
   type KindTotals,
   type MonthTotals,
-  type SubscriptionTotals,
+  type RecurrenceTotals,
   type Upcoming,
   breakdownByCategory,
   breakdownByFamily,
@@ -27,12 +27,12 @@ import {
   incomeFlow,
   monthProgress,
   monthTotals,
+  recurrenceTotals,
   restToLive,
   savingCapacity,
   savingLeft,
   savingsByCategory,
   spendingFlow,
-  subscriptionTotals,
   totalsByKind,
   upcomingEntries,
 } from '@/domain/stats'
@@ -111,12 +111,12 @@ export function useKindOf(): KindOf {
 }
 
 /**
- * Combien vaut un abonnement à une date — montant fixe, échéance chiffrée ou
+ * Combien vaut une récurrence à une date — montant fixe, échéance chiffrée ou
  * montant habituel, dans cet ordre (voir `amountOn`). Aujourd'hui par défaut,
  * fin de mois pour ce qui se lit sur un mois.
  *
  * Passée aux fonctions du domaine comme `kindOf`, et pour la même raison : le
- * revenu d'un membre, le total des abonnements et la fiche d'un abonnement
+ * revenu d'un membre, le total des récurrences et la fiche d’une récurrence
  * posent la même question, et il n'y a qu'ici qu'on y répond. Trois lectures
  * qui divergent, ce sont trois chiffres qui se contredisent d'un écran à
  * l'autre — et un prorata qui reste muet sans qu'on sache pourquoi.
@@ -363,8 +363,8 @@ export type MonthSplit = {
  * suivant n'existait pas encore — le foyer qui venait de poser ses deux
  * salaires n'avait aucune répartition, et en aurait eu une le lendemain.
  *
- * Le montant de chaque abonnement passe par `useAmountOf` — le même que celui
- * du total des abonnements et de la liste : le salaire qui pèse dans le prorata
+ * Le montant de chaque récurrence passe par `useAmountOf` — le même que celui
+ * du total des récurrences et de la liste : le salaire qui pèse dans le prorata
  * est au centime celui qui s'affiche sur sa fiche. Il se lit en fin de mois,
  * comme les charges qu'il sert à répartir : c'est la même question, « combien
  * ce mois-ci », et non « combien à cet instant ».
@@ -593,13 +593,13 @@ export function useMonthProgress(): number {
   return useMemo(() => monthProgress(month, today()), [month])
 }
 
-/* --- Abonnements ----------------------------------------------------------*/
+/* --- Récurrences ----------------------------------------------------------*/
 
-export function useSubscriptionTotals(direction: 'in' | 'out' = 'out'): SubscriptionTotals {
+export function useRecurrenceTotals(direction: 'in' | 'out' = 'out'): RecurrenceTotals {
   const recurrences = useRecurrences()
   const amountOf = useAmountOf()
   return useMemo(
-    () => subscriptionTotals(recurrences, amountOf, today(), direction),
+    () => recurrenceTotals(recurrences, amountOf, today(), direction),
     [recurrences, amountOf, direction],
   )
 }
@@ -660,7 +660,7 @@ export type RecurrenceRow = {
 }
 
 /**
- * La liste des abonnements, triée par prochaine échéance. Ceux qui n'ont plus
+ * La liste des récurrences, triée par prochaine échéance. Celles qui n'ont plus
  * d'échéance passent à la fin : ils ne se disputent pas l'attention.
  */
 export function useRecurrenceRows(): RecurrenceRow[] {
@@ -678,7 +678,7 @@ export function useRecurrenceRows(): RecurrenceRow[] {
         annual: annualCost(priced),
         priceChange: detectPriceChange(entries, recurrence.id),
         // `endedOn` est la dernière date couverte : `expandRecurrence` s'arrête
-        // dessus, incluse. Un abonnement arrêté aujourd'hui n'a donc plus
+        // dessus, incluse. Une récurrence arrêtée aujourd'hui n'a donc plus
         // d'échéance à venir — le compter encore actif jusqu'à demain laissait
         // « Arrêter » sans effet visible le jour même où on l'actionne.
         stopped: recurrence.endedOn !== undefined && recurrence.endedOn <= now,
@@ -701,7 +701,7 @@ export function useTrailingMonths(count = 12): MonthPoint[] {
 }
 
 /** Bornes de navigation : on ne remonte pas avant la première donnée. */
-/** Un abonnement et ses chiffres dérivés. `null` s'il n'existe pas (ou plus). */
+/** Une récurrence et ses chiffres dérivés. `null` si elle n'existe pas (ou plus). */
 export function useRecurrenceRow(id: string | undefined): RecurrenceRow | null {
   const rows = useRecurrenceRows()
   return useMemo(

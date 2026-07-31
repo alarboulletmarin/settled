@@ -4,11 +4,20 @@ import {
   NavCalendar,
   NavHistory,
   NavMonth,
+  NavRecurrences,
   NavSettings,
-  NavSubscriptions,
 } from '@/ui/Icons'
 
 export type RouteDef = { path: string; label: string; icon: IconComponent }
+
+/* Déclaré avant la table : un `const` ne remonte pas, et `NAV_ROUTES` le lit à
+   l'évaluation du module. */
+export const RECURRENCES_PATH = '/recurrences'
+/* Segment fixe : React Router le classe avant `/recurrences/:id`, une
+   récurrence ne peut donc pas éclipser le formulaire de création. */
+export const RECURRENCE_NEW_PATH = `${RECURRENCES_PATH}/nouveau`
+export const recurrencePath = (id: string): string => `${RECURRENCES_PATH}/${id}`
+export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/${id}/modifier`
 
 /**
  * L'ordre fait foi : il pilote la barre d'onglets comme la colonne latérale.
@@ -18,7 +27,7 @@ export type RouteDef = { path: string; label: string; icon: IconComponent }
 export const NAV_ROUTES: RouteDef[] = [
   { path: '/', label: fr.nav.month, icon: NavMonth },
   { path: '/calendrier', label: fr.nav.calendar, icon: NavCalendar },
-  { path: '/abonnements', label: fr.nav.subscriptions, icon: NavSubscriptions },
+  { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: NavRecurrences },
   { path: '/historique', label: fr.nav.history, icon: NavHistory },
   { path: '/reglages', label: fr.nav.settings, icon: NavSettings },
 ]
@@ -59,13 +68,6 @@ export const SPLIT_PATH = '/repartition'
    ne s'efface jamais — un mois sans versement est justement celui où la
    question « où je place » se pose. */
 export const SAVINGS_PATH = '/epargne'
-
-export const RECURRENCES_PATH = '/abonnements'
-/* Segment fixe : React Router le classe avant `/abonnements/:id`, un
-   abonnement ne peut donc pas éclipser le formulaire de création. */
-export const RECURRENCE_NEW_PATH = `${RECURRENCES_PATH}/nouveau`
-export const recurrencePath = (id: string): string => `${RECURRENCES_PATH}/${id}`
-export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/${id}/modifier`
 
 /**
  * Écrans qui n'ont qu'une chose à montrer — une saisie, une fiche. Aucune

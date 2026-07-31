@@ -90,7 +90,7 @@ export function HouseholdSection() {
                     <Close size={18} />
                   </IconButton>
                   {/* Le revenu ne se saisit pas ici : il se lit sur les
-                      abonnements de ressources du membre. Une seule vérité,
+                      récurrences de ressources du membre. Une seule vérité,
                       et une augmentation se répercute d'elle-même.
 
                       Quand il ne se lit pas, la ligne dit laquelle des deux
@@ -137,7 +137,7 @@ export function HouseholdSection() {
                 unassigned.map((r) => r.label).join(', '),
               )}
             </p>
-            {/* Droit sur l'abonnement quand il n'y en a qu'un : le nom est déjà
+            {/* Droit sur la récurrence quand il n'y en a qu'une : le nom est déjà
                 dans la phrase, le répéter en lien ne dirait rien de plus. */}
             <Link
               to={

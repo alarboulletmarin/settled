@@ -79,7 +79,7 @@ export function BentoSection() {
             <span className="t-tile-num tnum mt-auto">12</span>
           </Tile>
           <Tile span="2x1" variant="accent">
-            <Eyebrow>abonnements</Eyebrow>
+            <Eyebrow>récurrences</Eyebrow>
             <Amount value={money(4990)} size="tile" className="mt-auto" />
           </Tile>
           <Tile span="6x2">

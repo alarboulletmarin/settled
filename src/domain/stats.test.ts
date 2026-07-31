@@ -19,7 +19,7 @@ import {
   monthTotals,
   nextIncomeDate,
   restToLive,
-  subscriptionTotals,
+  recurrenceTotals,
   upcomingEntries,
   upcomingRows,
 } from './stats'
@@ -231,8 +231,8 @@ describe('prochaines échéances, prêtes à afficher', () => {
   })
 })
 
-describe('total des abonnements', () => {
-  /* Le résolveur répond pour chaque abonnement, fixe ou variable — c'est le
+describe('total des récurrences', () => {
+  /* Le résolveur répond pour chaque récurrence, fixe ou variable — c'est le
      même que celui du revenu d'un membre. Ici, un variable reste sans réponse. */
   const unpriced = (r: Recurrence): Money | null => r.amount
 
@@ -245,12 +245,12 @@ describe('total des abonnements', () => {
         period: { unit: 'year', every: 1, anchorDay: 1 },
       }),
     ]
-    const totals = subscriptionTotals(recurrences, unpriced, '2026-07-01')
+    const totals = recurrenceTotals(recurrences, unpriced, '2026-07-01')
     expect(totals.monthly).toBe(1998)
     expect(totals.annual).toBe(23976)
   })
 
-  it('ignore les entrées d’argent par défaut : ce ne sont pas des abonnements', () => {
+  it('ignore les entrées d’argent par défaut : ce ne sont pas des récurrences', () => {
     const recurrences = [
       makeRecurrence({
         id: 'salaire',
@@ -259,7 +259,7 @@ describe('total des abonnements', () => {
         period: { unit: 'month', every: 1, anchorDay: 28 },
       }),
     ]
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
   })
 
   it('sait aussi totaliser les entrées, quand on les lui demande', () => {
@@ -276,8 +276,8 @@ describe('total des abonnements', () => {
         period: { unit: 'month', every: 1, anchorDay: 15 },
       }),
     ]
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01', 'in').monthly).toBe(240_000)
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01', 'out').monthly).toBe(1_399)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01', 'in').monthly).toBe(240_000)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01', 'out').monthly).toBe(1_399)
   })
 
   it('ignore une récurrence arrêtée', () => {
@@ -289,14 +289,14 @@ describe('total des abonnements', () => {
         endedOn: '2026-05-31',
       }),
     ]
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
   })
 
   it('compte une variable non estimable plutôt que de la valoriser à zéro', () => {
     const recurrences = [
       makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
     ]
-    const totals = subscriptionTotals(recurrences, unpriced, '2026-07-01')
+    const totals = recurrenceTotals(recurrences, unpriced, '2026-07-01')
     expect(totals.unknownCount).toBe(1)
     expect(totals.monthly).toBe(0)
   })
@@ -305,13 +305,13 @@ describe('total des abonnements', () => {
     const recurrences = [
       makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
     ]
-    const totals = subscriptionTotals(recurrences, () => eur(8450), '2026-07-01')
+    const totals = recurrenceTotals(recurrences, () => eur(8450), '2026-07-01')
     expect(totals.monthly).toBe(8450)
     expect(totals.unknownCount).toBe(0)
   })
 
   it('vaut zéro sans aucune récurrence', () => {
-    expect(subscriptionTotals([], unpriced, '2026-07-01')).toEqual({
+    expect(recurrenceTotals([], unpriced, '2026-07-01')).toEqual({
       monthly: 0,
       annual: 0,
       unknownCount: 0,

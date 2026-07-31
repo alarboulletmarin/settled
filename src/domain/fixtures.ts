@@ -24,7 +24,7 @@ export function makeRecurrence(
 ): Recurrence {
   return {
     id: 'rec-1',
-    label: 'Abonnement',
+    label: 'Récurrence',
     categoryId: 'cat-1',
     direction: 'out',
     amount: money(999),

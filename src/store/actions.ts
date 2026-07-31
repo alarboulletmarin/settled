@@ -113,9 +113,9 @@ export function addRecurrence(input: Omit<Recurrence, 'id'>): Recurrence {
 }
 
 /**
- * Pose l'abonnement et marque l'échéance du jour saisi comme déjà payée.
+ * Pose la récurrence et marque l'échéance du jour saisi comme déjà payée.
  *
- * C'est le geste de la saisie d'une dépense qu'on bascule en abonnement :
+ * C'est le geste de la saisie d'une dépense qu'on bascule en récurrence :
  * celle-là a eu lieu, les suivantes sont à venir. Les trois étapes tiennent
  * dans une seule mutation — donc un seul rendu, une seule écriture — et surtout
  * l'échéance du jour ne peut pas rester prévue si la suite échouait.

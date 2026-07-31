@@ -8,7 +8,7 @@ import {
   useCategoryMap,
   useMemberMap,
   useRecurrenceRows,
-  useSubscriptionTotals,
+  useRecurrenceTotals,
 } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
@@ -16,7 +16,7 @@ import { Disclosure } from '@/ui/Disclosure'
 import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { Plus, SubscriptionsIcon } from '@/ui/Icons'
+import { Plus, RecurrencesIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
@@ -41,11 +41,11 @@ const OPEN_BY_DEFAULT: Record<RecurrenceGroupBy, boolean> = {
 }
 
 function Totals() {
-  const totals = useSubscriptionTotals('out')
+  const totals = useRecurrenceTotals('out')
   const currency = useCurrency()
   return (
     <Tile variant="accent" className="mb-4">
-      <Eyebrow icon={SubscriptionsIcon}>{fr.recurrences.totalMonthly}</Eyebrow>
+      <Eyebrow icon={RecurrencesIcon}>{fr.recurrences.totalMonthly}</Eyebrow>
       <Amount value={totals.monthly} size="tile" className="mt-3" />
       <p className="t-label mt-1 tnum">
         {tpl(fr.recurrences.perYear, formatMoney(totals.annual, currency, false))}
@@ -66,7 +66,7 @@ function Totals() {
 /**
  * La liste, regroupée sur l'axe choisi et repliable.
  *
- * Par sens d'abord : un salaire et un abonnement de streaming ne se
+ * Par sens d'abord : un salaire et une récurrence de streaming ne se
  * distinguaient que par le « + » que le DS §3 accorde aux entrées — trop peu
  * dans une liste qui les mêle, et d'autant plus que la pastille prend la teinte
  * de la catégorie et non du sens.
@@ -250,9 +250,9 @@ export function RecurrencesPage() {
         </div>
       )}
 
-      {/* Hors du branchement : sans abonnement non plus, on n'avait aucun
+      {/* Hors du branchement : sans récurrence non plus, on n'avait aucun
           chemin vers les crédits — et un crédit s'enregistre très bien avant
-          l'abonnement qui le rembourse. Le lien est un bloc et non un mot dans
+          la récurrence qui le rembourse. Le lien est un bloc et non un mot dans
           la phrase : dans le fil du texte, sa cible tombe à dix-huit pixels. */}
       <div className="mt-4 flex max-w-3xl flex-col">
         <p className="t-label">{fr.recurrences.creditsHint}</p>

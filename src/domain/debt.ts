@@ -2,7 +2,7 @@
  * Capital restant dû d'un crédit.
  *
  * La mensualité, elle, n'a rien de particulier : c'est une `Entry` posée par
- * une récurrence, comme un abonnement. Ce module ne calcule qu'une chose, mais
+ * une récurrence, comme une charge mensuelle. Ce module ne calcule qu'une chose, mais
  * que rien d'autre ne sait faire — combien il reste à devoir.
  *
  * Sans intérêts, la réponse est une soustraction. Avec, elle ne l'est plus :
@@ -82,7 +82,7 @@ export type DebtStatus = {
  * les montants réellement versés. Sans récurrence liée, il ne peut pas
  * décroître — on le dit plutôt que de deviner.
  *
- * Une échéance antérieure au crédit ne le rembourse pas : un abonnement peut
+ * Une échéance antérieure au crédit ne le rembourse pas : une récurrence peut
  * avoir servi à autre chose avant d'être rattaché, et les mensualités qu'il a
  * posées alors n'amortissent rien ici.
  */

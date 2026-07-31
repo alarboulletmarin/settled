@@ -385,9 +385,9 @@ export function upcomingRows(upcoming: readonly Upcoming[]): UpcomingRow[] {
   )
 }
 
-/* --- Abonnements ----------------------------------------------------------*/
+/* --- Récurrences ----------------------------------------------------------*/
 
-export type SubscriptionTotals = {
+export type RecurrenceTotals = {
   monthly: Money
   annual: Money
   /** Récurrences variables dont rien ne permet encore de dire le montant. */
@@ -406,12 +406,12 @@ export type SubscriptionTotals = {
  * un total qui ne compterait que les sorties sans le dire décrirait mal la
  * liste qu'il surplombe.
  */
-export function subscriptionTotals(
+export function recurrenceTotals(
   recurrences: readonly Recurrence[],
   amountOf: (recurrence: Recurrence) => Money | null,
   on: ISODate,
   direction: Direction = 'out',
-): SubscriptionTotals {
+): RecurrenceTotals {
   let monthly = ZERO
   let annual = ZERO
   let unknownCount = 0

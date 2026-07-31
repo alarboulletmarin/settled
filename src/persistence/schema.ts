@@ -106,9 +106,9 @@ function toVersion3(doc: RawDocument): RawDocument {
 }
 
 /**
- * Le montant habituel d'un abonnement à montant variable — `Recurrence.estimate`.
+ * Le montant habituel d’une récurrence à montant variable — `Recurrence.estimate`.
  *
- * Facultatif, et son absence a le sens qu'elle avait déjà : l'abonnement vaut
+ * Facultatif, et son absence a le sens qu'elle avait déjà : la récurrence vaut
  * ce que disent ses échéances, et rien tant qu'aucune n'est chiffrée. Un
  * document v3 est donc déjà un document v4 valide, et la migration n'a que la
  * version à inscrire — elle existe quand même, parce que le pipeline veut une

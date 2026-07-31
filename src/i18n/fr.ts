@@ -88,7 +88,7 @@ export const fr = {
     credits: 'Crédits',
     month: 'Le mois',
     calendar: 'Calendrier',
-    subscriptions: 'Abonnements',
+    subscriptions: 'Récurrences',
     history: 'Historique',
     settings: 'Réglages',
     styleguide: 'Styleguide',
@@ -128,16 +128,16 @@ export const fr = {
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
-    /* Le revenu ne se saisit pas ici : il se lit sur les abonnements de
+    /* Le revenu ne se saisit pas ici : il se lit sur les récurrences de
        ressources du membre. Le stocker à côté en ferait une seconde vérité.
        Reste à dire *pourquoi* il ne se lit pas, quand c'est le cas : les deux
        causes n'appellent pas le même geste, et « aucun revenu enregistré »
-       envoyait créer un abonnement qui existait déjà. */
+       envoyait créer une récurrence qui existait déjà. */
     memberNoIncome: 'aucun revenu enregistré',
     memberIncomeUnpriced: 'revenu à montant variable, pas encore chiffré',
     memberIncomeUnpricedFix: 'Indiquer un montant habituel',
     memberIncomeHint:
-      'Le revenu de chacun se lit sur ses abonnements de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
+      'Le revenu de chacun se lit sur ses récurrences de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
     /* Un salaire resté « tout le foyer » ne compte dans le revenu de personne,
        et c'est la première explication d'une répartition qui ne se calcule pas. */
@@ -185,7 +185,7 @@ export const fr = {
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
     reset: 'Tout effacer',
-    resetHint: 'Efface le foyer, les abonnements et toutes les entrées. Sans retour.',
+    resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
     resetConfirm1: 'Effacer toutes les données de cet appareil ?',
     resetConfirm2: 'Vraiment tout effacer ? Exporte d’abord si tu veux garder une trace.',
     resetDone: 'Données effacées',
@@ -244,7 +244,7 @@ export const fr = {
     breakdown: 'Répartition',
     breakdownHint: 'sorties du mois',
     upcoming: 'Prochaines échéances',
-    subscriptions: 'Abonnements',
+    subscriptions: 'Récurrences',
     subscriptionsHint: '%s par an',
     inflow: 'Entrées',
     outflow: 'Sorties',
@@ -419,50 +419,50 @@ export const fr = {
     planned: 'Prévue',
     confirmed: 'Confirmée',
 
-    /* Ponctuel ou abonnement — la bascule du cahier §4.4. */
+    /* Ponctuel ou récurrent — la bascule du cahier §4.4. */
     rhythm: 'Rythme',
     once: 'Ponctuel',
-    recurring: 'Abonnement',
+    recurring: 'Récurrence',
     firstDate: 'Première échéance',
     recurringHint:
       'Celle-ci est enregistrée comme payée, les suivantes arrivent à confirmer chaque mois.',
   },
 
   recurrences: {
-    title: 'Abonnements',
-    add: 'Ajouter un abonnement',
-    edit: 'Modifier l’abonnement',
-    added: 'Abonnement ajouté',
-    updated: 'Abonnement modifié',
-    resumed: 'Abonnement repris',
-    deleted: 'Abonnement supprimé',
-    empty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
+    title: 'Récurrences',
+    add: 'Ajouter une récurrence',
+    edit: 'Modifier la récurrence',
+    added: 'Récurrence ajoutée',
+    updated: 'Récurrence modifiée',
+    resumed: 'Récurrence reprise',
+    deleted: 'Récurrence supprimée',
+    empty: 'Aucune récurrence pour l’instant. Ajoute la première.',
     /* La seule porte des crédits était une tuile du mois qui se retire tant
        qu'aucun crédit n'est suivi : on ne pouvait donc jamais créer le premier.
-       Elle est ici, parce que c'est un abonnement qui pose les mensualités. */
-    creditsHint: 'Une mensualité de crédit est un abonnement comme un autre. Pour suivre en plus le capital qu’il reste à devoir :',
-    emptyStopped: 'Aucun abonnement arrêté.',
-    showStopped: 'Voir les abonnements arrêtés',
-    hideStopped: 'Masquer les abonnements arrêtés',
-    stoppedBadge: 'Arrêté',
+       Elle est ici, parce que c'est une récurrence qui pose les mensualités. */
+    creditsHint: 'Une mensualité de crédit est une récurrence comme une autre. Pour suivre en plus le capital qu’il reste à devoir :',
+    emptyStopped: 'Aucune récurrence arrêtée.',
+    showStopped: 'Voir les récurrences arrêtées',
+    hideStopped: 'Masquer les récurrences arrêtées',
+    stoppedBadge: 'Arrêtée',
     nextDue: 'Prochaine échéance',
     noNextDue: 'Plus d’échéance',
     monthlyCost: 'Par mois',
     annualCost: 'Par an',
     perYear: '%s par an',
-    totalMonthly: 'Total abonnements',
+    totalMonthly: 'Total récurrences',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
     /* Le sens en titre de section : dans une liste qui les mêle, le « + » des
-       entrées ne suffit pas à distinguer un salaire d'un abonnement. */
+       entrées ne suffit pas à distinguer un salaire d'une charge. */
     inflow: 'Ce qui rentre',
     outflow: 'Ce qui sort',
     groupBy: 'Regrouper par',
     bySense: 'Sens',
     byCategory: 'Catégorie',
     byMember: 'Personne',
-    groupCountOne: '%s abonnement',
-    groupCount: '%s abonnements',
+    groupCountOne: '%s récurrence',
+    groupCount: '%s récurrences',
     collapseAll: 'Tout replier',
     expandAll: 'Tout déplier',
     unknownAmounts: '%s à montant variable, non chiffré%s',
@@ -471,12 +471,12 @@ export const fr = {
     fixedAmount: 'Montant fixe',
     priceChanged: 'Le prix a changé : %s → %s',
     priceChangedSince: 'depuis le %s',
-    stop: 'Arrêter l’abonnement',
-    stopped: 'Abonnement arrêté',
-    resume: 'Reprendre l’abonnement',
-    remove: 'Supprimer l’abonnement',
+    stop: 'Arrêter la récurrence',
+    stopped: 'Récurrence arrêtée',
+    resume: 'Reprendre la récurrence',
+    remove: 'Supprimer la récurrence',
     removeConfirm:
-      'Les échéances déjà confirmées sont conservées. Supprimer cet abonnement ?',
+      'Les échéances déjà confirmées sont conservées. Supprimer cette récurrence ?',
     stopHint: 'Les échéances déjà confirmées restent dans l’historique.',
     form: {
       label: 'Libellé',
@@ -491,7 +491,7 @@ export const fr = {
          ce champ est le seul endroit où l'on peut s'avancer avant. */
       estimate: 'Montant habituel',
       estimateHint:
-        'Sert d’ordre de grandeur — pour le total des abonnements, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
+        'Sert d’ordre de grandeur — pour le total des récurrences, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
       period: 'Périodicité',
       everyMonths: 'Tous les combien de mois',
       weekday: 'Jour de la semaine',
@@ -501,13 +501,13 @@ export const fr = {
       notePlaceholder: 'Résiliable en ligne',
       categoryPlaceholder: 'Choisis une catégorie',
       shared: 'Charge commune, à partager entre les membres',
-      labelRequired: 'Donne un libellé à cet abonnement.',
+      labelRequired: 'Donne un libellé à cette récurrence.',
       amountRequired: 'Indique un montant, ou choisis « montant variable ».',
       categoryRequired: 'Choisis une catégorie.',
-      /* Un abonnement pose une échéance par mois : sans propriétaire ni
+      /* Une récurrence pose une échéance par mois : sans propriétaire ni
          partage, il creuse le trou à chaque fois. */
       memberRequired:
-        'Dis à qui est cet abonnement : il n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
+        'Dis à qui est cette récurrence : elle n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
       monthDayHint: 'Un jour qui n’existe pas est ramené au dernier jour du mois.',
     },
     periods: {
@@ -541,12 +541,12 @@ export const fr = {
     advancedBy: 'avancé par %s',
     method: 'Comment c’est calculé',
     methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
-    /* Le revenu est dérivé des abonnements de ressources, jamais déclaré à
+    /* Le revenu est dérivé des récurrences de ressources, jamais déclaré à
        part : une seconde vérité finirait par diverger de la première. */
     methodIncome:
-      'Le revenu vient des abonnements de salaire et d’allocation de chacun, ramenés au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
+      'Le revenu vient des récurrences de salaire et d’allocation de chacun, ramenées au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
     methodVariable:
-      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Un abonnement laissé « tout le foyer » ne compte dans le revenu de personne.',
+      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Une récurrence laissée « tout le foyer » ne compte dans le revenu de personne.',
     methodIncluded: 'Les charges et les crédits que personne ne s’est attribués.',
     methodFlagged: 'Les dépenses cochées « à partager ».',
     methodExcluded:
@@ -563,16 +563,16 @@ export const fr = {
        nommer, et le prorata n'a pas de dénominateur pour autant. */
     missingNone: 'Ajoute un revenu à chacun pour répartir les charges.',
     missingHint:
-      'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance chiffrée.',
-    /* Le cas où l'abonnement existe déjà : envoyer « ajouter un revenu » ferait
+      'Une récurrence de salaire ou d’allocation à son nom suffit. À montant variable, elle se lit sur la dernière échéance chiffrée.',
+    /* Le cas où la récurrence existe déjà : envoyer « ajouter un revenu » ferait
        créer un doublon là où il ne manque qu'un chiffre. Le « de » s'élide
        comme au-dessus, et pour la même raison. */
     unpricedOne: 'Le revenu %s est à montant variable et pas encore chiffré.',
     unpricedMany: 'Les revenus %s sont à montant variable et pas encore chiffrés.',
     unpricedHint:
-      'Confirme une échéance, ou indique un montant habituel sur l’abonnement : la répartition se calcule dès qu’un chiffre existe.',
+      'Confirme une échéance, ou indique un montant habituel sur la récurrence : la répartition se calcule dès qu’un chiffre existe.',
     goToIncome: 'Ajouter un revenu',
-    goToSubscriptions: 'Voir les abonnements',
+    goToSubscriptions: 'Voir les récurrences',
     soloTitle: 'La répartition demande au moins deux membres.',
     soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
     goToSettings: 'Aller aux réglages',
@@ -641,7 +641,7 @@ export const fr = {
     removed: 'Crédit retiré du suivi',
     remove: 'Retirer du suivi',
     removeConfirm:
-      'Les mensualités déjà versées sont conservées, ainsi que l’abonnement qui les pose. Seul le suivi du capital s’arrête. Retirer ce crédit ?',
+      'Les mensualités déjà versées sont conservées, ainsi que la récurrence qui les pose. Seul le suivi du capital s’arrête. Retirer ce crédit ?',
     empty: 'Aucun crédit suivi. Ajoute le premier pour voir ce qu’il te reste à devoir.',
     remaining: 'Capital restant dû',
     principal: 'Capital emprunté',
@@ -654,10 +654,10 @@ export const fr = {
     endsOn: 'Dernière mensualité',
     monthsLeft: '%s mensualité%s restante%s',
     settled: 'Soldé',
-    linked: 'Abonnement qui le rembourse',
+    linked: 'Récurrence qui le rembourse',
     linkedNone: 'Aucun — le capital ne bougera pas',
     linkedHint:
-      'C’est l’abonnement qui pose les mensualités et fait décroître le capital. Sans lui, seul le montant emprunté est connu.',
+      'C’est la récurrence qui pose les mensualités et fait décroître le capital. Sans elle, seul le montant emprunté est connu.',
     total: 'Reste à devoir',
     totalMonthly: 'Mensualités',
     progress: '%s remboursé',
@@ -719,8 +719,8 @@ export const fr = {
     themePreview: 'Aperçu forcé',
     sampleAmount: 'Montant',
     sampleRing: 'Anneau',
-    sampleEmpty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
-    sampleEmptyAction: 'Ajouter un abonnement',
+    sampleEmpty: 'Aucune récurrence pour l’instant. Ajoute la première.',
+    sampleEmptyAction: 'Ajouter une récurrence',
     variants: 'Variantes',
     states: 'États',
   },

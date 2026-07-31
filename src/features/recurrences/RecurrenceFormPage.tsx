@@ -1,4 +1,5 @@
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { RECURRENCES_PATH } from '@/app/routes'
 import type { Recurrence } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { addRecurrence, replaceRecurrence } from '@/store/actions'
@@ -14,7 +15,7 @@ import { useRecurrenceForm } from './useRecurrenceForm'
 
 /**
  * Création et édition. Le même formulaire, la même validation, sur un écran
- * plein : le formulaire d'abonnement est le plus long de l'app — périodicité,
+ * plein : le formulaire de récurrence est le plus long de l'app — périodicité,
  * ancre, date de première échéance — et une feuille à faire glisser n'en
  * montrait qu'un tiers à la fois.
  */
@@ -104,7 +105,7 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
   )
 }
 
-/** `/abonnements/nouveau`, et `/abonnements/:id/modifier` pour en reprendre un. */
+/** `/recurrences/nouveau`, et `/recurrences/:id/modifier` pour en reprendre une. */
 export function RecurrenceFormPage() {
   const { id } = useParams()
   const row = useRecurrenceRow(id)
@@ -114,11 +115,11 @@ export function RecurrenceFormPage() {
   const goBack = (): void => {
     // Arrivé par un lien direct ou un rechargement, il n'y a pas d'écran
     // précédent dans l'app : revenir en arrière sortirait du site.
-    if (location.key === 'default') void navigate('/abonnements')
+    if (location.key === 'default') void navigate(RECURRENCES_PATH)
     else void navigate(-1)
   }
 
-  if (id !== undefined && row === null) return <Navigate to="/abonnements" replace />
+  if (id !== undefined && row === null) return <Navigate to={RECURRENCES_PATH} replace />
 
   return <Form key={id ?? 'new'} recurrence={row?.recurrence ?? null} onDone={goBack} />
 }

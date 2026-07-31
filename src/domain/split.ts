@@ -164,10 +164,10 @@ export function sharedEntries(
 /**
  * Pourquoi un revenu manque. Deux causes, deux gestes différents — et c'est
  * bien pour ça qu'on les distingue : un écran qui se contente de « aucun revenu
- * enregistré » envoie créer un abonnement qui existe déjà.
+ * enregistré » envoie créer une récurrence qui existe déjà.
  */
 export type IncomeGap =
-  /** Aucun abonnement de ressource à son nom. */
+  /** Aucune récurrence de ressource à son nom. */
   | 'none'
   /** Il en porte, mais à montant variable et pas encore chiffré. */
   | 'unpriced'
@@ -202,8 +202,8 @@ export type MemberIncome = IncomeWeight & MemberIncomeValue
  * rien de ce que chacun gagne, et elle ne déplace donc pas la part du loyer.
  *
  * `amountOf` répond pour chaque récurrence — fixe ou variable — et c'est la
- * même fonction que pour le total des abonnements : le salaire qui pèse dans le
- * prorata est au centime celui que la liste des abonnements affiche.
+ * même fonction que pour le total des récurrences : le salaire qui pèse dans le
+ * prorata est au centime celui que la liste des récurrences affiche.
  *
  * Le revenu se lit **sur un mois**, jamais sur un jour. Lu au jour où l'on
  * regarde, un salaire dont la première échéance tombe le 1er du mois suivant
@@ -261,7 +261,7 @@ export function memberIncomes(
  * foyer —, mais elle ne pèse dans la part de personne, et c'est exactement le
  * genre de silence qui fait chercher longtemps pourquoi la répartition ne se
  * calcule pas. La saisie l'exige désormais à quelqu'un ; restent les
- * abonnements posés avant cette règle, ou avant qu'il y ait des membres.
+ * récurrences posées avant cette règle, ou avant qu'il y ait des membres.
  */
 export function unassignedIncomes(
   recurrences: readonly Recurrence[],

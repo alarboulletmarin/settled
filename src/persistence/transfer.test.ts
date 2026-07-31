@@ -350,7 +350,7 @@ describe('migration vers la répartition entre membres', () => {
   })
 })
 
-describe('montant habituel d’un abonnement variable (v4)', () => {
+describe('montant habituel d’une récurrence variable (v4)', () => {
   const doc = (recurrence: Record<string, unknown>) =>
     JSON.stringify({
       schemaVersion: 4,

@@ -20,7 +20,7 @@ const ACTION: [string, IconComponent][] = [
 const MARKER: [string, IconComponent][] = [
   ['NavMonth', Icons.NavMonth],
   ['NavCalendar', Icons.NavCalendar],
-  ['NavSubscriptions', Icons.NavSubscriptions],
+  ['NavRecurrences', Icons.NavRecurrences],
   ['NavHistory', Icons.NavHistory],
   ['NavSettings', Icons.NavSettings],
   ['BalanceIcon', Icons.BalanceIcon],
@@ -29,7 +29,7 @@ const MARKER: [string, IconComponent][] = [
   ['BreakdownIcon', Icons.BreakdownIcon],
   ['SavingsIcon', Icons.SavingsIcon],
   ['UpcomingIcon', Icons.UpcomingIcon],
-  ['SubscriptionsIcon', Icons.SubscriptionsIcon],
+  ['RecurrencesIcon', Icons.RecurrencesIcon],
   ['ToConfirmIcon', Icons.ToConfirmIcon],
   ['EntriesIcon', Icons.EntriesIcon],
   ['HouseholdIcon', Icons.HouseholdIcon],
