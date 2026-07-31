@@ -64,7 +64,7 @@ export function makeData(over: Partial<Data> = {}): Data {
   return {
     // La version courante du document : un aller-retour export / import doit
     // pouvoir se comparer à l'identique, sans qu'une migration s'intercale.
-    schemaVersion: 3,
+    schemaVersion: 4,
     household: { name: 'Maison', members: [] },
     families: [makeFamily({ id: 'fam-leisure' })],
     categories: [],

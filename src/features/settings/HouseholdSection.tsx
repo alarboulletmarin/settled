@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { RECURRENCE_NEW_PATH, SPLIT_PATH } from '@/app/routes'
+import {
+  RECURRENCES_PATH,
+  RECURRENCE_NEW_PATH,
+  SPLIT_PATH,
+  recurrenceEditPath,
+} from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { addMember, removeMember, setHouseholdName } from '@/store/actions'
@@ -8,6 +13,7 @@ import {
   useMemberIncomes,
   useMemberSharesOfIncome,
   useMembers,
+  useUnassignedIncomes,
 } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
@@ -22,12 +28,13 @@ export function HouseholdSection() {
   const name = useHouseholdName()
   const members = useMembers()
   const incomes = useMemberIncomes()
+  const unassigned = useUnassignedIncomes()
   const shares = useMemberSharesOfIncome()
   const currency = useCurrency()
   const [newMember, setNewMember] = useState('')
   const trimmed = newMember.trim()
 
-  const incomeOf = new Map(incomes.map((i) => [i.memberId, i.income]))
+  const incomeOf = new Map(incomes.map((i) => [i.memberId, i]))
 
   return (
     <Tile className="gap-4">
@@ -58,7 +65,7 @@ export function HouseholdSection() {
         ) : (
           <ul className="flex flex-col gap-1">
             {members.map((member) => {
-              const income = incomeOf.get(member.id) ?? null
+              const read = incomeOf.get(member.id)
               const shareBp = shares?.get(member.id)
               return (
                 <li
@@ -77,19 +84,65 @@ export function HouseholdSection() {
                   </IconButton>
                   {/* Le revenu ne se saisit pas ici : il se lit sur les
                       abonnements de ressources du membre. Une seule vérité,
-                      et une augmentation se répercute d'elle-même. */}
+                      et une augmentation se répercute d'elle-même.
+
+                      Quand il ne se lit pas, la ligne dit laquelle des deux
+                      raisons c'est : « aucun revenu enregistré » sur un membre
+                      qui en porte un, mais variable et pas encore chiffré,
+                      envoyait en créer un second. */}
                   <span className="t-axis tnum w-full">
-                    {income === null
-                      ? fr.settings.memberNoIncome
-                      : formatMoney(income, currency, false) +
+                    {read?.income != null
+                      ? formatMoney(read.income, currency, false) +
                         (shareBp === undefined
                           ? ''
-                          : ` · ${tpl(fr.settings.memberShareOf, formatPercent(shareBp / 10_000, 1))}`)}
+                          : ` · ${tpl(fr.settings.memberShareOf, formatPercent(shareBp / 10_000, 1))}`)
+                      : read?.gap === 'unpriced'
+                        ? fr.settings.memberIncomeUnpriced
+                        : fr.settings.memberNoIncome}
                   </span>
+                  {read?.gap === 'unpriced' && (
+                    <Link
+                      to={RECURRENCES_PATH}
+                      className="t-label w-full underline underline-offset-2"
+                    >
+                      {fr.settings.memberIncomeUnpricedFix}
+                    </Link>
+                  )}
                 </li>
               )
             })}
           </ul>
+        )}
+
+        {/* Un salaire resté « tout le foyer » ne compte dans le revenu de
+            personne : il rentre bien sur le mois, mais il ne pèse dans aucune
+            part, et rien nulle part ne le disait. C'est la première explication
+            d'une répartition qui ne se calcule pas — la saisie l'exige
+            désormais à quelqu'un, restent ceux posés avant cette règle, ou
+            avant qu'il y ait des membres. */}
+        {members.length > 0 && unassigned.length > 0 && (
+          <div className="flex flex-col gap-1 rounded-inner bg-surface-2 px-3 py-2">
+            <p className="t-label">
+              {tpl(
+                unassigned.length > 1
+                  ? fr.settings.incomeUnassignedMany
+                  : fr.settings.incomeUnassignedOne,
+                unassigned.map((r) => r.label).join(', '),
+              )}
+            </p>
+            {/* Droit sur l'abonnement quand il n'y en a qu'un : le nom est déjà
+                dans la phrase, le répéter en lien ne dirait rien de plus. */}
+            <Link
+              to={
+                unassigned.length === 1 && unassigned[0] !== undefined
+                  ? recurrenceEditPath(unassigned[0].id)
+                  : RECURRENCES_PATH
+              }
+              className="t-label underline underline-offset-2"
+            >
+              {fr.settings.incomeUnassignedFix}
+            </Link>
+          </div>
         )}
 
         <form

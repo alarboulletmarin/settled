@@ -6,7 +6,7 @@
  * chiffre directement, elle produit des `Entry`.
  * ==========================================================================*/
 
-import type { ISODate, YearMonth } from './date'
+import { type ISODate, type YearMonth, startOfMonth } from './date'
 import type { Money } from './money'
 
 export type Direction = 'in' | 'out'
@@ -89,6 +89,18 @@ export type Recurrence = {
   direction: Direction
   /** null = montant à saisir à chaque échéance. */
   amount: Money | null
+  /**
+   * Ordre de grandeur d'un montant variable, facultatif et sans effet sur un
+   * montant fixe.
+   *
+   * Ce n'est pas une seconde vérité à côté de `amount` : c'est la seule qu'un
+   * abonnement variable puisse porter avant sa première échéance. Un salaire
+   * qui varie n'a aucun chiffre tant que rien n'est tombé, et il ne pouvait
+   * donc peser dans aucun prorata — le foyer entier restait sans répartition
+   * parce qu'une personne venait d'arriver. Dès qu'une échéance est chiffrée,
+   * elle l'emporte : l'estimation ne recouvre jamais un fait (voir `amountOn`).
+   */
+  estimate?: Money
   period: Period
   startedOn: ISODate
   /** Dernier jour où la récurrence peut encore tomber, borne incluse. */
@@ -184,6 +196,24 @@ export type Data = {
 export function isActiveOn(recurrence: Recurrence, date: ISODate): boolean {
   if (date < recurrence.startedOn) return false
   return recurrence.endedOn === undefined || date <= recurrence.endedOn
+}
+
+/**
+ * L'abonnement décrit-il la situation du foyer sur ce mois-là ?
+ *
+ * Un abonnement arrêté avant le mois ne la décrit plus. Un abonnement dont la
+ * première échéance est encore à venir, si : il a été déclaré, il va tomber.
+ * L'asymétrie est voulue, et c'est déjà celle du total des abonnements, qui
+ * compte un abonnement à venir et exclut un abonnement arrêté — un foyer qui
+ * pose ses salaires au 1er du mois prochain n'a pas à attendre ce 1er pour
+ * savoir dans quelle proportion il partage ses charges.
+ *
+ * La question se pose sur un mois, jamais sur un jour : la répartition d'août
+ * se lit avec les revenus d'août, y compris quand on la consulte en juillet.
+ * Répondre « aujourd'hui » ferait dépendre le chiffre du moment où on regarde.
+ */
+export function isRunningIn(recurrence: Recurrence, month: YearMonth): boolean {
+  return recurrence.endedOn === undefined || recurrence.endedOn >= startOfMonth(month)
 }
 
 export function isStopped(recurrence: Recurrence, on: ISODate): boolean {

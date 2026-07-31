@@ -374,14 +374,17 @@ export function upcomingRows(upcoming: readonly Upcoming[]): UpcomingRow[] {
 export type SubscriptionTotals = {
   monthly: Money
   annual: Money
-  /** Récurrences variables dont aucun montant confirmé ne permet d'estimer. */
+  /** Récurrences variables dont rien ne permet encore de dire le montant. */
   unknownCount: number
 }
 
 /**
  * Coût des récurrences actives d'un sens, amorti au mois et à l'année.
- * Une récurrence à montant variable est estimée à sa dernière échéance
- * confirmée ; faute de quoi elle est comptée comme inconnue plutôt qu'à zéro.
+ *
+ * `amountOf` répond pour chaque récurrence, fixe ou variable — c'est la même
+ * fonction que pour le revenu d'un membre, et c'est ce qui garantit qu'un
+ * salaire pèse ici le montant exact dont il pèse là. Faute de réponse, la
+ * récurrence est comptée comme inconnue plutôt qu'à zéro.
  *
  * Le sens est un paramètre parce que la liste des récurrences mêle les deux :
  * un total qui ne compterait que les sorties sans le dire décrirait mal la
@@ -389,7 +392,7 @@ export type SubscriptionTotals = {
  */
 export function subscriptionTotals(
   recurrences: readonly Recurrence[],
-  resolveVariable: (recurrence: Recurrence) => Money | null,
+  amountOf: (recurrence: Recurrence) => Money | null,
   on: ISODate,
   direction: Direction = 'out',
 ): SubscriptionTotals {
@@ -401,8 +404,7 @@ export function subscriptionTotals(
     if (recurrence.direction !== direction) continue
     if (recurrence.endedOn !== undefined && recurrence.endedOn < on) continue
 
-    const resolved =
-      recurrence.amount ?? resolveVariable(recurrence)
+    const resolved = amountOf(recurrence)
     if (resolved === null) {
       unknownCount += 1
       continue

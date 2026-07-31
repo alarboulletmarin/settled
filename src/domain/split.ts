@@ -10,7 +10,7 @@
  * la nature d'une catégorie sous forme de fonction, comme `stats.ts`.
  * ==========================================================================*/
 
-import type { ISODate, YearMonth } from './date'
+import type { YearMonth } from './date'
 import { type Money, ZERO, add, money, sum } from './money'
 import { monthlyEquivalent } from './recurrence'
 import { type KindOf, type MemberFilter, entriesOfMonth } from './stats'
@@ -20,7 +20,7 @@ import {
   type Entry,
   type Member,
   type Recurrence,
-  isActiveOn,
+  isRunningIn,
   isSpending,
 } from './types'
 
@@ -161,45 +161,81 @@ export function sharedEntries(
 
 /* --- Le revenu d'un membre ------------------------------------------------*/
 
-/** Revenu mensuel d'un membre. `null` = pas de quoi le dire. */
-export type MemberIncome = { memberId: string; income: Money | null }
+/**
+ * Pourquoi un revenu manque. Deux causes, deux gestes différents — et c'est
+ * bien pour ça qu'on les distingue : un écran qui se contente de « aucun revenu
+ * enregistré » envoie créer un abonnement qui existe déjà.
+ */
+export type IncomeGap =
+  /** Aucun abonnement de ressource à son nom. */
+  | 'none'
+  /** Il en porte, mais à montant variable et pas encore chiffré. */
+  | 'unpriced'
+
+/** Ce qu'on sait du revenu mensuel d'un membre. */
+export type MemberIncomeValue = {
+  /** `null` = pas de quoi le dire ; `gap` dit alors ce qui manque. */
+  income: Money | null
+  /** Renseigné exactement quand `income` vaut `null`. */
+  gap: IncomeGap | null
+}
+
+/**
+ * Ce dont le prorata a besoin, et rien de plus : qui, et combien.
+ *
+ * Le partage ne demande pas *pourquoi* un revenu manque — un dénominateur
+ * incomplet ne se répartit pas, quelle qu'en soit la raison. C'est l'écran qui
+ * a besoin de la raison, pour dire quoi faire. Les deux besoins ont deux types.
+ */
+export type IncomeWeight = { memberId: string; income: Money | null }
+
+export type MemberIncome = IncomeWeight & MemberIncomeValue
 
 /**
  * Le revenu mensuel d'un membre, déduit de ses récurrences de nature
  * `resource` — salaire, allocations, pension — ramenées au mois.
  *
- * Dérivé, jamais stocké. Un revenu déclaré à côté serait une seconde vérité,
- * et la première augmentation les ferait diverger. C'est aussi ce qui donne au
- * coefficient la stabilité qu'il lui faut : une récurrence est une règle, une
- * prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce
- * que chacun gagne, et elle ne déplace donc pas la part du loyer.
+ * Dérivé, jamais stocké. Un revenu déclaré sur le membre serait une seconde
+ * vérité, et la première augmentation les ferait diverger. C'est aussi ce qui
+ * donne au coefficient la stabilité qu'il lui faut : une récurrence est une
+ * règle, une prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit
+ * rien de ce que chacun gagne, et elle ne déplace donc pas la part du loyer.
  *
- * `null` quand le membre ne porte aucune récurrence de ressource, et quand
- * l'une d'elles est à montant variable sans échéance confirmée d'où tirer un
- * ordre de grandeur : un revenu qu'on ne sait pas encore ne vaut pas zéro.
+ * `amountOf` répond pour chaque récurrence — fixe ou variable — et c'est la
+ * même fonction que pour le total des abonnements : le salaire qui pèse dans le
+ * prorata est au centime celui que la liste des abonnements affiche.
+ *
+ * Le revenu se lit **sur un mois**, jamais sur un jour. Lu au jour où l'on
+ * regarde, un salaire dont la première échéance tombe le 1er du mois suivant
+ * n'existait pas encore : le foyer qui venait de poser ses deux salaires
+ * n'avait aucune répartition, et en aurait eu une le lendemain. Un chiffre de
+ * partage ne peut pas dépendre du moment où on ouvre l'écran.
+ *
+ * `null` quand rien ne permet de le dire : un revenu qu'on ne sait pas encore
+ * ne vaut pas zéro. Le `gap` dit laquelle des deux raisons c'est.
  */
 export function monthlyIncome(
   recurrences: readonly Recurrence[],
   memberId: string,
   kindOf: KindOf,
-  resolveVariable: (recurrence: Recurrence) => Money | null,
-  on: ISODate,
-): Money | null {
+  amountOf: (recurrence: Recurrence) => Money | null,
+  month: YearMonth,
+): MemberIncomeValue {
   let total = ZERO
   let found = false
 
   for (const recurrence of recurrences) {
     if (recurrence.memberId !== memberId) continue
     if (kindOf(recurrence.categoryId) !== 'resource') continue
-    if (!isActiveOn(recurrence, on)) continue
+    if (!isRunningIn(recurrence, month)) continue
 
     found = true
-    const amount = recurrence.amount ?? resolveVariable(recurrence)
-    if (amount === null) return null
+    const amount = amountOf(recurrence)
+    if (amount === null) return { income: null, gap: 'unpriced' }
     total = add(total, monthlyEquivalent({ ...recurrence, amount }) ?? ZERO)
   }
 
-  return found ? total : null
+  return found ? { income: total, gap: null } : { income: null, gap: 'none' }
 }
 
 /** Le revenu de chaque membre du foyer, dans l'ordre du foyer. */
@@ -207,13 +243,37 @@ export function memberIncomes(
   members: readonly Member[],
   recurrences: readonly Recurrence[],
   kindOf: KindOf,
-  resolveVariable: (recurrence: Recurrence) => Money | null,
-  on: ISODate,
+  amountOf: (recurrence: Recurrence) => Money | null,
+  month: YearMonth,
 ): MemberIncome[] {
   return members.map((member) => ({
     memberId: member.id,
-    income: monthlyIncome(recurrences, member.id, kindOf, resolveVariable, on),
+    ...monthlyIncome(recurrences, member.id, kindOf, amountOf, month),
   }))
+}
+
+/**
+ * Les ressources actives que personne ne porte.
+ *
+ * Une ressource au foyer entier ne compte dans le revenu d'aucun membre : le
+ * prorata compare ce que chacun gagne, et un revenu commun ne dit rien de cet
+ * écart. Elle ne disparaît pas pour autant — elle rentre bien sur le mois du
+ * foyer —, mais elle ne pèse dans la part de personne, et c'est exactement le
+ * genre de silence qui fait chercher longtemps pourquoi la répartition ne se
+ * calcule pas. La saisie l'exige désormais à quelqu'un ; restent les
+ * abonnements posés avant cette règle, ou avant qu'il y ait des membres.
+ */
+export function unassignedIncomes(
+  recurrences: readonly Recurrence[],
+  kindOf: KindOf,
+  month: YearMonth,
+): Recurrence[] {
+  return recurrences.filter(
+    (recurrence) =>
+      recurrence.memberId === undefined &&
+      kindOf(recurrence.categoryId) === 'resource' &&
+      isRunningIn(recurrence, month),
+  )
 }
 
 /* --- Parts de chacun ------------------------------------------------------*/
@@ -236,7 +296,7 @@ export type MemberShare = {
  * c'est le raisonnement de `savingRate`, et l'écran doit dire ce qui manque
  * plutôt qu'afficher un chiffre faux.
  */
-function prorataWeights(incomes: readonly MemberIncome[]): Money[] | null {
+function prorataWeights(incomes: readonly IncomeWeight[]): Money[] | null {
   if (incomes.length < 2) return null
 
   const known: Money[] = []
@@ -258,7 +318,7 @@ function prorataWeights(incomes: readonly MemberIncome[]): Money[] | null {
  * Répartition annoncer deux chiffres à un centime l'un de l'autre.
  */
 export function memberShares(
-  incomes: readonly MemberIncome[],
+  incomes: readonly IncomeWeight[],
   amounts: readonly Money[],
 ): MemberShare[] | null {
   const weights = prorataWeights(incomes)
@@ -305,7 +365,7 @@ export function scopeToMember(
   entries: readonly Entry[],
   memberId: string,
   kindOf: KindOf,
-  incomes: readonly MemberIncome[],
+  incomes: readonly IncomeWeight[],
 ): Entry[] | null {
   const weights = prorataWeights(incomes)
   const index = incomes.findIndex((income) => income.memberId === memberId)
@@ -368,7 +428,7 @@ export function memberCharges(
   month: YearMonth,
   memberId: string,
   kindOf: KindOf,
-  incomes: readonly MemberIncome[],
+  incomes: readonly IncomeWeight[],
 ): MemberCharges | null {
   const weights = prorataWeights(incomes)
   const index = incomes.findIndex((income) => income.memberId === memberId)

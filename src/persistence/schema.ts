@@ -12,7 +12,7 @@ import type { Data } from '@/domain/types'
 import { defaultCategories, defaultFamilies, fallbackFamilyId } from './defaults'
 import { normalizeData } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
@@ -91,12 +91,12 @@ function toVersion2(doc: RawDocument): RawDocument {
 }
 
 /**
- * Répartition des charges entre membres : `Member.income`, et `shared` sur les
- * entrées comme sur les récurrences.
+ * Répartition des charges entre membres : `shared` sur les entrées comme sur
+ * les récurrences.
  *
- * Les trois champs sont facultatifs, et leur absence a un sens défini — un
- * membre sans revenu déclaré ne participe à aucun prorata, une entrée sans
- * `shared` s'en remet à la règle. Un document v2 est donc déjà un document v3
+ * Les deux champs sont facultatifs, et leur absence a un sens défini — une
+ * entrée sans `shared` s'en remet à la règle, qui sait déjà la ranger. Un
+ * document v2 est donc déjà un document v3
  * valide : la migration n'a que la version à inscrire. Elle existe quand même,
  * parce que le pipeline veut une étape par incrément et qu'une marche
  * manquante se paie la fois d'après.
@@ -105,10 +105,24 @@ function toVersion3(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 3 }
 }
 
+/**
+ * Le montant habituel d'un abonnement à montant variable — `Recurrence.estimate`.
+ *
+ * Facultatif, et son absence a le sens qu'elle avait déjà : l'abonnement vaut
+ * ce que disent ses échéances, et rien tant qu'aucune n'est chiffrée. Un
+ * document v3 est donc déjà un document v4 valide, et la migration n'a que la
+ * version à inscrire — elle existe quand même, parce que le pipeline veut une
+ * étape par incrément et qu'une marche manquante se paie la fois d'après.
+ */
+function toVersion4(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 4 }
+}
+
 export const MIGRATIONS: Migration[] = [
   { to: 1, migrate: toVersion1 },
   { to: 2, migrate: toVersion2 },
   { to: 3, migrate: toVersion3 },
+  { to: 4, migrate: toVersion4 },
 ]
 
 export class ImportError extends Error {

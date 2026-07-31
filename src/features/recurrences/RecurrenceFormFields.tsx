@@ -119,7 +119,31 @@ export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'member
       />
 
       {draft.variable ? (
-        <p className="t-label">{fr.recurrences.variableHint}</p>
+        <>
+          <p className="t-label">{fr.recurrences.variableHint}</p>
+          {/* Sans lui, un salaire variable ne vaut rien tant qu'aucune échéance
+              n'est tombée — et tout le foyer reste sans répartition, sans que
+              rien n'indique qu'il manque un chiffre quelque part. */}
+          <Field
+            label={fr.recurrences.form.estimate}
+            optional
+            hint={fr.recurrences.form.estimateHint}
+            {...(errors.estimate ? { error: errors.estimate } : {})}
+          >
+            {(id, describedBy) => (
+              <AmountInput
+                id={id}
+                aria-describedby={describedBy}
+                value={draft.estimateText}
+                invalid={Boolean(errors.estimate)}
+                placeholder="0,00"
+                onChange={(e) => {
+                  patch({ estimateText: e.target.value })
+                }}
+              />
+            )}
+          </Field>
+        </>
       ) : (
         <Field
           label={fr.recurrences.form.amount}

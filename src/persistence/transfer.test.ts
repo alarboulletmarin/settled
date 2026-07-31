@@ -349,3 +349,43 @@ describe('migration vers la répartition entre membres', () => {
     expect(entries[1]?.shared).toBe(false)
   })
 })
+
+describe('montant habituel d’un abonnement variable (v4)', () => {
+  const doc = (recurrence: Record<string, unknown>) =>
+    JSON.stringify({
+      schemaVersion: 4,
+      household: { name: 'Maison', members: [] },
+      categories: [],
+      recurrences: [
+        {
+          id: 'r1', label: 'Salaire', categoryId: 'salary', direction: 'in',
+          period: { unit: 'month', every: 1, anchorDay: 27 }, startedOn: '2026-01-27',
+          ...recurrence,
+        },
+      ],
+    })
+
+  it('survit à l’aller-retour sur un montant variable', () => {
+    const { recurrences } = parseImport(doc({ amount: null, estimate: 250_000 })).data
+    expect(recurrences[0]?.estimate).toBe(250_000)
+  })
+
+  it('n’a rien à faire sur un montant fixe : il n’y a rien à estimer', () => {
+    const { recurrences } = parseImport(doc({ amount: 1099, estimate: 250_000 })).data
+    expect(recurrences[0]).not.toHaveProperty('estimate')
+  })
+
+  it('écarte une estimation illisible ou nulle plutôt que de l’interpréter', () => {
+    expect(parseImport(doc({ amount: null, estimate: 'beaucoup' })).data.recurrences[0])
+      .not.toHaveProperty('estimate')
+    expect(parseImport(doc({ amount: null, estimate: 0 })).data.recurrences[0])
+      .not.toHaveProperty('estimate')
+  })
+
+  it('un document v3 reste lisible, simplement sans montant habituel', () => {
+    const v3 = doc({ amount: null }).replace('"schemaVersion":4', '"schemaVersion":3')
+    const result = parseImport(v3)
+    expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    expect(result.data.recurrences[0]).not.toHaveProperty('estimate')
+  })
+})

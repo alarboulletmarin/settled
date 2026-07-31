@@ -7,11 +7,11 @@
  * ==========================================================================*/
 
 import { useMemo } from 'react'
-import { type ISODate, type YearMonth, addMonthsToYm, today } from '@/domain/date'
+import { type ISODate, type YearMonth, addMonthsToYm, endOfMonth, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
-import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
+import { coveredMonths } from '@/domain/month'
 import { type Money, sum } from '@/domain/money'
-import { type PriceChange, detectPriceChange } from '@/domain/priceHistory'
+import { type PriceChange, amountOn, detectPriceChange } from '@/domain/priceHistory'
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
   type CategorySlice,
@@ -45,6 +45,7 @@ import {
   memberShares,
   scopeToMember,
   sharedEntries,
+  unassignedIncomes,
 } from '@/domain/split'
 import {
   type Category,
@@ -106,6 +107,25 @@ export function useKindOf(): KindOf {
       return (family === undefined ? undefined : kindOf.get(family)) ?? 'charge'
     }
   }, [families, categories])
+}
+
+/**
+ * Combien vaut un abonnement à une date — montant fixe, échéance chiffrée ou
+ * montant habituel, dans cet ordre (voir `amountOn`). Aujourd'hui par défaut,
+ * fin de mois pour ce qui se lit sur un mois.
+ *
+ * Passée aux fonctions du domaine comme `kindOf`, et pour la même raison : le
+ * revenu d'un membre, le total des abonnements et la fiche d'un abonnement
+ * posent la même question, et il n'y a qu'ici qu'on y répond. Trois lectures
+ * qui divergent, ce sont trois chiffres qui se contredisent d'un écran à
+ * l'autre — et un prorata qui reste muet sans qu'on sache pourquoi.
+ */
+export function useAmountOf(on: ISODate = today()): (recurrence: Recurrence) => Money | null {
+  const entries = useEntries()
+  return useMemo(
+    () => (recurrence: Recurrence): Money | null => amountOn(recurrence, entries, on),
+    [entries, on],
+  )
 }
 
 export type FamilyGroup = { family: Family; categories: Category[] }
@@ -339,25 +359,49 @@ export type MonthSplit = {
 }
 
 /**
- * Le revenu mensuel de chaque membre, déduit de ses abonnements de ressources.
- * Un montant variable est estimé à sa dernière échéance confirmée — le même
- * `resolveVariable` que le total des abonnements.
+ * Le revenu mensuel de chaque membre sur le mois affiché, et ce qui manque
+ * quand il ne se lit pas.
+ *
+ * Sur le mois affiché, et non au jour où l'on regarde : la répartition d'août
+ * se lit avec les revenus d'août, qu'on l'ouvre le 31 juillet ou le 15 août.
+ * Lu au jour dit, un salaire dont la première échéance tombe le 1er du mois
+ * suivant n'existait pas encore — le foyer qui venait de poser ses deux
+ * salaires n'avait aucune répartition, et en aurait eu une le lendemain.
+ *
+ * Le montant de chaque abonnement passe par `useAmountOf` — le même que celui
+ * du total des abonnements et de la liste : le salaire qui pèse dans le prorata
+ * est au centime celui qui s'affiche sur sa fiche. Il se lit en fin de mois,
+ * comme les charges qu'il sert à répartir : c'est la même question, « combien
+ * ce mois-ci », et non « combien à cet instant ».
  */
 export function useMemberIncomes(): MemberIncome[] {
   const members = useMembers()
   const recurrences = useRecurrences()
-  const entries = useEntries()
+  const month = useCurrentYm()
+  const amountOf = useAmountOf(endOfMonth(month))
   const kindOf = useKindOf()
-  return useMemo(() => {
-    const now = today()
-    return memberIncomes(
-      members,
-      recurrences,
-      kindOf,
-      (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
-      now,
-    )
-  }, [members, recurrences, entries, kindOf])
+  return useMemo(
+    () => memberIncomes(members, recurrences, kindOf, amountOf, month),
+    [members, recurrences, amountOf, kindOf, month],
+  )
+}
+
+/**
+ * Les ressources actives que personne ne porte — elles ne comptent dans le
+ * revenu d'aucun membre, et donc dans le prorata de personne.
+ *
+ * Les écrans qui parlent de revenus le disent : un salaire resté « tout le
+ * foyer » est la première explication d'une répartition qui ne se calcule pas,
+ * et c'est la seule qu'on ne pouvait deviner nulle part.
+ */
+export function useUnassignedIncomes(): Recurrence[] {
+  const recurrences = useRecurrences()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  return useMemo(
+    () => unassignedIncomes(recurrences, kindOf, month),
+    [recurrences, kindOf, month],
+  )
 }
 
 /**
@@ -471,16 +515,11 @@ export function useMonthProgress(): number {
 
 export function useSubscriptionTotals(direction: 'in' | 'out' = 'out'): SubscriptionTotals {
   const recurrences = useRecurrences()
-  const entries = useEntries()
-  return useMemo(() => {
-    const now = today()
-    return subscriptionTotals(
-      recurrences,
-      (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
-      now,
-      direction,
-    )
-  }, [recurrences, entries, direction])
+  const amountOf = useAmountOf()
+  return useMemo(
+    () => subscriptionTotals(recurrences, amountOf, today(), direction),
+    [recurrences, amountOf, direction],
+  )
 }
 
 export type MonthPending = {
@@ -545,12 +584,11 @@ export type RecurrenceRow = {
 export function useRecurrenceRows(): RecurrenceRow[] {
   const recurrences = useRecurrences()
   const entries = useEntries()
+  const amountOf = useAmountOf()
   return useMemo(() => {
     const now = today()
     const rows = recurrences.map((recurrence) => {
-      const resolved =
-        recurrence.amount ?? lastConfirmedAmount(entries, recurrence.id, now)
-      const priced: Recurrence = { ...recurrence, amount: resolved }
+      const priced: Recurrence = { ...recurrence, amount: amountOf(recurrence) }
       return {
         recurrence,
         next: nextOccurrence(recurrence, now)?.date ?? null,
@@ -569,7 +607,7 @@ export function useRecurrenceRows(): RecurrenceRow[] {
       if (b.next === null) return -1
       return a.next < b.next ? -1 : a.next > b.next ? 1 : 0
     })
-  }, [recurrences, entries])
+  }, [recurrences, entries, amountOf])
 }
 
 /* --- Historique -----------------------------------------------------------*/
