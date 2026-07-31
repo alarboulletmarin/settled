@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { eur, makeEntry, makeRecurrence, sequentialIds } from './fixtures'
-import { coveredMonths, isMonthOpened, lastConfirmedAmount, planMonth } from './month'
+import { coveredMonths, isMonthOpened, planMonth } from './month'
 
 const loyer = makeRecurrence({
   id: 'loyer',
@@ -145,28 +145,6 @@ describe('ouverture du mois', () => {
   it('laisse la règle trancher quand la récurrence ne dit rien', () => {
     const plan = planMonth({ recurrences: [loyer], entries: [] }, '2026-07', sequentialIds())
     expect(plan.created[0]).not.toHaveProperty('shared')
-  })
-})
-
-describe('dernier montant confirmé', () => {
-  const entries = [
-    makeEntry({ recurrenceId: 'elec', date: '2026-04-12', amount: eur(7000) }),
-    makeEntry({ recurrenceId: 'elec', date: '2026-06-12', amount: eur(8450) }),
-    makeEntry({ recurrenceId: 'elec', date: '2026-05-12', amount: eur(8000) }),
-    makeEntry({ recurrenceId: 'elec', date: '2026-07-12', amount: eur(9999), status: 'planned' }),
-  ]
-
-  it('prend le plus récent strictement antérieur', () => {
-    expect(lastConfirmedAmount(entries, 'elec', '2026-07-12')).toBe(8450)
-  })
-
-  it('ignore les échéances seulement prévues', () => {
-    expect(lastConfirmedAmount(entries, 'elec', '2026-12-31')).toBe(8450)
-  })
-
-  it('renvoie null quand rien ne précède', () => {
-    expect(lastConfirmedAmount(entries, 'elec', '2026-01-01')).toBeNull()
-    expect(lastConfirmedAmount(entries, 'inconnu', '2026-12-31')).toBeNull()
   })
 })
 

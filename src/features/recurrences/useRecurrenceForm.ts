@@ -17,12 +17,16 @@ export type RecurrenceDraft = PeriodDraft & {
   memberId: string
   amountText: string
   variable: boolean
+  /** Montant habituel d'un variable. Vide = on ne s'avance pas. */
+  estimateText: string
   /** `undefined` = la règle tranche ; voir `isSharedEntry`. */
   shared: boolean | undefined
   note: string
 }
 
-export type DraftErrors = Partial<Record<'label' | 'amount' | 'category' | 'member', string>>
+export type DraftErrors = Partial<
+  Record<'label' | 'amount' | 'estimate' | 'category' | 'member', string>
+>
 
 function draftFrom(recurrence: Recurrence | null, defaultCategoryId: string): RecurrenceDraft {
   const start = recurrence?.startedOn ?? today()
@@ -34,6 +38,7 @@ function draftFrom(recurrence: Recurrence | null, defaultCategoryId: string): Re
     memberId: recurrence?.memberId ?? '',
     amountText: recurrence?.amount != null ? toAmountInput(recurrence.amount) : '',
     variable: recurrence ? recurrence.amount === null : false,
+    estimateText: recurrence?.estimate === undefined ? '' : toAmountInput(recurrence.estimate),
     shared: recurrence?.shared,
     kind: recurrence ? kindOf(recurrence.period) : 'monthly',
     everyMonths: recurrence?.period.unit === 'month' ? recurrence.period.every : 2,
@@ -63,12 +68,27 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
     [draft.variable, draft.amountText],
   )
 
+  /* Le montant habituel ne vit que sur un variable : sur un montant fixe il
+     n'aurait rien à estimer, et le garder au passage de l'un à l'autre laisserait
+     traîner un chiffre que le formulaire ne montre plus. */
+  const estimate: Money | null = useMemo(
+    () => (draft.variable ? parseAmount(draft.estimateText) : null),
+    [draft.variable, draft.estimateText],
+  )
+  const estimateTyped = draft.variable && draft.estimateText.trim() !== ''
+
   const errors: DraftErrors = useMemo(() => {
     const found: DraftErrors = {}
     if (draft.label.trim().length === 0) found.label = fr.recurrences.form.labelRequired
     if (draft.categoryId === '') found.category = fr.recurrences.form.categoryRequired
     if (!draft.variable && (amount === null || amount <= 0)) {
       found.amount = fr.recurrences.form.amountRequired
+    }
+    /* Facultatif, mais pas au point d'être avalé en silence : un chiffre saisi
+       puis ignoré à l'enregistrement se découvre des semaines plus tard, quand
+       la répartition ne se calcule toujours pas. */
+    if (estimateTyped && (estimate === null || estimate <= 0)) {
+      found.estimate = fr.recurrences.form.amountRequired
     }
     /* Un abonnement qui n'entre pas dans les charges communes doit être à
        quelqu'un : il pose une échéance par période, et chacune manquerait au
@@ -88,6 +108,8 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
     draft.memberId,
     draft.shared,
     amount,
+    estimate,
+    estimateTyped,
     members,
     kindOf,
   ])
@@ -112,6 +134,7 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
       ...(draft.memberId === '' ? {} : { memberId: draft.memberId }),
       direction: draft.direction,
       amount,
+      ...(estimate === null || estimate <= 0 ? {} : { estimate }),
       period: periodOf(draft),
       startedOn: draft.startedOn,
       ...(recurrence?.endedOn === undefined ? {} : { endedOn: recurrence.endedOn }),

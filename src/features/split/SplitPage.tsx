@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { RECURRENCE_NEW_PATH } from '@/app/routes'
+import { RECURRENCES_PATH, RECURRENCE_NEW_PATH } from '@/app/routes'
 import { totalDue } from '@/domain/split'
 import type { MemberShare } from '@/domain/split'
 import type { Entry, Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDayMonthShort, formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { useCategoryMap, useMemberMap, useMembers, useMonthSplit } from '@/store/selectors'
+import {
+  useCategoryMap,
+  useMemberIncomes,
+  useMemberMap,
+  useMembers,
+  useMonthSplit,
+  useUnassignedIncomes,
+} from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Disclosure } from '@/ui/Disclosure'
 import { Dot } from '@/ui/Dot'
@@ -33,17 +40,45 @@ function de(name: string): string {
   return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(name) ? `d’${name}` : `de ${name}`
 }
 
+/** Ce qui manque pour répartir : la phrase, le geste, et où il mène. */
+type Missing = { message: string; hint: string; actionLabel: string; path: string }
+
 /**
- * Ce qui manque pour répartir, nommé.
+ * Ce qui manque pour répartir, nommé — et le geste qui va avec.
  *
  * Sans personne à nommer, le prorata bloque quand même : chacun porte une
  * ressource, mais toutes à zéro. La phrase le disait alors sans sujet —
  * « Ajoute le revenu de  pour répartir les charges ».
+ *
+ * Deux impasses, et elles n'appellent pas le même geste. Le revenu qui manque
+ * n'existe pas encore, ou bien il existe et n'est pas chiffré — un salaire à
+ * montant variable dont aucune échéance ne dit encore le montant. Envoyer alors
+ * « ajouter un revenu » fait créer un doublon là où il ne manque qu'un chiffre.
  */
-function missingIncomes(unknown: readonly Member[]): string {
+function missingIncomes(unknown: readonly Member[], unpriced: number): Missing {
   const names = unknown.map((member) => member.name)
-  if (names.length === 0) return fr.split.missingNone
-  return tpl(names.length === 1 ? fr.split.missingOne : fr.split.missingMany, de(enumerate(names)))
+  const who = de(enumerate(names))
+
+  // Tous les revenus manquants sont des variables non chiffrés : les
+  // abonnements sont là, il n'y a qu'un montant à poser.
+  if (unpriced > 0 && unpriced === names.length) {
+    return {
+      message: tpl(names.length === 1 ? fr.split.unpricedOne : fr.split.unpricedMany, who),
+      hint: fr.split.unpricedHint,
+      actionLabel: fr.split.goToSubscriptions,
+      path: RECURRENCES_PATH,
+    }
+  }
+
+  return {
+    message:
+      names.length === 0
+        ? fr.split.missingNone
+        : tpl(names.length === 1 ? fr.split.missingOne : fr.split.missingMany, who),
+    hint: fr.split.missingHint,
+    actionLabel: fr.split.goToIncome,
+    path: RECURRENCE_NEW_PATH,
+  }
 }
 
 function ShareRow({ share }: { share: MemberShare }) {
@@ -80,6 +115,8 @@ function ShareRow({ share }: { share: MemberShare }) {
  */
 export function SplitPage() {
   const { total, entries, shares, unknown } = useMonthSplit()
+  const incomes = useMemberIncomes()
+  const unassigned = useUnassignedIncomes()
   const members = useMembers()
   const memberMap = useMemberMap()
   const categories = useCategoryMap()
@@ -114,17 +151,31 @@ export function SplitPage() {
   }
 
   if (shares === null) {
+    const missing = missingIncomes(
+      unknown,
+      incomes.filter((income) => income.gap === 'unpriced').length,
+    )
     return (
       <>
         <PageTitle title={fr.split.title} />
         <EmptyState
-          message={missingIncomes(unknown)}
-          actionLabel={fr.split.goToIncome}
+          message={missing.message}
+          actionLabel={missing.actionLabel}
           onAction={() => {
-            void navigate(RECURRENCE_NEW_PATH)
+            void navigate(missing.path)
           }}
         >
-          <p className="t-label max-w-sm">{fr.split.missingHint}</p>
+          <p className="t-label max-w-sm">{missing.hint}</p>
+          {unassigned.length > 0 && (
+            <p className="t-label max-w-sm">
+              {tpl(
+                unassigned.length > 1
+                  ? fr.settings.incomeUnassignedMany
+                  : fr.settings.incomeUnassignedOne,
+                unassigned.map((r) => r.label).join(', '),
+              )}
+            </p>
+          )}
         </EmptyState>
       </>
     )
@@ -202,6 +253,7 @@ export function SplitPage() {
           <Eyebrow>{fr.split.method}</Eyebrow>
           <p className="t-body mt-1">{fr.split.methodFormula}</p>
           <p className="t-label">{fr.split.methodIncome}</p>
+          <p className="t-label">{fr.split.methodVariable}</p>
           <ul className="flex list-disc flex-col gap-1 pl-5">
             <li className="t-label">{fr.split.methodIncluded}</li>
             <li className="t-label">{fr.split.methodFlagged}</li>

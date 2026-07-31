@@ -6,7 +6,8 @@
  * ==========================================================================*/
 
 import { type ISODate, type YearMonth, endOfMonth, startOfMonth, ymOf } from './date'
-import { ZERO, type Money } from './money'
+import { ZERO } from './money'
+import { amountOn } from './priceHistory'
 import { occurrencesInMonth } from './recurrence'
 import type { Data, Entry, MonthState, Recurrence } from './types'
 
@@ -31,26 +32,6 @@ function existingOccurrences(entries: readonly Entry[], month: YearMonth): Set<s
     keys.add(occurrenceKey(entry.recurrenceId, entry.date))
   }
   return keys
-}
-
-/**
- * Dernier montant confirmé d'une récurrence avant `before`. C'est ce qui est
- * proposé par défaut pour une échéance à montant variable — et ce qui sert à
- * détecter un changement de prix.
- */
-export function lastConfirmedAmount(
-  entries: readonly Entry[],
-  recurrenceId: string,
-  before: ISODate,
-): Money | null {
-  let best: Entry | null = null
-  for (const entry of entries) {
-    if (entry.recurrenceId !== recurrenceId) continue
-    if (entry.status !== 'confirmed') continue
-    if (entry.date >= before) continue
-    if (best === null || entry.date > best.date) best = entry
-  }
-  return best?.amount ?? null
 }
 
 /**
@@ -90,8 +71,10 @@ export function buildPlannedEntry(
   entries: readonly Entry[],
   makeId: () => string,
 ): Entry {
-  // Montant variable : on propose celui de la dernière échéance confirmée.
-  const amount = recurrence.amount ?? lastConfirmedAmount(entries, recurrence.id, date) ?? ZERO
+  // Montant variable : on propose celui que l'abonnement vaut à cette date —
+  // la même règle qu'ailleurs, pour que le chiffre proposé à la confirmation
+  // soit celui-là même que les totaux ont déjà compté.
+  const amount = amountOn(recurrence, entries, date) ?? ZERO
   return {
     id: makeId(),
     recurrenceId: recurrence.id,

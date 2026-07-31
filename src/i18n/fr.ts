@@ -125,11 +125,21 @@ export const fr = {
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
     /* Le revenu ne se saisit pas ici : il se lit sur les abonnements de
-       ressources du membre. Le stocker à côté en ferait une seconde vérité. */
+       ressources du membre. Le stocker à côté en ferait une seconde vérité.
+       Reste à dire *pourquoi* il ne se lit pas, quand c'est le cas : les deux
+       causes n'appellent pas le même geste, et « aucun revenu enregistré »
+       envoyait créer un abonnement qui existait déjà. */
     memberNoIncome: 'aucun revenu enregistré',
+    memberIncomeUnpriced: 'revenu à montant variable, pas encore chiffré',
+    memberIncomeUnpricedFix: 'Indiquer un montant habituel',
     memberIncomeHint:
       'Le revenu de chacun se lit sur ses abonnements de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
+    /* Un salaire resté « tout le foyer » ne compte dans le revenu de personne,
+       et c'est la première explication d'une répartition qui ne se calcule pas. */
+    incomeUnassignedOne: '%s n’est à personne : ce revenu ne compte dans aucune part.',
+    incomeUnassignedMany: '%s ne sont à personne : ces revenus ne comptent dans aucune part.',
+    incomeUnassignedFix: 'Attribue-les à quelqu’un pour qu’ils pèsent dans le prorata.',
     memberShareOf: '%s des charges communes',
     /* La seule porte de la répartition était une tuile du mois, qui se retire
        sous un filtre par membre. Ici elle est toujours là, et c'est l'endroit
@@ -468,6 +478,12 @@ export const fr = {
       member: 'Membre',
       amount: 'Montant',
       amountKind: 'Type de montant',
+      /* Un montant variable ne vaut rien tant qu'aucune échéance n'est tombée.
+         Pour un salaire, ça suffit à laisser tout le foyer sans répartition :
+         ce champ est le seul endroit où l'on peut s'avancer avant. */
+      estimate: 'Montant habituel',
+      estimateHint:
+        'Sert d’ordre de grandeur — pour le total des abonnements, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
       period: 'Périodicité',
       everyMonths: 'Tous les combien de mois',
       weekday: 'Jour de la semaine',
@@ -521,6 +537,8 @@ export const fr = {
        part : une seconde vérité finirait par diverger de la première. */
     methodIncome:
       'Le revenu vient des abonnements de salaire et d’allocation de chacun, ramenés au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
+    methodVariable:
+      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Un abonnement laissé « tout le foyer » ne compte dans le revenu de personne.',
     methodIncluded: 'Les charges et les crédits que personne ne s’est attribués.',
     methodFlagged: 'Les dépenses cochées « à partager ».',
     methodExcluded:
@@ -537,8 +555,16 @@ export const fr = {
        nommer, et le prorata n'a pas de dénominateur pour autant. */
     missingNone: 'Ajoute un revenu à chacun pour répartir les charges.',
     missingHint:
-      'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance confirmée.',
+      'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance chiffrée.',
+    /* Le cas où l'abonnement existe déjà : envoyer « ajouter un revenu » ferait
+       créer un doublon là où il ne manque qu'un chiffre. Le « de » s'élide
+       comme au-dessus, et pour la même raison. */
+    unpricedOne: 'Le revenu %s est à montant variable et pas encore chiffré.',
+    unpricedMany: 'Les revenus %s sont à montant variable et pas encore chiffrés.',
+    unpricedHint:
+      'Confirme une échéance, ou indique un montant habituel sur l’abonnement : la répartition se calcule dès qu’un chiffre existe.',
     goToIncome: 'Ajouter un revenu',
+    goToSubscriptions: 'Voir les abonnements',
     soloTitle: 'La répartition demande au moins deux membres.',
     soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
     goToSettings: 'Aller aux réglages',

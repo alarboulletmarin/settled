@@ -139,13 +139,18 @@ function recurrence(raw: unknown, index: number): Recurrence | null {
   const memberId = optionalStr(raw['memberId'])
   const shared = optionalBool(raw['shared'])
   const note = optionalStr(raw['note'])
+  const amount = moneyOrNull(raw['amount'])
+  // Un montant habituel n'a de sens que sur un montant variable, et seulement
+  // s'il dit quelque chose : zéro n'est pas un ordre de grandeur.
+  const estimate = amount === null ? moneyOrNull(raw['estimate']) : null
   return {
     id: str(raw['id'], `recurrence-${String(index)}`),
     label: str(raw['label'], '—'),
     categoryId: str(raw['categoryId'], ''),
     ...(memberId === undefined ? {} : { memberId }),
     direction: direction(raw['direction']),
-    amount: moneyOrNull(raw['amount']),
+    amount,
+    ...(estimate === null || estimate <= 0 ? {} : { estimate }),
     period: period(raw['period']),
     startedOn,
     ...(endedOn === undefined ? {} : { endedOn }),

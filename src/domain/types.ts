@@ -89,6 +89,18 @@ export type Recurrence = {
   direction: Direction
   /** null = montant à saisir à chaque échéance. */
   amount: Money | null
+  /**
+   * Ordre de grandeur d'un montant variable, facultatif et sans effet sur un
+   * montant fixe.
+   *
+   * Ce n'est pas une seconde vérité à côté de `amount` : c'est la seule qu'un
+   * abonnement variable puisse porter avant sa première échéance. Un salaire
+   * qui varie n'a aucun chiffre tant que rien n'est tombé, et il ne pouvait
+   * donc peser dans aucun prorata — le foyer entier restait sans répartition
+   * parce qu'une personne venait d'arriver. Dès qu'une échéance est chiffrée,
+   * elle l'emporte : l'estimation ne recouvre jamais un fait (voir `amountOn`).
+   */
+  estimate?: Money
   period: Period
   startedOn: ISODate
   /** Dernier jour où la récurrence peut encore tomber, borne incluse. */

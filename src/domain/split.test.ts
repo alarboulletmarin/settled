@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ymOf } from './date'
 import { eur, makeEntry, makeMember, makeRecurrence } from './fixtures'
 import { money, sum } from './money'
+import { amountOn } from './priceHistory'
 import {
   allocate,
   isSharedEntry,
@@ -15,8 +16,9 @@ import {
   sharedEntries,
   sharedTotal,
   totalDue,
+  unassignedIncomes,
 } from './split'
-import { type CategoryKind, isSpending } from './types'
+import { type CategoryKind, type Entry, type EntryStatus, type Recurrence, isSpending } from './types'
 
 /* --- Répartition d'un entier ----------------------------------------------*/
 
@@ -169,9 +171,14 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
     id: 'r-1', categoryId: 'salaire', memberId: 'm-1', direction: 'in',
     amount: eur(250_000), startedOn: '2025-01-28', period: MONTHLY,
   })
-  const never: Parameters<typeof monthlyIncome>[3] = () => null
-  const income = (recurrences: Parameters<typeof monthlyIncome>[0], resolve = never) =>
-    monthlyIncome(recurrences, 'm-1', kindOf, resolve, '2026-07-15')
+  /* Le résolveur du domaine : c'est lui qui répond pour chaque abonnement,
+     fixe ou variable. `unpriced` est celui d'un variable dont rien ne dit encore
+     le montant. */
+  const unpriced: Parameters<typeof monthlyIncome>[3] = (r) => r.amount
+  const income = (recurrences: Parameters<typeof monthlyIncome>[0], amountOf = unpriced) =>
+    monthlyIncome(recurrences, 'm-1', kindOf, amountOf, '2026-07-15').income
+  const gap = (recurrences: Parameters<typeof monthlyIncome>[0], amountOf = unpriced) =>
+    monthlyIncome(recurrences, 'm-1', kindOf, amountOf, '2026-07-15').gap
 
   it('somme les ressources du membre', () => {
     const apl = makeRecurrence({
@@ -214,13 +221,20 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
     expect(income([])).toBeNull()
   })
 
-  it('estime un montant variable sur sa dernière échéance confirmée', () => {
+  it('estime un montant variable sur ce que le résolveur en dit', () => {
     const variable = { ...salaire, amount: null }
     expect(income([variable], () => eur(232_000))).toBe(232_000)
   })
 
   it('un revenu variable qu’on ne sait pas encore ne vaut pas zéro', () => {
     expect(income([{ ...salaire, amount: null }])).toBeNull()
+  })
+
+  it('dit lequel des deux manques c’est', () => {
+    // Sans la distinction, l'écran envoie créer un abonnement qui existe déjà.
+    expect(gap([])).toBe('none')
+    expect(gap([{ ...salaire, amount: null }])).toBe('unpriced')
+    expect(gap([salaire])).toBeNull()
   })
 
   it('rend un revenu par membre, dans l’ordre du foyer', () => {
@@ -233,14 +247,35 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
         [makeMember({ id: 'm-1' }), makeMember({ id: 'm-2' }), makeMember({ id: 'm-3' })],
         [salaire, autre],
         kindOf,
-        never,
+        unpriced,
         '2026-07-15',
       ),
     ).toEqual([
-      { memberId: 'm-1', income: 250_000 },
-      { memberId: 'm-2', income: 200_000 },
-      { memberId: 'm-3', income: null },
+      { memberId: 'm-1', income: 250_000, gap: null },
+      { memberId: 'm-2', income: 200_000, gap: null },
+      { memberId: 'm-3', income: null, gap: 'none' },
     ])
+  })
+})
+
+describe('ressources que personne ne porte', () => {
+  const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 28 }
+  const commun = makeRecurrence({
+    id: 'r-caf', label: 'CAF', categoryId: 'salaire', direction: 'in',
+    amount: eur(15_000), startedOn: '2025-01-28', period: MONTHLY,
+  })
+
+  it('signale un revenu resté au foyer entier', () => {
+    // Il rentre bien sur le mois, mais ne pèse dans la part de personne : c'est
+    // la première explication d'une répartition qui ne se calcule pas.
+    expect(unassignedIncomes([commun], kindOf, '2026-07-15').map((r) => r.id)).toEqual(['r-caf'])
+  })
+
+  it('ignore ce qui est attribué, ce qui n’est pas une ressource, et ce qui est arrêté', () => {
+    const àQuelquun = { ...commun, id: 'r-1', memberId: 'm-1' }
+    const charge = { ...commun, id: 'r-2', categoryId: 'logement' }
+    const arrêté = { ...commun, id: 'r-3', endedOn: '2026-03-31' }
+    expect(unassignedIncomes([àQuelquun, charge, arrêté], kindOf, '2026-07-15')).toEqual([])
   })
 })
 
@@ -515,5 +550,82 @@ describe('les charges d’un membre, les siennes et sa part du foyer', () => {
       commonTotal: money(0),
       shareBp: 5556,
     })
+  })
+})
+
+/* --- Le chemin complet, tel qu'on le vit -----------------------------------*/
+
+/**
+ * Deux salaires notés en abonnements à montant variable, et la répartition qui
+ * doit en sortir.
+ *
+ * C'est le montage le plus courant d'un foyer à deux salaires qui bougent, et
+ * il ne produisait aucun prorata : le revenu ne se lisait que sur une échéance
+ * *confirmée* et *strictement antérieure* au jour même. Un foyer tout neuf
+ * n'en avait aucune, un salaire confirmé le jour de son versement ne comptait
+ * pas non plus, et un montant saisi sur l'échéance prévue était ignoré. Les
+ * charges communes restaient alors partagées… nulle part.
+ */
+describe('un foyer à salaires variables se répartit', () => {
+  const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 27 }
+  const foyer = [makeMember({ id: 'm-1' }), makeMember({ id: 'm-2' })]
+
+  const salaire = (id: string, memberId: string, over: Partial<Recurrence> = {}) =>
+    makeRecurrence({
+      id, memberId, categoryId: 'salaire', direction: 'in',
+      amount: null, startedOn: '2026-06-27', period: MONTHLY, ...over,
+    })
+
+  const paie = (recurrenceId: string, date: string, amount: number, status: EntryStatus) =>
+    makeEntry({ recurrenceId, date, amount: eur(amount), direction: 'in', categoryId: 'salaire', status })
+
+  /** Le câblage réel : `amountOn` répond, `memberIncomes` en déduit les parts. */
+  const parts = (recurrences: Recurrence[], entries: Entry[], on: string) =>
+    memberShares(
+      memberIncomes(foyer, recurrences, kindOf, (r) => amountOn(r, entries, on), on),
+      [eur(100_000)],
+    )
+
+  it('sur un montant habituel déclaré, avant toute échéance', () => {
+    const recurrences = [
+      salaire('r-1', 'm-1', { estimate: eur(250_000) }),
+      salaire('r-2', 'm-2', { estimate: eur(200_000) }),
+    ]
+    expect(parts(recurrences, [], '2026-07-15')?.map((s) => s.shareBp)).toEqual([5556, 4444])
+  })
+
+  it('sur des salaires confirmés le jour même', () => {
+    const recurrences = [salaire('r-1', 'm-1'), salaire('r-2', 'm-2')]
+    const entries = [
+      paie('r-1', '2026-07-27', 250_000, 'confirmed'),
+      paie('r-2', '2026-07-27', 200_000, 'confirmed'),
+    ]
+    expect(parts(recurrences, entries, '2026-07-27')?.map((s) => s.shareBp)).toEqual([5556, 4444])
+  })
+
+  it('sur des montants saisis sur les échéances encore prévues', () => {
+    const recurrences = [salaire('r-1', 'm-1'), salaire('r-2', 'm-2')]
+    const entries = [
+      paie('r-1', '2026-07-27', 250_000, 'planned'),
+      paie('r-2', '2026-07-27', 200_000, 'planned'),
+    ]
+    expect(parts(recurrences, entries, '2026-07-15')?.map((s) => s.shareBp)).toEqual([5556, 4444])
+  })
+
+  it('mais pas tant qu’un seul des deux salaires reste sans chiffre', () => {
+    // Un dénominateur incomplet ne vaut pas zéro : il ne veut rien dire, et
+    // l'écran doit nommer qui manque plutôt qu'afficher une part fausse.
+    const recurrences = [salaire('r-1', 'm-1', { estimate: eur(250_000) }), salaire('r-2', 'm-2')]
+    expect(parts(recurrences, [], '2026-07-15')).toBeNull()
+  })
+
+  it('et l’échéance réelle l’emporte sur le montant habituel', () => {
+    const recurrences = [
+      salaire('r-1', 'm-1', { estimate: eur(250_000) }),
+      salaire('r-2', 'm-2', { estimate: eur(200_000) }),
+    ]
+    // m-1 a touché 200 000 en juin : les deux gagnent désormais autant.
+    const entries = [paie('r-1', '2026-06-27', 200_000, 'confirmed')]
+    expect(parts(recurrences, entries, '2026-07-15')?.map((s) => s.shareBp)).toEqual([5000, 5000])
   })
 })

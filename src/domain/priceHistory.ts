@@ -1,14 +1,97 @@
 /* ============================================================================
- * Historique de prix d'un abonnement.
+ * Les montants d'un abonnement, lus sur ses échéances.
  *
- * Il n'est jamais stocké : il se déduit des `Entry` confirmées liées à la
- * `recurrenceId` (cahier §3). Deux échéances au même montant ne constituent
- * pas un changement — seule une valeur qui diffère de la précédente en est un.
+ * Rien n'est stocké : un abonnement à montant variable ne porte aucun chiffre,
+ * le sien se déduit des `Entry` liées à sa `recurrenceId` (cahier §3).
+ *
+ * Ce module est le seul endroit où cette lecture se fait. Le total des
+ * abonnements, la fiche d'un abonnement, le revenu d'un membre et le montant
+ * proposé à l'ouverture d'un mois posent tous la même question — « combien vaut
+ * cet abonnement ? » — et trois réponses différentes à la même question, ce sont
+ * trois chiffres qui se contredisent d'un écran à l'autre.
  * ==========================================================================*/
 
 import type { ISODate } from './date'
 import { type Money, sub } from './money'
-import type { Direction, Entry } from './types'
+import type { Direction, Entry, Recurrence } from './types'
+
+/* --- Le montant en vigueur ------------------------------------------------*/
+
+/**
+ * Le montant qu'on peut attribuer à un abonnement le jour `on`, ou `null`
+ * quand rien ne permet de le dire — et non zéro : un montant qu'on ne connaît
+ * pas encore n'est pas un montant nul.
+ *
+ * Trois sources, dans cet ordre. Le montant fixe, quand il y en a un. Sinon ce
+ * que disent les échéances, qui font foi dès qu'il y en a une de chiffrée.
+ * Sinon seulement le montant habituel déclaré sur l'abonnement : c'est une
+ * estimation, et une estimation ne peut jamais couvrir un fait.
+ */
+export function amountOn(
+  recurrence: Recurrence,
+  entries: readonly Entry[],
+  on: ISODate,
+): Money | null {
+  if (recurrence.amount !== null) return recurrence.amount
+  return knownAmount(entries, recurrence.id, on) ?? recurrence.estimate ?? null
+}
+
+/**
+ * Le montant de l'échéance chiffrée la plus proche de `on`, le passé d'abord.
+ *
+ * Une échéance confirmée est un fait. Une échéance encore prévue dont on a
+ * saisi le montant en est un aussi — c'est ce qu'on s'attend à payer ou à
+ * toucher, et l'ignorer revenait à répondre « je ne sais pas » d'un montant
+ * qu'on venait d'écrire. Seule la case laissée à zéro par l'ouverture du mois
+ * ne dit rien : c'est un emplacement vide, pas un montant nul.
+ *
+ * Le jour même compte : un salaire confirmé le 27 vaut le 27, pas seulement le
+ * 28. Et faute de passé, la prochaine échéance déjà chiffrée fait l'affaire —
+ * un abonnement qui n'est pas encore tombé n'est pas pour autant inconnu.
+ */
+export function knownAmount(
+  entries: readonly Entry[],
+  recurrenceId: string,
+  on: ISODate,
+): Money | null {
+  let past: Entry | null = null
+  let ahead: Entry | null = null
+
+  for (const entry of entries) {
+    if (entry.recurrenceId !== recurrenceId) continue
+    if (entry.status !== 'confirmed' && entry.amount <= 0) continue
+
+    if (entry.date <= on) {
+      if (past === null || entry.date > past.date) past = entry
+    } else if (ahead === null || entry.date < ahead.date) ahead = entry
+  }
+
+  return (past ?? ahead)?.amount ?? null
+}
+
+/**
+ * Dernier montant confirmé d'une récurrence *strictement avant* `before`.
+ *
+ * C'est la question de l'historique de prix, et elle seule : ce qui était payé
+ * jusque-là. `amountOn` répond à une autre — ce que vaut l'abonnement — et les
+ * deux ne se remplacent pas, une échéance prévue n'étant pas un prix pratiqué.
+ */
+export function lastConfirmedAmount(
+  entries: readonly Entry[],
+  recurrenceId: string,
+  before: ISODate,
+): Money | null {
+  let best: Entry | null = null
+  for (const entry of entries) {
+    if (entry.recurrenceId !== recurrenceId) continue
+    if (entry.status !== 'confirmed') continue
+    if (entry.date >= before) continue
+    if (best === null || entry.date > best.date) best = entry
+  }
+  return best?.amount ?? null
+}
+
+/* --- Historique de prix ---------------------------------------------------*/
 
 export type PricePoint = { date: ISODate; amount: Money }
 
