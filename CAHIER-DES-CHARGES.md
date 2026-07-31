@@ -236,8 +236,9 @@ Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, cal
 
 Un crédit se déclare avec son capital emprunté, ses dates de première et dernière mensualité, un taux annuel facultatif, et l'abonnement qui le rembourse.
 
-- Le **capital restant dû** est dérivé, jamais saisi : `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1) / i`, où `n` est le nombre de mensualités effectivement confirmées.
-- Sans taux, le capital décroît exactement du montant versé.
+- Le **capital restant dû** est dérivé, jamais saisi : `Rₖ = Rₖ₋₁(1+i) − Mₖ`, appliqué à chaque mensualité **effectivement confirmée**, à son montant à elle. C'est la formule d'amortissement classique — `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1)/i` — écrite sous forme de récurrence : les deux donnent le même chiffre à mensualité constante, mais seule la récurrence accepte qu'un versement diffère des autres. Une renégociation, un différé, un remboursement anticipé changent le montant en cours de route, et rejouer le passé à la mensualité d'aujourd'hui inventerait un historique. La mensualité de l'abonnement lié ne sert donc qu'à annoncer la suite.
+- Une échéance **antérieure à la date de début** du crédit ne le rembourse pas : l'abonnement a pu servir à autre chose avant d'y être rattaché.
+- Sans taux, le capital décroît exactement de ce qui a été versé.
 - Sans abonnement lié, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
 - Retirer un crédit du suivi n'efface ni les mensualités versées ni l'abonnement qui les pose. Seul le suivi du capital s'arrête.
 

@@ -42,6 +42,17 @@ describe('Amount', () => {
     expect(container.textContent).not.toContain(',50')
   })
 
+  it('arrondit l’unité sans centimes, au lieu de la tronquer', () => {
+    const { container } = render(<Amount value={money(5669)} withCents={false} />)
+    expect(container.textContent).toContain('57')
+    expect(screen.getByLabelText('57 €')).toBeInTheDocument()
+  })
+
+  it('arrondit vers le bas ce qui doit l’être', () => {
+    const { container } = render(<Amount value={money(5620)} withCents={false} />)
+    expect(container.textContent).toContain('56')
+  })
+
   it('rend le montant lisible par un lecteur d’écran', () => {
     render(<Amount value={money(-4290)} />)
     expect(screen.getByLabelText('−42,90 €')).toBeInTheDocument()

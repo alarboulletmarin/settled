@@ -73,7 +73,9 @@ export function Amount({
   const activeCurrency = useCurrency()
   const code = currency ?? activeCurrency
   const displayed = (direction ? Math.abs(value) : value) as Money
-  const parts = moneyParts(displayed, code)
+  // Sans centimes, l'unité s'arrondit : le chiffre affiché et le nom accessible
+  // sortent des mêmes parts, ils ne peuvent pas dire deux montants différents.
+  const parts = moneyParts(displayed, code, !withCents)
   const sign = direction === 'in' || (signed && displayed > 0) ? '+' : parts.sign
 
   const spoken = `${sign === '+' ? '+' : ''}${formatMoney(displayed, code, withCents)}`

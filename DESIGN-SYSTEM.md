@@ -137,6 +137,8 @@ Deux familles, pas trois. La largeur variable d'Archivo remplace un troisième f
 
 Le symbole monétaire se pose à 0.55em de la taille du nombre, aligné en haut, opacité 0.5. Les centimes d'un chiffre héros passent à 0.5em. Le signe n'est affiché que pour les entrées (`+`), une sortie se lit à sa couleur et à son contexte.
 
+Une lecture qui **masque les centimes arrondit l'unité**, elle ne la tronque pas : 56,69 € s'y lit « 57 € ». Tronquer se trompe toujours dans le même sens — celui qui arrange qui lit —, et un reste à payer annoncé plus bas qu'il n'est vaut moins que rien.
+
 ---
 
 ## 4. Espacement, formes, mouvement
