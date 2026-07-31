@@ -1,28 +1,21 @@
 import { useState } from 'react'
 import { MonthHeader } from '@/app/MonthHeader'
-import { type ISODate, type YearMonth, startOfMonth, today, ymOf } from '@/domain/date'
 import type { Entry } from '@/domain/types'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
-import { useCurrentYm, useIsMonthOpened, useMonthEntries } from '@/store/selectors'
+import { useCurrentYm, useMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
 import { EntriesSection } from './EntriesSection'
 import { EntrySheet } from './EntrySheet'
-import { OpenMonthCard } from './OpenMonthCard'
+import { defaultDateFor } from './defaultDate'
+import { OpenMonthNotice, RegenerateEntriesButton } from './OpenMonth'
 import { PendingSection } from './PendingSection'
-
-/** La date proposée par défaut : aujourd'hui si on est dans le mois affiché. */
-function defaultDateFor(ym: YearMonth): ISODate {
-  const now = today()
-  return ymOf(now) === ym ? now : startOfMonth(ym)
-}
 
 export function MonthPage() {
   const ym = useCurrentYm()
   const entries = useMonthEntries()
-  const opened = useIsMonthOpened()
   const [editing, setEditing] = useState<Entry | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
 
@@ -31,20 +24,32 @@ export function MonthPage() {
     setSheetOpen(true)
   }
 
+  const isEmpty = entries.length === 0
+
   return (
     <>
+      <h1 className="sr-only">{fr.month.title}</h1>
       <MonthHeader />
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <OpenMonthCard />
-        <Button onClick={openCreate}>
-          <Plus size={18} />
-          {fr.entry.add}
-        </Button>
-      </div>
+      <OpenMonthNotice />
 
-      {entries.length === 0 && opened ? (
-        <EmptyState message={fr.month.empty} actionLabel={fr.entry.add} onAction={openCreate} />
+      {/* Mois vide, toutes les actions vivent dans l'état vide : les répéter
+          au-dessus afficherait deux fois « Ajouter une dépense » d'un coup
+          d'œil, et laisserait la régénération seule au sommet de l'écran. */}
+      {!isEmpty && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Button onClick={openCreate}>
+            <Plus size={18} />
+            {fr.entry.add}
+          </Button>
+          <RegenerateEntriesButton />
+        </div>
+      )}
+
+      {isEmpty ? (
+        <EmptyState message={fr.month.empty} actionLabel={fr.entry.add} onAction={openCreate}>
+          <RegenerateEntriesButton />
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
           <Dashboard />

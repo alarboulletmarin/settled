@@ -80,11 +80,15 @@ export function RecurrencesPage() {
 
   return (
     <>
+      {/* L'état vide porte déjà le même bouton : le garder en titre l'affiche
+          deux fois dans le même écran. */}
       <PageTitle title={fr.recurrences.title}>
-        <Button onClick={openCreate}>
-          <Plus size={18} />
-          {fr.common.add}
-        </Button>
+        {rows.length > 0 && (
+          <Button onClick={openCreate}>
+            <Plus size={18} />
+            {fr.common.add}
+          </Button>
+        )}
       </PageTitle>
 
       {rows.length === 0 ? (

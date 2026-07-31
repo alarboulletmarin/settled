@@ -3,13 +3,14 @@ import { MonthHeader } from '@/app/MonthHeader'
 import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDate } from '@/i18n/format'
-import { useCategoryMap, useMemberMap } from '@/store/selectors'
+import { useCategoryMap, useCurrentYm, useMemberMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { ListRow } from '@/ui/ListRow'
 import { Tile } from '@/ui/Tile'
 import { EntrySheet } from '@/features/month/EntrySheet'
+import { defaultDateFor } from '@/features/month/defaultDate'
 import { CalendarGrid } from './CalendarGrid'
 import { useCalendarDays } from './useCalendarDays'
 
@@ -48,8 +49,10 @@ function DayPanel({ entries, date, onOpen }: { entries: Entry[]; date: string; o
 
 export function CalendarPage() {
   const month = useCalendarDays()
+  const ym = useCurrentYm()
   const [selected, setSelected] = useState<string | null>(null)
   const [editing, setEditing] = useState<Entry | null>(null)
+  const [creating, setCreating] = useState(false)
 
   const hasAny = month.days.some((day) => day.entries.length > 0)
   // La sélection est dérivée, pas synchronisée : un jour d'un autre mois ne se
@@ -67,14 +70,28 @@ export function CalendarPage() {
         {day !== undefined ? (
           <DayPanel entries={day.entries} date={day.date} onOpen={setEditing} />
         ) : (
-          !hasAny && <EmptyState message={fr.calendar.empty} />
+          // L'invitation portait une action — « ouvre le mois » — que cet écran
+          // n'offre pas. Elle porte maintenant celle qu'il sait faire.
+          !hasAny && (
+            <EmptyState
+              message={fr.calendar.empty}
+              actionLabel={fr.entry.add}
+              onAction={() => {
+                setCreating(true)
+              }}
+            />
+          )
         )}
       </div>
 
       <EntrySheet
-        open={editing !== null}
+        open={creating || editing !== null}
         entry={editing}
-        onClose={() => { setEditing(null) }}
+        defaultDate={selected ?? defaultDateFor(ym)}
+        onClose={() => {
+          setEditing(null)
+          setCreating(false)
+        }}
       />
     </>
   )

@@ -35,7 +35,9 @@ export function HouseholdSection() {
 
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <h3 className="t-body font-medium">{fr.settings.members}</h3>
-        <p className="t-label">{fr.settings.memberRemoveHint}</p>
+        {/* La phrase explique ce que fait le retrait : sans personne à retirer,
+            elle parle d'un « ses » qui ne désigne rien. */}
+        {members.length > 0 && <p className="t-label">{fr.settings.memberRemoveHint}</p>}
 
         {members.length === 0 ? (
           <p className="t-label">{fr.settings.membersEmpty}</p>
