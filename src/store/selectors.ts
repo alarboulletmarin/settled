@@ -16,6 +16,7 @@ import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurren
 import {
   type CategorySlice,
   type DayTotals,
+  type Flow,
   type KindOf,
   type KindTotals,
   type MonthTotals,
@@ -25,9 +26,11 @@ import {
   breakdownByFamily,
   dailyBreakdown,
   entriesOfMonth,
+  incomeFlow,
   monthProgress,
   monthTotals,
   restToLive,
+  spendingFlow,
   subscriptionTotals,
   totalsByKind,
   upcomingEntries,
@@ -216,6 +219,33 @@ export function useKindTotals(forecast = false): KindTotals {
   return useMemo(
     () => totalsByKind(entries, month, kindOf, member, forecast),
     [entries, month, kindOf, member, forecast],
+  )
+}
+
+export type MonthFlows = {
+  /** Ce que le mois fait rentrer. */
+  income: Flow
+  /** Ce qu'il fait payer — charges et crédits, hors épargne. */
+  spending: Flow
+}
+
+/**
+ * Les deux chiffres que les soldes combinent sans jamais les dire : ce qu'on
+ * gagne et ce qu'on paie, chacun avec la part déjà tombée.
+ *
+ * Ils se lisent sur les mêmes totaux par nature que la capacité d'épargne — la
+ * lecture confirmée et la lecture prévisionnelle — et le filtre par membre de
+ * l'en-tête vaut pour eux comme pour le reste du tableau de bord.
+ */
+export function useMonthFlows(): MonthFlows {
+  const confirmed = useKindTotals()
+  const forecast = useKindTotals(true)
+  return useMemo(
+    () => ({
+      income: incomeFlow(confirmed, forecast),
+      spending: spendingFlow(confirmed, forecast),
+    }),
+    [confirmed, forecast],
   )
 }
 

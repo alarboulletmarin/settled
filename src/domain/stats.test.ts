@@ -6,8 +6,10 @@ import {
   OTHER_CATEGORY,
   breakdownByCategory,
   breakdownByFamily,
+  incomeFlow,
   savingCapacity,
   savingRate,
+  spendingFlow,
   totalsByKind,
   dailyBreakdown,
   entriesOfMonth,
@@ -346,5 +348,66 @@ describe('lecture par nature', () => {
     const slices = breakdownByFamily(month, '2026-07', familyOf, (id) => isSpending(kindOf(id)))
     expect(slices.map((s) => s.categoryId)).toEqual(['fam-loyer', 'fam-pret'])
     expect(slices.map((s) => s.total)).toEqual([80000, 30000])
+  })
+})
+
+describe('ce qui rentre et ce qui se paie', () => {
+  const KINDS: Record<string, CategoryKind> = {
+    salaire: 'resource',
+    prime: 'resource',
+    loyer: 'charge',
+    pret: 'debt',
+    livret: 'saving',
+  }
+  const kindOf = (id: string): CategoryKind => KINDS[id] ?? 'charge'
+
+  const month = [
+    makeEntry({ id: 'a', categoryId: 'salaire', direction: 'in', date: '2026-07-01', amount: eur(200000) }),
+    makeEntry({ id: 'b', categoryId: 'prime', direction: 'in', date: '2026-07-28', amount: eur(50000), status: 'planned' }),
+    makeEntry({ id: 'c', categoryId: 'loyer', date: '2026-07-05', amount: eur(80000) }),
+    makeEntry({ id: 'd', categoryId: 'pret', date: '2026-07-10', amount: eur(30000) }),
+    makeEntry({ id: 'e', categoryId: 'loyer', date: '2026-07-25', amount: eur(12000), status: 'planned' }),
+    makeEntry({ id: 'f', categoryId: 'livret', date: '2026-07-15', amount: eur(20000) }),
+  ]
+
+  const confirmed = totalsByKind(month, '2026-07', kindOf)
+  const forecast = totalsByKind(month, '2026-07', kindOf, undefined, true)
+
+  it('compte le mois entier, échéances prévues comprises', () => {
+    expect(incomeFlow(confirmed, forecast).total).toBe(250000)
+    expect(spendingFlow(confirmed, forecast).total).toBe(122000)
+  })
+
+  it('dit ce qui est déjà tombé et ce qui reste', () => {
+    expect(incomeFlow(confirmed, forecast)).toEqual({ total: 250000, done: 200000, left: 50000 })
+    expect(spendingFlow(confirmed, forecast)).toEqual({ total: 122000, done: 110000, left: 12000 })
+  })
+
+  it('laisse l’épargne hors de ce qui se paie — elle reste au foyer', () => {
+    const withMore = [
+      ...month,
+      makeEntry({ id: 'g', categoryId: 'livret', date: '2026-07-20', amount: eur(50000) }),
+    ]
+    const flow = spendingFlow(
+      totalsByKind(withMore, '2026-07', kindOf),
+      totalsByKind(withMore, '2026-07', kindOf, undefined, true),
+    )
+    expect(flow).toEqual(spendingFlow(confirmed, forecast))
+  })
+
+  it('ne laisse rien à tomber quand tout est confirmé', () => {
+    const done = totalsByKind(
+      month.filter((e) => e.status === 'confirmed'),
+      '2026-07',
+      kindOf,
+    )
+    expect(spendingFlow(done, done).left).toBe(0)
+    expect(incomeFlow(done, done).left).toBe(0)
+  })
+
+  it('rend tout à zéro sur un mois vide plutôt que de refuser de répondre', () => {
+    const empty = totalsByKind([], '2026-07', kindOf)
+    expect(incomeFlow(empty, empty)).toEqual({ total: 0, done: 0, left: 0 })
+    expect(spendingFlow(empty, empty)).toEqual({ total: 0, done: 0, left: 0 })
   })
 })

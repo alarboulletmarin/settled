@@ -199,6 +199,14 @@ export const fr = {
 
   dashboard: {
     balance: 'Solde du mois',
+    income: 'Revenus',
+    incomeLeft: 'dont %s encore à venir',
+    incomeAllIn: 'tout est déjà rentré',
+    incomeNone: 'aucun revenu ce mois-ci',
+    charges: 'Charges',
+    chargesLeft: 'reste %s à payer',
+    chargesAllPaid: 'tout est payé',
+    chargesNone: 'rien à payer ce mois-ci',
     forecast: 'Prévisionnel',
     forecastHint: 'échéances prévues comprises',
     remaining: 'Reste à vivre',
@@ -245,6 +253,20 @@ export const fr = {
         calculation: 'Les entrées confirmées, moins les sorties confirmées.',
         apart:
           'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte.',
+      },
+      income: {
+        lead: 'Ce que le mois te fait gagner, avant que quoi que ce soit n’en sorte.',
+        calculation:
+          'Tout ce qui rentre ce mois-ci — salaires, primes, aides —, échéances encore prévues comprises.',
+        apart:
+          'Le solde du mois a déjà retranché les sorties : il dit ce qu’il te reste, pas ce que tu gagnes. Celui-ci ne compte que ce qui rentre.',
+      },
+      charges: {
+        lead: 'Ce que le mois te coûte, du premier au dernier jour.',
+        calculation:
+          'Les charges et les mensualités de crédit du mois, échéances encore prévues comprises. Un virement sur un livret n’en fait pas partie : il sort du compte mais reste chez toi.',
+        apart:
+          '« Où part l’argent » montre le même total réparti par poste ; celui-ci le pose en clair et dit combien il en reste à payer.',
       },
       forecast: {
         lead: 'Là où le mois atterrit si tout ce qui est prévu se passe comme prévu.',

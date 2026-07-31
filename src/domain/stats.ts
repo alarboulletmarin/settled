@@ -133,6 +133,49 @@ export function savingRate(totals: KindTotals): number | null {
   return totals.saving / totals.resource
 }
 
+/* --- Ce qui rentre, ce qui se paie ----------------------------------------*/
+
+export type Flow = {
+  /** Le mois entier : ce qui a eu lieu et ce qui doit encore tomber. */
+  total: Money
+  /** La part confirmée — ce qui a eu lieu. */
+  done: Money
+  /** Ce qui reste à tomber. C'est `total − done`, donc les seules prévues. */
+  left: Money
+}
+
+/**
+ * Un flux du mois, lu sur une ou plusieurs natures.
+ *
+ * Les deux totaux viennent du même `totalsByKind` — l'un confirmé, l'autre
+ * prévisionnel — pour que le reste soit exactement leur différence. Les
+ * recalculer chacun de son côté ferait deux vérités, et la première échéance
+ * confirmée les ferait diverger.
+ */
+function flowOf(
+  confirmed: KindTotals,
+  forecast: KindTotals,
+  kinds: readonly CategoryKind[],
+): Flow {
+  const done = sum(kinds.map((kind) => confirmed[kind]))
+  const total = sum(kinds.map((kind) => forecast[kind]))
+  return { total, done, left: sub(total, done) }
+}
+
+/** Ce que le mois fait rentrer : les ressources, et rien d'autre. */
+export function incomeFlow(confirmed: KindTotals, forecast: KindTotals): Flow {
+  return flowOf(confirmed, forecast, ['resource'])
+}
+
+/**
+ * Ce que le mois fait payer : charges et crédits. L'épargne en est exclue pour
+ * la raison qui l'exclut partout ailleurs — un versement sort du compte mais
+ * reste au foyer, et personne ne le réclame.
+ */
+export function spendingFlow(confirmed: KindTotals, forecast: KindTotals): Flow {
+  return flowOf(confirmed, forecast, ['charge', 'debt'])
+}
+
 /* --- Reste à vivre --------------------------------------------------------*/
 
 /** Date de la prochaine rentrée d'argent strictement après `after`. */

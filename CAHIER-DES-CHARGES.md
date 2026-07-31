@@ -207,6 +207,8 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 ### 4.6 Dashboards du mois
 
 - **Solde du mois** : entrées confirmées − sorties confirmées.
+- **Revenus** : ce que le mois fait rentrer — les ressources, `planned` comprises —, avec ce qui reste à tomber en seconde lecture.
+- **Charges** : ce que le mois fait payer — charges et crédits, `planned` compris —, avec le reste à payer en seconde lecture. L'épargne en est exclue, comme partout : un versement sort du compte mais reste au foyer, et personne ne le réclame.
 - **Solde prévisionnel** : en incluant les `planned` restantes.
 - **Reste à vivre** : solde prévisionnel jusqu'à la prochaine entrée d'argent.
 - **Capacité d'épargne** : ressources − charges − crédits, donc avant versements, avec le taux d'épargne en seconde lecture. C'est ce que le solde ne dit pas : lui compte un versement comme une sortie, si bien qu'un mois où l'on met 300 € de côté se lit comme un mois où l'on a dépensé 300 € de plus.
@@ -216,7 +218,7 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Prochaines échéances**, les 5 suivantes avec le nombre de jours restants.
 - **Total abonnements**, mensuel et annualisé.
 
-Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose. Chaque tuile s'ouvre sur une feuille qui donne son calcul et, surtout, ce qui la sépare de ses voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
+Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose, et aucun ne répond à « combien je gagne, combien je paie » : un solde a déjà fait la soustraction. C'est pourquoi les deux totaux qu'il combine se lisent à côté de lui, avant les trois autres. Les six tuiles s'ouvrent sur une feuille qui donne leur calcul et, surtout, ce qui les sépare de leurs voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
 
 Tous les dashboards acceptent un filtre par membre.
 

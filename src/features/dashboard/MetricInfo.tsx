@@ -1,8 +1,23 @@
+import type { Money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
+import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Sheet } from '@/ui/Sheet'
 
-export type MetricKey = 'balance' | 'forecast' | 'remaining' | 'capacity'
+export type MetricKey = 'balance' | 'income' | 'charges' | 'forecast' | 'remaining' | 'capacity'
+
+/**
+ * Ce qu'une tuile passe à la feuille en s'ouvrant : sa clé, son chiffre, et la
+ * lecture secondaire qu'elle n'affiche pas sous 1024px. C'est la tuile qui les
+ * porte — elle les a déjà calculés, les refaire ici en ferait deux versions.
+ */
+export type Metric = {
+  key: MetricKey
+  value: Money
+  /** Un flux porte son sens ; un solde n'en a pas, il porte son signe. */
+  direction?: 'in' | 'out'
+  hint: string
+}
 
 type Explanation = {
   title: string
@@ -16,6 +31,8 @@ type Explanation = {
 
 const CONTENT: Record<MetricKey, Explanation> = {
   balance: { title: fr.dashboard.balance, ...fr.dashboard.info.balance },
+  income: { title: fr.dashboard.income, ...fr.dashboard.info.income },
+  charges: { title: fr.dashboard.charges, ...fr.dashboard.info.charges },
   forecast: { title: fr.dashboard.forecast, ...fr.dashboard.info.forecast },
   remaining: { title: fr.dashboard.remaining, ...fr.dashboard.info.remaining },
   capacity: { title: fr.dashboard.capacity, ...fr.dashboard.info.capacity },
@@ -25,10 +42,16 @@ const CONTENT: Record<MetricKey, Explanation> = {
  * Ce que dit un chiffre du tableau de bord, et ce qui le distingue de ses
  * voisins.
  *
- * Quatre tuiles portent un solde qui se ressemble à l'œil sans dire la même
- * chose. Leur lecture secondaire l'explique — mais une tuile d'une rangée fait
- * 88px, et cette ligne n'y tient qu'au-delà de 1024px : sur un téléphone,
- * l'explication existait sans jamais s'afficher.
+ * Six tuiles portent un chiffre qui se ressemble à l'œil sans dire la même
+ * chose — quatre soldes, plus ce qui rentre et ce qui se paie. Leur lecture
+ * secondaire l'explique — mais une tuile d'une rangée fait 88px, et cette ligne
+ * n'y tient qu'au-delà de 1024px : sur un téléphone, l'explication existait sans
+ * jamais s'afficher.
+ *
+ * La feuille reprend donc le chiffre et cette lecture, et pas seulement les
+ * phrases : sur téléphone, c'est le seul endroit où « reste 102 € à payer » se
+ * lit, et une explication qui parle d'un chiffre qu'on ne voit pas oblige à la
+ * refermer pour le retrouver.
  *
  * La phrase vient avant le calcul. L'inverse — ce qu'on lisait d'abord ici —
  * ouvre sur du vocabulaire qu'on n'a pas encore de quoi comprendre. Et le
@@ -40,15 +63,24 @@ export function MetricInfo({
   metric,
   onClose,
 }: {
-  metric: MetricKey | null
+  metric: Metric | null
   onClose: () => void
 }) {
-  const content = metric === null ? null : CONTENT[metric]
+  const content = metric === null ? null : CONTENT[metric.key]
 
   return (
     <Sheet open={content !== null} onClose={onClose} title={content?.title ?? ''}>
-      {content !== null && (
+      {content !== null && metric !== null && (
         <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <Amount
+              value={metric.value}
+              size="tile"
+              {...(metric.direction === undefined ? {} : { direction: metric.direction })}
+            />
+            <span className="t-label">{metric.hint}</span>
+          </div>
+
           <p className="t-body">{content.lead}</p>
 
           <section className="flex flex-col gap-2 border-t border-border pt-4">
