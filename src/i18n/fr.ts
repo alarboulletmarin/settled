@@ -121,6 +121,10 @@ export const fr = {
     memberAdd: 'Ajouter un membre',
     memberName: 'Prénom',
     memberPlaceholder: 'Alix',
+    /* Le prénom se corrige sur place, comme le libellé d'une catégorie. Le nom
+       accessible porte celui qu'on modifie : la liste compte un champ par
+       membre, et « Prénom » seul les annoncerait tous pareil. */
+    memberRename: 'Prénom de %s',
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
@@ -620,6 +624,7 @@ export const fr = {
     membersPlaceholder: 'Alix',
     membersAdd: 'Ajouter',
     membersEmpty: 'Personne pour l’instant. Ajoute un prénom, ou passe.',
+    membersRename: 'Prénom de %s',
     membersRemove: 'Retirer %s',
     solo: 'Je suis seul·e',
     start: 'Commencer',

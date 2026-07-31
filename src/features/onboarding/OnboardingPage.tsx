@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { tpl } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
-import { addMember, removeMember, setHouseholdName } from '@/store/actions'
+import { addMember, removeMember, renameMember, setHouseholdName } from '@/store/actions'
 import { useHouseholdName, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { ImportControl } from '@/features/settings/ImportControl'
@@ -41,6 +41,7 @@ export function OnboardingPage() {
             onAdd={(name) => {
               addMember(name)
             }}
+            onRename={renameMember}
             onRemove={removeMember}
             onDone={finishOnboarding}
           />

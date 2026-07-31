@@ -6,16 +6,19 @@ import { Button, IconButton } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { Field, TextInput } from '@/ui/Field'
 import { Close } from '@/ui/Icons'
+import { MemberNameInput } from '@/features/settings/MemberNameInput'
 
 /** Deuxième étape : les membres. Elle peut être passée — l'usage solo existe. */
 export function MembersStep({
   members,
   onAdd,
+  onRename,
   onRemove,
   onDone,
 }: {
   members: readonly Member[]
   onAdd: (name: string) => void
+  onRename: (id: string, name: string) => void
   onRemove: (id: string) => void
   onDone: () => void
 }) {
@@ -71,7 +74,13 @@ export function MembersStep({
               className="flex h-14 items-center gap-3 rounded-inner bg-surface-2 px-3"
             >
               <Dot color={member.color} />
-              <span className="t-body truncate">{member.name}</span>
+              <MemberNameInput
+                label={tpl(fr.onboarding.membersRename, member.name)}
+                name={member.name}
+                onRename={(next) => {
+                  onRename(member.id, next)
+                }}
+              />
               <IconButton
                 label={tpl(fr.onboarding.membersRemove, member.name)}
                 className="ml-auto"
