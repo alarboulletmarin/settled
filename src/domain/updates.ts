@@ -8,7 +8,6 @@
 
 import { type ISODate, type YearMonth, today, ymOf } from './date'
 import { buildPlannedEntry, planMonth } from './month'
-import type { Money } from './money'
 import type { Category, Data, Debt, Entry, Family, Member, Recurrence, Settings } from './types'
 
 /* --- Foyer et membres -----------------------------------------------------*/
@@ -27,28 +26,6 @@ export function renameMember(data: Data, id: string, name: string): Data {
     household: {
       ...data.household,
       members: data.household.members.map((m) => (m.id === id ? { ...m, name } : m)),
-    },
-  }
-}
-
-/**
- * Déclare — ou efface — le revenu d'un membre. L'effacer n'est pas le mettre à
- * zéro : zéro dit « je ne gagne rien », l'absence dit « je n'ai pas déclaré »,
- * et le prorata ne se calcule que dans le premier cas.
- */
-export function setMemberIncome(data: Data, id: string, income: Money | undefined): Data {
-  return {
-    ...data,
-    household: {
-      ...data.household,
-      members: data.household.members.map((m) => {
-        if (m.id !== id) return m
-        if (income === undefined) {
-          const { income: _dropped, ...rest } = m
-          return rest
-        }
-        return { ...m, income }
-      }),
     },
   }
 }

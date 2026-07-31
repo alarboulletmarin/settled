@@ -10,10 +10,11 @@
  * la nature d'une catégorie sous forme de fonction, comme `stats.ts`.
  * ==========================================================================*/
 
-import type { YearMonth } from './date'
+import type { ISODate, YearMonth } from './date'
 import { type Money, ZERO, add, money, sum } from './money'
+import { monthlyEquivalent } from './recurrence'
 import { type KindOf, type MemberFilter, entriesOfMonth } from './stats'
-import { type CategoryKind, type Entry, type Member, isSpending } from './types'
+import { type CategoryKind, type Entry, type Member, type Recurrence, isActiveOn, isSpending } from './types'
 
 /* --- Répartition d'un entier ----------------------------------------------*/
 
@@ -109,6 +110,63 @@ export function sharedTotal(
   )
 }
 
+/* --- Le revenu d'un membre ------------------------------------------------*/
+
+/** Revenu mensuel d'un membre. `null` = pas de quoi le dire. */
+export type MemberIncome = { memberId: string; income: Money | null }
+
+/**
+ * Le revenu mensuel d'un membre, déduit de ses récurrences de nature
+ * `resource` — salaire, allocations, pension — ramenées au mois.
+ *
+ * Dérivé, jamais stocké. Un revenu déclaré à côté serait une seconde vérité,
+ * et la première augmentation les ferait diverger. C'est aussi ce qui donne au
+ * coefficient la stabilité qu'il lui faut : une récurrence est une règle, une
+ * prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce
+ * que chacun gagne, et elle ne déplace donc pas la part du loyer.
+ *
+ * `null` quand le membre ne porte aucune récurrence de ressource, et quand
+ * l'une d'elles est à montant variable sans échéance confirmée d'où tirer un
+ * ordre de grandeur : un revenu qu'on ne sait pas encore ne vaut pas zéro.
+ */
+export function monthlyIncome(
+  recurrences: readonly Recurrence[],
+  memberId: string,
+  kindOf: KindOf,
+  resolveVariable: (recurrence: Recurrence) => Money | null,
+  on: ISODate,
+): Money | null {
+  let total = ZERO
+  let found = false
+
+  for (const recurrence of recurrences) {
+    if (recurrence.memberId !== memberId) continue
+    if (kindOf(recurrence.categoryId) !== 'resource') continue
+    if (!isActiveOn(recurrence, on)) continue
+
+    found = true
+    const amount = recurrence.amount ?? resolveVariable(recurrence)
+    if (amount === null) return null
+    total = add(total, monthlyEquivalent({ ...recurrence, amount }) ?? ZERO)
+  }
+
+  return found ? total : null
+}
+
+/** Le revenu de chaque membre du foyer, dans l'ordre du foyer. */
+export function memberIncomes(
+  members: readonly Member[],
+  recurrences: readonly Recurrence[],
+  kindOf: KindOf,
+  resolveVariable: (recurrence: Recurrence) => Money | null,
+  on: ISODate,
+): MemberIncome[] {
+  return members.map((member) => ({
+    memberId: member.id,
+    income: monthlyIncome(recurrences, member.id, kindOf, resolveVariable, on),
+  }))
+}
+
 /* --- Parts de chacun ------------------------------------------------------*/
 
 export type MemberShare = {
@@ -121,30 +179,33 @@ export type MemberShare = {
 }
 
 /**
- * Ce que chaque membre doit sur `total`, au prorata des revenus déclarés.
+ * Ce que chaque membre doit sur `total`, au prorata des revenus.
  *
  * Renvoie `null` — et non des parts à zéro — dans trois cas : moins de deux
- * membres, un membre sans revenu déclaré, ou des revenus tous nuls. Un prorata
- * dont le dénominateur est incomplet ne vaut pas zéro, il ne veut rien dire ;
- * c'est le raisonnement de `savingRate`, et l'écran doit dire ce qui manque
- * plutôt qu'afficher un chiffre faux.
+ * membres, un membre dont le revenu n'est pas connu, ou des revenus tous nuls.
+ * Un prorata dont le dénominateur est incomplet ne vaut pas zéro, il ne veut
+ * rien dire ; c'est le raisonnement de `savingRate`, et l'écran doit dire ce
+ * qui manque plutôt qu'afficher un chiffre faux.
  */
-export function memberShares(members: readonly Member[], total: Money): MemberShare[] | null {
-  if (members.length < 2) return null
+export function memberShares(
+  incomes: readonly MemberIncome[],
+  total: Money,
+): MemberShare[] | null {
+  if (incomes.length < 2) return null
 
-  const incomes: Money[] = []
-  for (const member of members) {
-    if (member.income === undefined) return null
-    incomes.push(member.income)
+  const known: Money[] = []
+  for (const entry of incomes) {
+    if (entry.income === null) return null
+    known.push(entry.income)
   }
-  if (sum(incomes) <= 0) return null
+  if (sum(known) <= 0) return null
 
-  const shares = largestRemainder(10_000, incomes)
-  const dues = allocate(total, incomes)
+  const shares = largestRemainder(10_000, known)
+  const dues = allocate(total, known)
 
-  return members.map((member, index) => ({
-    memberId: member.id,
-    income: incomes[index] ?? ZERO,
+  return incomes.map((entry, index) => ({
+    memberId: entry.memberId,
+    income: known[index] ?? ZERO,
     shareBp: shares[index] ?? 0,
     due: dues[index] ?? ZERO,
   }))

@@ -18,9 +18,9 @@ import {
   openMonth,
   removeMember,
   removeRecurrence,
+  renameMember,
   resumeRecurrence,
   setHouseholdName,
-  setMemberIncome,
   stopRecurrence,
   syncRecurrenceEntries,
   updateRecurrence,
@@ -63,23 +63,15 @@ describe('foyer et membres', () => {
     expect(after.recurrences[0]).not.toHaveProperty('memberId')
   })
 
-  it('déclare le revenu d’un membre sans toucher au reste', () => {
+  it('renomme un membre sans toucher aux autres', () => {
     const before = makeData({
       household: { name: 'Maison', members: [makeMember({ id: 'm1' }), makeMember({ id: 'm2' })] },
       entries: [makeEntry({ date: '2026-07-01' })],
     })
-    const after = setMemberIncome(before, 'm1', eur(250_000))
-    expect(after.household.members[0]?.income).toBe(250_000)
+    const after = renameMember(before, 'm1', 'Alix')
+    expect(after.household.members[0]?.name).toBe('Alix')
     expect(after.household.members[1]).toBe(before.household.members[1])
     expect(after.entries).toBe(before.entries)
-  })
-
-  it('effacer un revenu n’est pas le mettre à zéro', () => {
-    const before = makeData({
-      household: { name: 'Maison', members: [makeMember({ id: 'm1', income: eur(250_000) })] },
-    })
-    const after = setMemberIncome(before, 'm1', undefined)
-    expect(after.household.members[0]).not.toHaveProperty('income')
   })
 })
 

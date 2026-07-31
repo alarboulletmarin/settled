@@ -37,11 +37,6 @@ export function renameMember(id: string, name: string): void {
   mutate((data) => updates.renameMember(data, id, name))
 }
 
-/** `undefined` efface la déclaration ; zéro en est une, et n'est pas la même. */
-export function setMemberIncome(id: string, income: Money | undefined): void {
-  mutate((data) => updates.setMemberIncome(data, id, income))
-}
-
 export function removeMember(id: string): void {
   mutate((data) => updates.removeMember(data, id))
   if (useStore.getState().memberFilter === id) useStore.getState().setMemberFilter(undefined)

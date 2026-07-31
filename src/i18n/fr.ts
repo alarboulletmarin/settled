@@ -113,10 +113,12 @@ export const fr = {
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
-    memberIncome: 'Revenu mensuel net',
-    memberIncomeOf: 'Revenu mensuel net de %s',
+    /* Le revenu ne se saisit pas ici : il se lit sur les abonnements de
+       ressources du membre. Le stocker à côté en ferait une seconde vérité. */
+    memberNoIncome: 'aucun revenu enregistré',
     memberIncomeHint:
-      'Sert à répartir les charges communes au prorata. À deux revenus inégaux, des parts égales ne le sont pas.',
+      'Le revenu de chacun se lit sur ses abonnements de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
+    memberIncomeLink: 'Ajouter un revenu',
     memberShareOf: '%s des charges communes',
 
     categories: 'Catégories',
@@ -387,6 +389,10 @@ export const fr = {
     checkHint: 'La somme des parts vaut le total au centime près.',
     method: 'Comment c’est calculé',
     methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
+    /* Le revenu est dérivé des abonnements de ressources, jamais déclaré à
+       part : une seconde vérité finirait par diverger de la première. */
+    methodIncome:
+      'Le revenu vient des abonnements de salaire et d’allocation de chacun, ramenés au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
     methodIncluded: 'Les charges et les crédits que personne ne s’est attribués.',
     methodFlagged: 'Les dépenses cochées « à partager ».',
     methodExcluded:
@@ -394,8 +400,11 @@ export const fr = {
     nothing: 'Aucune charge commune ce mois-ci.',
     /* Ce qui manque est nommé plutôt que remplacé par un zéro : un prorata au
        dénominateur incomplet ne vaut pas zéro, il ne veut rien dire. */
-    missingOne: 'Renseigne le revenu de %s pour répartir les charges.',
-    missingMany: 'Renseigne les revenus de %s pour répartir les charges.',
+    missingOne: 'Ajoute le revenu de %s pour répartir les charges.',
+    missingMany: 'Ajoute les revenus de %s pour répartir les charges.',
+    missingHint:
+      'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance confirmée.',
+    goToIncome: 'Ajouter un revenu',
     soloTitle: 'La répartition demande au moins deux membres.',
     soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
     goToSettings: 'Aller aux réglages',
@@ -446,15 +455,12 @@ export const fr = {
     householdEmpty: 'Donne un nom à ton foyer pour continuer.',
     membersTitle: 'Qui vit ici ?',
     membersHint:
-      'Les membres étiquettent les dépenses, et leurs revenus répartissent les charges communes. Tu peux passer et rester en solo.',
+      'Les membres servent d’étiquette sur les dépenses. Tu peux passer et rester en solo.',
     membersLabel: 'Prénom',
     membersPlaceholder: 'Alix',
     membersAdd: 'Ajouter',
     membersEmpty: 'Personne pour l’instant. Ajoute un prénom, ou passe.',
     membersRemove: 'Retirer %s',
-    membersIncome: 'Revenu mensuel net',
-    membersIncomeHint:
-      'Facultatif, et modifiable ensuite. Renseigné pour tout le monde, il permet de répartir les charges communes au prorata.',
     solo: 'Je suis seul·e',
     start: 'Commencer',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',

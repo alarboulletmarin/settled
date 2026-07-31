@@ -62,15 +62,10 @@ function moneyOrNull(v: unknown): Money | null {
 
 function member(raw: unknown, index: number): Member | null {
   if (!isRecord(raw)) return null
-  // Un revenu illisible ou négatif est écarté plutôt que ramené à zéro : zéro
-  // est une déclaration, l'absence en est une autre, et elles ne donnent pas la
-  // même répartition.
-  const income = isMoney(raw['income']) && raw['income'] >= 0 ? raw['income'] : undefined
   return {
     id: str(raw['id'], `member-${String(index)}`),
     name: str(raw['name'], '—'),
     color: str(raw['color'], 'var(--cat-1)'),
-    ...(income === undefined ? {} : { income }),
   }
 }
 

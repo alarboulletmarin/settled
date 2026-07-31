@@ -43,20 +43,16 @@ export type Family = {
   kind: CategoryKind
 }
 
+/**
+ * Une étiquette, et rien de plus. Le revenu qui sert à répartir les charges
+ * n'est pas ici : il se lit sur les récurrences de nature `resource` que le
+ * membre porte (voir `domain/split.ts`). Le stocker à côté en ferait une
+ * seconde vérité, et la première augmentation les ferait diverger.
+ */
 export type Member = {
   id: string
   name: string
   color: string
-  /**
-   * Revenu mensuel net déclaré, en centimes. Il sert à répartir les charges
-   * communes au prorata, et rien d'autre.
-   *
-   * C'est une règle, pas un fait — au même titre qu'une récurrence face à ses
-   * échéances. Le dériver des `Entry` de nature `resource` serait tentant, mais
-   * ferait bouger la part de chacun sur le loyer au gré d'une prime ou d'un
-   * treizième mois. Absent, le foyer n'a pas de quoi calculer un prorata.
-   */
-  income?: Money
 }
 
 export type Category = {

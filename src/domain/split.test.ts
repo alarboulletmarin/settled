@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { eur, makeEntry, makeMember } from './fixtures'
+import { eur, makeEntry, makeMember, makeRecurrence } from './fixtures'
 import { money } from './money'
 import {
   allocate,
   isSharedEntry,
   largestRemainder,
+  memberIncomes,
   memberShares,
+  monthlyIncome,
   sharedTotal,
   totalDue,
 } from './split'
@@ -103,6 +105,7 @@ const KINDS: Record<string, CategoryKind> = {
   auto: 'debt',
   livret: 'saving',
   salaire: 'resource',
+  prime: 'resource',
 }
 const kindOf = (categoryId: string): CategoryKind => KINDS[categoryId] ?? 'charge'
 
@@ -149,54 +152,134 @@ describe('total des charges communes', () => {
 
 /* --- Parts de chacun ------------------------------------------------------*/
 
+describe('le revenu d’un membre, lu sur ses abonnements', () => {
+  const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 28 }
+  const salaire = makeRecurrence({
+    id: 'r-1', categoryId: 'salaire', memberId: 'm-1', direction: 'in',
+    amount: eur(250_000), startedOn: '2025-01-28', period: MONTHLY,
+  })
+  const never: Parameters<typeof monthlyIncome>[3] = () => null
+  const income = (recurrences: Parameters<typeof monthlyIncome>[0], resolve = never) =>
+    monthlyIncome(recurrences, 'm-1', kindOf, resolve, '2026-07-15')
+
+  it('somme les ressources du membre', () => {
+    const apl = makeRecurrence({
+      id: 'r-2', categoryId: 'salaire', memberId: 'm-1', direction: 'in',
+      amount: eur(12_000), startedOn: '2025-01-05', period: MONTHLY,
+    })
+    expect(income([salaire, apl])).toBe(262_000)
+  })
+
+  it('ramène une périodicité non mensuelle au mois', () => {
+    const annuel = makeRecurrence({
+      id: 'r-3', categoryId: 'salaire', memberId: 'm-1', direction: 'in',
+      amount: eur(120_000), startedOn: '2025-06-01',
+      period: { unit: 'year', every: 1, anchorDay: 1 },
+    })
+    expect(income([annuel])).toBe(10_000)
+  })
+
+  it('ignore ce qui n’est pas une ressource', () => {
+    const loyer = makeRecurrence({
+      id: 'r-4', categoryId: 'logement', memberId: 'm-1',
+      amount: eur(95_000), startedOn: '2025-01-05', period: MONTHLY,
+    })
+    expect(income([salaire, loyer])).toBe(250_000)
+  })
+
+  it('ignore les ressources d’un autre membre', () => {
+    const autre = makeRecurrence({
+      id: 'r-5', categoryId: 'salaire', memberId: 'm-2', direction: 'in',
+      amount: eur(200_000), startedOn: '2025-01-28', period: MONTHLY,
+    })
+    expect(income([salaire, autre])).toBe(250_000)
+  })
+
+  it('ignore un salaire arrêté avant la date', () => {
+    expect(income([{ ...salaire, endedOn: '2026-03-31' }])).toBeNull()
+  })
+
+  it('ne sait rien dire sans aucune ressource', () => {
+    expect(income([])).toBeNull()
+  })
+
+  it('estime un montant variable sur sa dernière échéance confirmée', () => {
+    const variable = { ...salaire, amount: null }
+    expect(income([variable], () => eur(232_000))).toBe(232_000)
+  })
+
+  it('un revenu variable qu’on ne sait pas encore ne vaut pas zéro', () => {
+    expect(income([{ ...salaire, amount: null }])).toBeNull()
+  })
+
+  it('rend un revenu par membre, dans l’ordre du foyer', () => {
+    const autre = makeRecurrence({
+      id: 'r-6', categoryId: 'salaire', memberId: 'm-2', direction: 'in',
+      amount: eur(200_000), startedOn: '2025-01-28', period: MONTHLY,
+    })
+    expect(
+      memberIncomes(
+        [makeMember({ id: 'm-1' }), makeMember({ id: 'm-2' }), makeMember({ id: 'm-3' })],
+        [salaire, autre],
+        kindOf,
+        never,
+        '2026-07-15',
+      ),
+    ).toEqual([
+      { memberId: 'm-1', income: 250_000 },
+      { memberId: 'm-2', income: 200_000 },
+      { memberId: 'm-3', income: null },
+    ])
+  })
+})
+
 describe('parts au prorata des revenus', () => {
-  const alix = makeMember({ id: 'm-1', name: 'Alix', income: eur(250_000) })
-  const camille = makeMember({ id: 'm-2', name: 'Camille', income: eur(200_000) })
+  const foyer = [
+    { memberId: 'm-1', income: eur(250_000) },
+    { memberId: 'm-2', income: eur(200_000) },
+  ]
 
   it('donne le coefficient de chacun en points de base', () => {
-    const shares = memberShares([alix, camille], eur(200_000))
+    const shares = memberShares(foyer, eur(200_000))
     expect(shares?.map((s) => s.shareBp)).toEqual([5556, 4444])
   })
 
   it('répartit les charges au centime près', () => {
-    const shares = memberShares([alix, camille], eur(200_000))
+    const shares = memberShares(foyer, eur(200_000))
     expect(shares?.map((s) => s.due)).toEqual([money(111_111), money(88_889)])
     expect(shares && totalDue(shares)).toBe(200_000)
   })
 
   it('la somme des parts vaut toujours le total, quel qu’il soit', () => {
     for (const total of [1, 7, 99, 100_001, 333_333]) {
-      const shares = memberShares([alix, camille], money(total))
+      const shares = memberShares(foyer, money(total))
       expect(shares && totalDue(shares)).toBe(total)
     }
   })
 
-  it('ne dit rien tant qu’un revenu n’est pas déclaré', () => {
-    expect(memberShares([alix, makeMember({ id: 'm-2' })], eur(200_000))).toBeNull()
+  it('ne dit rien tant qu’un revenu n’est pas connu', () => {
+    expect(memberShares([foyer[0]!, { memberId: 'm-2', income: null }], eur(200_000))).toBeNull()
   })
 
   it('ne dit rien avec un seul membre', () => {
-    expect(memberShares([alix], eur(200_000))).toBeNull()
+    expect(memberShares([foyer[0]!], eur(200_000))).toBeNull()
   })
 
   it('ne dit rien quand tous les revenus sont à zéro', () => {
     const shares = memberShares(
-      [makeMember({ id: 'm-1', income: eur(0) }), makeMember({ id: 'm-2', income: eur(0) })],
+      [{ memberId: 'm-1', income: eur(0) }, { memberId: 'm-2', income: eur(0) }],
       eur(200_000),
     )
     expect(shares).toBeNull()
   })
 
-  it('donne tout à celui qui gagne, si l’autre déclare zéro', () => {
-    const shares = memberShares(
-      [alix, makeMember({ id: 'm-2', income: eur(0) })],
-      eur(200_000),
-    )
+  it('donne tout à celui qui gagne, si l’autre est à zéro', () => {
+    const shares = memberShares([foyer[0]!, { memberId: 'm-2', income: eur(0) }], eur(200_000))
     expect(shares?.map((s) => s.due)).toEqual([money(200_000), money(0)])
   })
 
-  it('garde l’ordre des membres du foyer', () => {
-    const shares = memberShares([camille, alix], eur(200_000))
+  it('garde l’ordre du foyer', () => {
+    const shares = memberShares([foyer[1]!, foyer[0]!], eur(200_000))
     expect(shares?.map((s) => s.memberId)).toEqual(['m-2', 'm-1'])
   })
 })

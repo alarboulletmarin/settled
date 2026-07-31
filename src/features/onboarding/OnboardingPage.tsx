@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { tpl } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
-import { addMember, removeMember, setHouseholdName, setMemberIncome } from '@/store/actions'
+import { addMember, removeMember, setHouseholdName } from '@/store/actions'
 import { useHouseholdName, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Tile } from '@/ui/Tile'
@@ -37,9 +37,8 @@ export function OnboardingPage() {
         ) : (
           <MembersStep
             members={members}
-            onAdd={(name, income) => {
-              const member = addMember(name)
-              if (income !== undefined) setMemberIncome(member.id, income)
+            onAdd={(name) => {
+              addMember(name)
             }}
             onRemove={removeMember}
             onDone={finishOnboarding}

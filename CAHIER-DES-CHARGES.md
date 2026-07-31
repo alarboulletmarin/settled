@@ -26,7 +26,7 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Historique des mois passés
 - Comparatifs mois/mois et année/année
 - Catégories rangées en familles, sous quatre natures
-- Membres du foyer comme étiquette, avec leur revenu déclaré
+- Membres du foyer comme étiquette
 - Répartition des charges communes entre membres, au prorata des revenus
 - Export / import du fichier de données
 - Thème clair et sombre
@@ -54,12 +54,9 @@ type Data = {
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
 
-type Member = {
-  id: string
-  name: string
-  color: string
-  income?: Money              // revenu mensuel net déclaré, pour le prorata
-}
+// Le revenu qui sert au prorata n'est pas ici : il se lit sur les récurrences
+// de nature `resource` que le membre porte.
+type Member = { id: string; name: string; color: string }
 
 // Ce que devient l'argent, par-delà son sens de trésorerie.
 type CategoryKind = 'resource' | 'charge' | 'debt' | 'saving'
@@ -133,7 +130,7 @@ type MonthState = {
 - Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas.
 - Le sens d'une catégorie découle de la nature de sa famille, jamais l'inverse : `resource` entre, les trois autres sortent. Un versement sort du compte exactement comme une charge — c'est la nature, pas le sens, qui les distingue.
 - Un `Debt` ne produit aucun chiffre de trésorerie : ce sont les `Entry` de la récurrence liée qui font sortir l'argent. Il n'ajoute que le capital, que la somme des mensualités ne dit pas dès qu'il y a des intérêts.
-- Le revenu d'un membre est une **déclaration**, pas un relevé : il ne se déduit pas des `Entry` de nature `resource`. Une prime ou un treizième mois ne doivent pas rebattre la part de chacun sur le loyer.
+- Le revenu d'un membre est **dérivé de ses récurrences** de nature `resource`, ramenées au mois — jamais stocké à côté. Le déclarer en plus en ferait une seconde vérité, et la première augmentation les ferait diverger. C'est aussi ce qui donne au coefficient sa stabilité : une récurrence est une règle, une prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce qu'on gagne.
 - `shared` est une **exception** à la règle de partage, jamais sa copie. Absent, la règle tranche — et c'est ce qui permet à tout ce qui a déjà été saisi de rester exploitable sans être requalifié.
 
 ---
@@ -145,7 +142,7 @@ type MonthState = {
 Deux étapes, aucune ne peut être sautée sur la première.
 
 1. Nom du foyer. Champ libre, pré-rempli avec « Maison ».
-2. Membres. L'utilisateur peut passer directement (usage solo) ou ajouter des personnes : prénom, et revenu mensuel net facultatif. Le revenu se déclare aussi bien plus tard, dans les réglages.
+2. Membres. L'utilisateur peut passer directement (usage solo) ou ajouter des personnes, prénom uniquement.
 
 Un jeu de catégories par défaut est créé, modifiable ensuite.
 
@@ -232,10 +229,11 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 À deux revenus inégaux, des parts égales ne le sont pas : sur 2 500 € et 2 000 €, un loyer partagé en deux pèse un quart plus lourd pour le second. La répartition dit ce que chacun verse sur les charges communes, **au prorata des revenus déclarés**.
 
 - **Coefficient** : `revenu du membre ÷ revenus du foyer`. Sur 2 500 € et 2 000 €, 55,6 % et 44,4 %.
+- **Le revenu ne se saisit nulle part** : il est la somme des récurrences de nature `resource` du membre — salaire, allocations, pension — ramenées au mois. Une récurrence à montant variable est estimée à sa dernière échéance confirmée, comme le total des abonnements. Une augmentation se saisit là où elle a lieu, dans l'abonnement, et la répartition suit.
 - **Charges communes** : les sorties de nature `charge` ou `debt` que personne ne s'est attribuées, plus celles cochées « à partager ». C'est la frontière de la capacité d'épargne, et pour la même raison : un versement sort du compte mais reste à qui le fait, il n'a rien à faire dans un partage.
 - Les échéances **prévues** comptent : la question est « combien verser ce mois-ci », pas « combien a déjà été payé ». Répondre au réalisé ferait grimper la part de chacun au fil du mois.
 - La somme des parts vaut **exactement** le total, au centime. Arrondir chaque part dans son coin ne le garantirait pas ; les centimes restants vont aux plus forts restes, et l'écran affiche le total des parts pour qu'on le vérifie.
-- Le calcul ne se fait pas tant qu'un membre n'a pas déclaré son revenu, ou qu'il n'y en a qu'un. L'écran **nomme ce qui manque** au lieu d'afficher un zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+- Le calcul ne se fait pas tant qu'un membre n'a aucune ressource récurrente à son nom, ou qu'il n'y en a qu'un. L'écran **nomme ce qui manque** au lieu d'afficher un zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
 - Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, et sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre.
 - La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
 

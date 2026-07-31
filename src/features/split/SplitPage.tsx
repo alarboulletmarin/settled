@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { RECURRENCE_NEW_PATH } from '@/app/routes'
 import { totalDue } from '@/domain/split'
 import type { MemberShare } from '@/domain/split'
 import { fr } from '@/i18n/fr'
@@ -52,7 +53,7 @@ function ShareRow({ share }: { share: MemberShare }) {
  * de l'affirmer.
  */
 export function SplitPage() {
-  const { total, shares, undeclared } = useMonthSplit()
+  const { total, shares, unknown } = useMonthSplit()
   const members = useMembers()
   const currency = useCurrency()
   const navigate = useNavigate()
@@ -77,7 +78,7 @@ export function SplitPage() {
   }
 
   if (shares === null) {
-    const names = undeclared.map((m) => m.name)
+    const names = unknown.map((m) => m.name)
     return (
       <>
         <PageTitle title={fr.split.title} />
@@ -86,9 +87,13 @@ export function SplitPage() {
             names.length === 1 ? fr.split.missingOne : fr.split.missingMany,
             enumerate(names),
           )}
-          actionLabel={fr.split.goToSettings}
-          onAction={goToSettings}
-        />
+          actionLabel={fr.split.goToIncome}
+          onAction={() => {
+            void navigate(RECURRENCE_NEW_PATH)
+          }}
+        >
+          <p className="t-label max-w-sm">{fr.split.missingHint}</p>
+        </EmptyState>
       </>
     )
   }
@@ -129,6 +134,7 @@ export function SplitPage() {
         <Tile className="gap-2">
           <Eyebrow>{fr.split.method}</Eyebrow>
           <p className="t-body mt-1">{fr.split.methodFormula}</p>
+          <p className="t-label">{fr.split.methodIncome}</p>
           <ul className="flex list-disc flex-col gap-1 pl-5">
             <li className="t-label">{fr.split.methodIncluded}</li>
             <li className="t-label">{fr.split.methodFlagged}</li>

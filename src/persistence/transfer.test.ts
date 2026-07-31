@@ -21,7 +21,7 @@ function richData(): Data {
     household: {
       name: 'Chez nous',
       members: [
-        { id: 'm1', name: 'Alix', color: 'var(--cat-1)', income: eur(250000) },
+        { id: 'm1', name: 'Alix', color: 'var(--cat-1)' },
         { id: 'm2', name: 'Camille', color: 'var(--cat-2)' },
       ],
     },
@@ -328,31 +328,24 @@ describe('migration vers la répartition entre membres', () => {
     expect(result.data.household.members[0]?.name).toBe('Alix')
   })
 
-  it('laisse les nouveaux champs absents, pour que la règle tranche', () => {
+  it('laisse `shared` absent, pour que la règle tranche', () => {
     const { data } = parseImport(v2())
-    expect(data.household.members[0]).not.toHaveProperty('income')
     expect(data.entries[0]).not.toHaveProperty('shared')
   })
 
-  it('écarte un revenu illisible plutôt que de le ramener à zéro', () => {
+  it('écarte un `shared` illisible plutôt que de l’interpréter', () => {
     const bogus = JSON.stringify({
       schemaVersion: 3,
-      household: {
-        name: 'Maison',
-        members: [
-          { id: 'm1', name: 'Alix', color: 'c', income: 'beaucoup' },
-          { id: 'm2', name: 'Camille', color: 'c', income: 1234.5 },
-          { id: 'm3', name: 'Sacha', color: 'c', income: -100 },
-          { id: 'm4', name: 'Dominique', color: 'c', income: 0 },
-        ],
-      },
+      household: { name: 'Maison', members: [] },
       categories: [],
+      entries: [
+        { id: 'e1', label: 'A', categoryId: 'c', direction: 'out', amount: 100, date: '2026-07-01', status: 'confirmed', shared: 'oui' },
+        { id: 'e2', label: 'B', categoryId: 'c', direction: 'out', amount: 100, date: '2026-07-02', status: 'confirmed', shared: false },
+      ],
     })
-    const { members } = parseImport(bogus).data.household
-    expect(members[0]).not.toHaveProperty('income')
-    expect(members[1]).not.toHaveProperty('income')
-    expect(members[2]).not.toHaveProperty('income')
-    // Zéro est une déclaration, elle survit.
-    expect(members[3]?.income).toBe(0)
+    const { entries } = parseImport(bogus).data
+    expect(entries[0]).not.toHaveProperty('shared')
+    // `false` est une exception explicite, elle survit.
+    expect(entries[1]?.shared).toBe(false)
   })
 })

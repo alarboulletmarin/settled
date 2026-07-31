@@ -77,13 +77,16 @@ serait faux dès qu'il y a des intérêts : sur 100 000 € à 4 % sur 20 ans, l
 première année amortit ~3 000 € pour ~7 300 € versés, et le raccourci
 annoncerait le prêt soldé des années trop tôt.
 
-**Prorata des revenus.** Le revenu d'un membre est *déclaré* (`Member.income`),
-jamais déduit de ses `Entry` de nature `resource`. C'est la même distinction que
-règle et fait : le revenu déclaré est une règle de partage, les ressources
-encaissées sont des faits. Les dériver ferait bouger la part de chacun sur le
-loyer au gré d'une prime, alors que le loyer, lui, n'a pas bougé. Le calcul
-refuse de répondre — `null`, pas zéro — tant qu'un membre n'a pas déclaré :
-un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+**Prorata des revenus.** Le revenu d'un membre est *dérivé* de ses récurrences
+de nature `resource`, ramenées au mois — il n'est stocké nulle part. Le déclarer
+à côté en ferait une seconde vérité, et la première augmentation les ferait
+diverger. La distinction règle / fait tient quand même, et sans doublon : c'est
+la **récurrence** qui est la règle, l'`Entry` qui est le fait. Une prime est une
+entrée ponctuelle, donc elle ne déplace pas la part du loyer ; une augmentation
+se saisit dans l'abonnement, donc elle la déplace. Le calcul refuse de répondre
+— `null`, pas zéro — tant qu'un membre n'a aucune ressource à son nom, ou qu'un
+montant variable n'a pas d'échéance confirmée d'où se lire : un prorata au
+dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
 
 **Plus forts restes.** Répartir 2 000 € entre trois tiers en arrondissant chaque
 part donnerait trois fois 666,67 € et un centime de trop. `split.ts` pose les

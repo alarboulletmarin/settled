@@ -33,7 +33,13 @@ import {
   upcomingEntries,
 } from '@/domain/stats'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
-import { type MemberShare, memberShares, sharedTotal } from '@/domain/split'
+import {
+  type MemberIncome,
+  type MemberShare,
+  memberIncomes,
+  memberShares,
+  sharedTotal,
+} from '@/domain/split'
 import {
   type Category,
   type CategoryKind,
@@ -243,23 +249,44 @@ export type MonthSplit = {
   total: Money
   /** `null` tant que le prorata ne peut pas se calculer — voir `memberShares`. */
   shares: MemberShare[] | null
-  /** Les membres dont le revenu n'est pas déclaré, pour pouvoir les nommer. */
-  undeclared: Member[]
+  /** Les membres dont le revenu n'est pas connu, pour pouvoir les nommer. */
+  unknown: Member[]
+}
+
+/**
+ * Le revenu mensuel de chaque membre, déduit de ses abonnements de ressources.
+ * Un montant variable est estimé à sa dernière échéance confirmée — le même
+ * `resolveVariable` que le total des abonnements.
+ */
+export function useMemberIncomes(): MemberIncome[] {
+  const members = useMembers()
+  const recurrences = useRecurrences()
+  const entries = useEntries()
+  const kindOf = useKindOf()
+  return useMemo(() => {
+    const now = today()
+    return memberIncomes(
+      members,
+      recurrences,
+      kindOf,
+      (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
+      now,
+    )
+  }, [members, recurrences, entries, kindOf])
 }
 
 /**
  * Le coefficient de chaque membre, en points de base, indépendamment de tout
- * mois : c'est la lecture des réglages, où l'on ajuste les revenus et où l'on
- * veut voir la part bouger sans avoir à naviguer jusqu'à un mois.
- * `null` tant que le prorata ne peut pas se calculer.
+ * mois : c'est la lecture des réglages, où l'on veut voir la part de chacun
+ * sans avoir à naviguer jusqu'à un mois. `null` tant qu'il ne se calcule pas.
  */
 export function useMemberSharesOfIncome(): Map<string, number> | null {
-  const members = useMembers()
+  const incomes = useMemberIncomes()
   return useMemo(() => {
-    const shares = memberShares(members, ZERO)
+    const shares = memberShares(incomes, ZERO)
     if (shares === null) return null
     return new Map(shares.map((s) => [s.memberId, s.shareBp]))
-  }, [members])
+  }, [incomes])
 }
 
 /**
@@ -274,17 +301,19 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
   const entries = useEntries()
   const current = useCurrentYm()
   const members = useMembers()
+  const incomes = useMemberIncomes()
   const kindOf = useKindOf()
   const month = ym ?? current
 
   return useMemo(() => {
     const total = sharedTotal(entries, month, kindOf)
+    const missing = new Set(incomes.filter((i) => i.income === null).map((i) => i.memberId))
     return {
       total,
-      shares: memberShares(members, total),
-      undeclared: members.filter((m) => m.income === undefined),
+      shares: memberShares(incomes, total),
+      unknown: members.filter((m) => missing.has(m.id)),
     }
-  }, [entries, month, kindOf, members])
+  }, [entries, month, kindOf, members, incomes])
 }
 
 /* --- Crédits --------------------------------------------------------------*/
