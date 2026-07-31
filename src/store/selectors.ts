@@ -37,8 +37,10 @@ import {
 } from '@/domain/stats'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
 import {
+  type MemberCharges,
   type MemberIncome,
   type MemberShare,
+  memberCharges,
   memberIncomes,
   memberShares,
   scopeToMember,
@@ -401,6 +403,28 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
       unknown: members.filter((m) => missing.has(m.id)),
     }
   }, [entries, month, kindOf, members, incomes])
+}
+
+/**
+ * Ce que le mois affiché coûte au membre filtré, ses charges d'un côté et sa
+ * part du foyer de l'autre.
+ *
+ * `null` hors filtre — le foyer entier n'a pas de part, il a une répartition —
+ * et tant que le prorata ne se calcule pas : l'en-tête du mois dit alors ce qui
+ * manque, et une tuile de plus le répéterait sans rien ajouter.
+ */
+export function useMemberCharges(): MemberCharges | null {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const member = useMemberFilter()
+  const kindOf = useKindOf()
+  const incomes = useMemberIncomes()
+
+  return useMemo(
+    () =>
+      member === undefined ? null : memberCharges(entries, current, member, kindOf, incomes),
+    [entries, current, member, kindOf, incomes],
+  )
 }
 
 /* --- Crédits --------------------------------------------------------------*/

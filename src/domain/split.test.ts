@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { ymOf } from './date'
 import { eur, makeEntry, makeMember, makeRecurrence } from './fixtures'
 import { money, sum } from './money'
 import {
   allocate,
   isSharedEntry,
   largestRemainder,
+  memberCharges,
   memberIncomes,
   memberRequired,
   memberShares,
@@ -14,7 +16,7 @@ import {
   sharedTotal,
   totalDue,
 } from './split'
-import type { CategoryKind } from './types'
+import { type CategoryKind, isSpending } from './types'
 
 /* --- Répartition d'un entier ----------------------------------------------*/
 
@@ -427,5 +429,91 @@ describe('le mois vu par un membre', () => {
     expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!, { memberId: 'm-2', income: null }])).toBeNull()
     expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!])).toBeNull()
     expect(scopeToMember(july, 'm-3', kindOf, foyer)).toBeNull()
+  })
+})
+
+/* --- Ce qu'un membre porte du mois ----------------------------------------*/
+
+describe('les charges d’un membre, les siennes et sa part du foyer', () => {
+  const foyer = [
+    { memberId: 'm-1', income: eur(250_000) },
+    { memberId: 'm-2', income: eur(200_000) },
+  ]
+
+  const july = [
+    /* Communes : 950 € de loyer et 300 € de mensualité. */
+    makeEntry({ id: 'loyer', date: '2026-07-05', amount: eur(95_000), categoryId: 'logement' }),
+    makeEntry({ id: 'pret', date: '2026-07-10', amount: eur(30_000), categoryId: 'auto' }),
+    /* À lui : des courses, et un versement d'épargne qui n'est pas une charge. */
+    makeEntry({ id: 'sien', date: '2026-07-15', amount: eur(4_000), categoryId: 'courses', memberId: 'm-1' }),
+    makeEntry({ id: 'livret', date: '2026-07-12', amount: eur(20_000), categoryId: 'livret', memberId: 'm-1' }),
+    /* À elle, et une paie : ni l'une ni l'autre n'est à sa charge. */
+    makeEntry({ id: 'elle', date: '2026-07-16', amount: eur(6_000), categoryId: 'courses', memberId: 'm-2' }),
+    makeEntry({ id: 'paie', date: '2026-07-01', direction: 'in', amount: eur(250_000), categoryId: 'salaire', memberId: 'm-1' }),
+    /* Un autre mois : il ne compte pas dans celui-ci. */
+    makeEntry({ id: 'aout', date: '2026-08-03', amount: eur(9_999), categoryId: 'courses' }),
+  ]
+
+  const charges = memberCharges(july, '2026-07', 'm-1', kindOf, foyer)
+
+  it('sépare ce qu’il porte seul de ce qu’il porte pour le foyer', () => {
+    // 55,56 % de 950 € et de 300 €, contre 40 € de courses à son seul nom.
+    expect(charges).toEqual({
+      own: money(4_000),
+      common: money(69_445),
+      commonTotal: money(125_000),
+      shareBp: 5556,
+    })
+  })
+
+  it('laisse l’épargne, les entrées et les lignes des autres en dehors', () => {
+    const forM2 = memberCharges(july, '2026-07', 'm-2', kindOf, foyer)
+    expect(forM2?.own).toBe(6_000)
+    expect(forM2?.commonTotal).toBe(125_000)
+  })
+
+  it('les deux morceaux redonnent le total des charges de son mois filtré', () => {
+    const scoped = scopeToMember(july, 'm-1', kindOf, foyer) ?? []
+    const spending = sum(
+      scoped
+        .filter((e) => ymOf(e.date) === '2026-07')
+        .filter((e) => e.direction === 'out' && isSpending(kindOf(e.categoryId)))
+        .map((e) => e.amount),
+    )
+    expect((charges?.own ?? 0) + (charges?.common ?? 0)).toBe(spending)
+  })
+
+  it('donne le même chiffre et le même coefficient que l’écran Répartition', () => {
+    const commun = sharedEntries(july, '2026-07', kindOf)
+    const share = memberShares(foyer, commun.map((e) => e.amount))?.[0]
+    expect(charges?.common).toBe(share?.due)
+    expect(charges?.shareBp).toBe(share?.shareBp)
+    expect(charges?.commonTotal).toBe(sharedTotal(july, '2026-07', kindOf))
+  })
+
+  it('une dépense cochée « à partager » quitte ses charges pour le pot commun', () => {
+    const avancee = july.map((e) => (e.id === 'sien' ? { ...e, shared: true } : e))
+    const partagee = memberCharges(avancee, '2026-07', 'm-1', kindOf, foyer)
+    expect(partagee?.own).toBe(0)
+    // 55,56 % des 40 € qu'il a avancés lui reviennent, le reste passe à l'autre.
+    expect(partagee?.common).toBe(71_667)
+    expect(partagee?.commonTotal).toBe(129_000)
+  })
+
+  it('ne dit rien tant que le prorata ne se calcule pas', () => {
+    const incomplet = [foyer[0]!, { memberId: 'm-2', income: null }]
+    expect(memberCharges(july, '2026-07', 'm-1', kindOf, incomplet)).toBeNull()
+    expect(memberCharges(july, '2026-07', 'm-1', kindOf, [foyer[0]!])).toBeNull()
+    expect(memberCharges(july, '2026-07', 'm-3', kindOf, foyer)).toBeNull()
+  })
+
+  it('rend un mois sans charge commune sans rien inventer', () => {
+    const seul = memberCharges([july[2]!], '2026-07', 'm-1', kindOf, foyer)
+    expect(seul).toEqual({
+      own: money(4_000),
+      common: money(0),
+      commonTotal: money(0),
+      shareBp: 5556,
+    })
   })
 })
