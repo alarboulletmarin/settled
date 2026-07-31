@@ -281,37 +281,6 @@ export function breakdownByCategory(
   return topSlices(byCategory, limit)
 }
 
-/* --- Dépenses par jour ----------------------------------------------------*/
-
-export type DaySlice = { categoryId: string; total: Money }
-export type DayTotals = { date: ISODate; total: Money; slices: DaySlice[] }
-
-/** Un point par jour du mois, y compris les jours vides : la barre doit exister. */
-export function dailyBreakdown(
-  entries: readonly Entry[],
-  month: YearMonth,
-  direction: Direction = 'out',
-  memberId?: MemberFilter,
-): DayTotals[] {
-  const { y, m } = parseYm(month)
-  const scoped = entriesOfMonth(entries, month, memberId).filter((e) => e.direction === direction)
-  const days = new Map<ISODate, Map<string, Money>>()
-
-  for (const entry of scoped) {
-    const day = days.get(entry.date) ?? new Map<string, Money>()
-    day.set(entry.categoryId, add(day.get(entry.categoryId) ?? ZERO, entry.amount))
-    days.set(entry.date, day)
-  }
-
-  return Array.from({ length: daysInMonth(y, m) }, (_, i) => {
-    const date = `${month}-${String(i + 1).padStart(2, '0')}`
-    const slices = [...(days.get(date) ?? new Map<string, Money>())].map(
-      ([categoryId, total]) => ({ categoryId, total }),
-    )
-    return { date, total: sum(slices.map((s) => s.total)), slices }
-  })
-}
-
 /* --- Prochaines échéances -------------------------------------------------*/
 
 export type Upcoming = { entry: Entry; daysLeft: number }

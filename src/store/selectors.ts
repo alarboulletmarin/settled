@@ -15,7 +15,6 @@ import { type PriceChange, amountOn, detectPriceChange } from '@/domain/priceHis
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
   type CategorySlice,
-  type DayTotals,
   type Flow,
   type KindOf,
   type KindTotals,
@@ -24,7 +23,6 @@ import {
   type Upcoming,
   breakdownByCategory,
   breakdownByFamily,
-  dailyBreakdown,
   entriesOfMonth,
   incomeFlow,
   monthProgress,
@@ -266,12 +264,6 @@ export function useCategoryBreakdown(direction: 'in' | 'out' = 'out'): CategoryS
     () => breakdownByCategory(entries, month, direction),
     [entries, month, direction],
   )
-}
-
-export function useDailyBreakdown(direction: 'in' | 'out' = 'out'): DayTotals[] {
-  const { entries } = useMonthScope()
-  const month = useCurrentYm()
-  return useMemo(() => dailyBreakdown(entries, month, direction), [entries, month, direction])
 }
 
 /**

@@ -243,7 +243,6 @@ export const fr = {
     remainingNoIncome: 'jusqu’à la fin du mois',
     breakdown: 'Répartition',
     breakdownHint: 'sorties du mois',
-    daily: 'Dépenses par jour',
     upcoming: 'Prochaines échéances',
     subscriptions: 'Abonnements',
     subscriptionsHint: '%s par an',
@@ -251,7 +250,6 @@ export const fr = {
     outflow: 'Sorties',
     noBreakdown: 'Aucune sortie ce mois-ci.',
     noUpcoming: 'Plus d’échéance ce mois-ci.',
-    noDaily: 'Aucune dépense ce mois-ci.',
     progress: 'Jour %s sur %s',
     monthAhead: 'Mois à venir',
     monthDone: 'Mois terminé',
@@ -317,7 +315,6 @@ export const fr = {
       },
     },
     srBreakdown: 'Répartition des sorties : %s',
-    srDaily: 'Jours les plus dépensiers : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
   },
 

@@ -12,7 +12,6 @@ import {
   savingRate,
   spendingFlow,
   totalsByKind,
-  dailyBreakdown,
   entriesOfMonth,
   monthProgress,
   monthTotals,
@@ -146,33 +145,6 @@ describe('répartition par catégorie', () => {
 
   it('ne renvoie rien sur un mois vide, plutôt qu’une part à zéro', () => {
     expect(breakdownByCategory(july, '2026-01', 'out')).toEqual([])
-  })
-})
-
-describe('dépenses par jour', () => {
-  it('produit un point par jour, y compris les jours vides', () => {
-    const days = dailyBreakdown(july, '2026-07')
-    expect(days).toHaveLength(31)
-    expect(days[0]?.date).toBe('2026-07-01')
-    expect(days[0]?.total).toBe(0)
-    expect(days[4]?.total).toBe(95000)
-  })
-
-  it('empile les catégories d’un même jour', () => {
-    const entries = [
-      makeEntry({ date: '2026-07-03', amount: eur(1000), categoryId: 'a' }),
-      makeEntry({ date: '2026-07-03', amount: eur(2000), categoryId: 'b' }),
-      makeEntry({ date: '2026-07-03', amount: eur(500), categoryId: 'a' }),
-    ]
-    const day = dailyBreakdown(entries, '2026-07')[2]
-    expect(day?.total).toBe(3500)
-    expect(day?.slices).toHaveLength(2)
-  })
-
-  it('compte 28 barres en février, 29 en année bissextile', () => {
-    expect(dailyBreakdown([], '2026-02')).toHaveLength(28)
-    expect(dailyBreakdown([], '2024-02')).toHaveLength(29)
-    expect(dailyBreakdown([], '2026-04')).toHaveLength(30)
   })
 })
 

@@ -4,7 +4,6 @@ import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile } from './BreakdownTile'
 import { CreditsTile } from './CreditsTile'
-import { DailyTile } from './DailyTile'
 import { ChargesTile, IncomeTile, type ShowFlow } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
@@ -64,7 +63,6 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
         <UpcomingTile />
         <SubscriptionsTile />
         <CreditsTile />
-        <DailyTile />
       </BentoGrid>
 
       <MetricInfo

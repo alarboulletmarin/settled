@@ -29,7 +29,6 @@ const MARKER: [string, IconComponent][] = [
   ['BreakdownIcon', Icons.BreakdownIcon],
   ['UpcomingIcon', Icons.UpcomingIcon],
   ['SubscriptionsIcon', Icons.SubscriptionsIcon],
-  ['DailyIcon', Icons.DailyIcon],
   ['ToConfirmIcon', Icons.ToConfirmIcon],
   ['EntriesIcon', Icons.EntriesIcon],
   ['HouseholdIcon', Icons.HouseholdIcon],
