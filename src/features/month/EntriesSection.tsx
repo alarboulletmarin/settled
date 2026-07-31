@@ -16,6 +16,7 @@ import { Tile } from '@/ui/Tile'
 
 const AXES = [
   { value: 'day' as const, label: fr.month.byDay },
+  { value: 'direction' as const, label: fr.month.bySense },
   { value: 'category' as const, label: fr.month.byCategory },
   { value: 'member' as const, label: fr.month.byMember },
 ]
@@ -33,10 +34,17 @@ function memberMeta(
 
 /**
  * Groupé par jour, la liste se lit dans l'ordre où les choses ont eu lieu :
- * elle s'ouvre. Groupée par poste ou par personne, c'est un résumé dans lequel
- * on entre — elle se replie, et l'en-tête porte déjà la réponse.
+ * elle s'ouvre. Par sens elle s'ouvre aussi — les groupes ne sont que deux, et
+ * on vient y lire les lignes, pas les deux totaux que les tuiles donnent déjà.
+ * Groupée par poste ou par personne, c'est un résumé dans lequel on entre —
+ * elle se replie, et l'en-tête porte déjà la réponse.
  */
-const OPEN_BY_DEFAULT: Record<GroupBy, boolean> = { day: true, category: false, member: false }
+const OPEN_BY_DEFAULT: Record<GroupBy, boolean> = {
+  day: true,
+  direction: true,
+  category: false,
+  member: false,
+}
 
 export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
   const entries = useMonthConfirmed()
@@ -52,6 +60,7 @@ export function EntriesSection({ onOpen }: { onOpen: (entry: Entry) => void }) {
 
   const titleOf = (key: string): string => {
     if (by === 'day') return formatDayFull(key)
+    if (by === 'direction') return key === 'in' ? fr.month.inflow : fr.month.outflow
     if (by === 'category') return categories.get(key)?.label ?? fr.common.other
     return key === NO_MEMBER ? fr.shell.everyone : (members.get(key)?.name ?? fr.common.other)
   }

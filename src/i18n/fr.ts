@@ -359,8 +359,14 @@ export const fr = {
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',
     groupBy: 'Regrouper par',
     byDay: 'Jour',
+    bySense: 'Sens',
     byCategory: 'Catégorie',
     byMember: 'Personne',
+    /* Les mots des deux tuiles de flux, juste au-dessus dans la même page :
+       « Ce qui rentre » et « Ce qui sort », employés sur les abonnements,
+       nommeraient ici une deuxième fois les chiffres déjà lus plus haut. */
+    inflow: 'Revenus',
+    outflow: 'Charges',
     groupCountOne: '%s ligne',
     groupCount: '%s lignes',
     collapseAll: 'Tout replier',

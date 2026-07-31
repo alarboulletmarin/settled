@@ -33,6 +33,29 @@ describe('regroupement par jour', () => {
   })
 })
 
+describe('regroupement par sens', () => {
+  it('met ce qui sort avant ce qui rentre', () => {
+    expect(groupEntries(july, 'direction').map((g) => g.key)).toEqual(['out', 'in'])
+  })
+
+  it('rassemble les charges d’un côté et les revenus de l’autre', () => {
+    const groups = groupEntries(july, 'direction')
+    expect(groups[0]?.entries.map((e) => e.id)).toEqual(['a', 'b', 'c'])
+    expect(groups[1]?.entries.map((e) => e.id)).toEqual(['d'])
+  })
+
+  it('rend un total signé, du signe de son groupe', () => {
+    const groups = groupEntries(july, 'direction')
+    expect(groups[0]?.total).toBe(-111_000)
+    expect(groups[1]?.total).toBe(250_000)
+  })
+
+  it('ne rend qu’un groupe quand le mois n’a qu’un sens', () => {
+    const onlyOut = july.filter((e) => e.direction === 'out')
+    expect(groupEntries(onlyOut, 'direction').map((g) => g.key)).toEqual(['out'])
+  })
+})
+
 describe('regroupement par catégorie', () => {
   it('range le plus gros mouvement en tête', () => {
     const groups = groupEntries(july, 'category')
@@ -117,7 +140,7 @@ describe('cas limites', () => {
   })
 
   it('n’oublie aucune entrée, quel que soit l’axe', () => {
-    for (const by of ['day', 'category', 'member'] as const) {
+    for (const by of ['day', 'direction', 'category', 'member'] as const) {
       const count = groupEntries(july, by).reduce((n, g) => n + g.entries.length, 0)
       expect(count).toBe(july.length)
     }
