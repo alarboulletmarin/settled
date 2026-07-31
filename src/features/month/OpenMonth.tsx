@@ -4,6 +4,7 @@ import { openMonth } from '@/store/actions'
 import { useCurrentYm, useIsMonthOpened, useRecurrences } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { Warning } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 
@@ -46,7 +47,7 @@ export function OpenMonthNotice() {
 
   return (
     <Tile className="mb-4 w-full items-start gap-3">
-      <Eyebrow>{fr.month.notOpenedTitle}</Eyebrow>
+      <Eyebrow icon={Warning}>{fr.month.notOpenedTitle}</Eyebrow>
       <p className="t-body max-w-prose">{fr.month.notOpened}</p>
       <Button onClick={run}>{fr.month.open}</Button>
     </Tile>

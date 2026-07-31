@@ -7,7 +7,7 @@ import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { Plus } from '@/ui/Icons'
+import { Plus, SubscriptionsIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
@@ -18,7 +18,7 @@ function Totals() {
   const currency = useCurrency()
   return (
     <Tile variant="accent" className="mb-4">
-      <Eyebrow>{fr.recurrences.totalMonthly}</Eyebrow>
+      <Eyebrow icon={SubscriptionsIcon}>{fr.recurrences.totalMonthly}</Eyebrow>
       <Amount value={totals.monthly} size="tile" className="mt-3" />
       <p className="t-label mt-1 tnum">
         {tpl(fr.recurrences.perYear, formatMoney(totals.annual, currency, false))}

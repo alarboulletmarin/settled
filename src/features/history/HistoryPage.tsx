@@ -3,6 +3,7 @@ import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
 import { useCurrencyCode, useCurrentYm, useTrailingMonths } from '@/store/selectors'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { TrailingIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { MonthCompare } from './MonthCompare'
@@ -23,7 +24,7 @@ function Trailing() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.history.trailing}</Eyebrow>
+      <Eyebrow icon={TrailingIcon}>{fr.history.trailing}</Eyebrow>
       {filled.length === 0 ? (
         <p className="t-label">{fr.history.trailingEmpty}</p>
       ) : (

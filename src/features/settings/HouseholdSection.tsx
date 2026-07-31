@@ -7,7 +7,7 @@ import { Button, IconButton } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, TextInput } from '@/ui/Field'
-import { Close } from '@/ui/Icons'
+import { Close, HouseholdIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 
 export function HouseholdSection() {
@@ -18,7 +18,7 @@ export function HouseholdSection() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.settings.household}</Eyebrow>
+      <Eyebrow icon={HouseholdIcon}>{fr.settings.household}</Eyebrow>
 
       <Field label={fr.settings.householdName} required>
         {(id) => (

@@ -8,6 +8,7 @@ import { useCategories } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { CategoriesIcon } from '@/ui/Icons'
 import { Field, Select, TextInput } from '@/ui/Field'
 import { Tile } from '@/ui/Tile'
 
@@ -59,7 +60,7 @@ export function CategoriesSection() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.settings.categories}</Eyebrow>
+      <Eyebrow icon={CategoriesIcon}>{fr.settings.categories}</Eyebrow>
       <p className="t-label">{fr.settings.categoriesHint}</p>
 
       <ul className="flex flex-col gap-1">

@@ -4,6 +4,7 @@ import { formatMoney, tpl } from '@/i18n/format'
 import { useSubscriptionTotals } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { SubscriptionsIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 
@@ -14,7 +15,7 @@ export function SubscriptionsTile() {
 
   return (
     <Tile span="2x2" className="justify-between">
-      <Eyebrow>{fr.dashboard.subscriptions}</Eyebrow>
+      <Eyebrow icon={SubscriptionsIcon}>{fr.dashboard.subscriptions}</Eyebrow>
       <div className="flex flex-col gap-1">
         <Amount value={totals.monthly} size="tile" direction="out" />
         <span className="t-label tnum">

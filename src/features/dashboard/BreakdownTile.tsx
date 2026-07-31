@@ -6,6 +6,7 @@ import { useCategoryBreakdown, useCategoryMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { BreakdownIcon } from '@/ui/Icons'
 import { Ring, type RingSegment } from '@/ui/Ring'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
@@ -26,7 +27,7 @@ export function BreakdownTile() {
   if (slices.length === 0) {
     return (
       <Tile span="2x2" className="justify-between">
-        <Eyebrow>{fr.dashboard.breakdown}</Eyebrow>
+        <Eyebrow icon={BreakdownIcon}>{fr.dashboard.breakdown}</Eyebrow>
         <p className="t-label">{fr.dashboard.noBreakdown}</p>
       </Tile>
     )
@@ -45,7 +46,7 @@ export function BreakdownTile() {
 
   return (
     <Tile span="2x2" className="gap-3">
-      <Eyebrow>{fr.dashboard.breakdown}</Eyebrow>
+      <Eyebrow icon={BreakdownIcon}>{fr.dashboard.breakdown}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         <Ring
           size={104}

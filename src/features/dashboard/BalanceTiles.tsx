@@ -4,6 +4,7 @@ import { tpl } from '@/i18n/format'
 import { useCurrentYm, useMonthProgress, useMonthTotals, useRestToLive } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { BalanceIcon, ForecastIcon, RemainingIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { nextIncomeDate } from '@/domain/stats'
 import { useMonthEntries } from '@/store/selectors'
@@ -33,7 +34,7 @@ export function BalanceTile() {
 
   return (
     <Tile span="2x2" variant="accent" className="justify-between">
-      <Eyebrow>{fr.dashboard.balance}</Eyebrow>
+      <Eyebrow icon={BalanceIcon}>{fr.dashboard.balance}</Eyebrow>
       {/* Un eyebrow, un chiffre, une lecture secondaire — le maximum qu'une
           tuile porte selon le DS §5. L'anneau signature vit sur la répartition. */}
       <div className="flex flex-col gap-1">
@@ -49,7 +50,7 @@ export function ForecastTile() {
   const totals = useMonthTotals()
   return (
     <Tile span="2x1" className="justify-between">
-      <Eyebrow>{fr.dashboard.forecast}</Eyebrow>
+      <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={totals.forecastBalance} size="tile" />
         {/* Tant que la rangée fait une demi-hauteur, la lecture secondaire
@@ -68,7 +69,7 @@ export function RemainingTile() {
 
   return (
     <Tile span="2x1" className="justify-between">
-      <Eyebrow>{fr.dashboard.remaining}</Eyebrow>
+      <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={remaining} size="tile" tone={remaining < 0 ? 'danger' : 'default'} />
         <span className="t-label max-lg:sr-only">

@@ -5,6 +5,7 @@ import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { useCategoryMap, useDailyBreakdown } from '@/store/selectors'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { DailyIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 
@@ -17,7 +18,7 @@ export function DailyTile() {
 
   return (
     <Tile span="6x2" className="gap-3">
-      <Eyebrow>{fr.dashboard.daily}</Eyebrow>
+      <Eyebrow icon={DailyIcon}>{fr.dashboard.daily}</Eyebrow>
       {hasSpending ? (
         <StackedBars
           days={days}

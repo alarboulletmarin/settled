@@ -8,6 +8,7 @@ import { useCategoryMap, useEntries, useMemberFilter } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { CompareIcon } from '@/ui/Icons'
 import { Dot } from '@/ui/Dot'
 import { Field, Select } from '@/ui/Field'
 import { Tile } from '@/ui/Tile'
@@ -66,7 +67,7 @@ export function MonthCompare() {
   if (available.length < 2) {
     return (
       <Tile className="gap-3">
-        <Eyebrow>{fr.history.compare}</Eyebrow>
+        <Eyebrow icon={CompareIcon}>{fr.history.compare}</Eyebrow>
         <p className="t-label">{fr.history.compareSingleMonth}</p>
       </Tile>
     )
@@ -74,7 +75,7 @@ export function MonthCompare() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow>{fr.history.compare}</Eyebrow>
+      <Eyebrow icon={CompareIcon}>{fr.history.compare}</Eyebrow>
 
       <div className="flex flex-wrap gap-3">
         <MonthSelect

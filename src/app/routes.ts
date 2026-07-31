@@ -1,17 +1,29 @@
 import { fr } from '@/i18n/fr'
+import {
+  type IconComponent,
+  NavCalendar,
+  NavHistory,
+  NavMonth,
+  NavSettings,
+  NavSubscriptions,
+} from '@/ui/Icons'
 
-export type RouteDef = { path: string; label: string }
+export type RouteDef = { path: string; label: string; icon: IconComponent }
 
-/** L'ordre fait foi : il pilote la barre d'onglets comme la colonne latérale. */
+/**
+ * L'ordre fait foi : il pilote la barre d'onglets comme la colonne latérale.
+ * Chaque destination porte son glyphe ici, en un seul endroit, pour que les
+ * deux navigations ne puissent pas diverger.
+ */
 export const NAV_ROUTES: RouteDef[] = [
-  { path: '/', label: fr.nav.month },
-  { path: '/calendrier', label: fr.nav.calendar },
-  { path: '/abonnements', label: fr.nav.subscriptions },
-  { path: '/historique', label: fr.nav.history },
-  { path: '/reglages', label: fr.nav.settings },
+  { path: '/', label: fr.nav.month, icon: NavMonth },
+  { path: '/calendrier', label: fr.nav.calendar, icon: NavCalendar },
+  { path: '/abonnements', label: fr.nav.subscriptions, icon: NavSubscriptions },
+  { path: '/historique', label: fr.nav.history, icon: NavHistory },
+  { path: '/reglages', label: fr.nav.settings, icon: NavSettings },
 ]
 
-export const STYLEGUIDE_ROUTE: RouteDef = { path: '/styleguide', label: fr.nav.styleguide }
+export const STYLEGUIDE_ROUTE = { path: '/styleguide', label: fr.nav.styleguide }
 
 /* Saisies et fiches sont des écrans pleins, pas des feuilles : elles ont donc
    une URL. Aucune ne figure dans la navigation, on n'y va que par une action. */

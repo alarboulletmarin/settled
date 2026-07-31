@@ -1,6 +1,7 @@
 import { fr } from '@/i18n/fr'
 import { useStore } from '@/store/store'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { ThemeIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
@@ -19,7 +20,7 @@ function ThemeSection() {
   const setTheme = useStore((s) => s.setTheme)
   return (
     <Tile className="gap-3">
-      <Eyebrow>{fr.theme.label}</Eyebrow>
+      <Eyebrow icon={ThemeIcon}>{fr.theme.label}</Eyebrow>
       <p className="t-label">{fr.settings.themeHint}</p>
       <Segmented
         options={THEME_OPTIONS}
