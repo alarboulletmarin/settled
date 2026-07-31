@@ -4,7 +4,7 @@ import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { useHouseholdName } from '@/store/selectors'
 import { Sidebar, TabBar } from './Nav'
-import { ENTRY_NEW_PATH } from './routes'
+import { isFocusScreen } from './routes'
 
 /** Coquille de l'app : navigation et gabarit. Aucune règle métier ici. */
 export function AppShell({ children }: { children: ReactNode }) {
@@ -28,8 +28,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 lg:pb-10"
         >
           {/* Le rappel d'export ne s'intercale pas au-dessus d'une saisie en
-              cours : cet écran-là n'a qu'une chose à montrer. */}
-          {!pathname.startsWith(ENTRY_NEW_PATH) && <ExportReminder />}
+              cours ni d'une fiche : ces écrans-là n'ont qu'une chose à montrer. */}
+          {!isFocusScreen(pathname) && <ExportReminder />}
           {children}
         </main>
       </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { Recurrence } from '@/domain/types'
+import { useNavigate } from 'react-router-dom'
+import { RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { useCategoryMap, useRecurrenceRows, useSubscriptionTotals } from '@/store/selectors'
@@ -11,9 +11,7 @@ import { Plus } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
-import { RecurrenceDetail } from './RecurrenceDetail'
 import { RecurrenceRow } from './RecurrenceRow'
-import { RecurrenceSheet } from './RecurrenceSheet'
 
 function Totals() {
   const totals = useSubscriptionTotals()
@@ -65,17 +63,17 @@ function RowList({
 
 export function RecurrencesPage() {
   const rows = useRecurrenceRows()
-  const [editing, setEditing] = useState<Recurrence | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [detailId, setDetailId] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   const active = rows.filter((row) => !row.stopped)
   const stopped = rows.filter((row) => row.stopped)
-  const detail = rows.find((row) => row.recurrence.id === detailId) ?? null
 
   const openCreate = (): void => {
-    setEditing(null)
-    setSheetOpen(true)
+    void navigate(RECURRENCE_NEW_PATH)
+  }
+
+  const openDetail = (id: string): void => {
+    void navigate(recurrencePath(id))
   }
 
   return (
@@ -101,37 +99,17 @@ export function RecurrencesPage() {
         <div className="flex max-w-3xl flex-col gap-4">
           <Totals />
           <Tile className="p-2! md:p-2!">
-            <RowList rows={active} onOpen={setDetailId} />
+            <RowList rows={active} onOpen={openDetail} />
           </Tile>
 
           {stopped.length > 0 && (
             <Tile className="p-2! md:p-2!">
               <Eyebrow className="mx-1 mt-1 mb-2">{fr.recurrences.stoppedBadge}</Eyebrow>
-              <RowList rows={stopped} onOpen={setDetailId} />
+              <RowList rows={stopped} onOpen={openDetail} />
             </Tile>
           )}
         </div>
       )}
-
-      <RecurrenceDetail
-        row={detail}
-        onClose={() => {
-          setDetailId(null)
-        }}
-        onEdit={(recurrence) => {
-          setDetailId(null)
-          setEditing(recurrence)
-          setSheetOpen(true)
-        }}
-      />
-
-      <RecurrenceSheet
-        open={sheetOpen}
-        recurrence={editing}
-        onClose={() => {
-          setSheetOpen(false)
-        }}
-      />
     </>
   )
 }

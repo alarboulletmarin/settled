@@ -216,7 +216,11 @@ export function useRecurrenceRows(): RecurrenceRow[] {
         monthly: monthlyEquivalent(priced),
         annual: annualCost(priced),
         priceChange: detectPriceChange(entries, recurrence.id),
-        stopped: recurrence.endedOn !== undefined && recurrence.endedOn < now,
+        // `endedOn` est la dernière date couverte : `expandRecurrence` s'arrête
+        // dessus, incluse. Un abonnement arrêté aujourd'hui n'a donc plus
+        // d'échéance à venir — le compter encore actif jusqu'à demain laissait
+        // « Arrêter » sans effet visible le jour même où on l'actionne.
+        stopped: recurrence.endedOn !== undefined && recurrence.endedOn <= now,
       }
     })
     return rows.sort((a, b) => {
@@ -237,6 +241,15 @@ export function useTrailingMonths(count = 12): MonthPoint[] {
 }
 
 /** Bornes de navigation : on ne remonte pas avant la première donnée. */
+/** Un abonnement et ses chiffres dérivés. `null` s'il n'existe pas (ou plus). */
+export function useRecurrenceRow(id: string | undefined): RecurrenceRow | null {
+  const rows = useRecurrenceRows()
+  return useMemo(
+    () => (id === undefined ? null : (rows.find((row) => row.recurrence.id === id) ?? null)),
+    [rows, id],
+  )
+}
+
 export function useMonthBounds(): { min: YearMonth; max: YearMonth } {
   const entries = useEntries()
   const months = useStore((s) => s.data.months)
