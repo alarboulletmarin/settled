@@ -133,6 +133,22 @@ export function savingRate(totals: KindTotals): number | null {
   return totals.saving / totals.resource
 }
 
+/**
+ * Ce qu'il reste à placer : la capacité moins ce qui est déjà versé.
+ *
+ * C'est la question qui suit la capacité, et à laquelle aucun chiffre ne
+ * répondait. Savoir qu'on peut mettre 1 000 € de côté ne dit pas s'il en reste
+ * à répartir entre les supports : 800 € partent peut-être déjà d'eux-mêmes sur
+ * un livret et un plan, et les 200 € restants sont les seuls dont on décide.
+ *
+ * Négatif, il a un sens tout aussi net : on verse plus qu'on ne dégage, donc le
+ * mois se termine à découvert d'autant. C'est une lecture, pas une erreur — on
+ * ne le borne donc pas à zéro.
+ */
+export function savingLeft(totals: KindTotals): Money {
+  return sub(savingCapacity(totals), totals.saving)
+}
+
 /* --- Ce qui rentre, ce qui se paie ----------------------------------------*/
 
 export type Flow = {
@@ -273,6 +289,37 @@ export function breakdownByCategory(
   limit = 6,
 ): CategorySlice[] {
   const scoped = entriesOfMonth(entries, month, memberId).filter((e) => e.direction === direction)
+  const byCategory = new Map<string, Money>()
+  for (const entry of scoped) {
+    byCategory.set(entry.categoryId, add(byCategory.get(entry.categoryId) ?? ZERO, entry.amount))
+  }
+
+  return topSlices(byCategory, limit)
+}
+
+/**
+ * Où va l'épargne du mois, par support.
+ *
+ * La répartition par sens ne sait pas séparer un virement sur un PEA d'un plein
+ * d'essence : les deux sortent. La nature, elle, le sait — c'est la frontière
+ * de `spendingFlow`, prise par l'autre bout.
+ *
+ * Le plafond est plus haut que celui des dépenses : un foyer tient une
+ * quarantaine de postes de charges, dont un « Autres » sauve la lisibilité,
+ * mais rarement plus de six ou sept supports d'épargne — et les regrouper sous
+ * « Autres » retirerait à l'écran la seule chose qu'il a à dire, où l'argent
+ * est placé.
+ */
+export function savingsByCategory(
+  entries: readonly Entry[],
+  month: YearMonth,
+  kindOf: KindOf,
+  memberId?: MemberFilter,
+  limit = 8,
+): CategorySlice[] {
+  const scoped = entriesOfMonth(entries, month, memberId).filter(
+    (e) => kindOf(e.categoryId) === 'saving',
+  )
   const byCategory = new Map<string, Money>()
   for (const entry of scoped) {
     byCategory.set(entry.categoryId, add(byCategory.get(entry.categoryId) ?? ZERO, entry.amount))

@@ -58,7 +58,7 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
         <BreakdownTile />
         <ForecastTile onExplain={setMetric} />
         <RemainingTile onExplain={setMetric} />
-        <SavingTile onExplain={setMetric} />
+        <SavingTile />
         <SplitTile />
         <UpcomingTile />
         <SubscriptionsTile />

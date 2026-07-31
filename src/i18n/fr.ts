@@ -255,8 +255,11 @@ export const fr = {
     monthDone: 'Mois terminé',
     capacity: 'Capacité d’épargne',
     capacityHint: 'ressources − charges − crédits',
-    savingRate: '%s de tes ressources mises de côté',
-    savingRateNone: 'aucune ressource ce mois-ci',
+    /* La seconde lecture porte le reste à placer, et non le taux d'épargne : le
+       taux décrit le mois passé, le reste appelle un geste — c'est lui qui fait
+       ouvrir l'écran. Le taux s'y lit, à côté de sa ventilation. */
+    savingLeft: 'reste %s à placer',
+    showSavings: 'Voir où placer %s',
     spending: 'Où part l’argent',
     spendingHint: 'charges et crédits, hors épargne',
     savedThisMonth: 'Mis de côté : %s',
@@ -313,12 +316,10 @@ export const fr = {
         apart:
           'C’est le prévisionnel arrêté plus tôt : lui va jusqu’au bout du mois, celui-ci s’arrête au prochain salaire. Sans rentrée en vue, les deux se rejoignent — l’horizon devient la fin du mois.',
       },
-      capacity: {
-        lead: 'Ce que tu pouvais mettre de côté ce mois-ci, avant de l’avoir fait.',
-        calculation: 'Les ressources, moins les charges et les crédits — donc avant les versements.',
-        apart:
-          'Le solde compte un virement sur un livret comme une sortie, si bien qu’un mois où l’on met 300 € de côté s’y lit comme un mois où l’on a dépensé 300 € de plus. Celui-ci ne s’y laisse pas prendre.',
-      },
+      /* La capacité d'épargne n'a plus sa feuille : elle ouvre son écran, où le
+         calcul est posé terme par terme et suivi de ce qu'il reste à placer.
+         Devant un chiffre qui appelle un geste, définir n'était pas la
+         réponse. */
     },
     srBreakdown: 'Répartition des sorties : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
@@ -576,6 +577,59 @@ export const fr = {
     soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
     goToSettings: 'Aller aux réglages',
     srShares: 'Parts de chacun : %s',
+  },
+
+  savings: {
+    title: 'Épargne',
+    subtitle: 'Ce que le mois dégage, et où ça se place.',
+
+    /* La cascade, terme par terme. Le résultat seul se croit sur parole ; les
+       trois lignes qui le produisent se vérifient, et disent surtout *quoi
+       changer* — un crédit qui mange la moitié de la capacité se voit ici, et
+       nulle part ailleurs. */
+    flow: 'Ce que le mois dégage',
+    flowIncome: 'Revenus',
+    flowCharges: 'Charges',
+    flowDebts: 'Crédits',
+    capacity: 'Capacité d’épargne',
+    capacityHint: 'échéances prévues comprises',
+    capacityNegative: 'Les charges dépassent les revenus : il n’y a rien à placer ce mois-ci.',
+
+    placed: 'Où ça se place',
+    placedTotal: 'Versé ce mois',
+    placedEmpty: 'Aucun versement ce mois-ci.',
+    /* Un versement au foyer entier n'est à personne, et l'épargne ne se partage
+       pas : il ne compte donc dans la capacité de personne. C'est le pendant
+       exact du salaire resté « tout le foyer » sur la répartition. */
+    placedUnassigned:
+      'Un versement laissé « tout le foyer » n’entre dans l’épargne de personne. Attribue-le pour qu’il compte.',
+
+    left: 'Reste à placer',
+    leftHint: 'capacité − versements',
+    leftNone: 'Toute la capacité est placée.',
+    /* Verser plus qu'on ne dégage n'est pas une erreur de saisie : c'est une
+       lecture, et celle qu'on vient chercher. */
+    over: 'Dépassement',
+    overHint: 'les versements dépassent la capacité de %s',
+    rate: '%s des ressources mises de côté',
+    rateNone: 'aucune ressource ce mois-ci',
+
+    /* Chacun décide sur son compte : une somme des capacités ne se place nulle
+       part. Hors filtre, l'écran montre donc les colonnes plutôt qu'un total. */
+    byMember: 'Chacun de son côté',
+    byMemberHint: 'L’épargne ne se partage pas : chacun place ce qu’il dégage.',
+
+    method: 'Comment c’est calculé',
+    methodFormula: 'Capacité = revenus − charges − crédits.',
+    methodExcluded:
+      'Un versement n’est pas une charge : il sort du compte, mais il reste à qui le fait. Il ne pèse donc ni dans les charges du mois, ni dans le partage du foyer.',
+    methodShared:
+      'Sous un filtre, la capacité tient compte de la part des charges communes que la personne porte — au prorata des revenus, comme partout ailleurs.',
+    methodBalance:
+      'Le solde du mois, lui, compte le versement comme une sortie : c’est exact en trésorerie, et c’est pour ça que les deux chiffres diffèrent.',
+
+    empty: 'Rien à placer tant que le mois n’a ni revenu ni charge.',
+    srMemberSaving: '%s dégage %s, en place %s, il lui reste %s.',
   },
 
   credits: {

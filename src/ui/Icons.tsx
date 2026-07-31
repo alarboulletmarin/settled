@@ -34,6 +34,7 @@ import { HandCoins } from '@phosphor-icons/react/dist/csr/HandCoins'
 import { House } from '@phosphor-icons/react/dist/csr/House'
 import { ListBullets } from '@phosphor-icons/react/dist/csr/ListBullets'
 import { Palette } from '@phosphor-icons/react/dist/csr/Palette'
+import { PiggyBank } from '@phosphor-icons/react/dist/csr/PiggyBank'
 import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
 import { Receipt } from '@phosphor-icons/react/dist/csr/Receipt'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
@@ -91,6 +92,9 @@ export const IncomeIcon = adapt(Coins)
 export const ChargesIcon = adapt(Receipt)
 export const ForecastIcon = adapt(ChartLineUp)
 export const RemainingIcon = adapt(HandCoins)
+/* La tirelire porte l'épargne, la main tendue le reste à vivre : deux chiffres
+   voisins sur la grille, et deux mains de pièces s'y confondraient. */
+export const SavingsIcon = adapt(PiggyBank)
 export const BreakdownIcon = adapt(ChartPieSlice)
 export const UpcomingIcon = adapt(Clock)
 export const SubscriptionsIcon = adapt(ArrowsClockwise)

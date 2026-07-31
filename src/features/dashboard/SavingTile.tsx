@@ -1,30 +1,45 @@
-import { savingCapacity, savingRate } from '@/domain/stats'
+import { useNavigate } from 'react-router-dom'
+import { SAVINGS_PATH } from '@/app/routes'
+import { abs } from '@/domain/money'
+import { savingCapacity, savingLeft } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
-import { formatPercent, tpl } from '@/i18n/format'
+import { formatMoney, tpl } from '@/i18n/format'
 import { useKindTotals } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { RemainingIcon } from '@/ui/Icons'
+import { SavingsIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
-import type { Metric } from './MetricInfo'
+import { useCurrency } from '@/ui/currency'
 
 /**
  * Capacité d'épargne : ressources − charges − crédits, donc avant versements.
  *
  * C'est ce que le solde du mois ne dit pas. Lui compte un versement comme une
  * sortie — exact en trésorerie — si bien qu'un mois où l'on met 300 € de côté
- * se lit comme un mois où l'on a dépensé 300 € de plus. Cette tuile répond à
- * l'autre question : combien pouvais-je mettre de côté, et combien l'ai-je
- * effectivement fait.
+ * se lit comme un mois où l'on a dépensé 300 € de plus.
+ *
+ * Le chiffre est celui du mois entier, échéances prévues comprises, comme les
+ * tuiles Revenus et Charges dont il est exactement la soustraction. Lu au seul
+ * confirmé — ce qu'il faisait — il annonçait presque zéro un 3 du mois, et ne
+ * valait pas la différence des deux tuiles posées trois cases plus haut : deux
+ * chiffres voisins qui ne se recomposent pas se lisent comme une erreur.
+ *
+ * Elle mène à l'écran de l'épargne plutôt qu'à une feuille qui la définit,
+ * comme la Répartition mène au partage : devant « Capacité : 1 100 € », la
+ * question suivante n'est pas « qu'est-ce qu'une capacité » mais « où je la
+ * place, et combien m'en reste-t-il ». La feuille répondait à l'autre.
  */
-export function SavingTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
-  const totals = useKindTotals()
+export function SavingTile() {
+  const totals = useKindTotals(true)
+  const currency = useCurrency()
+  const navigate = useNavigate()
+
   const capacity = savingCapacity(totals)
-  const rate = savingRate(totals)
+  const left = savingLeft(totals)
   const hint =
-    rate === null
-      ? fr.dashboard.savingRateNone
-      : tpl(fr.dashboard.savingRate, formatPercent(rate))
+    left < 0
+      ? tpl(fr.savings.overHint, formatMoney(abs(left), currency))
+      : tpl(fr.dashboard.savingLeft, formatMoney(left, currency))
 
   return (
     // 4×1 et non 2×1 : « CAPACITÉ D'ÉPARGNE » ne tient pas dans la centaine de
@@ -34,11 +49,11 @@ export function SavingTile({ onExplain }: { onExplain: (metric: Metric) => void 
       span="4x1"
       className="justify-between"
       onClick={() => {
-        onExplain({ key: 'capacity', value: capacity, hint })
+        void navigate(SAVINGS_PATH)
       }}
-      label={tpl(fr.dashboard.explain, fr.dashboard.capacity)}
+      label={tpl(fr.dashboard.showSavings, fr.dashboard.capacity)}
     >
-      <Eyebrow icon={RemainingIcon}>{fr.dashboard.capacity}</Eyebrow>
+      <Eyebrow icon={SavingsIcon}>{fr.dashboard.capacity}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={capacity} size="tile-fit" tone={capacity < 0 ? 'danger' : 'default'} />
         <span className="t-label max-lg:sr-only">{hint}</span>

@@ -55,6 +55,11 @@ export const CREDITS_PATH = '/credits'
    mois, qui s'efface tant qu'il n'y a rien à répartir. */
 export const SPLIT_PATH = '/repartition'
 
+/* Même règle, même porte : la tuile Capacité d'épargne du mois y mène, et elle,
+   ne s'efface jamais — un mois sans versement est justement celui où la
+   question « où je place » se pose. */
+export const SAVINGS_PATH = '/epargne'
+
 export const RECURRENCES_PATH = '/abonnements'
 /* Segment fixe : React Router le classe avant `/abonnements/:id`, un
    abonnement ne peut donc pas éclipser le formulaire de création. */

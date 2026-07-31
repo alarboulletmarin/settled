@@ -28,6 +28,9 @@ import {
   monthProgress,
   monthTotals,
   restToLive,
+  savingCapacity,
+  savingLeft,
+  savingsByCategory,
   spendingFlow,
   subscriptionTotals,
   totalsByKind,
@@ -460,6 +463,93 @@ export function useMemberCharges(): MemberCharges | null {
     () =>
       member === undefined ? null : memberCharges(entries, current, member, kindOf, incomes),
     [entries, current, member, kindOf, incomes],
+  )
+}
+
+/* --- Épargne --------------------------------------------------------------*/
+
+/** Où va l'épargne du mois affiché, à la portée de lecture courante. */
+export function useSavingsByCategory(limit?: number): CategorySlice[] {
+  const { entries } = useMonthScope()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  return useMemo(
+    () => savingsByCategory(entries, month, kindOf, undefined, limit),
+    [entries, month, kindOf, limit],
+  )
+}
+
+/**
+ * Les versements du mois que personne ne porte.
+ *
+ * L'épargne ne se partage jamais : un versement laissé « tout le foyer » ne
+ * tombe donc dans le scope d'aucun membre, et n'entre dans la capacité de
+ * personne. Il sort bien du compte du foyer, mais la somme des lectures
+ * individuelles cesse de valoir celle du foyer sans que rien ne le dise —
+ * exactement le silence que `unassignedIncomes` lève sur la répartition.
+ */
+export function useUnassignedSavings(): Entry[] {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  return useMemo(
+    () =>
+      entriesOfMonth(entries, month).filter(
+        (entry) => entry.memberId === undefined && kindOf(entry.categoryId) === 'saving',
+      ),
+    [entries, month, kindOf],
+  )
+}
+
+/** Ce qu'un membre dégage, ce qu'il place, et ce qu'il lui reste à placer. */
+export type MemberSaving = {
+  memberId: string
+  /** Ressources − charges − crédits, sa part du pot commun comprise. */
+  capacity: Money
+  /** Ce qu'il a déjà versé sur ses supports. */
+  saved: Money
+  /** La différence. Négative, il verse plus qu'il ne dégage. */
+  left: Money
+}
+
+/**
+ * La même lecture pour chaque membre, sans avoir à passer d'un filtre à l'autre.
+ *
+ * L'épargne est le seul chiffre du mois qui n'a aucun sens au foyer : deux
+ * personnes qui dégagent 300 € et 900 € n'ont pas « 1 200 € à placer », elles
+ * ont deux décisions séparées à prendre, sur deux comptes séparés. Hors filtre,
+ * l'écran montre donc les deux colonnes plutôt qu'une somme qui ne se décide
+ * nulle part.
+ *
+ * `scopeToMember` fait tout le travail — les lignes du membre, plus sa part de
+ * chaque charge commune : la capacité tient compte du loyer qu'il porte, sans
+ * qu'aucun prorata soit recalculé ici.
+ */
+export function useMemberSavings(): MemberSaving[] {
+  const members = useMembers()
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  const incomes = useMemberIncomes()
+
+  return useMemo(
+    () =>
+      members.flatMap((member) => {
+        const scoped = scopeToMember(entries, member.id, kindOf, incomes)
+        // Prorata incalculable : une capacité qui ignorerait le loyer vaudrait
+        // moins qu'une ligne absente. L'écran dit déjà ce qui manque.
+        if (scoped === null) return []
+        const totals = totalsByKind(scoped, month, kindOf, undefined, true)
+        return [
+          {
+            memberId: member.id,
+            capacity: savingCapacity(totals),
+            saved: totals.saving,
+            left: savingLeft(totals),
+          },
+        ]
+      }),
+    [members, entries, month, kindOf, incomes],
   )
 }
 

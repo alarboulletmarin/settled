@@ -10,6 +10,7 @@ import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPage'
 import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
 import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
+import { SavingsPage } from '@/features/savings/SavingsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { SplitPage } from '@/features/split/SplitPage'
 import { useStore } from '@/store/store'
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="/credits/nouveau" element={<CreditFormPage />} />
         <Route path="/credits/:id" element={<CreditFormPage />} />
         <Route path="/repartition" element={<SplitPage />} />
+        <Route path="/epargne" element={<SavingsPage />} />
         <Route path="/historique" element={<HistoryPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -27,6 +27,7 @@ const MARKER: [string, IconComponent][] = [
   ['ForecastIcon', Icons.ForecastIcon],
   ['RemainingIcon', Icons.RemainingIcon],
   ['BreakdownIcon', Icons.BreakdownIcon],
+  ['SavingsIcon', Icons.SavingsIcon],
   ['UpcomingIcon', Icons.UpcomingIcon],
   ['SubscriptionsIcon', Icons.SubscriptionsIcon],
   ['ToConfirmIcon', Icons.ToConfirmIcon],
