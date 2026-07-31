@@ -1,17 +1,30 @@
+import { useEffect, useRef } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { fr } from '@/i18n/fr'
 import { Button } from '@/ui/Button'
+import { watchForegroundUpdates } from './swUpdate'
 
 /**
  * Le service worker est enregistré en mode « prompt » : une nouvelle version
  * ne remplace jamais l'app en cours d'usage sans le dire. Les données étant
  * locales, un rechargement surprise en pleine saisie serait impardonnable.
+ *
+ * Le seul rechargement possible part du bouton ci-dessous. Le reste — y compris
+ * la vérification au retour au premier plan — ne fait qu'avancer le moment où
+ * la bannière apparaît.
  */
 export function UpdatePrompt() {
+  const registration = useRef<ServiceWorkerRegistration | null>(null)
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW()
+  } = useRegisterSW({
+    onRegisteredSW(_url, r) {
+      registration.current = r ?? null
+    },
+  })
+
+  useEffect(() => watchForegroundUpdates(() => registration.current), [])
 
   if (!needRefresh) return null
 
