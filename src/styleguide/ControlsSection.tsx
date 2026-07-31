@@ -35,17 +35,17 @@ function Controls() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Libellé">
+        <Field label="Libellé" required>
           {(id, describedBy) => (
             <TextInput id={id} aria-describedby={describedBy} placeholder="Loyer" />
           )}
         </Field>
-        <Field label="Montant" hint="En euros">
+        <Field label="Montant" required hint="En euros">
           {(id, describedBy) => (
             <AmountInput id={id} aria-describedby={describedBy} defaultValue="950,00" />
           )}
         </Field>
-        <Field label="Catégorie">
+        <Field label="Catégorie" optional>
           {(id) => (
             <Select id={id} defaultValue="logement">
               <option value="logement">Logement</option>

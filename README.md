@@ -33,6 +33,8 @@ npm run dev
 - `src/store/` — état zustand. Un composant lit un sélecteur et appelle une
   action, rien de plus.
 - `src/i18n/fr.ts` — toutes les chaînes. Aucun texte en dur dans un composant.
+- `src/ui/Icons.tsx` — le seul module qui connaît la bibliothèque d'icônes. Un
+  composant qui importe Phosphor directement est un bug.
 
 ## Choix structurants
 
@@ -48,11 +50,26 @@ accesseurs locaux. Aucune conversion UTC nulle part.
 **Échéances.** Le jour d'échéance est borné, jamais reporté : une mensuelle au 31
 tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars.
 
-**Ouverture du mois.** Idempotente : la rejouer ne duplique aucune échéance et ne
-touche aucune entrée confirmée.
+**Ouverture du mois.** Jamais une tâche pour l'utilisateur : afficher un mois
+non passé l'ouvre. Idempotente — une échéance est reconnue à sa paire récurrence
++ date — donc naviguer d'un mois à l'autre ne duplique rien et ne touche aucune
+entrée confirmée. Un mois passé ne s'ouvre pas tout seul : y faire apparaître des
+échéances que personne n'a confirmées inventerait un historique.
+
+**Règle et fait.** Un abonnement est une règle, une échéance est un fait. Toute
+écriture sur une récurrence réaligne ses échéances à venir dans tous les mois
+ouverts, dans la même mutation. Les confirmées ne bougent jamais.
 
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.
+
+**Icônes.** Phosphor, graisse `bold`, réexportée sous des noms à nous par
+`src/ui/Icons.tsx` — changer de bibliothèque ne doit toucher qu'un fichier.
+Import par chemin (`@phosphor-icons/react/dist/csr/<Nom>`) et non depuis l'index,
+dont le barrel de neuf mille icônes ralentit le démarrage en dev. Coût réel :
+environ 2,5 ko brut par icône, parce que chaque module embarque ses six graisses
+dans une `Map` lue à l'exécution — on n'en affiche qu'une, aucun bundler ne peut
+élaguer les autres. Les deux emplois autorisés sont fixés au DS §9.
 
 ## Écarts au design system
 
@@ -71,15 +88,18 @@ appliqué, et reste réversible en une ligne.
 
 Deux autres points relèvent de la lecture plutôt que du contraste :
 
-- `Category.icon` existe au modèle de données mais le DS interdit l'icône
-  décorative : le champ est conservé et jamais rendu, l'identité visuelle d'une
-  catégorie passe par sa pastille de couleur.
+- `Category.icon` existe au modèle de données mais reste vide et n'est jamais
+  rendu. Le DS §9 n'admet l'icône que pour agir ou se repérer : sur une ligne de
+  liste, la pastille de couleur tient déjà le rôle de repère, et deux marqueurs
+  côte à côte n'en font plus aucun.
 - `settings.monthStartsOn` est stocké et migrable, mais la v1 raisonne en mois
   calendaire — les `ym` du cahier sont de la forme `"2026-07"`.
 
 La date du dernier export vit en `localStorage`, hors du document : elle décrit
 l'état de sauvegarde de cet appareil, et l'inclure ferait qu'un fichier importé
-prétendrait avoir été sauvegardé à l'instant.
+prétendrait avoir été sauvegardé à l'instant. Le refus du rappel y vit pour la
+même raison, et sous la même forme : une date, pas un booléen, pour qu'un refus
+vaille un cycle de trente jours et non l'éternité.
 
 ## Responsive
 
@@ -93,9 +113,19 @@ de contenu sur une tablette portrait, et chaque tuile tombe sous 80px de large.
 En dessous de 1024px, l'app garde donc la barre d'onglets et la grille à deux
 colonnes, en pleine largeur.
 
-Vérifié sans débordement horizontal de 320 à 1920px sur les cinq écrans. Les
-feuilles modales montent du bas sur mobile et se centrent au-delà ; le mois se
-balaie horizontalement au doigt ; les cibles tactiles font 44px partout.
+Vérifié sans débordement horizontal de 320 à 1920px sur tous les écrans.
+
+Saisies et fiches sont des écrans pleins avec leur URL, pas des feuilles
+modales : rien à faire glisser, rien à refermer pour revenir. `ui/Sheet.tsx`
+subsiste sans appelant — son sort est une décision de design system, pas de
+ménage.
+
+Le mois se balaie horizontalement au doigt, le rappel d'export se chasse d'un
+balayage vers le haut, et les cibles tactiles font 44px partout.
+
+Un piège à connaître sur les gestes : `touch-action: pan-x` est ce qui rend le
+balayage vertical possible. Sans lui, le navigateur préempte le mouvement pour
+faire défiler la page et n'envoie plus un seul `pointermove`.
 
 ## Déploiement
 
@@ -110,4 +140,8 @@ fournit d'office.
 
 Chaque écran a été relu dans les deux thèmes, en téléphone, tablette et desktop.
 Le contraste, les noms accessibles et les cibles tactiles sont audités par script
-sur les six routes, dans les deux thèmes : aucun point en suspens.
+sur toutes les routes, dans les deux thèmes : aucun point en suspens.
+
+Aux cinq destinations de la navigation s'ajoutent les écrans qu'on n'atteint que
+par une action — `/depense`, `/depense/:id`, `/abonnements/nouveau`,
+`/abonnements/:id`, `/abonnements/:id/modifier` — et `/styleguide`.

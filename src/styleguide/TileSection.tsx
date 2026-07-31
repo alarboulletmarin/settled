@@ -2,6 +2,7 @@ import { money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { BalanceIcon } from '@/ui/Icons'
 import { Ring } from '@/ui/Ring'
 import { BentoGrid, Tile, type TileVariant } from '@/ui/Tile'
 import { Section, SubTitle } from './Section'
@@ -18,7 +19,7 @@ function TileVariants() {
     <div className="grid gap-3 lg:grid-cols-3">
       {VARIANTS.map(({ variant, eyebrow }) => (
         <Tile key={variant} variant={variant}>
-          <Eyebrow>{eyebrow}</Eyebrow>
+          <Eyebrow icon={BalanceIcon}>{eyebrow}</Eyebrow>
           <Amount value={money(12845)} size="tile" className="mt-4" />
           <p className="t-label mt-1">une lecture secondaire</p>
         </Tile>

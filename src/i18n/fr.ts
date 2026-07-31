@@ -370,6 +370,7 @@ export const fr = {
       type: 'Échelle typographique',
       shapes: 'Formes et mouvement',
       components: 'Composants',
+      icons: 'Icônes',
       bento: 'Grille bento',
     },
     baseNote: 'Ces valeurs ne sont jamais consommées directement par un composant.',
@@ -379,6 +380,10 @@ export const fr = {
     typeNote: 'Archivo pour ce qui se lit, Geist Mono pour les libellés utilitaires.',
     shapesNote: 'Base 4px. Mouvement 160ms, 240ms à l’entrée d’une vue.',
     bentoNote: 'Formats autorisés : 2×1, 2×2, 4×1, 4×2, 6×2. Rien d’autre.',
+    iconsNote:
+      'Phosphor, graisse bold. Deux emplois et pas un de plus : agir, ou se repérer.',
+    iconAction: 'Action — sur un contrôle',
+    iconMarker: 'Repère — onglet, tuile, section',
     themePreview: 'Aperçu forcé',
     sampleAmount: 'Montant',
     sampleRing: 'Anneau',

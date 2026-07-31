@@ -100,6 +100,7 @@ type MonthState = {
 - Une `Entry` est la seule source de vérité pour les statistiques. Une récurrence ne produit jamais de chiffre directement.
 - L'historique de prix d'un abonnement se déduit des `Entry` liées à sa `recurrenceId`, il n'est pas stocké.
 - Supprimer une récurrence n'efface pas les `Entry` déjà confirmées : elle est marquée `endedOn`.
+- Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas.
 
 ---
 
@@ -121,21 +122,31 @@ Un jeu de catégories par défaut est créé, modifiable ensuite.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
 - Les périodicités non mensuelles sont amorties au mois dans toutes les statistiques.
 - Une récurrence peut être arrêtée sans être supprimée.
+- Créer, modifier ou reprendre une récurrence réaligne ses échéances à venir dans la foulée, dans tous les mois ouverts à partir du mois courant. L'utilisateur n'a jamais à demander cette régénération : poser la règle et en tirer les échéances sont un seul geste.
 - Détection automatique de changement de prix : si le montant confirmé diffère du précédent, l'app le signale sur la fiche.
 
 ### 4.3 Ouverture du mois
 
-Déclenchée automatiquement au premier lancement du mois, rejouable manuellement.
+L'ouverture est un mécanisme interne, jamais une tâche : aucun écran ne demande de l'actionner.
 
-1. L'app génère une `Entry` `planned` pour chaque échéance de récurrence tombant dans le mois.
-2. Les récurrences à montant variable sont listées à part, avec le montant du mois précédent proposé par défaut.
-3. L'utilisateur confirme en bloc ou une par une.
+1. Un mois s'ouvre dès qu'on l'affiche, s'il n'est pas passé — le mois courant à la première visite, un mois à venir dès qu'on y navigue.
+2. L'app génère une `Entry` `planned` pour chaque échéance de récurrence tombant dans le mois.
+3. Les récurrences à montant variable sont listées à part, avec le montant du mois précédent proposé par défaut.
+4. L'utilisateur confirme en bloc ou une par une.
+
+Un mois passé ne s'ouvre jamais tout seul : y faire apparaître des échéances que personne n'a confirmées inventerait un historique.
+
+L'opération est idempotente — une échéance est reconnue à sa paire récurrence + date — donc naviguer d'un mois à l'autre ne duplique rien.
 
 Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 ### 4.4 Saisie ponctuelle
 
-Formulaire court : montant, catégorie, date (aujourd'hui par défaut), libellé, membre optionnel. Créée directement en `confirmed`.
+Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre optionnel. Créée directement en `confirmed`.
+
+Dépense et revenu sont deux points d'entrée distincts, côte à côte, sur le mois comme sur le calendrier : le sens est choisi avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. Titre et confirmation le suivent — on n'annonce pas « dépense ajoutée » après un salaire.
+
+La date proposée est aujourd'hui si l'on est dans le mois affiché, sinon le premier de ce mois — et le jour sélectionné quand la saisie part du calendrier.
 
 ### 4.5 Calendrier
 
@@ -166,7 +177,8 @@ Tous les dashboards acceptent un filtre par membre.
 - **Export** : un fichier `.json` contenant le document complet et son `schemaVersion`. Nom du fichier horodaté.
 - **Import** : remplace intégralement les données après confirmation. Un import d'un `schemaVersion` antérieur passe par les migrations.
 - **Réinitialisation** : efface tout, double confirmation.
-- Une bannière rappelle l'export si le dernier date de plus de 30 jours.
+- Une bannière rappelle l'export si le dernier date de plus de 30 jours, ou n'a jamais eu lieu — le texte dit alors ce qu'il en est plutôt que d'invoquer un export inexistant.
+- Elle s'écarte à la croix ou d'un balayage vers le haut. Le refus est enregistré sur l'appareil et vaut pour un cycle de trente jours : une croix ne condamne pas au silence des données qui ne sont sauvegardées nulle part. Un export l'oublie.
 
 ---
 

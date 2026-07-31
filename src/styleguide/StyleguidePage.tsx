@@ -3,6 +3,7 @@ import { useStore } from '@/store/store'
 import { Segmented } from '@/ui/Segmented'
 import { BasePaletteSection, CategoryPaletteSection, SemanticTokensSection } from './ColorSections'
 import { ControlsSection } from './ControlsSection'
+import { IconSection } from './IconSection'
 import { ListSection } from './ListSection'
 import { RingSection } from './RingSection'
 import { BentoSection, TileSection } from './TileSection'
@@ -48,6 +49,7 @@ export function StyleguidePage() {
       <ListSection />
       <RingSection />
       <ControlsSection />
+      <IconSection />
       <BentoSection />
     </div>
   )
