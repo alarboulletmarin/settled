@@ -6,8 +6,9 @@ import type { Direction, Entry } from '@/domain/types'
 import { DIRECTION_PARAM, directionFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { addEntry, removeEntry, updateEntry } from '@/store/actions'
-import { useActiveCategories, useCurrentYm, useEntry, useMembers } from '@/store/selectors'
+import { useCurrentYm, useEntry, useMembers } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
+import { CategorySelect } from '@/ui/CategorySelect'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
 import { Segmented } from '@/ui/Segmented'
@@ -74,13 +75,11 @@ function EntryForm({
   defaultDirection: Direction
   onDone: () => void
 }) {
-  const categories = useActiveCategories()
   const members = useMembers()
   const [draft, setDraft] = useState<Draft>(() => initial(entry, defaultDate, defaultDirection))
   const [showErrors, setShowErrors] = useState(false)
 
   const amount = parseAmount(draft.amountText)
-  const forDirection = categories.filter((c) => c.direction === draft.direction)
   const errors = {
     amount: amount === null || amount <= 0 ? fr.entry.amountRequired : undefined,
     category: draft.categoryId === '' ? fr.entry.categoryRequired : undefined,
@@ -160,21 +159,15 @@ function EntryForm({
 
           <Field label={fr.entry.category} required {...(shown.category ? { error: shown.category } : {})}>
             {(id, describedBy) => (
-              <Select
+              <CategorySelect
                 id={id}
                 aria-describedby={describedBy}
+                direction={draft.direction}
                 value={draft.categoryId}
                 onChange={(e) => {
                   patch({ categoryId: e.target.value })
                 }}
-              >
-                <option value="">{fr.entry.categoryPlaceholder}</option>
-                {forDirection.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.label}
-                  </option>
-                ))}
-              </Select>
+              />
             )}
           </Field>
 

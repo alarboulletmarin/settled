@@ -2,7 +2,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { Recurrence } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { addRecurrence, updateRecurrence } from '@/store/actions'
-import { useActiveCategories, useMembers, useRecurrenceRow } from '@/store/selectors'
+import { useMembers, useRecurrenceRow } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
 import { Field, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
@@ -19,10 +19,10 @@ import { useRecurrenceForm } from './useRecurrenceForm'
  */
 function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: () => void }) {
   const members = useMembers()
-  const categories = useActiveCategories()
-  const scoped = categories.filter((c) => c.direction === (recurrence?.direction ?? 'out'))
-  const { draft, patch, errors, build } = useRecurrenceForm(recurrence, scoped[0]?.id ?? '')
-  const forDirection = categories.filter((c) => c.direction === draft.direction)
+  // La catégorie ne se pré-remplit plus : avec une quarantaine de choix rangés
+  // sous onze familles, en imposer une au hasard ferait saisir des dépenses
+  // sous la première venue.
+  const { draft, patch, errors, build } = useRecurrenceForm(recurrence, '')
 
   const submit = (): void => {
     const payload = build()
@@ -56,13 +56,7 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
         }}
       >
         <Tile className="gap-4">
-          <IdentityFields
-            draft={draft}
-            patch={patch}
-            errors={errors}
-            categories={forDirection}
-            members={members}
-          />
+          <IdentityFields draft={draft} patch={patch} errors={errors} members={members} />
           <AmountFields draft={draft} patch={patch} errors={errors} />
           <PeriodFields draft={draft} patch={patch} />
 

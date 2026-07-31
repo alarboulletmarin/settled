@@ -48,6 +48,8 @@ export function entryNewPath(options: { direction?: 'in' | 'out'; date?: string 
   return query === '' ? ENTRY_NEW_PATH : `${ENTRY_NEW_PATH}?${query}`
 }
 
+export const CREDITS_PATH = '/credits'
+
 const RECURRENCES_PATH = '/abonnements'
 /* Segment fixe : React Router le classe avant `/abonnements/:id`, un
    abonnement ne peut donc pas éclipser le formulaire de création. */
@@ -62,6 +64,10 @@ export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/$
 export function isFocusScreen(pathname: string): boolean {
   return (
     pathname.startsWith(ENTRY_NEW_PATH) ||
-    (pathname.startsWith(`${RECURRENCES_PATH}/`) && pathname !== `${RECURRENCES_PATH}/`)
+    (pathname.startsWith(`${RECURRENCES_PATH}/`) && pathname !== `${RECURRENCES_PATH}/`) ||
+    (pathname.startsWith(`${CREDITS_PATH}/`) && pathname !== `${CREDITS_PATH}/`)
   )
 }
+
+export const CREDIT_NEW_PATH = `${CREDITS_PATH}/nouveau`
+export const creditEditPath = (id: string): string => `${CREDITS_PATH}/${id}`

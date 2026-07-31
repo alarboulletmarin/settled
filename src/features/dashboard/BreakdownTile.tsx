@@ -2,7 +2,8 @@ import { sum } from '@/domain/money'
 import { OTHER_CATEGORY } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { useCategoryBreakdown, useCategoryMap } from '@/store/selectors'
+import { useFamilyMap, useKindTotals, useSpendingByFamily } from '@/store/selectors'
+import { familyColor } from '@/persistence/defaults'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -13,21 +14,30 @@ import { useCurrency } from '@/ui/currency'
 
 const MAX_LEGEND = 4
 
-/** Répartition par catégorie sur les sorties du mois — le donut du DS §6. */
+/**
+ * Où part l'argent, par famille — le donut du DS §6.
+ *
+ * Par famille et non par catégorie : à une quarantaine de catégories, six parts
+ * plus un gros « Autres » ne répondent plus à la question. Et hors épargne : un
+ * versement sort du compte mais reste au foyer, l'inscrire ici ferait passer un
+ * mois où l'on a mis 300 € de côté pour un mois dispendieux. Le montant épargné
+ * se lit dessous, à sa place, sans se mêler au reste.
+ */
 export function BreakdownTile() {
-  const slices = useCategoryBreakdown('out')
-  const categories = useCategoryMap()
+  const slices = useSpendingByFamily()
+  const families = useFamilyMap()
+  const totals = useKindTotals()
   const currency = useCurrency()
 
   const labelOf = (id: string): string =>
-    id === OTHER_CATEGORY ? fr.common.other : (categories.get(id)?.label ?? fr.common.other)
+    id === OTHER_CATEGORY ? fr.common.other : (families.get(id)?.label ?? fr.common.other)
   const colorOf = (id: string): string =>
-    id === OTHER_CATEGORY ? 'var(--cat-rest)' : (categories.get(id)?.color ?? 'var(--cat-rest)')
+    id === OTHER_CATEGORY ? 'var(--cat-rest)' : familyColor(id)
 
   if (slices.length === 0) {
     return (
       <Tile span="2x2" className="justify-between">
-        <Eyebrow icon={BreakdownIcon}>{fr.dashboard.breakdown}</Eyebrow>
+        <Eyebrow icon={BreakdownIcon}>{fr.dashboard.spending}</Eyebrow>
         <p className="t-label">{fr.dashboard.noBreakdown}</p>
       </Tile>
     )
@@ -46,13 +56,13 @@ export function BreakdownTile() {
 
   return (
     <Tile span="2x2" className="gap-3">
-      <Eyebrow icon={BreakdownIcon}>{fr.dashboard.breakdown}</Eyebrow>
+      <Eyebrow icon={BreakdownIcon}>{fr.dashboard.spending}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         <Ring
           size={104}
           thickness={12}
           segments={segments}
-          label={fr.dashboard.breakdown}
+          label={fr.dashboard.spending}
           srText={tpl(fr.dashboard.srBreakdown, spoken)}
           className="shrink-0"
         >
@@ -70,6 +80,11 @@ export function BreakdownTile() {
           ))}
         </ul>
       </div>
+      {totals.saving > 0 && (
+        <p className="t-label">
+          {tpl(fr.dashboard.savedThisMonth, formatMoney(totals.saving, currency))}
+        </p>
+      )}
       <p className="sr-only-text">{formatMoney(total, currency)}</p>
     </Tile>
   )

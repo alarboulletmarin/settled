@@ -19,7 +19,7 @@ import {
 } from './date'
 import { type Money, ZERO, add, ratio, sub, sum } from './money'
 import { monthlyEquivalent, annualCost } from './recurrence'
-import type { Direction, Entry, Recurrence } from './types'
+import type { CategoryKind, Direction, Entry, Recurrence } from './types'
 
 /** Filtre par membre. `undefined` = tout le foyer. */
 export type MemberFilter = string | undefined
@@ -71,6 +71,66 @@ export function monthTotals(
     balance: sub(confirmedIn, confirmedOut),
     forecastBalance: sub(add(confirmedIn, plannedIn), add(confirmedOut, plannedOut)),
   }
+}
+
+/* --- Lecture par nature ---------------------------------------------------*/
+
+/** Résout la nature d'une entrée. Injectée pour que ce module reste pur. */
+export type KindOf = (categoryId: string) => CategoryKind
+
+export type KindTotals = {
+  resource: Money
+  charge: Money
+  debt: Money
+  saving: Money
+}
+
+const EMPTY_KINDS: KindTotals = { resource: ZERO, charge: ZERO, debt: ZERO, saving: ZERO }
+
+/**
+ * Ce que le mois fait de l'argent, réparti par nature.
+ *
+ * `planned` compris ou non selon `forecast` : la lecture réalisée et la
+ * lecture prévisionnelle répondent à deux questions différentes, et mélanger
+ * les deux donnerait un taux d'épargne qui bouge tout seul au fil du mois.
+ */
+export function totalsByKind(
+  entries: readonly Entry[],
+  month: YearMonth,
+  kindOf: KindOf,
+  memberId?: MemberFilter,
+  forecast = false,
+): KindTotals {
+  const scoped = entriesOfMonth(entries, month, memberId).filter(
+    (e) => forecast || e.status === 'confirmed',
+  )
+  const totals = { ...EMPTY_KINDS }
+  for (const entry of scoped) {
+    const kind = kindOf(entry.categoryId)
+    totals[kind] = add(totals[kind], entry.amount)
+  }
+  return totals
+}
+
+/**
+ * Capacité d'épargne : ce qui reste des ressources une fois les charges et les
+ * crédits honorés — donc avant les versements. C'est le chiffre que le solde du
+ * mois ne dit pas : lui compte l'épargne comme une sortie, ce qui est juste en
+ * trésorerie mais fait passer un mois où l'on a mis 300 € de côté pour un mois
+ * où l'on a dépensé 300 € de plus.
+ */
+export function savingCapacity(totals: KindTotals): Money {
+  return sub(totals.resource, add(totals.charge, totals.debt))
+}
+
+/**
+ * Part des ressources effectivement mise de côté, de 0 à 1. `null` quand il n'y
+ * a pas de ressource : un taux sans dénominateur ne vaut pas zéro, il ne veut
+ * rien dire.
+ */
+export function savingRate(totals: KindTotals): number | null {
+  if (totals.resource <= 0) return null
+  return totals.saving / totals.resource
 }
 
 /* --- Reste à vivre --------------------------------------------------------*/
@@ -126,6 +186,42 @@ export type CategorySlice = {
  */
 export const OTHER_CATEGORY = '__other__'
 
+/**
+ * Répartition par famille plutôt que par catégorie. Avec une quarantaine de
+ * catégories, un anneau plafonné à six parts ne montre plus que des miettes et
+ * un gros « Autres » ; la famille est le niveau auquel la question « où part
+ * l'argent ? » a une réponse lisible.
+ */
+export function breakdownByFamily(
+  entries: readonly Entry[],
+  month: YearMonth,
+  familyOf: (categoryId: string) => string,
+  keep: (categoryId: string) => boolean,
+  memberId?: MemberFilter,
+  limit = 6,
+): CategorySlice[] {
+  const scoped = entriesOfMonth(entries, month, memberId).filter((e) => keep(e.categoryId))
+  const byFamily = new Map<string, Money>()
+  for (const entry of scoped) {
+    const family = familyOf(entry.categoryId)
+    byFamily.set(family, add(byFamily.get(family) ?? ZERO, entry.amount))
+  }
+  return topSlices(byFamily, limit)
+}
+
+/** Trie, calcule les parts, et regroupe la queue sous « Autres ». */
+function topSlices(totals: Map<string, Money>, limit: number): CategorySlice[] {
+  const total = sum([...totals.values()])
+  const sorted = [...totals.entries()]
+    .map(([categoryId, amount]) => ({ categoryId, total: amount, share: ratio(amount, total) }))
+    .sort((a, b) => b.total - a.total)
+
+  if (sorted.length <= limit) return sorted
+  const head = sorted.slice(0, limit)
+  const rest = sum(sorted.slice(limit).map((s) => s.total))
+  return [...head, { categoryId: OTHER_CATEGORY, total: rest, share: ratio(rest, total) }]
+}
+
 export function breakdownByCategory(
   entries: readonly Entry[],
   month: YearMonth,
@@ -139,15 +235,7 @@ export function breakdownByCategory(
     byCategory.set(entry.categoryId, add(byCategory.get(entry.categoryId) ?? ZERO, entry.amount))
   }
 
-  const total = sum([...byCategory.values()])
-  const sorted = [...byCategory.entries()]
-    .map(([categoryId, amount]) => ({ categoryId, total: amount, share: ratio(amount, total) }))
-    .sort((a, b) => b.total - a.total)
-
-  if (sorted.length <= limit) return sorted
-  const head = sorted.slice(0, limit)
-  const rest = sum(sorted.slice(limit).map((s) => s.total))
-  return [...head, { categoryId: OTHER_CATEGORY, total: rest, share: ratio(rest, total) }]
+  return topSlices(byCategory, limit)
 }
 
 /* --- Dépenses par jour ----------------------------------------------------*/

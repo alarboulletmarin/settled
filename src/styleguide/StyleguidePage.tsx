@@ -4,6 +4,7 @@ import { Segmented } from '@/ui/Segmented'
 import { BasePaletteSection, CategoryPaletteSection, SemanticTokensSection } from './ColorSections'
 import { ControlsSection } from './ControlsSection'
 import { IconSection } from './IconSection'
+import { KindSection } from './KindSection'
 import { ListSection } from './ListSection'
 import { RingSection } from './RingSection'
 import { BentoSection, TileSection } from './TileSection'
@@ -50,6 +51,7 @@ export function StyleguidePage() {
       <RingSection />
       <ControlsSection />
       <IconSection />
+      <KindSection />
       <BentoSection />
     </div>
   )

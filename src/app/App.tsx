@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
+import { CreditFormPage } from '@/features/credits/CreditFormPage'
+import { CreditsPage } from '@/features/credits/CreditsPage'
 import { HistoryPage } from '@/features/history/HistoryPage'
 import { EntryPage } from '@/features/month/EntryPage'
 import { MonthPage } from '@/features/month/MonthPage'
@@ -31,6 +33,9 @@ function AppRoutes() {
         <Route path="/abonnements/nouveau" element={<RecurrenceFormPage />} />
         <Route path="/abonnements/:id" element={<RecurrenceDetailPage />} />
         <Route path="/abonnements/:id/modifier" element={<RecurrenceFormPage />} />
+        <Route path="/credits" element={<CreditsPage />} />
+        <Route path="/credits/nouveau" element={<CreditFormPage />} />
+        <Route path="/credits/:id" element={<CreditFormPage />} />
         <Route path="/historique" element={<HistoryPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

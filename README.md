@@ -50,6 +50,9 @@ accesseurs locaux. Aucune conversion UTC nulle part.
 **Échéances.** Le jour d'échéance est borné, jamais reporté : une mensuelle au 31
 tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars.
 
+**Taux.** En points de base entiers — 450 = 4,50 %. Aucun flottant ne touche un
+calcul financier, pas plus un taux qu'un montant.
+
 **Ouverture du mois.** Jamais une tâche pour l'utilisateur : afficher un mois
 non passé l'ouvre. Idempotente — une échéance est reconnue à sa paire récurrence
 + date — donc naviguer d'un mois à l'autre ne duplique rien et ne touche aucune
@@ -59,6 +62,20 @@ entrée confirmée. Un mois passé ne s'ouvre pas tout seul : y faire apparaîtr
 **Règle et fait.** Un abonnement est une règle, une échéance est un fait. Toute
 écriture sur une récurrence réaligne ses échéances à venir dans tous les mois
 ouverts, dans la même mutation. Les confirmées ne bougent jamais.
+
+**Sens et nature.** `direction` dit si l'argent entre ou sort du compte,
+`CategoryKind` dit ce qu'il devient. Un versement sur un livret sort du compte
+exactement comme un plein d'essence : seule la nature les distingue. C'est ce
+qui permet à la capacité d'épargne d'exister — ressources − charges − crédits,
+avant versements — et au camembert de ne pas mettre « Épargne 30 % » à côté de
+« Courses 12 % ». La nature est portée par la famille et lue par une fonction,
+jamais dupliquée sur la catégorie : deux copies finissent toujours par diverger.
+
+**Capital restant dû.** Dérivé, jamais stocké. `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1)/i`,
+avec `n` le nombre de mensualités confirmées. Retrancher les mensualités versées
+serait faux dès qu'il y a des intérêts : sur 100 000 € à 4 % sur 20 ans, la
+première année amortit ~3 000 € pour ~7 300 € versés, et le raccourci
+annoncerait le prêt soldé des années trop tôt.
 
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.
@@ -144,4 +161,10 @@ sur toutes les routes, dans les deux thèmes : aucun point en suspens.
 
 Aux cinq destinations de la navigation s'ajoutent les écrans qu'on n'atteint que
 par une action — `/depense`, `/depense/:id`, `/abonnements/nouveau`,
-`/abonnements/:id`, `/abonnements/:id/modifier` — et `/styleguide`.
+`/abonnements/:id`, `/abonnements/:id/modifier`, `/credits`, `/credits/nouveau`,
+`/credits/:id` — et `/styleguide`.
+
+`/credits` ne figure pas dans la navigation : six onglets ne tiennent pas à
+320px sans tronquer « Abonnements » en « Abonneme… ». On y accède par la tuile
+Crédits de l'écran du mois, comme on accède aux abonnements par la sienne. La
+tuile s'efface tant qu'aucun crédit n'est suivi.

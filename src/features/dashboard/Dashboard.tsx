@@ -1,7 +1,9 @@
 import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile } from './BreakdownTile'
+import { CreditsTile } from './CreditsTile'
 import { DailyTile } from './DailyTile'
+import { SavingTile } from './SavingTile'
 import { SubscriptionsTile } from './SubscriptionsTile'
 import { UpcomingTile } from './UpcomingTile'
 
@@ -17,8 +19,10 @@ export function Dashboard() {
       <ForecastTile />
       <BreakdownTile />
       <RemainingTile />
+      <SavingTile />
       <UpcomingTile />
       <SubscriptionsTile />
+      <CreditsTile />
       <DailyTile />
     </BentoGrid>
   )

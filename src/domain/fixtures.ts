@@ -1,7 +1,7 @@
 /** Fabriques de test. Aucun module d'application ne dépend de ce fichier. */
 
 import { type Money, money } from './money'
-import type { Category, Data, Entry, Period, Recurrence } from './types'
+import type { Category, Data, Debt, Entry, Family, Period, Recurrence } from './types'
 
 export function makeEntry(over: Partial<Entry> & { date: string }): Entry {
   return {
@@ -32,6 +32,7 @@ export function makeRecurrence(
 export function makeCategory(over: Partial<Category> & { id: string }): Category {
   return {
     label: 'Catégorie',
+    familyId: 'fam-leisure',
     icon: '',
     color: 'var(--cat-1)',
     direction: 'out',
@@ -40,13 +41,32 @@ export function makeCategory(over: Partial<Category> & { id: string }): Category
   }
 }
 
+export function makeFamily(over: Partial<Family> & { id: string }): Family {
+  return { label: 'Famille', kind: 'charge', ...over }
+}
+
+export function makeDebt(over: Partial<Debt> & { id: string }): Debt {
+  return {
+    label: 'Crédit',
+    categoryId: 'car-loan',
+    principal: money(1200000),
+    startedOn: '2026-01-05',
+    endsOn: '2028-12-05',
+    ...over,
+  }
+}
+
 export function makeData(over: Partial<Data> = {}): Data {
   return {
-    schemaVersion: 1,
+    // La version courante du document : un aller-retour export / import doit
+    // pouvoir se comparer à l'identique, sans qu'une migration s'intercale.
+    schemaVersion: 2,
     household: { name: 'Maison', members: [] },
+    families: [makeFamily({ id: 'fam-leisure' })],
     categories: [],
     recurrences: [],
     entries: [],
+    debts: [],
     months: [],
     settings: { theme: 'system', currency: 'EUR', monthStartsOn: 1 },
     ...over,

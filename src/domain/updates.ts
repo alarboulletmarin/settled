@@ -8,7 +8,7 @@
 
 import { type ISODate, type YearMonth, today, ymOf } from './date'
 import { planMonth } from './month'
-import type { Category, Data, Entry, Member, Recurrence, Settings } from './types'
+import type { Category, Data, Debt, Entry, Family, Member, Recurrence, Settings } from './types'
 
 /* --- Foyer et membres -----------------------------------------------------*/
 
@@ -61,6 +61,38 @@ export function updateCategory(data: Data, id: string, patch: Partial<Category>)
 /** Une catégorie n'est jamais effacée : elle est archivée, les entrées restent. */
 export function archiveCategory(data: Data, id: string, archived = true): Data {
   return updateCategory(data, id, { archived })
+}
+
+/* --- Familles -------------------------------------------------------------*/
+
+export function addFamily(data: Data, family: Family): Data {
+  return { ...data, families: [...data.families, family] }
+}
+
+export function renameFamily(data: Data, id: string, label: string): Data {
+  return {
+    ...data,
+    families: data.families.map((f) => (f.id === id ? { ...f, label } : f)),
+  }
+}
+
+/* --- Crédits --------------------------------------------------------------*/
+
+export function addDebt(data: Data, debt: Debt): Data {
+  return { ...data, debts: [...data.debts, debt] }
+}
+
+export function updateDebt(data: Data, id: string, patch: Partial<Debt>): Data {
+  return { ...data, debts: data.debts.map((d) => (d.id === id ? { ...d, ...patch } : d)) }
+}
+
+/**
+ * Supprime le crédit, jamais sa récurrence ni ses échéances : les mensualités
+ * déjà versées ont eu lieu. Cesser de suivre un capital ne réécrit pas ce qui
+ * est sorti du compte.
+ */
+export function removeDebt(data: Data, id: string): Data {
+  return { ...data, debts: data.debts.filter((d) => d.id !== id) }
 }
 
 /* --- Récurrences ----------------------------------------------------------*/

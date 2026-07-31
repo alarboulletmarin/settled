@@ -26,6 +26,7 @@ import { ChartPieSlice } from '@phosphor-icons/react/dist/csr/ChartPieSlice'
 import { Check as PhCheck } from '@phosphor-icons/react/dist/csr/Check'
 import { CheckCircle } from '@phosphor-icons/react/dist/csr/CheckCircle'
 import { Clock } from '@phosphor-icons/react/dist/csr/Clock'
+import { Bank } from '@phosphor-icons/react/dist/csr/Bank'
 import { Database } from '@phosphor-icons/react/dist/csr/Database'
 import { GearSix } from '@phosphor-icons/react/dist/csr/GearSix'
 import { HandCoins } from '@phosphor-icons/react/dist/csr/HandCoins'
@@ -88,6 +89,7 @@ export const BreakdownIcon = adapt(ChartPieSlice)
 export const UpcomingIcon = adapt(Clock)
 export const SubscriptionsIcon = adapt(ArrowsClockwise)
 export const DailyIcon = adapt(ChartBar)
+export const CreditsIcon = adapt(Bank)
 export const ToConfirmIcon = adapt(CheckCircle)
 export const EntriesIcon = adapt(ListBullets)
 export const HouseholdIcon = adapt(House)

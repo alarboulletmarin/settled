@@ -10,9 +10,12 @@ import { isValidISO, today } from '@/domain/date'
 import { isMoney, type Money } from '@/domain/money'
 import type {
   Category,
+  CategoryKind,
   Data,
+  Debt,
   Direction,
   Entry,
+  Family,
   Member,
   MonthState,
   Period,
@@ -21,6 +24,7 @@ import type {
   Settings,
   ThemeSetting,
 } from '@/domain/types'
+import { defaultFamilies, fallbackFamilyId } from './defaults'
 import { CURRENT_SCHEMA_VERSION } from './schema'
 
 type Raw = Record<string, unknown>
@@ -61,15 +65,52 @@ function member(raw: unknown, index: number): Member | null {
   }
 }
 
+const KINDS = new Set<CategoryKind>(['resource', 'charge', 'debt', 'saving'])
+
+const kind = (v: unknown): CategoryKind =>
+  typeof v === 'string' && KINDS.has(v as CategoryKind) ? (v as CategoryKind) : 'charge'
+
+function family(raw: unknown, index: number): Family | null {
+  if (!isRecord(raw)) return null
+  return {
+    id: str(raw['id'], `family-${String(index)}`),
+    label: str(raw['label'], '—'),
+    kind: kind(raw['kind']),
+  }
+}
+
 function category(raw: unknown, index: number): Category | null {
   if (!isRecord(raw)) return null
+  const dir = direction(raw['direction'])
   return {
     id: str(raw['id'], `category-${String(index)}`),
     label: str(raw['label'], '—'),
+    familyId: str(raw['familyId'], fallbackFamilyId(dir)),
     icon: str(raw['icon'], ''),
     color: str(raw['color'], 'var(--cat-1)'),
-    direction: direction(raw['direction']),
+    direction: dir,
     archived: bool(raw['archived'], false),
+  }
+}
+
+/** Un crédit sans capital lisible est écarté : il ne dirait rien de juste. */
+function debt(raw: unknown, index: number): Debt | null {
+  if (!isRecord(raw)) return null
+  if (!isMoney(raw['principal'])) return null
+  const recurrenceId = optionalStr(raw['recurrenceId'])
+  const note = optionalStr(raw['note'])
+  const rate = int(raw['rateBp'], 0)
+  const startedOn = isoDate(raw['startedOn'], today())
+  return {
+    id: str(raw['id'], `debt-${String(index)}`),
+    label: str(raw['label'], '—'),
+    categoryId: str(raw['categoryId'], ''),
+    ...(recurrenceId === undefined ? {} : { recurrenceId }),
+    principal: raw['principal'],
+    startedOn,
+    endsOn: isoDate(raw['endsOn'], startedOn),
+    ...(rate > 0 ? { rateBp: rate } : {}),
+    ...(note === undefined ? {} : { note }),
   }
 }
 
@@ -174,9 +215,16 @@ export function normalizeData(raw: unknown): Data {
       name: str(household['name'], 'Maison'),
       members: compact(array(household['members']), member),
     },
+    // Un document sans famille lisible repart du catalogue : sans premier
+    // niveau, aucune catégorie ne sait plus de quelle nature elle relève.
+    families: (() => {
+      const parsed = compact(array(source['families']), family)
+      return parsed.length > 0 ? parsed : defaultFamilies()
+    })(),
     categories: compact(array(source['categories']), category),
     recurrences: compact(array(source['recurrences']), recurrence),
     entries: compact(array(source['entries']), entry),
+    debts: compact(array(source['debts']), debt),
     months: compact(array(source['months']), monthState),
     settings: settings(source['settings']),
   }

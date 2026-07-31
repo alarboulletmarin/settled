@@ -16,19 +16,33 @@ import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurren
 import {
   type CategorySlice,
   type DayTotals,
+  type KindOf,
+  type KindTotals,
   type MonthTotals,
   type SubscriptionTotals,
   type Upcoming,
   breakdownByCategory,
+  breakdownByFamily,
   dailyBreakdown,
   entriesOfMonth,
   monthProgress,
   monthTotals,
   restToLive,
   subscriptionTotals,
+  totalsByKind,
   upcomingEntries,
 } from '@/domain/stats'
-import type { Category, Entry, Member, Recurrence } from '@/domain/types'
+import { type DebtStatus, debtStatus } from '@/domain/debt'
+import {
+  type Category,
+  type CategoryKind,
+  type Debt,
+  type Entry,
+  type Family,
+  type Member,
+  type Recurrence,
+  isSpending,
+} from '@/domain/types'
 import { useStore } from './store'
 
 /* --- Tranches brutes ------------------------------------------------------*/
@@ -36,6 +50,8 @@ import { useStore } from './store'
 export const useEntries = (): Entry[] => useStore((s) => s.data.entries)
 export const useRecurrences = (): Recurrence[] => useStore((s) => s.data.recurrences)
 export const useCategories = (): Category[] => useStore((s) => s.data.categories)
+export const useFamilies = (): Family[] => useStore((s) => s.data.families)
+export const useDebts = (): Debt[] => useStore((s) => s.data.debts)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
@@ -55,6 +71,67 @@ export function useActiveCategories(direction?: 'in' | 'out'): Category[] {
 export function useCategoryMap(): Map<string, Category> {
   const categories = useCategories()
   return useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories])
+}
+
+export function useFamilyMap(): Map<string, Family> {
+  const families = useFamilies()
+  return useMemo(() => new Map(families.map((f) => [f.id, f])), [families])
+}
+
+/**
+ * La nature d'une catégorie, résolue par sa famille. Passée aux fonctions du
+ * domaine, qui restent ainsi ignorantes du store.
+ */
+export function useKindOf(): KindOf {
+  const families = useFamilies()
+  const categories = useCategories()
+  return useMemo(() => {
+    const familyOf = new Map(categories.map((c) => [c.id, c.familyId]))
+    const kindOf = new Map(families.map((f) => [f.id, f.kind]))
+    return (categoryId: string): CategoryKind => {
+      const family = familyOf.get(categoryId)
+      return (family === undefined ? undefined : kindOf.get(family)) ?? 'charge'
+    }
+  }, [families, categories])
+}
+
+export type FamilyGroup = { family: Family; categories: Category[] }
+
+/**
+ * Les catégories utilisables, rangées sous leur famille et dans l'ordre du
+ * catalogue. Une famille sans catégorie active ne figure pas : un onglet vide
+ * n'est pas un choix.
+ */
+export function useCategoriesByFamily(kinds?: readonly CategoryKind[]): FamilyGroup[] {
+  const families = useFamilies()
+  const categories = useCategories()
+  const wanted = kinds === undefined ? undefined : new Set(kinds)
+  const key = wanted === undefined ? '' : [...wanted].sort().join(',')
+
+  return useMemo(() => {
+    const scope = key === '' ? null : new Set(key.split(','))
+    return families
+      .filter((family) => scope === null || scope.has(family.kind))
+      .map((family) => ({
+        family,
+        categories: categories.filter((c) => c.familyId === family.id && !c.archived),
+      }))
+      .filter((group) => group.categories.length > 0)
+  }, [families, categories, key])
+}
+
+/** Toutes les familles avec leurs catégories, archivées comprises — Réglages. */
+export function useAllCategoriesByFamily(): FamilyGroup[] {
+  const families = useFamilies()
+  const categories = useCategories()
+  return useMemo(
+    () =>
+      families.map((family) => ({
+        family,
+        categories: categories.filter((c) => c.familyId === family.id),
+      })),
+    [families, categories],
+  )
 }
 
 export function useMemberMap(): Map<string, Member> {
@@ -120,6 +197,77 @@ export function useUpcoming(limit = 5): Upcoming[] {
   const entries = useEntries()
   const member = useMemberFilter()
   return useMemo(() => upcomingEntries(entries, today(), limit, member), [entries, limit, member])
+}
+
+/* --- Lecture par nature ---------------------------------------------------*/
+
+export function useKindTotals(forecast = false): KindTotals {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const member = useMemberFilter()
+  const kindOf = useKindOf()
+  return useMemo(
+    () => totalsByKind(entries, month, kindOf, member, forecast),
+    [entries, month, kindOf, member, forecast],
+  )
+}
+
+/**
+ * Répartition de ce qui est réellement consommé — charges et crédits — par
+ * famille. L'épargne en est exclue : elle sort du compte mais reste au foyer,
+ * et la mêler aux dépenses ferait passer un bon mois pour un mois dispendieux.
+ */
+export function useSpendingByFamily(): CategorySlice[] {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const member = useMemberFilter()
+  const categories = useCategories()
+  const kindOf = useKindOf()
+  return useMemo(() => {
+    const familyOf = new Map(categories.map((c) => [c.id, c.familyId]))
+    return breakdownByFamily(
+      entries,
+      month,
+      (categoryId) => familyOf.get(categoryId) ?? '',
+      (categoryId) => isSpending(kindOf(categoryId)),
+      member,
+    )
+  }, [entries, month, categories, kindOf, member])
+}
+
+/* --- Crédits --------------------------------------------------------------*/
+
+/**
+ * L'état de chaque crédit, le plus lourd d'abord. La mensualité vient de la
+ * récurrence liée : c'est elle qui fait foi, et la modifier se répercute ici
+ * sans qu'on ait à ressaisir le crédit.
+ */
+export function useDebtStatuses(): DebtStatus[] {
+  const debts = useDebts()
+  const recurrences = useRecurrences()
+  const entries = useEntries()
+  return useMemo(() => {
+    const now = today()
+    const monthlyOf = new Map(recurrences.map((r) => [r.id, r.amount]))
+    return debts
+      .map((debt) =>
+        debtStatus(
+          debt,
+          entries,
+          debt.recurrenceId === undefined ? null : (monthlyOf.get(debt.recurrenceId) ?? null),
+          now,
+        ),
+      )
+      .sort((a, b) => b.remaining - a.remaining)
+  }, [debts, recurrences, entries])
+}
+
+export function useDebtStatus(id: string | undefined): DebtStatus | null {
+  const statuses = useDebtStatuses()
+  return useMemo(
+    () => (id === undefined ? null : (statuses.find((s) => s.debt.id === id) ?? null)),
+    [statuses, id],
+  )
 }
 
 export function useMonthProgress(): number {

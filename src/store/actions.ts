@@ -8,9 +8,9 @@
 import { type ISODate, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
 import type { Money } from '@/domain/money'
-import type { Category, Entry, Member, Recurrence, Settings } from '@/domain/types'
+import { type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
 import * as updates from '@/domain/updates'
-import { nextMemberColor } from '@/persistence/defaults'
+import { nextCategoryColor, nextMemberColor } from '@/persistence/defaults'
 import { useStore } from './store'
 
 const mutate = (recipe: Parameters<ReturnType<typeof useStore.getState>['mutate']>[0]): void => {
@@ -44,10 +44,48 @@ export function removeMember(id: string): void {
 
 /* --- Catégories -----------------------------------------------------------*/
 
-export function addCategory(input: Omit<Category, 'id' | 'archived'>): Category {
-  const category: Category = { ...input, id: makeId(), archived: false }
+export function addCategory(input: Omit<Category, 'id' | 'archived' | 'color' | 'direction'>): Category {
+  const kind =
+    useStore.getState().data.families.find((f) => f.id === input.familyId)?.kind ?? 'charge'
+  const category: Category = {
+    ...input,
+    id: makeId(),
+    // La teinte et le sens ne se saisissent pas : ils découlent de la famille,
+    // et les laisser diverger d'elle n'aurait aucun sens lisible.
+    color: nextCategoryColor(input.familyId),
+    direction: directionOfKind(kind),
+    archived: false,
+  }
   mutate((data) => updates.addCategory(data, category))
   return category
+}
+
+/* --- Familles -------------------------------------------------------------*/
+
+export function addFamily(input: { label: string; kind: CategoryKind }): Family {
+  const family: Family = { ...input, id: makeId() }
+  mutate((data) => updates.addFamily(data, family))
+  return family
+}
+
+export function renameFamily(id: string, label: string): void {
+  mutate((data) => updates.renameFamily(data, id, label))
+}
+
+/* --- Crédits --------------------------------------------------------------*/
+
+export function addDebt(input: Omit<Debt, 'id'>): Debt {
+  const debt: Debt = { ...input, id: makeId() }
+  mutate((data) => updates.addDebt(data, debt))
+  return debt
+}
+
+export function updateDebt(id: string, patch: Partial<Debt>): void {
+  mutate((data) => updates.updateDebt(data, id, patch))
+}
+
+export function removeDebt(id: string): void {
+  mutate((data) => updates.removeDebt(data, id))
 }
 
 export function updateCategory(id: string, patch: Partial<Category>): void {

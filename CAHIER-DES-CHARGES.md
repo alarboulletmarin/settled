@@ -7,7 +7,7 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 ## 1. Principes
 
 1. **Aucun backend.** Les données vivent dans le navigateur. Rien ne sort de l'appareil.
-2. **Un seul flux.** L'app suit des entrées et des sorties d'argent. Pas de comptes, pas de bilan, pas de patrimoine.
+2. **Quatre natures, un seul flux.** L'app suit des entrées et des sorties d'argent, rangées en Ressources, Charges, Crédits et Versements. Le sens dit si l'argent entre ou sort ; la nature dit ce qu'il devient. Pas de comptes bancaires, pas de bilan patrimonial.
 3. **Prévu, puis confirmé.** Chaque mois est d'abord une prévision générée depuis les récurrences, que l'utilisateur valide au fil de l'eau.
 4. **Rien à configurer pour démarrer.** Deux questions à l'ouverture, puis l'app est utilisable.
 
@@ -19,12 +19,13 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 
 - Récurrences (abonnements, charges, revenus) à montant fixe ou variable
 - Dépenses et recettes ponctuelles
+- Capital restant dû des crédits en cours
 - Ouverture et suivi du mois courant
 - Vue calendrier des échéances
 - Dashboards du mois
 - Historique des mois passés
 - Comparatifs mois/mois et année/année
-- Catégories
+- Catégories rangées en familles, sous quatre natures
 - Membres du foyer comme étiquette
 - Export / import du fichier de données
 - Thème clair et sombre
@@ -43,22 +44,43 @@ type Money = number // centimes, entier signé
 type Data = {
   schemaVersion: number
   household: { name: string; members: Member[] }
+  families: Family[]
   categories: Category[]
   recurrences: Recurrence[]
   entries: Entry[]
+  debts: Debt[]
   months: MonthState[]
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
 
 type Member = { id: string; name: string; color: string }
 
+// Ce que devient l'argent, par-delà son sens de trésorerie.
+type CategoryKind = 'resource' | 'charge' | 'debt' | 'saving'
+
+// Le premier niveau des catégories : l'onglet sous lequel on va chercher.
+type Family = { id: string; label: string; kind: CategoryKind }
+
 type Category = {
   id: string
   label: string
+  familyId: string              // la famille porte la nature et la teinte
   icon: string
   color: string
   direction: 'in' | 'out'
   archived: boolean
+}
+
+type Debt = {
+  id: string
+  label: string
+  categoryId: string
+  recurrenceId?: string         // la mensualité qui l'amortit
+  principal: Money              // capital emprunté
+  startedOn: string
+  endsOn: string
+  rateBp?: number               // taux annuel en points de base, 450 = 4,50 %
+  note?: string
 }
 
 type Recurrence = {
@@ -101,6 +123,8 @@ type MonthState = {
 - L'historique de prix d'un abonnement se déduit des `Entry` liées à sa `recurrenceId`, il n'est pas stocké.
 - Supprimer une récurrence n'efface pas les `Entry` déjà confirmées : elle est marquée `endedOn`.
 - Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas.
+- Le sens d'une catégorie découle de la nature de sa famille, jamais l'inverse : `resource` entre, les trois autres sortent. Un versement sort du compte exactement comme une charge — c'est la nature, pas le sens, qui les distingue.
+- Un `Debt` ne produit aucun chiffre de trésorerie : ce sont les `Entry` de la récurrence liée qui font sortir l'argent. Il n'ajoute que le capital, que la somme des mensualités ne dit pas dès qu'il y a des intérêts.
 
 ---
 
@@ -114,6 +138,14 @@ Deux étapes, aucune ne peut être sautée sur la première.
 2. Membres. L'utilisateur peut passer directement (usage solo) ou ajouter des personnes, prénom uniquement.
 
 Un jeu de catégories par défaut est créé, modifiable ensuite.
+
+### 4.1 bis Catégories
+
+Deux niveaux. Une **famille** porte une nature — Ressources, Charges, Crédits et dettes, Versements — et ses catégories en héritent leur sens et leur teinte.
+
+Le catalogue par défaut suit le vocabulaire d'un budget familial : Ressources (salaires, allocations, prestations familiales, pensions reçues, aide au logement, revenus fonciers), huit familles de charges (Logement, Communication, Transport, Vie courante, Santé, Famille et scolarité, Impôts et taxes, Loisirs et divers), Crédits et dettes (automobile, immobilier, location longue durée, crédits d'achat, autres), Versements (livrets, plans, assurance vie, épargne retraite, épargne entreprise).
+
+Tout est modifiable : renommer une famille, en créer une avec sa nature, ajouter ou archiver une catégorie. La teinte et le sens ne se saisissent jamais — ils découlent de la famille, et les laisser diverger d'elle n'aurait aucun sens lisible.
 
 ### 4.2 Récurrences
 
@@ -157,7 +189,9 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Solde du mois** : entrées confirmées − sorties confirmées.
 - **Solde prévisionnel** : en incluant les `planned` restantes.
 - **Reste à vivre** : solde prévisionnel jusqu'à la prochaine entrée d'argent.
-- **Répartition par catégorie** sur les sorties du mois.
+- **Capacité d'épargne** : ressources − charges − crédits, donc avant versements, avec le taux d'épargne en seconde lecture. C'est ce que le solde ne dit pas : lui compte un versement comme une sortie, si bien qu'un mois où l'on met 300 € de côté se lit comme un mois où l'on a dépensé 300 € de plus.
+- **Où part l'argent** : répartition par famille, sur les charges et les crédits. L'épargne en est exclue et se lit à part — elle sort du compte mais reste au foyer.
+- **Crédits** : capital restant dû, tous crédits confondus.
 - **Dépenses par jour**, barres empilées par catégorie.
 - **Prochaines échéances**, les 5 suivantes avec le nombre de jours restants.
 - **Total abonnements**, mensuel et annualisé.
@@ -171,6 +205,15 @@ Tous les dashboards acceptent un filtre par membre.
 - Comparaison de deux mois au choix, écart par catégorie en valeur et en pourcentage.
 - Comparaison d'années : cumul par mois, année N contre année N−1.
 - Les périodes sans donnée affichent un état vide explicite, pas un graphique à zéro.
+
+### 4.7 bis Crédits et dettes
+
+Un crédit se déclare avec son capital emprunté, ses dates de première et dernière mensualité, un taux annuel facultatif, et l'abonnement qui le rembourse.
+
+- Le **capital restant dû** est dérivé, jamais saisi : `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1) / i`, où `n` est le nombre de mensualités effectivement confirmées.
+- Sans taux, le capital décroît exactement du montant versé.
+- Sans abonnement lié, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
+- Retirer un crédit du suivi n'efface ni les mensualités versées ni l'abonnement qui les pose. Seul le suivi du capital s'arrête.
 
 ### 4.8 Données
 

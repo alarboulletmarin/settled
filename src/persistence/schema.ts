@@ -9,9 +9,10 @@
  * ==========================================================================*/
 
 import type { Data } from '@/domain/types'
+import { defaultCategories, defaultFamilies, fallbackFamilyId } from './defaults'
 import { normalizeData } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
@@ -31,7 +32,68 @@ function toVersion1(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 1 }
 }
 
-export const MIGRATIONS: Migration[] = [{ to: 1, migrate: toVersion1 }]
+/**
+ * Où atterrit chacune des neuf catégories du jeu d'origine, quand le document
+ * est antérieur aux familles. Ce qui n'y figure pas — une catégorie créée par
+ * l'utilisateur — tombe dans la famille d'accueil de son sens.
+ */
+const LEGACY_FAMILY: Record<string, string> = {
+  housing: 'fam-housing',
+  groceries: 'fam-daily',
+  transport: 'fam-transport',
+  health: 'fam-health',
+  leisure: 'fam-leisure',
+  subscriptions: 'fam-communication',
+  misc: 'fam-leisure',
+  salary: 'fam-resources',
+  otherIncome: 'fam-resources',
+}
+
+/**
+ * Introduction des familles, des natures et des crédits.
+ *
+ * Rien n'est effacé : chaque catégorie déjà présente est rangée sous une
+ * famille et garde son identifiant, donc les entrées déjà saisies continuent
+ * de la désigner. Le catalogue par défaut est ajouté à côté, pour que la
+ * nouvelle arborescence soit utilisable sans avoir à la ressaisir — une
+ * catégorie du catalogue dont l'identifiant existe déjà n'est pas dupliquée.
+ */
+function toVersion2(doc: RawDocument): RawDocument {
+  const existing: unknown[] = Array.isArray(doc['categories']) ? doc['categories'] : []
+
+  const adopted: RawDocument[] = []
+  const known = new Set<string>()
+  for (const raw of existing) {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) continue
+    const category = raw as RawDocument
+    const id = typeof category['id'] === 'string' ? category['id'] : ''
+    if (id !== '') known.add(id)
+    const alreadyPlaced =
+      typeof category['familyId'] === 'string' && category['familyId'].length > 0
+    if (alreadyPlaced) {
+      adopted.push(category)
+      continue
+    }
+    const direction = category['direction'] === 'in' ? 'in' : 'out'
+    adopted.push({ ...category, familyId: LEGACY_FAMILY[id] ?? fallbackFamilyId(direction) })
+  }
+
+  const families: unknown[] =
+    Array.isArray(doc['families']) && doc['families'].length > 0 ? doc['families'] : defaultFamilies()
+
+  return {
+    ...doc,
+    schemaVersion: 2,
+    families,
+    categories: [...adopted, ...defaultCategories().filter((c) => !known.has(c.id))],
+    debts: Array.isArray(doc['debts']) ? (doc['debts'] as unknown[]) : [],
+  }
+}
+
+export const MIGRATIONS: Migration[] = [
+  { to: 1, migrate: toVersion1 },
+  { to: 2, migrate: toVersion2 },
+]
 
 export class ImportError extends Error {
   override name = 'ImportError'

@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { eur, makeEntry, makeRecurrence } from './fixtures'
+import type { CategoryKind } from './types'
+import { isSpending } from './types'
 import {
   OTHER_CATEGORY,
   breakdownByCategory,
+  breakdownByFamily,
+  savingCapacity,
+  savingRate,
+  totalsByKind,
   dailyBreakdown,
   entriesOfMonth,
   monthProgress,
@@ -270,5 +276,57 @@ describe('progression du mois', () => {
   it('borne à 0 avant le mois et à 1 après', () => {
     expect(monthProgress('2026-07', '2026-06-30')).toBe(0)
     expect(monthProgress('2026-07', '2026-08-01')).toBe(1)
+  })
+})
+
+describe('lecture par nature', () => {
+  const KINDS: Record<string, CategoryKind> = {
+    salaire: 'resource',
+    loyer: 'charge',
+    pret: 'debt',
+    livret: 'saving',
+  }
+  const kindOf = (id: string): CategoryKind => KINDS[id] ?? 'charge'
+
+  const month = [
+    makeEntry({ id: 'a', categoryId: 'salaire', direction: 'in', date: '2026-07-01', amount: eur(200000), status: 'confirmed' }),
+    makeEntry({ id: 'b', categoryId: 'loyer', date: '2026-07-05', amount: eur(80000), status: 'confirmed' }),
+    makeEntry({ id: 'c', categoryId: 'pret', date: '2026-07-10', amount: eur(30000), status: 'confirmed' }),
+    makeEntry({ id: 'd', categoryId: 'livret', date: '2026-07-15', amount: eur(20000), status: 'confirmed' }),
+  ]
+
+  it('range chaque entrée sous sa nature', () => {
+    const totals = totalsByKind(month, '2026-07', kindOf)
+    expect(totals).toEqual({ resource: 200000, charge: 80000, debt: 30000, saving: 20000 })
+  })
+
+  it('exclut les prévues, sauf en lecture prévisionnelle', () => {
+    const withPlanned = [
+      ...month,
+      makeEntry({ id: 'e', categoryId: 'loyer', date: '2026-07-28', amount: eur(5000), status: 'planned' }),
+    ]
+    expect(totalsByKind(withPlanned, '2026-07', kindOf).charge).toBe(80000)
+    expect(totalsByKind(withPlanned, '2026-07', kindOf, undefined, true).charge).toBe(85000)
+  })
+
+  it('laisse l’épargne hors de la capacité — c’est ce qu’elle mesure', () => {
+    const totals = totalsByKind(month, '2026-07', kindOf)
+    expect(savingCapacity(totals)).toBe(90000)
+  })
+
+  it('rapporte l’épargne aux ressources', () => {
+    expect(savingRate(totalsByKind(month, '2026-07', kindOf))).toBeCloseTo(0.1, 5)
+  })
+
+  it('ne rend pas un taux de zéro faute de ressources', () => {
+    const noIncome = month.filter((e) => e.categoryId !== 'salaire')
+    expect(savingRate(totalsByKind(noIncome, '2026-07', kindOf))).toBeNull()
+  })
+
+  it('répartit par famille en excluant l’épargne', () => {
+    const familyOf = (id: string): string => (id === 'livret' ? 'fam-savings' : `fam-${id}`)
+    const slices = breakdownByFamily(month, '2026-07', familyOf, (id) => isSpending(kindOf(id)))
+    expect(slices.map((s) => s.categoryId)).toEqual(['fam-loyer', 'fam-pret'])
+    expect(slices.map((s) => s.total)).toEqual([80000, 30000])
   })
 })

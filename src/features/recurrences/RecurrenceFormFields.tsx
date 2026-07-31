@@ -1,5 +1,6 @@
-import type { Category, Member } from '@/domain/types'
+import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
+import { CategorySelect } from '@/ui/CategorySelect'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { Segmented } from '@/ui/Segmented'
 import { PERIOD_OPTIONS } from './period'
@@ -19,11 +20,10 @@ export type FieldsProps = {
   draft: RecurrenceDraft
   patch: (next: Partial<RecurrenceDraft>) => void
   errors: DraftErrors
-  categories: Category[]
   members: Member[]
 }
 
-export function IdentityFields({ draft, patch, errors, categories, members }: FieldsProps) {
+export function IdentityFields({ draft, patch, errors, members }: FieldsProps) {
   return (
     <>
       <Field label={fr.recurrences.form.label} required {...(errors.label ? { error: errors.label } : {})}>
@@ -57,21 +57,15 @@ export function IdentityFields({ draft, patch, errors, categories, members }: Fi
         {...(errors.category ? { error: errors.category } : {})}
       >
         {(id, describedBy) => (
-          <Select
+          <CategorySelect
             id={id}
             aria-describedby={describedBy}
+            direction={draft.direction}
             value={draft.categoryId}
             onChange={(e) => {
               patch({ categoryId: e.target.value })
             }}
-          >
-            <option value="">{fr.recurrences.form.categoryPlaceholder}</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.label}
-              </option>
-            ))}
-          </Select>
+          />
         )}
       </Field>
 
@@ -99,7 +93,7 @@ export function IdentityFields({ draft, patch, errors, categories, members }: Fi
   )
 }
 
-export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'categories' | 'members'>) {
+export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'members'>) {
   return (
     <>
       <Segmented
