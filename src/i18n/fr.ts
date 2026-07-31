@@ -269,13 +269,19 @@ export const fr = {
     /* La contrepartie de la tuile Répartition, sous un filtre par membre :
        celle-ci montre les parts de tout le monde, celle-là ce que la personne
        filtrée porte du pot commun — et le coefficient qui le produit, qui
-       n'apparaissait nulle part sur son mois. */
+       n'apparaissait nulle part sur son mois.
+
+       Le montant à virer est le chiffre de tête, et non une ligne parmi trois.
+       C'est le geste que la tuile sert : un virement sur le compte joint, dont
+       la somme se recopie telle quelle. Le total des charges communes du foyer
+       en est parti — c'est un chiffre qu'on ne doit pas, et il se lit encore
+       sur l'écran Répartition, qui est fait pour ça. */
     memberShare: 'Part du foyer',
-    memberShareMine: 'Sa part',
-    memberShareCommon: 'Communes',
-    memberShareOwn: 'Personnelles',
+    memberShareToTransfer: 'À verser sur le commun',
+    memberShareOwn: 'Charges perso',
+    memberShareTotal: 'Total à payer',
     memberShareHint: 'au prorata des revenus',
-    srMemberShare: 'Part de %s dans les charges communes : %s, soit %s sur %s.',
+    srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
        dit son calcul, puis ce qui le sépare de son voisin — c'est la question
