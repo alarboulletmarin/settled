@@ -160,11 +160,17 @@ export function Checkbox({ checked, onChange, label, hint, className }: Checkbox
 export type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> & {
   children: ReactNode
   className?: string
+  /** Même signalement qu'un champ texte : bordure d'alerte et `aria-invalid`. */
+  invalid?: boolean
 }
 
-export function Select({ children, className, ...rest }: SelectProps) {
+export function Select({ children, className, invalid = false, ...rest }: SelectProps) {
   return (
-    <select className={cn(CONTROL, 'h-11 appearance-none pr-9', className)} {...rest}>
+    <select
+      className={cn(CONTROL, 'h-11 appearance-none pr-9', invalid && 'border-danger', className)}
+      aria-invalid={invalid || undefined}
+      {...rest}
+    >
       {children}
     </select>
   )

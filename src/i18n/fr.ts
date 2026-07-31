@@ -378,6 +378,10 @@ export const fr = {
     amountRequired: 'Indique un montant supérieur à zéro.',
     categoryRequired: 'Choisis une catégorie.',
     labelRequired: 'Donne un libellé à cette entrée.',
+    /* Sans propriétaire ni partage, la ligne n'apparaîtrait dans le mois de
+       personne, et la somme des soldes cesserait de valoir celui du foyer. */
+    memberRequired:
+      'Dis à qui est cette ligne : elle n’entre pas dans les charges communes, donc sans propriétaire elle n’apparaîtrait dans le mois de personne.',
     planned: 'Prévue',
     confirmed: 'Confirmée',
 
@@ -456,6 +460,10 @@ export const fr = {
       labelRequired: 'Donne un libellé à cet abonnement.',
       amountRequired: 'Indique un montant, ou choisis « montant variable ».',
       categoryRequired: 'Choisis une catégorie.',
+      /* Un abonnement pose une échéance par mois : sans propriétaire ni
+         partage, il creuse le trou à chaque fois. */
+      memberRequired:
+        'Dis à qui est cet abonnement : il n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
       monthDayHint: 'Un jour qui n’existe pas est ramené au dernier jour du mois.',
     },
     periods: {

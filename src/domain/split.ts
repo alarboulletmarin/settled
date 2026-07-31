@@ -14,7 +14,15 @@ import type { ISODate, YearMonth } from './date'
 import { type Money, ZERO, add, money, sum } from './money'
 import { monthlyEquivalent } from './recurrence'
 import { type KindOf, type MemberFilter, entriesOfMonth } from './stats'
-import { type CategoryKind, type Entry, type Member, type Recurrence, isActiveOn, isSpending } from './types'
+import {
+  type CategoryKind,
+  type Direction,
+  type Entry,
+  type Member,
+  type Recurrence,
+  isActiveOn,
+  isSpending,
+} from './types'
 
 /* --- Répartition d'un entier ----------------------------------------------*/
 
@@ -87,6 +95,29 @@ export function isSharedEntry(entry: Entry, kind: CategoryKind): boolean {
  */
 export function defaultShared(kind: CategoryKind, memberId?: string): boolean {
   return isSpending(kind) && (memberId === undefined || memberId === '')
+}
+
+/**
+ * Une ligne doit être à quelqu'un, ou à tout le monde.
+ *
+ * Sans propriétaire et hors partage, elle sort bien du compte du foyer, mais
+ * n'apparaît dans le mois de personne : la somme des soldes individuels cesse
+ * alors de valoir celui du foyer, sans que rien ne le dise. C'est le cas d'un
+ * versement d'épargne que personne ne revendique — l'épargne ne se partage
+ * jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle
+ * est, et de toute entrée d'argent, qui ne se partage pas davantage.
+ *
+ * La saisie l'exige donc là, et seulement là : partout ailleurs, le membre
+ * reste facultatif parce que la règle de partage sait déjà où ranger la ligne.
+ */
+export function memberRequired(
+  direction: Direction,
+  kind: CategoryKind,
+  memberId: string,
+  shared: boolean | undefined,
+): boolean {
+  if (memberId !== '') return false
+  return !(direction === 'out' && (shared ?? defaultShared(kind, memberId)))
 }
 
 /** La même frontière que `sharedEntries`, en un seul endroit. */

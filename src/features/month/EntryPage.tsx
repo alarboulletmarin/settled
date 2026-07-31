@@ -6,7 +6,8 @@ import type { Direction, Entry } from '@/domain/types'
 import { DIRECTION_PARAM, directionFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { addEntry, addRecurrencePaidOn, removeEntry, updateEntry } from '@/store/actions'
-import { useCurrentYm, useEntry, useMembers } from '@/store/selectors'
+import { memberRequired } from '@/domain/split'
+import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
@@ -108,16 +109,26 @@ function EntryForm({
   onDone: () => void
 }) {
   const members = useMembers()
+  const kindOf = useKindOf()
   const [draft, setDraft] = useState<Draft>(() => initial(entry, defaultDate, defaultDirection))
   const [showErrors, setShowErrors] = useState(false)
 
   const amount = parseAmount(draft.amountText)
+  /* Une ligne qui n'entre pas dans les charges communes doit être à quelqu'un :
+     sans propriétaire, elle n'apparaîtrait dans le mois de personne. Le champ
+     ne s'exige évidemment que s'il y a quelqu'un à désigner. */
+  const needsMember =
+    members.length > 0 &&
+    memberRequired(draft.direction, kindOf(draft.categoryId), draft.memberId, draft.shared)
   const errors = {
     amount: amount === null || amount <= 0 ? fr.entry.amountRequired : undefined,
     category: draft.categoryId === '' ? fr.entry.categoryRequired : undefined,
     label: draft.label.trim() === '' ? fr.entry.labelRequired : undefined,
+    member: needsMember ? fr.entry.memberRequired : undefined,
   }
-  const shown = showErrors ? errors : { amount: undefined, category: undefined, label: undefined }
+  const shown = showErrors
+    ? errors
+    : { amount: undefined, category: undefined, label: undefined, member: undefined }
 
   const patch = (next: Partial<Draft>): void => {
     setDraft((current) => {
@@ -139,7 +150,8 @@ function EntryForm({
 
   const submit = (): void => {
     setShowErrors(true)
-    if (amount === null || amount <= 0 || draft.categoryId === '' || draft.label.trim() === '') return
+    if (Object.values(errors).some((error) => error !== undefined)) return
+    if (amount === null) return
 
     const common = {
       label: draft.label.trim(),
@@ -291,11 +303,22 @@ function EntryForm({
           </Field>
 
           {members.length > 0 && (
-            <Field label={fr.entry.member} optional>
-              {(id) => (
+            /* La phrase sert d'aide tant qu'on n'a pas essayé d'enregistrer,
+               puis d'erreur : c'est la même, et elle dit pourquoi ce champ,
+               facultatif ailleurs, ne l'est pas ici. */
+            <Field
+              label={fr.entry.member}
+              {...(needsMember
+                ? { required: true, hint: fr.entry.memberRequired }
+                : { optional: true })}
+              {...(shown.member ? { error: shown.member } : {})}
+            >
+              {(id, describedBy) => (
                 <Select
                   id={id}
+                  aria-describedby={describedBy}
                   value={draft.memberId}
+                  invalid={Boolean(shown.member)}
                   onChange={(e) => {
                     patch({ memberId: e.target.value })
                   }}

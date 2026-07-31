@@ -6,6 +6,7 @@ import {
   isSharedEntry,
   largestRemainder,
   memberIncomes,
+  memberRequired,
   memberShares,
   monthlyIncome,
   scopeToMember,
@@ -295,6 +296,63 @@ describe('parts au prorata des revenus', () => {
     const amounts = [money(1), money(7), money(99), money(100_001), money(333_333)]
     const shares = memberShares(foyer, amounts)
     expect(shares && totalDue(shares)).toBe(sum(amounts))
+  })
+})
+
+/* --- À quelqu'un, ou à tout le monde ---------------------------------------*/
+
+describe('une ligne doit être à quelqu’un, ou à tout le monde', () => {
+  it('laisse le membre facultatif sur ce que le partage prendra en charge', () => {
+    expect(memberRequired('out', 'charge', '', undefined)).toBe(false)
+    expect(memberRequired('out', 'debt', '', undefined)).toBe(false)
+  })
+
+  it('exige un membre sur une dépense sortie du partage à la main', () => {
+    expect(memberRequired('out', 'charge', '', false)).toBe(true)
+  })
+
+  it('exige un membre sur un versement d’épargne : il ne se partage jamais', () => {
+    expect(memberRequired('out', 'saving', '', undefined)).toBe(true)
+  })
+
+  it('exige un membre sur une entrée d’argent : elle ne se partage pas davantage', () => {
+    expect(memberRequired('in', 'resource', '', undefined)).toBe(true)
+    // Cocher « à partager » sur une entrée n'y change rien : seules les sorties
+    // se répartissent.
+    expect(memberRequired('in', 'resource', '', true)).toBe(true)
+  })
+
+  it('n’exige plus rien dès que la ligne est à quelqu’un', () => {
+    expect(memberRequired('out', 'saving', 'm-1', undefined)).toBe(false)
+    expect(memberRequired('in', 'resource', 'm-1', undefined)).toBe(false)
+    expect(memberRequired('out', 'charge', 'm-1', false)).toBe(false)
+  })
+
+  it('couvre exactement ce qui n’apparaîtrait dans le mois de personne', () => {
+    const orphan = (kind: CategoryKind, shared?: boolean): boolean => {
+      const entry = makeEntry({
+        date: '2026-07-10',
+        direction: kind === 'resource' ? 'in' : 'out',
+        categoryId: kind,
+        ...(shared === undefined ? {} : { shared }),
+      })
+      const scoped = scopeToMember([entry], 'm-1', () => kind, [
+        { memberId: 'm-1', income: eur(250_000) },
+        { memberId: 'm-2', income: eur(200_000) },
+      ])
+      return scoped?.length === 0
+    }
+
+    for (const [kind, shared] of [
+      ['charge', undefined],
+      ['charge', false],
+      ['saving', undefined],
+      ['resource', undefined],
+    ] as [CategoryKind, boolean | undefined][]) {
+      expect(orphan(kind, shared)).toBe(
+        memberRequired(kind === 'resource' ? 'in' : 'out', kind, '', shared),
+      )
+    }
   })
 })
 

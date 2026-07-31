@@ -23,7 +23,7 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
   // La catégorie ne se pré-remplit plus : avec une quarantaine de choix rangés
   // sous onze familles, en imposer une au hasard ferait saisir des dépenses
   // sous la première venue.
-  const { draft, patch, errors, build } = useRecurrenceForm(recurrence, '')
+  const { draft, patch, errors, needsMember, build } = useRecurrenceForm(recurrence, '')
 
   const submit = (): void => {
     const payload = build()
@@ -57,7 +57,13 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
         }}
       >
         <Tile className="gap-4">
-          <IdentityFields draft={draft} patch={patch} errors={errors} members={members} />
+          <IdentityFields
+            draft={draft}
+            patch={patch}
+            errors={errors}
+            members={members}
+            needsMember={needsMember}
+          />
           <AmountFields draft={draft} patch={patch} errors={errors} />
           <PeriodFields draft={draft} patch={patch} />
 

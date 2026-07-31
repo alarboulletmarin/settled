@@ -4,8 +4,10 @@
 import { useMemo, useState } from 'react'
 import { today } from '@/domain/date'
 import { type Money, parseAmount, toAmountInput } from '@/domain/money'
+import { memberRequired } from '@/domain/split'
 import type { Direction, Recurrence } from '@/domain/types'
 import { fr } from '@/i18n/fr'
+import { useKindOf, useMembers } from '@/store/selectors'
 import { type PeriodDraft, defaultsFrom, kindOf, periodOf } from './period'
 
 export type RecurrenceDraft = PeriodDraft & {
@@ -20,7 +22,7 @@ export type RecurrenceDraft = PeriodDraft & {
   note: string
 }
 
-export type DraftErrors = Partial<Record<'label' | 'amount' | 'category', string>>
+export type DraftErrors = Partial<Record<'label' | 'amount' | 'category' | 'member', string>>
 
 function draftFrom(recurrence: Recurrence | null, defaultCategoryId: string): RecurrenceDraft {
   const start = recurrence?.startedOn ?? today()
@@ -53,6 +55,8 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
     draftFrom(recurrence, defaultCategoryId),
   )
   const [showErrors, setShowErrors] = useState(false)
+  const members = useMembers()
+  const kindOf = useKindOf()
 
   const amount: Money | null = useMemo(
     () => (draft.variable ? null : parseAmount(draft.amountText)),
@@ -66,8 +70,27 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
     if (!draft.variable && (amount === null || amount <= 0)) {
       found.amount = fr.recurrences.form.amountRequired
     }
+    /* Un abonnement qui n'entre pas dans les charges communes doit être à
+       quelqu'un : il pose une échéance par période, et chacune manquerait au
+       mois de tout le monde. */
+    if (
+      members.length > 0 &&
+      memberRequired(draft.direction, kindOf(draft.categoryId), draft.memberId, draft.shared)
+    ) {
+      found.member = fr.recurrences.form.memberRequired
+    }
     return found
-  }, [draft.label, draft.categoryId, draft.variable, amount])
+  }, [
+    draft.label,
+    draft.categoryId,
+    draft.variable,
+    draft.direction,
+    draft.memberId,
+    draft.shared,
+    amount,
+    members,
+    kindOf,
+  ])
 
   const patch = (next: Partial<RecurrenceDraft>): void => {
     setDraft((current) => {
@@ -97,5 +120,7 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
     }
   }
 
-  return { draft, patch, errors: showErrors ? errors : {}, build }
+  /* La mention « obligatoire » ne se découvre pas après un échec : le champ la
+     porte dès que la règle s'applique, comme les autres champs obligatoires. */
+  return { draft, patch, errors: showErrors ? errors : {}, needsMember: errors.member !== undefined, build }
 }
