@@ -3,7 +3,7 @@ import { MonthHeader } from '@/app/MonthHeader'
 import { entryNewPath, entryPath } from '@/app/routes'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
-import { useMonthEntries } from '@/store/selectors'
+import { useScopedMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
@@ -11,7 +11,9 @@ import { EntriesSection } from './EntriesSection'
 import { PendingSection } from './PendingSection'
 
 export function MonthPage() {
-  const entries = useMonthEntries()
+  /* Le mois d'un membre n'est pas vide parce qu'il n'a rien saisi à son nom :
+     sa part des charges communes en fait partie. */
+  const entries = useScopedMonthEntries()
   const navigate = useNavigate()
 
   const create = (direction: 'in' | 'out'): void => {
@@ -23,7 +25,7 @@ export function MonthPage() {
   return (
     <>
       <h1 className="sr-only">{fr.month.title}</h1>
-      <MonthHeader />
+      <MonthHeader prorataNote />
 
       {/* Les deux sens sont deux boutons, jamais un seul. Passer par « Ajouter
           une dépense » pour saisir un salaire obligeait à découvrir, une fois

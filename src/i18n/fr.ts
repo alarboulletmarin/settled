@@ -98,6 +98,17 @@ export const fr = {
     loading: 'Ouverture de tes données',
     filterByMember: 'Filtrer par membre',
     everyone: 'Tout le foyer',
+    /* Les chiffres d'un membre comprennent sa part des charges communes : sans
+       elle, chacun se lirait comme s'il vivait sans loyer. La liste des
+       échéances, elle, garde les lignes réelles — on confirme une échéance
+       entière, jamais une part. */
+    prorata: 'Chiffres à la part de %s : sa part des charges communes est comprise, au prorata des revenus. Les listes gardent les échéances entières.',
+    prorataMissingOne:
+      'Charges communes non réparties, faute de connaître le revenu de %s : seules les lignes à son nom sont comptées.',
+    prorataMissingMany:
+      'Charges communes non réparties, faute de connaître les revenus de %s : seules les lignes à son nom sont comptées.',
+    prorataOnlyOwn:
+      'Charges communes non réparties : seules les lignes à son nom sont comptées.',
   },
 
   settings: {
