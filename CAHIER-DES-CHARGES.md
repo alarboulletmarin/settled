@@ -189,6 +189,14 @@ Dépense et revenu sont deux points d'entrée distincts, côte à côte, sur le 
 
 La date proposée est aujourd'hui si l'on est dans le mois affiché, sinon le premier de ce mois — et le jour sélectionné quand la saisie part du calendrier.
 
+### 4.4 bis Liste du mois
+
+Ce qui a eu lieu, regroupé sur un axe au choix : **jour**, **catégorie** ou **personne**. Chaque groupe porte son nombre de lignes et son **solde** — pas une somme : un jour où l'on touche un salaire et où l'on paie le loyer ne se résume pas en additionnant les deux.
+
+Les groupes se replient. Par jour, ils s'ouvrent — c'est l'ordre de la lecture. Par catégorie ou par personne, ils se replient : c'est un résumé dans lequel on entre, et l'en-tête porte déjà la réponse. Un « tout replier » vaut pour la liste entière.
+
+Par jour, du plus récent au plus ancien. Sur les deux autres axes, le plus gros mouvement d'abord.
+
 ### 4.5 Calendrier
 
 Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la catégorie, opacité réduite si `planned`. Un jour sélectionné ouvre la liste de ses entrées.

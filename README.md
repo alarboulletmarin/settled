@@ -100,6 +100,14 @@ s'est attribuée. La case « à partager » est une *exception* stockée seuleme
 quand elle diverge de cette règle, jamais une copie : sans quoi tout ce qui a
 déjà été saisi serait à requalifier, et deux sources finiraient par diverger.
 
+**Listes longues.** Une liste qui dépasse l'écran se regroupe et se replie,
+sur `<details>` natif (`ui/Disclosure.tsx`) : il porte déjà l'état pour un
+lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir ce
+qui est replié. L'en-tête garde une lecture visible même replié — un total, un
+compte : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait
+gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
+personne, et les réglages de 4 779 px à 1 137 px.
+
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.
 
