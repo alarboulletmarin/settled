@@ -1,7 +1,11 @@
 /** Fabriques de test. Aucun module d'application ne dépend de ce fichier. */
 
 import { type Money, money } from './money'
-import type { Category, Data, Debt, Entry, Family, Period, Recurrence } from './types'
+import type { Category, Data, Debt, Entry, Family, Member, Period, Recurrence } from './types'
+
+export function makeMember(over: Partial<Member> & { id: string }): Member {
+  return { name: 'Membre', color: 'var(--cat-1)', ...over }
+}
 
 export function makeEntry(over: Partial<Entry> & { date: string }): Entry {
   return {
@@ -60,7 +64,7 @@ export function makeData(over: Partial<Data> = {}): Data {
   return {
     // La version courante du document : un aller-retour export / import doit
     // pouvoir se comparer à l'identique, sans qu'une migration s'intercale.
-    schemaVersion: 2,
+    schemaVersion: 3,
     household: { name: 'Maison', members: [] },
     families: [makeFamily({ id: 'fam-leisure' })],
     categories: [],

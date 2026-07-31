@@ -120,7 +120,9 @@ Deux familles, pas trois. La largeur variable d'Archivo remplace un troisième f
 | Rôle | Fonte | Taille | Graisse | Détails |
 |---|---|---|---|---|
 | Chiffre héros | sans | 56 / 72px | 700 | `stretch: 112%`, `tracking: -0.03em` |
-| Chiffre de tuile | sans | 32px | 650 | `tracking: -0.02em` |
+| Chiffre de tuile | sans | 32px | 700 | ramené à la largeur de sa tuile dans la grille, et à 26px sur une rangée simple |
+| Montant de ligne | sans | 15px | 700 | |
+| Montant secondaire | sans | 13px | 700 | |
 | Titre de section | sans | 20px | 600 | |
 | Corps | sans | 15px | 400 | `line-height: 1.5` |
 | Libellé secondaire | sans | 13px | 400 | `color: var(--text-muted)` |
@@ -130,6 +132,8 @@ Deux familles, pas trois. La largeur variable d'Archivo remplace un troisième f
 ### Chiffres
 
 `font-variant-numeric: tabular-nums` sur **tout** montant, sans exception. Une colonne de montants qui danse à chaque mise à jour est le défaut le plus visible d'une app de finances.
+
+**Une seule lettre pour tous les montants.** Les quatre tailles ci-dessus sont le même chiffre à quatre échelles : 700, `stretch: 112%`, `tracking: -0.03em`. Seule la taille varie. Un montant de liste et un solde héros doivent se reconnaître comme deux tailles du même chiffre — les faire diverger de graisse et de largeur donne l'impression de deux polices sur le même écran.
 
 Le symbole monétaire se pose à 0.55em de la taille du nombre, aligné en haut, opacité 0.5. Les centimes d'un chiffre héros passent à 0.5em. Le signe n'est affiché que pour les entrées (`+`), une sortie se lit à sa couleur et à son contexte.
 
@@ -172,6 +176,8 @@ Formats autorisés : `2×1`, `2×2`, `4×1`, `4×2`, `6×2`. Rien d'autre, sinon
 
 Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une visualisation. Si elle en demande un cinquième, c'est deux tuiles.
 
+Ce maximum n'est pas un dû : une tuile d'une seule rangée fait 88px, dont 56 utiles, et l'eyebrow avec un chiffre de 32px en demandent 57 à eux deux. Les formats `2×1` et `4×1` resserrent donc leur cadre à 16px et ramènent leur chiffre à 26px — une demi-tuile porte un demi-chiffre. Un contenu qui déborde quand même se coupe **par le bas** : une liste ancrée au centre remonte sur son eyebrow, ce qui est le seul débordement qui se voie vraiment.
+
 ---
 
 ## 6. Composants
@@ -186,6 +192,10 @@ Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une
 
 **Amount** — composant unique pour tout montant. Props : valeur en centimes, taille, sens. Gère seul le tabular-nums, le symbole, les centimes réduits et la couleur.
 
+**Checkbox** — un attribut vrai ou faux, pas un choix entre deux modes : `Segmented` sert à choisir parmi des positions qui s'excluent, la case dit qu'une chose est vraie ou ne l'est pas. Carré de 24px dans une cible de 44px, coché en `--accent` sur texte encre — lime reste un remplissage. La case native reste dans le DOM, masquée : c'est elle qui porte l'état pour un lecteur d'écran et qui répond à la barre d'espace.
+
+**Disclosure** — section repliable, sur `<details>` natif : il porte déjà l'état pour un lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir ce qui est replié. En-tête de 44px, chevron qui pivote, et une lecture de droite — total ou compte — qui reste visible replié : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait pas gagner de défilement. Une liste longue s'accompagne d'un « tout replier ».
+
 **Chip** — pilule pour catégories, membres et filtres. Pastille de couleur 8px + libellé 13px. État actif : fond `--surface-2` → `--accent`.
 
 **ListRow** — pastille de catégorie, libellé, sous-libellé mono (date ou périodicité), montant à droite. Hauteur 56px. Un `planned` s'affiche à 60% d'opacité avec un contour en pointillés sur la pastille.
@@ -193,6 +203,8 @@ Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une
 **MonthNav** — chevrons de part et d'autre du mois courant, mois en sans 20px, année en mono 11px dessous. Balayage horizontal sur mobile.
 
 **Ring** — l'anneau. Épaisseur 12px, extrémités arrondies, départ à midi, sens horaire, fond de piste en `--surface-2`. Sert de progression du mois, de jauge et de donut de répartition. Le contenu central est un `Amount`.
+
+**Toast** — trois au plus à l'écran, et un message qui se répète porte son compte (« Échéance confirmée · 10 ») au lieu de se dupliquer. Une pile qui recouvre l'écran ne dit plus rien de ce qui vient de se passer, et cache ce sur quoi on est en train d'agir. Le compte à rebours repart à chaque répétition.
 
 **EmptyState** — un anneau vide, une phrase qui dit quoi faire, un bouton. Jamais d'illustration, jamais d'excuse.
 

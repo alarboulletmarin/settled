@@ -110,6 +110,27 @@ export function addRecurrence(input: Omit<Recurrence, 'id'>): Recurrence {
   return recurrence
 }
 
+/**
+ * Pose l'abonnement et marque l'échéance du jour saisi comme déjà payée.
+ *
+ * C'est le geste de la saisie d'une dépense qu'on bascule en abonnement :
+ * celle-là a eu lieu, les suivantes sont à venir. Les trois étapes tiennent
+ * dans une seule mutation — donc un seul rendu, une seule écriture — et surtout
+ * l'échéance du jour ne peut pas rester prévue si la suite échouait.
+ */
+export function addRecurrencePaidOn(input: Omit<Recurrence, 'id'>, on: ISODate): Recurrence {
+  const recurrence: Recurrence = { ...input, id: makeId() }
+  mutate((data) =>
+    updates.confirmOccurrence(
+      updates.syncRecurrenceEntries(updates.addRecurrence(data, recurrence), recurrence.id, makeId),
+      recurrence.id,
+      on,
+      makeId,
+    ),
+  )
+  return recurrence
+}
+
 export function updateRecurrence(id: string, patch: Partial<Recurrence>): void {
   mutate((data) => updates.syncRecurrenceEntries(updates.updateRecurrence(data, id, patch), id, makeId))
 }

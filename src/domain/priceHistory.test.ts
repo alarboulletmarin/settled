@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { money } from './money'
 import { eur, makeEntry } from './fixtures'
-import { detectPriceChange, priceHistory } from './priceHistory'
+import { detectPriceChange, isCostly, priceHistory } from './priceHistory'
 
 const at = (date: string, amount: number, status: 'planned' | 'confirmed' = 'confirmed') =>
   makeEntry({ recurrenceId: 'netflix', date, amount: eur(amount), status })
@@ -67,5 +68,30 @@ describe('détection de changement de prix', () => {
 
   it('ne signale rien sans aucune échéance', () => {
     expect(detectPriceChange([], 'netflix')).toBeNull()
+  })
+})
+
+describe('un changement qui coûte', () => {
+  const change = (delta: number) => ({
+    previous: money(1000),
+    current: money(1000 + delta),
+    delta: money(delta),
+    since: '2026-02-05',
+  })
+
+  it('une charge qui monte pèse', () => {
+    expect(isCostly(change(100), 'out')).toBe(true)
+  })
+
+  it('une charge qui baisse ne pèse pas', () => {
+    expect(isCostly(change(-100), 'out')).toBe(false)
+  })
+
+  it('un revenu qui baisse pèse', () => {
+    expect(isCostly(change(-100), 'in')).toBe(true)
+  })
+
+  it('une augmentation de salaire n’est pas une alerte', () => {
+    expect(isCostly(change(100), 'in')).toBe(false)
   })
 })

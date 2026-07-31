@@ -113,6 +113,13 @@ export const fr = {
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
+    /* Le revenu ne se saisit pas ici : il se lit sur les abonnements de
+       ressources du membre. Le stocker à côté en ferait une seconde vérité. */
+    memberNoIncome: 'aucun revenu enregistré',
+    memberIncomeHint:
+      'Le revenu de chacun se lit sur ses abonnements de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
+    memberIncomeLink: 'Ajouter un revenu',
+    memberShareOf: '%s des charges communes',
 
     categories: 'Catégories',
     families: 'Familles',
@@ -126,6 +133,10 @@ export const fr = {
     categoryPlaceholder: 'Loisirs',
     categoryArchive: 'Archiver %s',
     categoryRestore: 'Réactiver %s',
+    familyCountOne: '%s catégorie',
+    familyCount: '%s catégories',
+    collapseAll: 'Tout replier',
+    expandAll: 'Tout déplier',
     archive: 'Archiver',
     restore: 'Réactiver',
     categoryDirection: 'Sens',
@@ -217,6 +228,8 @@ export const fr = {
     credits: 'Crédits',
     creditsRemaining: 'capital restant dû',
     noCredits: 'Aucun crédit en cours.',
+    split: 'Répartition',
+    splitHint: 'charges communes du mois',
     srBreakdown: 'Répartition des sorties : %s',
     srDaily: 'Jours les plus dépensiers : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
@@ -242,11 +255,22 @@ export const fr = {
     confirmedAll: 'Mois confirmé',
     confirmOne: 'Confirmer',
     confirmedOne: 'Échéance confirmée',
-    variableTitle: 'Montants à saisir',
-    variableHint: 'Le montant du mois précédent est proposé. Ajuste-le avant de confirmer.',
+    /* Sur la ligne elle-même, à côté du champ : une explication en tête de
+       section est oubliée le temps d'arriver au champ qu'elle décrit. */
+    toFill: 'à saisir',
+    confirmAllHint: 'Les montants à saisir restent à confirmer un par un.',
+    openEntry: 'Modifier %s',
     done: 'Tout est confirmé pour ce mois.',
     entries: 'Ce mois',
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',
+    groupBy: 'Regrouper par',
+    byDay: 'Jour',
+    byCategory: 'Catégorie',
+    byMember: 'Personne',
+    groupCountOne: '%s ligne',
+    groupCount: '%s lignes',
+    collapseAll: 'Tout replier',
+    expandAll: 'Tout déplier',
     balance: 'Solde',
     forecast: 'Prévisionnel',
     remaining: 'Reste à vivre',
@@ -278,6 +302,8 @@ export const fr = {
     label: 'Libellé',
     labelPlaceholder: 'Courses',
     categoryPlaceholder: 'Choisis une catégorie',
+    shared: 'Charge commune, à partager entre les membres',
+    sharedHint: 'Elle entre dans la répartition au prorata des revenus.',
     member: 'Membre',
     note: 'Note',
     direction: 'Sens',
@@ -286,6 +312,14 @@ export const fr = {
     labelRequired: 'Donne un libellé à cette entrée.',
     planned: 'Prévue',
     confirmed: 'Confirmée',
+
+    /* Ponctuel ou abonnement — la bascule du cahier §4.4. */
+    rhythm: 'Rythme',
+    once: 'Ponctuel',
+    recurring: 'Abonnement',
+    firstDate: 'Première échéance',
+    recurringHint:
+      'Celle-ci est enregistrée comme payée, les suivantes arrivent à confirmer chaque mois.',
   },
 
   recurrences: {
@@ -308,6 +342,19 @@ export const fr = {
     perYear: '%s par an',
     totalMonthly: 'Total abonnements',
     totalAnnual: 'Total annuel',
+    perMonth: '%s par mois',
+    /* Le sens en titre de section : dans une liste qui les mêle, le « + » des
+       entrées ne suffit pas à distinguer un salaire d'un abonnement. */
+    inflow: 'Ce qui rentre',
+    outflow: 'Ce qui sort',
+    groupBy: 'Regrouper par',
+    bySense: 'Sens',
+    byCategory: 'Catégorie',
+    byMember: 'Personne',
+    groupCountOne: '%s abonnement',
+    groupCount: '%s abonnements',
+    collapseAll: 'Tout replier',
+    expandAll: 'Tout déplier',
     unknownAmounts: '%s à montant variable, non chiffré%s',
     variable: 'Montant variable',
     variableHint: 'Le montant sera demandé à chaque échéance.',
@@ -337,6 +384,7 @@ export const fr = {
       note: 'Note',
       notePlaceholder: 'Résiliable en ligne',
       categoryPlaceholder: 'Choisis une catégorie',
+      shared: 'Charge commune, à partager entre les membres',
       labelRequired: 'Donne un libellé à cet abonnement.',
       amountRequired: 'Indique un montant, ou choisis « montant variable ».',
       categoryRequired: 'Choisis une catégorie.',
@@ -355,6 +403,44 @@ export const fr = {
       everyN: 'le %s, tous les %s mois',
       yearly: 'chaque année le %s',
     },
+  },
+
+  split: {
+    title: 'Répartition',
+    subtitle: 'Ce que chacun verse sur les charges communes, au prorata des revenus.',
+    total: 'Charges communes',
+    totalHint: 'échéances prévues comprises',
+    share: 'Part',
+    due: 'À verser',
+    income: 'Revenu',
+    checkTotal: 'Total des parts',
+    checkHint: 'La somme des parts vaut le total au centime près.',
+    detail: 'Ce qui est partagé',
+    detailCountOne: '%s ligne',
+    detailCount: '%s lignes',
+    advancedBy: 'avancé par %s',
+    method: 'Comment c’est calculé',
+    methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
+    /* Le revenu est dérivé des abonnements de ressources, jamais déclaré à
+       part : une seconde vérité finirait par diverger de la première. */
+    methodIncome:
+      'Le revenu vient des abonnements de salaire et d’allocation de chacun, ramenés au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
+    methodIncluded: 'Les charges et les crédits que personne ne s’est attribués.',
+    methodFlagged: 'Les dépenses cochées « à partager ».',
+    methodExcluded:
+      'L’épargne n’est pas partagée : elle sort du compte, mais elle reste à qui la met de côté.',
+    nothing: 'Aucune charge commune ce mois-ci.',
+    /* Ce qui manque est nommé plutôt que remplacé par un zéro : un prorata au
+       dénominateur incomplet ne vaut pas zéro, il ne veut rien dire. */
+    missingOne: 'Ajoute le revenu de %s pour répartir les charges.',
+    missingMany: 'Ajoute les revenus de %s pour répartir les charges.',
+    missingHint:
+      'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance confirmée.',
+    goToIncome: 'Ajouter un revenu',
+    soloTitle: 'La répartition demande au moins deux membres.',
+    soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
+    goToSettings: 'Aller aux réglages',
+    srShares: 'Parts de chacun : %s',
   },
 
   credits: {
@@ -409,6 +495,7 @@ export const fr = {
     membersRemove: 'Retirer %s',
     solo: 'Je suis seul·e',
     start: 'Commencer',
+    importHint: 'Tu as déjà un fichier Settled ? Restaure-le sans passer par ici.',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
   },
 

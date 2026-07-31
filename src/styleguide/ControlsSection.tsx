@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { fr } from '@/i18n/fr'
 import { Button, IconButton } from '@/ui/Button'
-import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
+import { Disclosure } from '@/ui/Disclosure'
+import { AmountInput, Checkbox, Field, Select, TextInput } from '@/ui/Field'
 import { Plus } from '@/ui/Icons'
 import { Segmented } from '@/ui/Segmented'
 import { Section, SubTitle } from './Section'
@@ -14,6 +15,8 @@ const DIRECTIONS = [
 
 function Controls() {
   const [direction, setDirection] = useState<'in' | 'out'>('out')
+  const [shared, setShared] = useState(true)
+  const [open, setOpen] = useState(true)
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -59,6 +62,25 @@ function Controls() {
           )}
         </Field>
       </div>
+
+      <div className="flex flex-col gap-2">
+        <Checkbox
+          checked={shared}
+          onChange={setShared}
+          label={fr.entry.shared}
+          hint={fr.entry.sharedHint}
+        />
+        <Checkbox checked={false} onChange={() => undefined} label={fr.recurrences.variable} />
+      </div>
+
+      <Disclosure
+        open={open}
+        onOpenChange={setOpen}
+        title={<span className="t-body font-medium">Logement</span>}
+        trailing={<span className="t-axis">5 catégories</span>}
+      >
+        <p className="t-label pt-2 pl-6">Loyer et charges, énergies, assurance habitation…</p>
+      </Disclosure>
     </div>
   )
 }

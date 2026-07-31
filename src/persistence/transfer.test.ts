@@ -48,6 +48,7 @@ function richData(): Data {
         period: { unit: 'month', every: 2, anchorDay: 31 },
         startedOn: '2025-11-30',
         endedOn: '2026-09-30',
+        shared: true,
       }),
     ],
     entries: [
@@ -60,6 +61,7 @@ function richData(): Data {
         date: '2026-07-05',
         amount: eur(95000),
         status: 'confirmed',
+        shared: false,
         note: 'juillet',
       }),
       makeEntry({
@@ -294,5 +296,56 @@ describe('migration vers les familles', () => {
     const { families } = parseImport(legacy()).data
     const kinds = new Set(families.map((f) => f.kind))
     expect(kinds).toEqual(new Set(['resource', 'charge', 'debt', 'saving']))
+  })
+})
+
+describe('migration vers la répartition entre membres', () => {
+  /** Un document tel qu'écrit avant les revenus et le partage. */
+  function v2() {
+    return JSON.stringify({
+      schemaVersion: 2,
+      household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
+      families: [{ id: 'fam-housing', label: 'Logement', kind: 'charge' }],
+      categories: [
+        { id: 'housing', label: 'Loyer', familyId: 'fam-housing', icon: '', color: 'c', direction: 'out', archived: false },
+      ],
+      recurrences: [],
+      entries: [
+        { id: 'e1', label: 'Loyer', categoryId: 'housing', direction: 'out', amount: 85000, date: '2026-06-05', status: 'confirmed' },
+      ],
+      debts: [],
+      months: [],
+      settings: { theme: 'dark', currency: 'EUR', monthStartsOn: 1 },
+    })
+  }
+
+  it('atteint la version courante sans rien perdre', () => {
+    const result = parseImport(v2())
+    expect(result.from).toBe(2)
+    expect(result.migrated).toBe(true)
+    expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    expect(result.data.entries).toHaveLength(1)
+    expect(result.data.household.members[0]?.name).toBe('Alix')
+  })
+
+  it('laisse `shared` absent, pour que la règle tranche', () => {
+    const { data } = parseImport(v2())
+    expect(data.entries[0]).not.toHaveProperty('shared')
+  })
+
+  it('écarte un `shared` illisible plutôt que de l’interpréter', () => {
+    const bogus = JSON.stringify({
+      schemaVersion: 3,
+      household: { name: 'Maison', members: [] },
+      categories: [],
+      entries: [
+        { id: 'e1', label: 'A', categoryId: 'c', direction: 'out', amount: 100, date: '2026-07-01', status: 'confirmed', shared: 'oui' },
+        { id: 'e2', label: 'B', categoryId: 'c', direction: 'out', amount: 100, date: '2026-07-02', status: 'confirmed', shared: false },
+      ],
+    })
+    const { entries } = parseImport(bogus).data
+    expect(entries[0]).not.toHaveProperty('shared')
+    // `false` est une exception explicite, elle survit.
+    expect(entries[1]?.shared).toBe(false)
   })
 })

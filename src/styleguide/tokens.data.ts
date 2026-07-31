@@ -68,6 +68,8 @@ export const CATEGORY_PALETTE: TokenEntry[] = [
   { name: '--cat-rest', value: 'au-delà de six : « Autres »' },
 ]
 
+/* Les six premières lignes sont un même chiffre à six tailles : la lettre —
+   700, élargie à 112 %, serrée à -0.03em — ne change jamais. */
 export const TYPE_SCALE = [
   { role: 'Chiffre héros', className: 't-hero', detail: 'sans · 56/72px · 700 · stretch 112%' },
   {
@@ -75,7 +77,14 @@ export const TYPE_SCALE = [
     className: 't-hero-fit',
     detail: 'mêmes bornes, ramené à la largeur de la tuile',
   },
-  { role: 'Chiffre de tuile', className: 't-tile-num', detail: 'sans · 32px · 650' },
+  { role: 'Chiffre de tuile', className: 't-tile-num', detail: 'sans · 32px' },
+  {
+    role: 'Chiffre de tuile ajusté',
+    className: 't-tile-fit',
+    detail: 'ramené à la tuile ; 26px au plus sur une rangée simple',
+  },
+  { role: 'Montant de ligne', className: 't-num-body', detail: 'sans · 15px' },
+  { role: 'Montant secondaire', className: 't-num-label', detail: 'sans · 13px' },
   { role: 'Titre de section', className: 't-section', detail: 'sans · 20px · 600' },
   { role: 'Corps', className: 't-body', detail: 'sans · 15px · 400' },
   { role: 'Libellé secondaire', className: 't-label', detail: 'sans · 13px · 400 · muted' },

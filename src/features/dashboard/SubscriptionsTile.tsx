@@ -17,7 +17,7 @@ export function SubscriptionsTile() {
     <Tile span="2x2" className="justify-between">
       <Eyebrow icon={SubscriptionsIcon}>{fr.dashboard.subscriptions}</Eyebrow>
       <div className="flex flex-col gap-1">
-        <Amount value={totals.monthly} size="tile" direction="out" />
+        <Amount value={totals.monthly} size="tile-fit" direction="out" />
         <span className="t-label tnum">
           {tpl(fr.dashboard.subscriptionsHint, formatMoney(totals.annual, currency, false))}
         </span>

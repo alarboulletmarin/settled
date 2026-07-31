@@ -4,6 +4,7 @@ import { BreakdownTile } from './BreakdownTile'
 import { CreditsTile } from './CreditsTile'
 import { DailyTile } from './DailyTile'
 import { SavingTile } from './SavingTile'
+import { SplitTile } from './SplitTile'
 import { SubscriptionsTile } from './SubscriptionsTile'
 import { UpcomingTile } from './UpcomingTile'
 
@@ -20,6 +21,7 @@ export function Dashboard() {
       <BreakdownTile />
       <RemainingTile />
       <SavingTile />
+      <SplitTile />
       <UpcomingTile />
       <SubscriptionsTile />
       <CreditsTile />

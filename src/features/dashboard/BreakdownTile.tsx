@@ -11,8 +11,7 @@ import { BreakdownIcon } from '@/ui/Icons'
 import { Ring, type RingSegment } from '@/ui/Ring'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
-
-const MAX_LEGEND = 4
+import { DONUT_SIZE, DONUT_SLICES, DONUT_THICKNESS } from './donut'
 
 /**
  * Où part l'argent, par famille — le donut du DS §6.
@@ -24,7 +23,7 @@ const MAX_LEGEND = 4
  * se lit dessous, à sa place, sans se mêler au reste.
  */
 export function BreakdownTile() {
-  const slices = useSpendingByFamily()
+  const slices = useSpendingByFamily(DONUT_SLICES)
   const families = useFamilyMap()
   const totals = useKindTotals()
   const currency = useCurrency()
@@ -59,8 +58,8 @@ export function BreakdownTile() {
       <Eyebrow icon={BreakdownIcon}>{fr.dashboard.spending}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         <Ring
-          size={104}
-          thickness={12}
+          size={DONUT_SIZE}
+          thickness={DONUT_THICKNESS}
           segments={segments}
           label={fr.dashboard.spending}
           srText={tpl(fr.dashboard.srBreakdown, spoken)}
@@ -68,8 +67,10 @@ export function BreakdownTile() {
         >
           <Amount value={total} size="label" direction="out" withCents={false} />
         </Ring>
+        {/* Toutes les parts de l'anneau, sans exception : une couleur dans
+            l'anneau que la légende ne nomme pas ne veut rien dire. */}
         <ul className="flex min-w-0 flex-1 flex-col gap-1">
-          {slices.slice(0, MAX_LEGEND).map((slice) => (
+          {slices.map((slice) => (
             <li key={slice.categoryId} className="flex items-center gap-2">
               <Dot color={colorOf(slice.categoryId)} />
               <span className="t-label min-w-0 flex-1 truncate">

@@ -4,7 +4,7 @@ import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { useCurrency } from './currency'
 
-export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'body' | 'label'
+export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'tile-fit' | 'body' | 'label'
 export type AmountTone = 'default' | 'muted' | 'danger'
 
 export type AmountProps = {
@@ -29,8 +29,9 @@ const SIZE_CLASS: Record<AmountSize, string> = {
   hero: 't-hero',
   'hero-fit': 't-hero-fit',
   tile: 't-tile-num',
-  body: 't-body font-medium',
-  label: 't-label',
+  'tile-fit': 't-tile-fit',
+  body: 't-num-body',
+  label: 't-num-label',
 }
 
 /** Les centimes d'un chiffre héros passent à 0.5em (DS §3). */
@@ -38,6 +39,7 @@ const CENTS_EM: Record<AmountSize, string> = {
   hero: '0.5em',
   'hero-fit': '0.5em',
   tile: '1em',
+  'tile-fit': '1em',
   body: '1em',
   label: '1em',
 }
@@ -52,6 +54,11 @@ const TONE_CLASS: Record<AmountTone, string> = {
  * Le composant unique pour tout montant. Il porte seul le tabular-nums, le
  * symbole, les centimes réduits et le signe : aucun autre composant ne met
  * un montant en forme.
+ *
+ * Les six tailles ne diffèrent que par leur taille : la lettre — Archivo 700
+ * élargie à 112 % — est la même partout, déclarée d'un seul bloc dans
+ * `base.css`. Un montant de liste et un solde héros doivent se reconnaître
+ * comme deux tailles du même chiffre, pas comme deux polices.
  */
 export function Amount({
   value,

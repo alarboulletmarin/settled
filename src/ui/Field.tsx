@@ -1,6 +1,7 @@
 import { type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, useId } from 'react'
 import { cn } from '@/lib/cn'
 import { fr } from '@/i18n/fr'
+import { Check } from './Icons'
 
 const CONTROL = cn(
   'w-full rounded-input bg-surface-2 px-3.5 text-[15px] text-text',
@@ -88,6 +89,71 @@ export function AmountInput({ invalid = false, className, ...rest }: TextInputPr
       aria-invalid={invalid || undefined}
       {...rest}
     />
+  )
+}
+
+export type CheckboxProps = {
+  checked: boolean
+  onChange: (next: boolean) => void
+  label: string
+  /** Une phrase sous le libellé, quand la case demande à être expliquée. */
+  hint?: string
+  className?: string
+}
+
+/**
+ * Case à cocher — un attribut vrai ou faux, pas un choix entre deux modes.
+ *
+ * `Segmented` sert à choisir parmi des positions qui s'excluent ; une case dit
+ * qu'une chose est vraie ou ne l'est pas, et un formulaire qui empilerait trois
+ * bascules pour poser trois booléens ne se lirait plus.
+ *
+ * La case native reste dans le DOM, seulement masquée : c'est elle qui porte
+ * l'état pour un lecteur d'écran et qui répond à la barre d'espace. Le carré
+ * dessiné n'est qu'un décor, d'où son `aria-hidden`.
+ */
+export function Checkbox({ checked, onChange, label, hint, className }: CheckboxProps) {
+  const id = useId()
+  const helpId = `${id}-help`
+
+  return (
+    <div className={cn('flex flex-col gap-1.5', className)}>
+      <label
+        htmlFor={id}
+        className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-text"
+      >
+        <span className="relative inline-flex shrink-0 items-center justify-center">
+          <input
+            id={id}
+            type="checkbox"
+            checked={checked}
+            aria-describedby={hint === undefined ? undefined : helpId}
+            onChange={(event) => {
+              onChange(event.target.checked)
+            }}
+            className="peer absolute size-6 cursor-pointer opacity-0"
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              'flex size-6 items-center justify-center rounded-[7px] border',
+              'transition-colors duration-[var(--dur)] ease-ds',
+              'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
+              'peer-focus-visible:outline-[var(--accent-2)]',
+              checked ? 'border-transparent bg-accent text-accent-fg' : 'border-border bg-surface-2',
+            )}
+          >
+            {checked && <Check size={16} />}
+          </span>
+        </span>
+        {label}
+      </label>
+      {hint !== undefined && (
+        <p id={helpId} className="t-label">
+          {hint}
+        </p>
+      )}
+    </div>
   )
 }
 

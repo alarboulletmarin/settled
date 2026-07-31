@@ -8,6 +8,7 @@ import { Field, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
+import { SharedField } from '@/features/split/SharedField'
 import { AmountFields, IdentityFields, PeriodFields } from './RecurrenceFormFields'
 import { useRecurrenceForm } from './useRecurrenceForm'
 
@@ -59,6 +60,15 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
           <IdentityFields draft={draft} patch={patch} errors={errors} members={members} />
           <AmountFields draft={draft} patch={patch} errors={errors} />
           <PeriodFields draft={draft} patch={patch} />
+
+          <SharedField
+            categoryId={draft.categoryId}
+            memberId={draft.memberId}
+            value={draft.shared}
+            onChange={(shared) => {
+              patch({ shared })
+            }}
+          />
 
           <Field label={fr.recurrences.form.note} optional>
             {(id) => (

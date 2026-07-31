@@ -27,10 +27,11 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Comparatifs mois/mois et année/année
 - Catégories rangées en familles, sous quatre natures
 - Membres du foyer comme étiquette
+- Répartition des charges communes entre membres, au prorata des revenus
 - Export / import du fichier de données
 - Thème clair et sombre
 
-**Hors v1** — épargne et objectifs, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, partage de dépenses entre membres.
+**Hors v1** — épargne et objectifs, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
 
 ---
 
@@ -53,6 +54,8 @@ type Data = {
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
 
+// Le revenu qui sert au prorata n'est pas ici : il se lit sur les récurrences
+// de nature `resource` que le membre porte.
 type Member = { id: string; name: string; color: string }
 
 // Ce que devient l'argent, par-delà son sens de trésorerie.
@@ -93,6 +96,7 @@ type Recurrence = {
   period: { unit: 'week' | 'month' | 'year'; every: number; anchorDay: number }
   startedOn: string             // ISO date
   endedOn?: string              // récurrence arrêtée
+  shared?: boolean              // voir Entry.shared ; les échéances en héritent
   note?: string
 }
 
@@ -106,6 +110,7 @@ type Entry = {
   amount: Money
   date: string                  // ISO date
   status: 'planned' | 'confirmed'
+  shared?: boolean              // exception à la règle de partage, jamais sa copie
   note?: string
 }
 
@@ -125,6 +130,8 @@ type MonthState = {
 - Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas.
 - Le sens d'une catégorie découle de la nature de sa famille, jamais l'inverse : `resource` entre, les trois autres sortent. Un versement sort du compte exactement comme une charge — c'est la nature, pas le sens, qui les distingue.
 - Un `Debt` ne produit aucun chiffre de trésorerie : ce sont les `Entry` de la récurrence liée qui font sortir l'argent. Il n'ajoute que le capital, que la somme des mensualités ne dit pas dès qu'il y a des intérêts.
+- Le revenu d'un membre est **dérivé de ses récurrences** de nature `resource`, ramenées au mois — jamais stocké à côté. Le déclarer en plus en ferait une seconde vérité, et la première augmentation les ferait diverger. C'est aussi ce qui donne au coefficient sa stabilité : une récurrence est une règle, une prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce qu'on gagne.
+- `shared` est une **exception** à la règle de partage, jamais sa copie. Absent, la règle tranche — et c'est ce qui permet à tout ce qui a déjà été saisi de rester exploitable sans être requalifié.
 
 ---
 
@@ -152,10 +159,12 @@ Tout est modifiable : renommer une famille, en créer une avec sa nature, ajoute
 - Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable ».
 - Périodicités : hebdomadaire, mensuelle, trimestrielle, annuelle, ou tous les *n* mois.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
+- Liste regroupée sur un axe au choix : **sens**, **catégorie** ou **personne**, chaque groupe portant son nombre d'abonnements et son solde mensuel. Par sens, les deux groupes s'ouvrent — le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d'un abonnement dans une liste qui les mêle, d'autant que la pastille prend la teinte de la catégorie et pas du sens. Sur les deux autres axes ils se replient. Le total en tête de page, lui, ne compte que les sorties.
+- Un groupe dont tout est à montant variable affiche « montant variable » plutôt qu'un zéro, et un groupe qui n'en contient qu'une partie ne compte que ce qu'il sait chiffrer.
 - Les périodicités non mensuelles sont amorties au mois dans toutes les statistiques.
 - Une récurrence peut être arrêtée sans être supprimée.
 - Créer, modifier ou reprendre une récurrence réaligne ses échéances à venir dans la foulée, dans tous les mois ouverts à partir du mois courant. L'utilisateur n'a jamais à demander cette régénération : poser la règle et en tirer les échéances sont un seul geste.
-- Détection automatique de changement de prix : si le montant confirmé diffère du précédent, l'app le signale sur la fiche.
+- Détection automatique de changement de prix : si le montant confirmé diffère du précédent, l'app le signale sur la fiche. L'alerte — rouge et panneau — n'apparaît que quand le changement coûte : une charge qui monte, un revenu qui baisse. Une augmentation de salaire se lit sans alarme.
 
 ### 4.3 Ouverture du mois
 
@@ -163,8 +172,9 @@ L'ouverture est un mécanisme interne, jamais une tâche : aucun écran ne deman
 
 1. Un mois s'ouvre dès qu'on l'affiche, s'il n'est pas passé — le mois courant à la première visite, un mois à venir dès qu'on y navigue.
 2. L'app génère une `Entry` `planned` pour chaque échéance de récurrence tombant dans le mois.
-3. Les récurrences à montant variable sont listées à part, avec le montant du mois précédent proposé par défaut.
-4. L'utilisateur confirme en bloc ou une par une.
+3. Les échéances du mois se lisent en **une seule liste**, par date. Celles à montant variable y portent leur champ de saisie, pré-rempli du montant de la dernière échéance confirmée, et leur ligne le dit — une explication en tête de section est oubliée le temps d'arriver au champ qu'elle décrit.
+4. L'utilisateur confirme en bloc ou une par une. « Confirmer le mois » ne touche pas aux montants à saisir, et l'écran le dit avant qu'on l'actionne.
+5. Une échéance prévue **s'ouvre** : elle mène à l'écran de saisie, qui sait corriger un montant, changer une date, réattribuer un membre ou la supprimer. Confirmer n'a jamais été le seul geste possible, seulement le seul qu'on pouvait atteindre. Modifier ne confirme pas : la confirmation a son geste.
 
 Un mois passé ne s'ouvre jamais tout seul : y faire apparaître des échéances que personne n'a confirmées inventerait un historique.
 
@@ -176,9 +186,19 @@ Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre optionnel. Créée directement en `confirmed`.
 
+Une bascule **Ponctuel / Abonnement** y siège, à la création seulement. En abonnement, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en abonnement réécrirait un historique.
+
 Dépense et revenu sont deux points d'entrée distincts, côte à côte, sur le mois comme sur le calendrier : le sens est choisi avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. Titre et confirmation le suivent — on n'annonce pas « dépense ajoutée » après un salaire.
 
 La date proposée est aujourd'hui si l'on est dans le mois affiché, sinon le premier de ce mois — et le jour sélectionné quand la saisie part du calendrier.
+
+### 4.4 bis Liste du mois
+
+Ce qui a eu lieu, regroupé sur un axe au choix : **jour**, **catégorie** ou **personne**. Chaque groupe porte son nombre de lignes et son **solde** — pas une somme : un jour où l'on touche un salaire et où l'on paie le loyer ne se résume pas en additionnant les deux.
+
+Les groupes se replient. Par jour, ils s'ouvrent — c'est l'ordre de la lecture. Par catégorie ou par personne, ils se replient : c'est un résumé dans lequel on entre, et l'en-tête porte déjà la réponse. Un « tout replier » vaut pour la liste entière.
+
+Par jour, du plus récent au plus ancien. Sur les deux autres axes, le plus gros mouvement d'abord.
 
 ### 4.5 Calendrier
 
@@ -214,6 +234,20 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 - Sans taux, le capital décroît exactement du montant versé.
 - Sans abonnement lié, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
 - Retirer un crédit du suivi n'efface ni les mensualités versées ni l'abonnement qui les pose. Seul le suivi du capital s'arrête.
+
+### 4.7 ter Répartition entre membres
+
+À deux revenus inégaux, des parts égales ne le sont pas : sur 2 500 € et 2 000 €, un loyer partagé en deux pèse un quart plus lourd pour le second. La répartition dit ce que chacun verse sur les charges communes, **au prorata des revenus déclarés**.
+
+- **Coefficient** : `revenu du membre ÷ revenus du foyer`. Sur 2 500 € et 2 000 €, 55,6 % et 44,4 %.
+- **Le revenu ne se saisit nulle part** : il est la somme des récurrences de nature `resource` du membre — salaire, allocations, pension — ramenées au mois. Une récurrence à montant variable est estimée à sa dernière échéance confirmée, comme le total des abonnements. Une augmentation se saisit là où elle a lieu, dans l'abonnement, et la répartition suit.
+- **Charges communes** : les sorties de nature `charge` ou `debt` que personne ne s'est attribuées, plus celles cochées « à partager ». C'est la frontière de la capacité d'épargne, et pour la même raison : un versement sort du compte mais reste à qui le fait, il n'a rien à faire dans un partage.
+- Les échéances **prévues** comptent : la question est « combien verser ce mois-ci », pas « combien a déjà été payé ». Répondre au réalisé ferait grimper la part de chacun au fil du mois.
+- La somme des parts vaut **exactement** le total, au centime. Arrondir chaque part dans son coin ne le garantirait pas ; les centimes restants vont aux plus forts restes, et l'écran affiche le total des parts pour qu'on le vérifie.
+- Le calcul ne se fait pas tant qu'un membre n'a aucune ressource récurrente à son nom, ou qu'il n'y en a qu'un. L'écran **nomme ce qui manque** au lieu d'afficher un zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+- Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, et sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre.
+- Le total **s'ouvre** sur la liste de ce qu'il compte, de la plus lourde à la plus légère. Un chiffre de répartition qu'on ne peut pas vérifier ne se vérifie pas, et une dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
+- La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
 
 ### 4.8 Données
 

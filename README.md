@@ -77,6 +77,39 @@ serait faux dès qu'il y a des intérêts : sur 100 000 € à 4 % sur 20 ans, l
 première année amortit ~3 000 € pour ~7 300 € versés, et le raccourci
 annoncerait le prêt soldé des années trop tôt.
 
+**Prorata des revenus.** Le revenu d'un membre est *dérivé* de ses récurrences
+de nature `resource`, ramenées au mois — il n'est stocké nulle part. Le déclarer
+à côté en ferait une seconde vérité, et la première augmentation les ferait
+diverger. La distinction règle / fait tient quand même, et sans doublon : c'est
+la **récurrence** qui est la règle, l'`Entry` qui est le fait. Une prime est une
+entrée ponctuelle, donc elle ne déplace pas la part du loyer ; une augmentation
+se saisit dans l'abonnement, donc elle la déplace. Le calcul refuse de répondre
+— `null`, pas zéro — tant qu'un membre n'a aucune ressource à son nom, ou qu'un
+montant variable n'a pas d'échéance confirmée d'où se lire : un prorata au
+dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+
+**Plus forts restes.** Répartir 2 000 € entre trois tiers en arrondissant chaque
+part donnerait trois fois 666,67 € et un centime de trop. `split.ts` pose les
+parts entières puis distribue le reste aux plus forts restes, à égalité au poids
+le plus à gauche : la somme vaut exactement le total, et deux affichages du même
+mois donnent le même centime au même membre. Le coefficient est en points de
+base, comme les taux — aucun flottant ne touche un calcul financier.
+
+**Partage.** Est commune une sortie de nature `charge` ou `debt` que personne ne
+s'est attribuée. La case « à partager » est une *exception* stockée seulement
+quand elle diverge de cette règle, jamais une copie : sans quoi tout ce qui a
+déjà été saisi serait à requalifier, et deux sources finiraient par diverger.
+
+**Listes longues.** Une liste qui dépasse l'écran se regroupe et se replie,
+sur `<details>` natif (`ui/Disclosure.tsx`) : il porte déjà l'état pour un
+lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir ce
+qui est replié. L'en-tête garde une lecture visible même replié — un total, un
+compte : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait
+gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
+personne, les abonnements de 1 518 px à 708 px, et les réglages de 4 779 px à
+1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
+seule fois pour les trois écrans.
+
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.
 
@@ -162,9 +195,10 @@ sur toutes les routes, dans les deux thèmes : aucun point en suspens.
 Aux cinq destinations de la navigation s'ajoutent les écrans qu'on n'atteint que
 par une action — `/depense`, `/depense/:id`, `/abonnements/nouveau`,
 `/abonnements/:id`, `/abonnements/:id/modifier`, `/credits`, `/credits/nouveau`,
-`/credits/:id` — et `/styleguide`.
+`/credits/:id`, `/repartition` — et `/styleguide`.
 
-`/credits` ne figure pas dans la navigation : six onglets ne tiennent pas à
-320px sans tronquer « Abonnements » en « Abonneme… ». On y accède par la tuile
-Crédits de l'écran du mois, comme on accède aux abonnements par la sienne. La
-tuile s'efface tant qu'aucun crédit n'est suivi.
+`/credits` et `/repartition` ne figurent pas dans la navigation : six onglets ne
+tiennent pas à 320px sans tronquer « Abonnements » en « Abonneme… ». On y accède
+par la tuile correspondante de l'écran du mois, comme on accède aux abonnements
+par la sienne. Chacune s'efface quand elle n'a rien à dire — aucun crédit suivi,
+ou pas de quoi calculer un prorata.

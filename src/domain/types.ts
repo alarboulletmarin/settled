@@ -43,6 +43,12 @@ export type Family = {
   kind: CategoryKind
 }
 
+/**
+ * Une étiquette, et rien de plus. Le revenu qui sert à répartir les charges
+ * n'est pas ici : il se lit sur les récurrences de nature `resource` que le
+ * membre porte (voir `domain/split.ts`). Le stocker à côté en ferait une
+ * seconde vérité, et la première augmentation les ferait diverger.
+ */
 export type Member = {
   id: string
   name: string
@@ -87,6 +93,8 @@ export type Recurrence = {
   startedOn: ISODate
   /** Dernier jour où la récurrence peut encore tomber, borne incluse. */
   endedOn?: string
+  /** Voir `Entry.shared` : les échéances en héritent. */
+  shared?: boolean
   note?: string
 }
 
@@ -103,6 +111,13 @@ export type Entry = {
   amount: Money
   date: ISODate
   status: EntryStatus
+  /**
+   * Force le partage entre les membres, ou l'exclut. Absent, la règle tranche :
+   * une sortie de nature charge ou crédit que personne ne s'est attribuée est
+   * commune. Le champ est une exception, jamais une copie de la règle — c'est
+   * ce qui évite d'avoir à requalifier tout ce qui a déjà été saisi.
+   */
+  shared?: boolean
   note?: string
 }
 

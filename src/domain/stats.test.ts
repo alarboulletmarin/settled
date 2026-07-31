@@ -210,7 +210,7 @@ describe('total des abonnements', () => {
     expect(totals.annual).toBe(23976)
   })
 
-  it('ignore les entrées d’argent : ce ne sont pas des abonnements', () => {
+  it('ignore les entrées d’argent par défaut : ce ne sont pas des abonnements', () => {
     const recurrences = [
       makeRecurrence({
         id: 'salaire',
@@ -220,6 +220,24 @@ describe('total des abonnements', () => {
       }),
     ]
     expect(subscriptionTotals(recurrences, never, '2026-07-01').monthly).toBe(0)
+  })
+
+  it('sait aussi totaliser les entrées, quand on les lui demande', () => {
+    const recurrences = [
+      makeRecurrence({
+        id: 'salaire',
+        direction: 'in',
+        amount: eur(240000),
+        period: { unit: 'month', every: 1, anchorDay: 28 },
+      }),
+      makeRecurrence({
+        id: 'netflix',
+        amount: eur(1399),
+        period: { unit: 'month', every: 1, anchorDay: 15 },
+      }),
+    ]
+    expect(subscriptionTotals(recurrences, never, '2026-07-01', 'in').monthly).toBe(240_000)
+    expect(subscriptionTotals(recurrences, never, '2026-07-01', 'out').monthly).toBe(1_399)
   })
 
   it('ignore une récurrence arrêtée', () => {

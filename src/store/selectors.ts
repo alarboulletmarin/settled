@@ -10,7 +10,7 @@ import { useMemo } from 'react'
 import { type ISODate, type YearMonth, addMonthsToYm, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
 import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
-import type { Money } from '@/domain/money'
+import { type Money, ZERO, sum } from '@/domain/money'
 import { type PriceChange, detectPriceChange } from '@/domain/priceHistory'
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
@@ -33,6 +33,13 @@ import {
   upcomingEntries,
 } from '@/domain/stats'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
+import {
+  type MemberIncome,
+  type MemberShare,
+  memberIncomes,
+  memberShares,
+  sharedEntries,
+} from '@/domain/split'
 import {
   type Category,
   type CategoryKind,
@@ -217,7 +224,7 @@ export function useKindTotals(forecast = false): KindTotals {
  * famille. L'épargne en est exclue : elle sort du compte mais reste au foyer,
  * et la mêler aux dépenses ferait passer un bon mois pour un mois dispendieux.
  */
-export function useSpendingByFamily(): CategorySlice[] {
+export function useSpendingByFamily(limit?: number): CategorySlice[] {
   const entries = useEntries()
   const month = useCurrentYm()
   const member = useMemberFilter()
@@ -231,8 +238,87 @@ export function useSpendingByFamily(): CategorySlice[] {
       (categoryId) => familyOf.get(categoryId) ?? '',
       (categoryId) => isSpending(kindOf(categoryId)),
       member,
+      limit,
     )
-  }, [entries, month, categories, kindOf, member])
+  }, [entries, month, categories, kindOf, member, limit])
+}
+
+/* --- Répartition entre membres --------------------------------------------*/
+
+export type MonthSplit = {
+  /** Ce qui est à répartir : charges et crédits communs du mois. */
+  total: Money
+  /** Le détail de ce total, pour que le chiffre s'ouvre au lieu d'être cru. */
+  entries: Entry[]
+  /** `null` tant que le prorata ne peut pas se calculer — voir `memberShares`. */
+  shares: MemberShare[] | null
+  /** Les membres dont le revenu n'est pas connu, pour pouvoir les nommer. */
+  unknown: Member[]
+}
+
+/**
+ * Le revenu mensuel de chaque membre, déduit de ses abonnements de ressources.
+ * Un montant variable est estimé à sa dernière échéance confirmée — le même
+ * `resolveVariable` que le total des abonnements.
+ */
+export function useMemberIncomes(): MemberIncome[] {
+  const members = useMembers()
+  const recurrences = useRecurrences()
+  const entries = useEntries()
+  const kindOf = useKindOf()
+  return useMemo(() => {
+    const now = today()
+    return memberIncomes(
+      members,
+      recurrences,
+      kindOf,
+      (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
+      now,
+    )
+  }, [members, recurrences, entries, kindOf])
+}
+
+/**
+ * Le coefficient de chaque membre, en points de base, indépendamment de tout
+ * mois : c'est la lecture des réglages, où l'on veut voir la part de chacun
+ * sans avoir à naviguer jusqu'à un mois. `null` tant qu'il ne se calcule pas.
+ */
+export function useMemberSharesOfIncome(): Map<string, number> | null {
+  const incomes = useMemberIncomes()
+  return useMemo(() => {
+    const shares = memberShares(incomes, ZERO)
+    if (shares === null) return null
+    return new Map(shares.map((s) => [s.memberId, s.shareBp]))
+  }, [incomes])
+}
+
+/**
+ * La répartition du mois affiché.
+ *
+ * Elle ignore volontairement le filtre par membre de l'en-tête : une charge
+ * commune n'appartient à personne, donc filtrer sur quelqu'un la ferait
+ * disparaître. C'est une lecture du foyer, et l'écran qui la porte se retire
+ * quand un filtre est actif plutôt que d'afficher un zéro trompeur.
+ */
+export function useMonthSplit(ym?: YearMonth): MonthSplit {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const members = useMembers()
+  const incomes = useMemberIncomes()
+  const kindOf = useKindOf()
+  const month = ym ?? current
+
+  return useMemo(() => {
+    const shared = sharedEntries(entries, month, kindOf)
+    const total = sum(shared.map((e) => e.amount))
+    const missing = new Set(incomes.filter((i) => i.income === null).map((i) => i.memberId))
+    return {
+      total,
+      entries: shared,
+      shares: memberShares(incomes, total),
+      unknown: members.filter((m) => missing.has(m.id)),
+    }
+  }, [entries, month, kindOf, members, incomes])
 }
 
 /* --- Crédits --------------------------------------------------------------*/
@@ -277,7 +363,7 @@ export function useMonthProgress(): number {
 
 /* --- Abonnements ----------------------------------------------------------*/
 
-export function useSubscriptionTotals(): SubscriptionTotals {
+export function useSubscriptionTotals(direction: 'in' | 'out' = 'out'): SubscriptionTotals {
   const recurrences = useRecurrences()
   const entries = useEntries()
   return useMemo(() => {
@@ -286,8 +372,9 @@ export function useSubscriptionTotals(): SubscriptionTotals {
       recurrences,
       (recurrence) => lastConfirmedAmount(entries, recurrence.id, now),
       now,
+      direction,
     )
-  }, [recurrences, entries])
+  }, [recurrences, entries, direction])
 }
 
 export type MonthPending = {

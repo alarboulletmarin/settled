@@ -28,7 +28,7 @@ export function SavingTile() {
     <Tile span="4x1" className="justify-between">
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.capacity}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <Amount value={capacity} size="tile" tone={capacity < 0 ? 'danger' : 'default'} />
+        <Amount value={capacity} size="tile-fit" tone={capacity < 0 ? 'danger' : 'default'} />
         <span className="t-label max-lg:sr-only">
           {rate === null
             ? fr.dashboard.savingRateNone

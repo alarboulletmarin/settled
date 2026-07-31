@@ -52,7 +52,7 @@ export function ForecastTile() {
     <Tile span="2x1" className="justify-between">
       <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <Amount value={totals.forecastBalance} size="tile" />
+        <Amount value={totals.forecastBalance} size="tile-fit" />
         {/* Tant que la rangée fait une demi-hauteur, la lecture secondaire
             reste lue par un lecteur d'écran mais ne s'affiche pas. */}
         <span className="t-label max-lg:sr-only">{fr.dashboard.forecastHint}</span>
@@ -71,7 +71,7 @@ export function RemainingTile() {
     <Tile span="2x1" className="justify-between">
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <Amount value={remaining} size="tile" tone={remaining < 0 ? 'danger' : 'default'} />
+        <Amount value={remaining} size="tile-fit" tone={remaining < 0 ? 'danger' : 'default'} />
         <span className="t-label max-lg:sr-only">
           {hasIncome ? fr.dashboard.remainingHint : fr.dashboard.remainingNoIncome}
         </span>

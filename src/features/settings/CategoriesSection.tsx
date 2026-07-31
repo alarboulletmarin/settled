@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Category, CategoryKind } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { addCategory, addFamily, archiveCategory, renameFamily, updateCategory } from '@/store/actions'
 import { useAllCategoriesByFamily, useFamilies } from '@/store/selectors'
 import { Button } from '@/ui/Button'
+import { Disclosure } from '@/ui/Disclosure'
+import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, Select, TextInput } from '@/ui/Field'
@@ -51,40 +53,68 @@ function Row({ category }: { category: Category }) {
 /**
  * Une famille et ses catégories. Le sens n'apparaît plus sur chaque ligne : il
  * découle de la nature de la famille, qui est écrite une fois au-dessus.
+ *
+ * Repliée par défaut : le catalogue compte onze familles et trente-huit
+ * catégories, soit un écran de réglages qu'on parcourt au doigt pendant dix
+ * secondes avant d'atteindre le thème. Replié, il tient en onze lignes.
+ *
+ * Le nom de la famille se modifie à l'intérieur, pas dans l'en-tête : un champ
+ * de saisie dans un `<summary>` se replie à chaque espace qu'on y tape.
  */
 function FamilyBlock({
   id,
   label,
   kind,
   categories,
+  open,
+  onOpenChange,
 }: {
   id: string
   label: string
   kind: CategoryKind
   categories: Category[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }) {
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <input
-          aria-label={fr.settings.familyName}
-          value={label}
-          maxLength={40}
-          onChange={(event) => {
-            renameFamily(id, event.target.value)
-          }}
-          className="t-body min-w-0 flex-1 bg-transparent font-medium outline-none"
-        />
-        <span className="t-axis shrink-0">{fr.kinds[kind]}</span>
+    <Disclosure
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="t-body truncate font-medium">{label}</span>
+          <span className="t-axis shrink-0">
+            {tpl(
+              categories.length > 1 ? fr.settings.familyCount : fr.settings.familyCountOne,
+              categories.length,
+            )}
+          </span>
+        </span>
+      }
+      trailing={<span className="t-axis">{fr.kinds[kind]}</span>}
+    >
+      <div className="flex flex-col gap-2 pt-2 pl-6">
+        <Field label={fr.settings.familyName}>
+          {(fieldId) => (
+            <TextInput
+              id={fieldId}
+              value={label}
+              maxLength={40}
+              onChange={(event) => {
+                renameFamily(id, event.target.value)
+              }}
+            />
+          )}
+        </Field>
+        {categories.length > 0 && (
+          <ul className="flex flex-col gap-1">
+            {categories.map((category) => (
+              <Row key={category.id} category={category} />
+            ))}
+          </ul>
+        )}
       </div>
-      {categories.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {categories.map((category) => (
-            <Row key={category.id} category={category} />
-          ))}
-        </ul>
-      )}
-    </section>
+    </Disclosure>
   )
 }
 
@@ -197,13 +227,20 @@ function AddFamily() {
 export function CategoriesSection() {
   const groups = useAllCategoriesByFamily()
   const families = useFamilies()
+  const keys = useMemo(() => groups.map((g) => g.family.id), [groups])
+  const disclosure = useDisclosureGroup(keys, false)
 
   return (
     <Tile className="gap-4">
-      <Eyebrow icon={CategoriesIcon}>{fr.settings.categories}</Eyebrow>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow icon={CategoriesIcon}>{fr.settings.categories}</Eyebrow>
+        <Button size="sm" variant="ghost" onClick={disclosure.toggleAll}>
+          {disclosure.anyOpen ? fr.settings.collapseAll : fr.settings.expandAll}
+        </Button>
+      </div>
       <p className="t-label">{fr.settings.categoriesHint}</p>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-1">
         {groups.map((group) => (
           <FamilyBlock
             key={group.family.id}
@@ -211,6 +248,10 @@ export function CategoriesSection() {
             label={group.family.label}
             kind={group.family.kind}
             categories={group.categories}
+            open={disclosure.isOpen(group.family.id)}
+            onOpenChange={(open) => {
+              disclosure.setOpen(group.family.id, open)
+            }}
           />
         ))}
       </div>
