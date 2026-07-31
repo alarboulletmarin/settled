@@ -50,6 +50,10 @@ const isoDate = (v: unknown, fallback: string): string =>
 
 const array = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 
+/** Un booléen facultatif dont l'absence a un sens : elle rend la main à la règle. */
+const optionalBool = (v: unknown): boolean | undefined =>
+  typeof v === 'boolean' ? v : undefined
+
 function moneyOrNull(v: unknown): Money | null {
   return isMoney(v) ? v : null
 }
@@ -58,10 +62,15 @@ function moneyOrNull(v: unknown): Money | null {
 
 function member(raw: unknown, index: number): Member | null {
   if (!isRecord(raw)) return null
+  // Un revenu illisible ou négatif est écarté plutôt que ramené à zéro : zéro
+  // est une déclaration, l'absence en est une autre, et elles ne donnent pas la
+  // même répartition.
+  const income = isMoney(raw['income']) && raw['income'] >= 0 ? raw['income'] : undefined
   return {
     id: str(raw['id'], `member-${String(index)}`),
     name: str(raw['name'], '—'),
     color: str(raw['color'], 'var(--cat-1)'),
+    ...(income === undefined ? {} : { income }),
   }
 }
 
@@ -133,6 +142,7 @@ function recurrence(raw: unknown, index: number): Recurrence | null {
     ? raw['endedOn']
     : undefined
   const memberId = optionalStr(raw['memberId'])
+  const shared = optionalBool(raw['shared'])
   const note = optionalStr(raw['note'])
   return {
     id: str(raw['id'], `recurrence-${String(index)}`),
@@ -144,6 +154,7 @@ function recurrence(raw: unknown, index: number): Recurrence | null {
     period: period(raw['period']),
     startedOn,
     ...(endedOn === undefined ? {} : { endedOn }),
+    ...(shared === undefined ? {} : { shared }),
     ...(note === undefined ? {} : { note }),
   }
 }
@@ -156,6 +167,7 @@ function entry(raw: unknown, index: number): Entry | null {
 
   const recurrenceId = optionalStr(raw['recurrenceId'])
   const memberId = optionalStr(raw['memberId'])
+  const shared = optionalBool(raw['shared'])
   const note = optionalStr(raw['note'])
   return {
     id: str(raw['id'], `entry-${String(index)}`),
@@ -167,6 +179,7 @@ function entry(raw: unknown, index: number): Entry | null {
     amount: raw['amount'],
     date: raw['date'],
     status: raw['status'] === 'confirmed' ? 'confirmed' : 'planned',
+    ...(shared === undefined ? {} : { shared }),
     ...(note === undefined ? {} : { note }),
   }
 }

@@ -2,24 +2,21 @@
  * aucune règle : il lit des champs et appelle `submit`. */
 
 import { useMemo, useState } from 'react'
-import { type ISODate, today } from '@/domain/date'
+import { today } from '@/domain/date'
 import { type Money, parseAmount, toAmountInput } from '@/domain/money'
 import type { Direction, Recurrence } from '@/domain/types'
 import { fr } from '@/i18n/fr'
-import { type PeriodKind, buildPeriod, defaultsFrom, kindOf } from './period'
+import { type PeriodDraft, defaultsFrom, kindOf, periodOf } from './period'
 
-export type RecurrenceDraft = {
+export type RecurrenceDraft = PeriodDraft & {
   label: string
   direction: Direction
   categoryId: string
   memberId: string
   amountText: string
   variable: boolean
-  kind: PeriodKind
-  everyMonths: number
-  monthDay: number
-  weekday: number
-  startedOn: ISODate
+  /** `undefined` = la règle tranche ; voir `isSharedEntry`. */
+  shared: boolean | undefined
   note: string
 }
 
@@ -35,6 +32,7 @@ function draftFrom(recurrence: Recurrence | null, defaultCategoryId: string): Re
     memberId: recurrence?.memberId ?? '',
     amountText: recurrence?.amount != null ? toAmountInput(recurrence.amount) : '',
     variable: recurrence ? recurrence.amount === null : false,
+    shared: recurrence?.shared,
     kind: recurrence ? kindOf(recurrence.period) : 'monthly',
     everyMonths: recurrence?.period.unit === 'month' ? recurrence.period.every : 2,
     monthDay:
@@ -91,15 +89,10 @@ export function useRecurrenceForm(recurrence: Recurrence | null, defaultCategory
       ...(draft.memberId === '' ? {} : { memberId: draft.memberId }),
       direction: draft.direction,
       amount,
-      period: buildPeriod(
-        draft.kind,
-        draft.startedOn,
-        draft.monthDay,
-        draft.weekday,
-        draft.everyMonths,
-      ),
+      period: periodOf(draft),
       startedOn: draft.startedOn,
       ...(recurrence?.endedOn === undefined ? {} : { endedOn: recurrence.endedOn }),
+      ...(draft.shared === undefined ? {} : { shared: draft.shared }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
     }
   }

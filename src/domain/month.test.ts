@@ -131,6 +131,21 @@ describe('ouverture du mois', () => {
     const plan = planMonth({ recurrences: [loyer], entries: [] }, '2026-07', sequentialIds())
     expect(plan.created[0]).not.toHaveProperty('memberId')
   })
+
+  it('reporte la règle de partage de la récurrence sur l’échéance', () => {
+    const r = makeRecurrence({
+      id: 'r',
+      shared: false,
+      period: { unit: 'month', every: 1, anchorDay: 5 },
+    })
+    const plan = planMonth({ recurrences: [r], entries: [] }, '2026-07', sequentialIds())
+    expect(plan.created[0]?.shared).toBe(false)
+  })
+
+  it('laisse la règle trancher quand la récurrence ne dit rien', () => {
+    const plan = planMonth({ recurrences: [loyer], entries: [] }, '2026-07', sequentialIds())
+    expect(plan.created[0]).not.toHaveProperty('shared')
+  })
 })
 
 describe('dernier montant confirmé', () => {

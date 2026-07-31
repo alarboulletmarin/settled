@@ -12,7 +12,7 @@ import type { Data } from '@/domain/types'
 import { defaultCategories, defaultFamilies, fallbackFamilyId } from './defaults'
 import { normalizeData } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 2
+export const CURRENT_SCHEMA_VERSION = 3
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
@@ -90,9 +90,25 @@ function toVersion2(doc: RawDocument): RawDocument {
   }
 }
 
+/**
+ * Répartition des charges entre membres : `Member.income`, et `shared` sur les
+ * entrées comme sur les récurrences.
+ *
+ * Les trois champs sont facultatifs, et leur absence a un sens défini — un
+ * membre sans revenu déclaré ne participe à aucun prorata, une entrée sans
+ * `shared` s'en remet à la règle. Un document v2 est donc déjà un document v3
+ * valide : la migration n'a que la version à inscrire. Elle existe quand même,
+ * parce que le pipeline veut une étape par incrément et qu'une marche
+ * manquante se paie la fois d'après.
+ */
+function toVersion3(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 3 }
+}
+
 export const MIGRATIONS: Migration[] = [
   { to: 1, migrate: toVersion1 },
   { to: 2, migrate: toVersion2 },
+  { to: 3, migrate: toVersion3 },
 ]
 
 export class ImportError extends Error {

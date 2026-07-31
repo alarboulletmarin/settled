@@ -10,7 +10,7 @@ import { useMemo } from 'react'
 import { type ISODate, type YearMonth, addMonthsToYm, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
 import { coveredMonths, lastConfirmedAmount } from '@/domain/month'
-import type { Money } from '@/domain/money'
+import { type Money, ZERO } from '@/domain/money'
 import { type PriceChange, detectPriceChange } from '@/domain/priceHistory'
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
@@ -33,6 +33,7 @@ import {
   upcomingEntries,
 } from '@/domain/stats'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
+import { type MemberShare, memberShares, sharedTotal } from '@/domain/split'
 import {
   type Category,
   type CategoryKind,
@@ -233,6 +234,57 @@ export function useSpendingByFamily(): CategorySlice[] {
       member,
     )
   }, [entries, month, categories, kindOf, member])
+}
+
+/* --- Répartition entre membres --------------------------------------------*/
+
+export type MonthSplit = {
+  /** Ce qui est à répartir : charges et crédits communs du mois. */
+  total: Money
+  /** `null` tant que le prorata ne peut pas se calculer — voir `memberShares`. */
+  shares: MemberShare[] | null
+  /** Les membres dont le revenu n'est pas déclaré, pour pouvoir les nommer. */
+  undeclared: Member[]
+}
+
+/**
+ * Le coefficient de chaque membre, en points de base, indépendamment de tout
+ * mois : c'est la lecture des réglages, où l'on ajuste les revenus et où l'on
+ * veut voir la part bouger sans avoir à naviguer jusqu'à un mois.
+ * `null` tant que le prorata ne peut pas se calculer.
+ */
+export function useMemberSharesOfIncome(): Map<string, number> | null {
+  const members = useMembers()
+  return useMemo(() => {
+    const shares = memberShares(members, ZERO)
+    if (shares === null) return null
+    return new Map(shares.map((s) => [s.memberId, s.shareBp]))
+  }, [members])
+}
+
+/**
+ * La répartition du mois affiché.
+ *
+ * Elle ignore volontairement le filtre par membre de l'en-tête : une charge
+ * commune n'appartient à personne, donc filtrer sur quelqu'un la ferait
+ * disparaître. C'est une lecture du foyer, et l'écran qui la porte se retire
+ * quand un filtre est actif plutôt que d'afficher un zéro trompeur.
+ */
+export function useMonthSplit(ym?: YearMonth): MonthSplit {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const members = useMembers()
+  const kindOf = useKindOf()
+  const month = ym ?? current
+
+  return useMemo(() => {
+    const total = sharedTotal(entries, month, kindOf)
+    return {
+      total,
+      shares: memberShares(members, total),
+      undeclared: members.filter((m) => m.income === undefined),
+    }
+  }, [entries, month, kindOf, members])
 }
 
 /* --- Crédits --------------------------------------------------------------*/

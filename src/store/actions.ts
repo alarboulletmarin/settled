@@ -37,6 +37,11 @@ export function renameMember(id: string, name: string): void {
   mutate((data) => updates.renameMember(data, id, name))
 }
 
+/** `undefined` efface la déclaration ; zéro en est une, et n'est pas la même. */
+export function setMemberIncome(id: string, income: Money | undefined): void {
+  mutate((data) => updates.setMemberIncome(data, id, income))
+}
+
 export function removeMember(id: string): void {
   mutate((data) => updates.removeMember(data, id))
   if (useStore.getState().memberFilter === id) useStore.getState().setMemberFilter(undefined)
@@ -106,6 +111,27 @@ export function addRecurrence(input: Omit<Recurrence, 'id'>): Recurrence {
   const recurrence: Recurrence = { ...input, id: makeId() }
   mutate((data) =>
     updates.syncRecurrenceEntries(updates.addRecurrence(data, recurrence), recurrence.id, makeId),
+  )
+  return recurrence
+}
+
+/**
+ * Pose l'abonnement et marque l'échéance du jour saisi comme déjà payée.
+ *
+ * C'est le geste de la saisie d'une dépense qu'on bascule en abonnement :
+ * celle-là a eu lieu, les suivantes sont à venir. Les trois étapes tiennent
+ * dans une seule mutation — donc un seul rendu, une seule écriture — et surtout
+ * l'échéance du jour ne peut pas rester prévue si la suite échouait.
+ */
+export function addRecurrencePaidOn(input: Omit<Recurrence, 'id'>, on: ISODate): Recurrence {
+  const recurrence: Recurrence = { ...input, id: makeId() }
+  mutate((data) =>
+    updates.confirmOccurrence(
+      updates.syncRecurrenceEntries(updates.addRecurrence(data, recurrence), recurrence.id, makeId),
+      recurrence.id,
+      on,
+      makeId,
+    ),
   )
   return recurrence
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { fr } from '@/i18n/fr'
 import { Button, IconButton } from '@/ui/Button'
-import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
+import { AmountInput, Checkbox, Field, Select, TextInput } from '@/ui/Field'
 import { Plus } from '@/ui/Icons'
 import { Segmented } from '@/ui/Segmented'
 import { Section, SubTitle } from './Section'
@@ -14,6 +14,7 @@ const DIRECTIONS = [
 
 function Controls() {
   const [direction, setDirection] = useState<'in' | 'out'>('out')
+  const [shared, setShared] = useState(true)
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -58,6 +59,16 @@ function Controls() {
             <TextInput id={id} aria-describedby={describedBy} defaultValue="31" invalid />
           )}
         </Field>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Checkbox
+          checked={shared}
+          onChange={setShared}
+          label={fr.entry.shared}
+          hint={fr.entry.sharedHint}
+        />
+        <Checkbox checked={false} onChange={() => undefined} label={fr.recurrences.variable} />
       </div>
     </div>
   )

@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { type Money, parseAmount, toAmountInput } from '@/domain/money'
 import type { Member } from '@/domain/types'
 import { tpl } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { Button, IconButton } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
-import { Field, TextInput } from '@/ui/Field'
+import { AmountInput, Field, TextInput } from '@/ui/Field'
 import { Close } from '@/ui/Icons'
 
 /** Deuxième étape : les membres. Elle peut être passée — l'usage solo existe. */
@@ -15,17 +16,20 @@ export function MembersStep({
   onDone,
 }: {
   members: readonly Member[]
-  onAdd: (name: string) => void
+  onAdd: (name: string, income: Money | undefined) => void
   onRemove: (id: string) => void
   onDone: () => void
 }) {
   const [name, setName] = useState('')
+  const [income, setIncome] = useState('')
   const trimmed = name.trim()
 
   const submit = (): void => {
     if (trimmed.length === 0) return
-    onAdd(trimmed)
+    const parsed = parseAmount(income)
+    onAdd(trimmed, parsed !== null && parsed >= 0 ? parsed : undefined)
     setName('')
+    setIncome('')
   }
 
   return (
@@ -36,27 +40,49 @@ export function MembersStep({
       </div>
 
       <form
-        className="flex items-end gap-2"
+        className="flex flex-col gap-3"
         onSubmit={(event) => {
           event.preventDefault()
           submit()
         }}
       >
-        <Field label={fr.onboarding.membersLabel} className="flex-1">
-          {(id) => (
-            <TextInput
-              id={id}
-              value={name}
-              placeholder={fr.onboarding.membersPlaceholder}
-              maxLength={24}
-              autoFocus
-              onChange={(event) => {
-                setName(event.target.value)
-              }}
-            />
-          )}
-        </Field>
-        <Button type="submit" variant="secondary" disabled={trimmed.length === 0}>
+        {/* Empilés au téléphone : côte à côte, « Revenu mensuel net ·
+            facultatif » se coupe en deux avant qu'on ait rien saisi. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-2">
+          <Field label={fr.onboarding.membersLabel} required className="min-w-0 sm:flex-1">
+            {(id) => (
+              <TextInput
+                id={id}
+                value={name}
+                placeholder={fr.onboarding.membersPlaceholder}
+                maxLength={24}
+                autoFocus
+                onChange={(event) => {
+                  setName(event.target.value)
+                }}
+              />
+            )}
+          </Field>
+          <Field label={fr.onboarding.membersIncome} optional className="sm:w-36">
+            {(id) => (
+              <AmountInput
+                id={id}
+                value={income}
+                placeholder="0,00"
+                onChange={(event) => {
+                  setIncome(event.target.value)
+                }}
+              />
+            )}
+          </Field>
+        </div>
+        <p className="t-label">{fr.onboarding.membersIncomeHint}</p>
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={trimmed.length === 0}
+          className="self-start"
+        >
           {fr.onboarding.membersAdd}
         </Button>
       </form>
@@ -72,9 +98,12 @@ export function MembersStep({
             >
               <Dot color={member.color} />
               <span className="t-body truncate">{member.name}</span>
+              {member.income !== undefined && (
+                <span className="t-axis tnum ml-auto">{toAmountInput(member.income)}</span>
+              )}
               <IconButton
                 label={tpl(fr.onboarding.membersRemove, member.name)}
-                className="ml-auto"
+                className={member.income === undefined ? 'ml-auto' : ''}
                 onClick={() => {
                   onRemove(member.id)
                 }}

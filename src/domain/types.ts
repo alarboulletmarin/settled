@@ -47,6 +47,16 @@ export type Member = {
   id: string
   name: string
   color: string
+  /**
+   * Revenu mensuel net déclaré, en centimes. Il sert à répartir les charges
+   * communes au prorata, et rien d'autre.
+   *
+   * C'est une règle, pas un fait — au même titre qu'une récurrence face à ses
+   * échéances. Le dériver des `Entry` de nature `resource` serait tentant, mais
+   * ferait bouger la part de chacun sur le loyer au gré d'une prime ou d'un
+   * treizième mois. Absent, le foyer n'a pas de quoi calculer un prorata.
+   */
+  income?: Money
 }
 
 export type Category = {
@@ -87,6 +97,8 @@ export type Recurrence = {
   startedOn: ISODate
   /** Dernier jour où la récurrence peut encore tomber, borne incluse. */
   endedOn?: string
+  /** Voir `Entry.shared` : les échéances en héritent. */
+  shared?: boolean
   note?: string
 }
 
@@ -103,6 +115,13 @@ export type Entry = {
   amount: Money
   date: ISODate
   status: EntryStatus
+  /**
+   * Force le partage entre les membres, ou l'exclut. Absent, la règle tranche :
+   * une sortie de nature charge ou crédit que personne ne s'est attribuée est
+   * commune. Le champ est une exception, jamais une copie de la règle — c'est
+   * ce qui évite d'avoir à requalifier tout ce qui a déjà été saisi.
+   */
+  shared?: boolean
   note?: string
 }
 

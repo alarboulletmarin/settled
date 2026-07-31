@@ -8,6 +8,29 @@ import { formatDayMonthShort, tpl } from '@/i18n/format'
 
 export type PeriodKind = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'everyNMonths'
 
+/**
+ * La tranche de formulaire qui décrit une périodicité. Extraite du brouillon
+ * d'abonnement pour que la saisie d'une dépense puisse la porter aussi : les
+ * deux écrans posent la même règle, ils ne peuvent pas la décrire deux fois.
+ */
+export type PeriodDraft = {
+  kind: PeriodKind
+  everyMonths: number
+  monthDay: number
+  weekday: number
+  startedOn: ISODate
+}
+
+/** Une périodicité mensuelle ancrée sur la date donnée — le défaut partout. */
+export function monthlyDraftFrom(startedOn: ISODate): PeriodDraft {
+  return { kind: 'monthly', everyMonths: 2, startedOn, ...defaultsFrom(startedOn) }
+}
+
+/** Construit la `Period` du modèle à partir de la tranche de formulaire. */
+export function periodOf(draft: PeriodDraft): Period {
+  return buildPeriod(draft.kind, draft.startedOn, draft.monthDay, draft.weekday, draft.everyMonths)
+}
+
 export const PERIOD_OPTIONS: { value: PeriodKind; label: string }[] = [
   { value: 'weekly', label: fr.recurrences.periods.weekly },
   { value: 'monthly', label: fr.recurrences.periods.monthly },

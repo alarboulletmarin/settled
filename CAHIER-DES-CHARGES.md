@@ -26,11 +26,12 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Historique des mois passés
 - Comparatifs mois/mois et année/année
 - Catégories rangées en familles, sous quatre natures
-- Membres du foyer comme étiquette
+- Membres du foyer comme étiquette, avec leur revenu déclaré
+- Répartition des charges communes entre membres, au prorata des revenus
 - Export / import du fichier de données
 - Thème clair et sombre
 
-**Hors v1** — épargne et objectifs, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, partage de dépenses entre membres.
+**Hors v1** — épargne et objectifs, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
 
 ---
 
@@ -53,7 +54,12 @@ type Data = {
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
 
-type Member = { id: string; name: string; color: string }
+type Member = {
+  id: string
+  name: string
+  color: string
+  income?: Money              // revenu mensuel net déclaré, pour le prorata
+}
 
 // Ce que devient l'argent, par-delà son sens de trésorerie.
 type CategoryKind = 'resource' | 'charge' | 'debt' | 'saving'
@@ -93,6 +99,7 @@ type Recurrence = {
   period: { unit: 'week' | 'month' | 'year'; every: number; anchorDay: number }
   startedOn: string             // ISO date
   endedOn?: string              // récurrence arrêtée
+  shared?: boolean              // voir Entry.shared ; les échéances en héritent
   note?: string
 }
 
@@ -106,6 +113,7 @@ type Entry = {
   amount: Money
   date: string                  // ISO date
   status: 'planned' | 'confirmed'
+  shared?: boolean              // exception à la règle de partage, jamais sa copie
   note?: string
 }
 
@@ -125,6 +133,8 @@ type MonthState = {
 - Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas.
 - Le sens d'une catégorie découle de la nature de sa famille, jamais l'inverse : `resource` entre, les trois autres sortent. Un versement sort du compte exactement comme une charge — c'est la nature, pas le sens, qui les distingue.
 - Un `Debt` ne produit aucun chiffre de trésorerie : ce sont les `Entry` de la récurrence liée qui font sortir l'argent. Il n'ajoute que le capital, que la somme des mensualités ne dit pas dès qu'il y a des intérêts.
+- Le revenu d'un membre est une **déclaration**, pas un relevé : il ne se déduit pas des `Entry` de nature `resource`. Une prime ou un treizième mois ne doivent pas rebattre la part de chacun sur le loyer.
+- `shared` est une **exception** à la règle de partage, jamais sa copie. Absent, la règle tranche — et c'est ce qui permet à tout ce qui a déjà été saisi de rester exploitable sans être requalifié.
 
 ---
 
@@ -135,7 +145,7 @@ type MonthState = {
 Deux étapes, aucune ne peut être sautée sur la première.
 
 1. Nom du foyer. Champ libre, pré-rempli avec « Maison ».
-2. Membres. L'utilisateur peut passer directement (usage solo) ou ajouter des personnes, prénom uniquement.
+2. Membres. L'utilisateur peut passer directement (usage solo) ou ajouter des personnes : prénom, et revenu mensuel net facultatif. Le revenu se déclare aussi bien plus tard, dans les réglages.
 
 Un jeu de catégories par défaut est créé, modifiable ensuite.
 
@@ -176,6 +186,8 @@ Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre optionnel. Créée directement en `confirmed`.
 
+Une bascule **Ponctuel / Abonnement** y siège, à la création seulement. En abonnement, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en abonnement réécrirait un historique.
+
 Dépense et revenu sont deux points d'entrée distincts, côte à côte, sur le mois comme sur le calendrier : le sens est choisi avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. Titre et confirmation le suivent — on n'annonce pas « dépense ajoutée » après un salaire.
 
 La date proposée est aujourd'hui si l'on est dans le mois affiché, sinon le premier de ce mois — et le jour sélectionné quand la saisie part du calendrier.
@@ -214,6 +226,18 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 - Sans taux, le capital décroît exactement du montant versé.
 - Sans abonnement lié, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
 - Retirer un crédit du suivi n'efface ni les mensualités versées ni l'abonnement qui les pose. Seul le suivi du capital s'arrête.
+
+### 4.7 ter Répartition entre membres
+
+À deux revenus inégaux, des parts égales ne le sont pas : sur 2 500 € et 2 000 €, un loyer partagé en deux pèse un quart plus lourd pour le second. La répartition dit ce que chacun verse sur les charges communes, **au prorata des revenus déclarés**.
+
+- **Coefficient** : `revenu du membre ÷ revenus du foyer`. Sur 2 500 € et 2 000 €, 55,6 % et 44,4 %.
+- **Charges communes** : les sorties de nature `charge` ou `debt` que personne ne s'est attribuées, plus celles cochées « à partager ». C'est la frontière de la capacité d'épargne, et pour la même raison : un versement sort du compte mais reste à qui le fait, il n'a rien à faire dans un partage.
+- Les échéances **prévues** comptent : la question est « combien verser ce mois-ci », pas « combien a déjà été payé ». Répondre au réalisé ferait grimper la part de chacun au fil du mois.
+- La somme des parts vaut **exactement** le total, au centime. Arrondir chaque part dans son coin ne le garantirait pas ; les centimes restants vont aux plus forts restes, et l'écran affiche le total des parts pour qu'on le vérifie.
+- Le calcul ne se fait pas tant qu'un membre n'a pas déclaré son revenu, ou qu'il n'y en a qu'un. L'écran **nomme ce qui manque** au lieu d'afficher un zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+- Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, et sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre.
+- La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
 
 ### 4.8 Données
 

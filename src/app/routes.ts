@@ -50,6 +50,11 @@ export function entryNewPath(options: { direction?: 'in' | 'out'; date?: string 
 
 export const CREDITS_PATH = '/credits'
 
+/* Hors navigation, pour la même raison que les crédits : six onglets ne
+   tiennent pas à 320px. On y accède par la tuile Répartition de l'écran du
+   mois, qui s'efface tant qu'il n'y a rien à répartir. */
+export const SPLIT_PATH = '/repartition'
+
 const RECURRENCES_PATH = '/abonnements'
 /* Segment fixe : React Router le classe avant `/abonnements/:id`, un
    abonnement ne peut donc pas éclipser le formulaire de création. */

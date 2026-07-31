@@ -1,16 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { eur, makeCategory, makeData, makeEntry, makeRecurrence, sequentialIds } from './fixtures'
+import {
+  eur,
+  makeCategory,
+  makeData,
+  makeEntry,
+  makeMember,
+  makeRecurrence,
+  sequentialIds,
+} from './fixtures'
 import {
   addEntry,
   addMember,
   archiveCategory,
   confirmEntries,
   confirmEntry,
+  confirmOccurrence,
   openMonth,
   removeMember,
   removeRecurrence,
   resumeRecurrence,
   setHouseholdName,
+  setMemberIncome,
   stopRecurrence,
   syncRecurrenceEntries,
   updateRecurrence,
@@ -51,6 +61,65 @@ describe('foyer et membres', () => {
     expect(after.entries[0]).not.toHaveProperty('memberId')
     expect(after.entries[1]?.memberId).toBe('m2')
     expect(after.recurrences[0]).not.toHaveProperty('memberId')
+  })
+
+  it('déclare le revenu d’un membre sans toucher au reste', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [makeMember({ id: 'm1' }), makeMember({ id: 'm2' })] },
+      entries: [makeEntry({ date: '2026-07-01' })],
+    })
+    const after = setMemberIncome(before, 'm1', eur(250_000))
+    expect(after.household.members[0]?.income).toBe(250_000)
+    expect(after.household.members[1]).toBe(before.household.members[1])
+    expect(after.entries).toBe(before.entries)
+  })
+
+  it('effacer un revenu n’est pas le mettre à zéro', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [makeMember({ id: 'm1', income: eur(250_000) })] },
+    })
+    const after = setMemberIncome(before, 'm1', undefined)
+    expect(after.household.members[0]).not.toHaveProperty('income')
+  })
+})
+
+describe('échéance payée d’avance', () => {
+  const monthly = makeRecurrence({
+    id: 'r1',
+    amount: eur(1399),
+    startedOn: '2026-07-31',
+    period: { unit: 'month', every: 1, anchorDay: 31 },
+  })
+
+  it('confirme l’échéance déjà posée par la synchronisation', () => {
+    const opened = makeData({
+      recurrences: [monthly],
+      months: [{ ym: '2026-07', openedAt: '2026-07-01', closed: false }],
+    })
+    const planned = syncRecurrenceEntries(opened, 'r1', sequentialIds(), '2026-07-01')
+    const after = confirmOccurrence(planned, 'r1', '2026-07-31', sequentialIds('bis'))
+
+    const july = after.entries.filter((e) => e.date === '2026-07-31')
+    expect(july).toHaveLength(1)
+    expect(july[0]?.status).toBe('confirmed')
+  })
+
+  it('crée l’échéance quand son mois n’a jamais été ouvert', () => {
+    const before = makeData({ recurrences: [monthly] })
+    const after = confirmOccurrence(before, 'r1', '2026-07-31', sequentialIds())
+
+    expect(after.entries).toHaveLength(1)
+    expect(after.entries[0]).toMatchObject({
+      recurrenceId: 'r1',
+      date: '2026-07-31',
+      status: 'confirmed',
+      amount: 1399,
+    })
+  })
+
+  it('ne fabrique rien pour une récurrence inconnue', () => {
+    const before = makeData({ recurrences: [monthly] })
+    expect(confirmOccurrence(before, 'inconnue', '2026-07-31', sequentialIds())).toBe(before)
   })
 })
 

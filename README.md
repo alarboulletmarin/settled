@@ -77,6 +77,26 @@ serait faux dès qu'il y a des intérêts : sur 100 000 € à 4 % sur 20 ans, l
 première année amortit ~3 000 € pour ~7 300 € versés, et le raccourci
 annoncerait le prêt soldé des années trop tôt.
 
+**Prorata des revenus.** Le revenu d'un membre est *déclaré* (`Member.income`),
+jamais déduit de ses `Entry` de nature `resource`. C'est la même distinction que
+règle et fait : le revenu déclaré est une règle de partage, les ressources
+encaissées sont des faits. Les dériver ferait bouger la part de chacun sur le
+loyer au gré d'une prime, alors que le loyer, lui, n'a pas bougé. Le calcul
+refuse de répondre — `null`, pas zéro — tant qu'un membre n'a pas déclaré :
+un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+
+**Plus forts restes.** Répartir 2 000 € entre trois tiers en arrondissant chaque
+part donnerait trois fois 666,67 € et un centime de trop. `split.ts` pose les
+parts entières puis distribue le reste aux plus forts restes, à égalité au poids
+le plus à gauche : la somme vaut exactement le total, et deux affichages du même
+mois donnent le même centime au même membre. Le coefficient est en points de
+base, comme les taux — aucun flottant ne touche un calcul financier.
+
+**Partage.** Est commune une sortie de nature `charge` ou `debt` que personne ne
+s'est attribuée. La case « à partager » est une *exception* stockée seulement
+quand elle diverge de cette règle, jamais une copie : sans quoi tout ce qui a
+déjà été saisi serait à requalifier, et deux sources finiraient par diverger.
+
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.
 
@@ -162,9 +182,10 @@ sur toutes les routes, dans les deux thèmes : aucun point en suspens.
 Aux cinq destinations de la navigation s'ajoutent les écrans qu'on n'atteint que
 par une action — `/depense`, `/depense/:id`, `/abonnements/nouveau`,
 `/abonnements/:id`, `/abonnements/:id/modifier`, `/credits`, `/credits/nouveau`,
-`/credits/:id` — et `/styleguide`.
+`/credits/:id`, `/repartition` — et `/styleguide`.
 
-`/credits` ne figure pas dans la navigation : six onglets ne tiennent pas à
-320px sans tronquer « Abonnements » en « Abonneme… ». On y accède par la tuile
-Crédits de l'écran du mois, comme on accède aux abonnements par la sienne. La
-tuile s'efface tant qu'aucun crédit n'est suivi.
+`/credits` et `/repartition` ne figurent pas dans la navigation : six onglets ne
+tiennent pas à 320px sans tronquer « Abonnements » en « Abonneme… ». On y accède
+par la tuile correspondante de l'écran du mois, comme on accède aux abonnements
+par la sienne. Chacune s'efface quand elle n'a rien à dire — aucun crédit suivi,
+ou pas de quoi calculer un prorata.

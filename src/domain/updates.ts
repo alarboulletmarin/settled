@@ -7,7 +7,8 @@
  * ==========================================================================*/
 
 import { type ISODate, type YearMonth, today, ymOf } from './date'
-import { planMonth } from './month'
+import { buildPlannedEntry, planMonth } from './month'
+import type { Money } from './money'
 import type { Category, Data, Debt, Entry, Family, Member, Recurrence, Settings } from './types'
 
 /* --- Foyer et membres -----------------------------------------------------*/
@@ -26,6 +27,28 @@ export function renameMember(data: Data, id: string, name: string): Data {
     household: {
       ...data.household,
       members: data.household.members.map((m) => (m.id === id ? { ...m, name } : m)),
+    },
+  }
+}
+
+/**
+ * Déclare — ou efface — le revenu d'un membre. L'effacer n'est pas le mettre à
+ * zéro : zéro dit « je ne gagne rien », l'absence dit « je n'ai pas déclaré »,
+ * et le prorata ne se calcule que dans le premier cas.
+ */
+export function setMemberIncome(data: Data, id: string, income: Money | undefined): Data {
+  return {
+    ...data,
+    household: {
+      ...data.household,
+      members: data.household.members.map((m) => {
+        if (m.id !== id) return m
+        if (income === undefined) {
+          const { income: _dropped, ...rest } = m
+          return rest
+        }
+        return { ...m, income }
+      }),
     },
   }
 }
@@ -206,6 +229,34 @@ export function removeEntry(data: Data, id: string): Data {
 
 export function confirmEntry(data: Data, id: string): Data {
   return updateEntry(data, id, { status: 'confirmed' })
+}
+
+/**
+ * Marque comme payée l'échéance d'une récurrence à une date donnée.
+ *
+ * Sert à la saisie qui pose l'abonnement et la dépense du jour d'un seul geste :
+ * l'utilisateur a dit que celle-là a eu lieu, on ne la lui redemande pas.
+ *
+ * L'échéance existe presque toujours — `syncRecurrenceEntries` vient de la
+ * poser. Presque : une date antérieure au mois courant tombe dans un mois qui
+ * n'a jamais été ouvert, et n'a donc rien produit. Elle est alors créée, déjà
+ * confirmée, plutôt que perdue — c'est une dépense qui a eu lieu, et ouvrir le
+ * mois pour la retrouver inventerait toutes les autres au passage (cahier §4.3).
+ */
+export function confirmOccurrence(
+  data: Data,
+  recurrenceId: string,
+  date: ISODate,
+  makeId: () => string,
+): Data {
+  const existing = data.entries.find((e) => e.recurrenceId === recurrenceId && e.date === date)
+  if (existing !== undefined) return confirmEntry(data, existing.id)
+
+  const recurrence = data.recurrences.find((r) => r.id === recurrenceId)
+  if (recurrence === undefined) return data
+
+  const entry = buildPlannedEntry(recurrence, date, data.entries, makeId)
+  return addEntry(data, { ...entry, status: 'confirmed' })
 }
 
 /** Confirmation en bloc — le geste du cahier §4.3. */

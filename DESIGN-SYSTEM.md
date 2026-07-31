@@ -186,6 +186,8 @@ Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une
 
 **Amount** — composant unique pour tout montant. Props : valeur en centimes, taille, sens. Gère seul le tabular-nums, le symbole, les centimes réduits et la couleur.
 
+**Checkbox** — un attribut vrai ou faux, pas un choix entre deux modes : `Segmented` sert à choisir parmi des positions qui s'excluent, la case dit qu'une chose est vraie ou ne l'est pas. Carré de 24px dans une cible de 44px, coché en `--accent` sur texte encre — lime reste un remplissage. La case native reste dans le DOM, masquée : c'est elle qui porte l'état pour un lecteur d'écran et qui répond à la barre d'espace.
+
 **Chip** — pilule pour catégories, membres et filtres. Pastille de couleur 8px + libellé 13px. État actif : fond `--surface-2` → `--accent`.
 
 **ListRow** — pastille de catégorie, libellé, sous-libellé mono (date ou périodicité), montant à droite. Hauteur 56px. Un `planned` s'affiche à 60% d'opacité avec un contour en pointillés sur la pastille.

@@ -36,6 +36,7 @@ import { Palette } from '@phosphor-icons/react/dist/csr/Palette'
 import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
+import { UsersThree } from '@phosphor-icons/react/dist/csr/UsersThree'
 import { Wallet } from '@phosphor-icons/react/dist/csr/Wallet'
 import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle'
 import { X } from '@phosphor-icons/react/dist/csr/X'
@@ -90,6 +91,7 @@ export const UpcomingIcon = adapt(Clock)
 export const SubscriptionsIcon = adapt(ArrowsClockwise)
 export const DailyIcon = adapt(ChartBar)
 export const CreditsIcon = adapt(Bank)
+export const SplitIcon = adapt(UsersThree)
 export const ToConfirmIcon = adapt(CheckCircle)
 export const EntriesIcon = adapt(ListBullets)
 export const HouseholdIcon = adapt(House)

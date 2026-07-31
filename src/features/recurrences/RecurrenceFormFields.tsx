@@ -3,7 +3,7 @@ import { fr } from '@/i18n/fr'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { Segmented } from '@/ui/Segmented'
-import { PERIOD_OPTIONS } from './period'
+import { PERIOD_OPTIONS, type PeriodDraft } from './period'
 import type { DraftErrors, RecurrenceDraft } from './useRecurrenceForm'
 
 const DIRECTIONS = [
@@ -131,7 +131,19 @@ export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'member
   )
 }
 
-export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patch'>) {
+export type PeriodFieldsProps = {
+  draft: PeriodDraft
+  patch: (next: Partial<PeriodDraft>) => void
+  /**
+   * Faux quand l'écran porte déjà le champ de date. La saisie d'une dépense
+   * bascule en abonnement sans changer de date : celle qu'on vient d'entrer
+   * *est* la première échéance, et en demander une seconde donnerait deux
+   * champs de date pour une seule réponse.
+   */
+  withStart?: boolean
+}
+
+export function PeriodFields({ draft, patch, withStart = true }: PeriodFieldsProps) {
   return (
     <>
       <Field label={fr.recurrences.form.period} required>
@@ -140,7 +152,7 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
             id={id}
             value={draft.kind}
             onChange={(e) => {
-              patch({ kind: e.target.value as RecurrenceDraft['kind'] })
+              patch({ kind: e.target.value as PeriodDraft['kind'] })
             }}
           >
             {PERIOD_OPTIONS.map((option) => (
@@ -152,18 +164,20 @@ export function PeriodFields({ draft, patch }: Pick<FieldsProps, 'draft' | 'patc
         )}
       </Field>
 
-      <Field label={fr.recurrences.form.startedOn} required>
-        {(id) => (
-          <TextInput
-            id={id}
-            type="date"
-            value={draft.startedOn}
-            onChange={(e) => {
-              if (e.target.value !== '') patch({ startedOn: e.target.value })
-            }}
-          />
-        )}
-      </Field>
+      {withStart && (
+        <Field label={fr.recurrences.form.startedOn} required>
+          {(id) => (
+            <TextInput
+              id={id}
+              type="date"
+              value={draft.startedOn}
+              onChange={(e) => {
+                if (e.target.value !== '') patch({ startedOn: e.target.value })
+              }}
+            />
+          )}
+        </Field>
+      )}
 
       {draft.kind === 'weekly' && (
         <Field label={fr.recurrences.form.weekday} required>

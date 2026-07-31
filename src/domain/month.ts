@@ -83,7 +83,8 @@ export function planMonth(
   return { ym: month, created, variable }
 }
 
-function buildPlannedEntry(
+/** Fabrique l'échéance d'une récurrence à une date. Exportée pour `updates`. */
+export function buildPlannedEntry(
   recurrence: Recurrence,
   date: ISODate,
   entries: readonly Entry[],
@@ -101,6 +102,9 @@ function buildPlannedEntry(
     amount,
     date,
     status: 'planned',
+    // La règle de partage est portée par l'abonnement : ses échéances en
+    // héritent, comme elles héritent du membre.
+    ...(recurrence.shared === undefined ? {} : { shared: recurrence.shared }),
   }
 }
 

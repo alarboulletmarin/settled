@@ -11,6 +11,7 @@ import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPag
 import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
 import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
+import { SplitPage } from '@/features/split/SplitPage'
 import { useStore } from '@/store/store'
 import { StyleguidePage } from '@/styleguide/StyleguidePage'
 import { useApplyTheme } from '@/theme/useTheme'
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/credits" element={<CreditsPage />} />
         <Route path="/credits/nouveau" element={<CreditFormPage />} />
         <Route path="/credits/:id" element={<CreditFormPage />} />
+        <Route path="/repartition" element={<SplitPage />} />
         <Route path="/historique" element={<HistoryPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

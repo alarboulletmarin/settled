@@ -21,7 +21,7 @@ function richData(): Data {
     household: {
       name: 'Chez nous',
       members: [
-        { id: 'm1', name: 'Alix', color: 'var(--cat-1)' },
+        { id: 'm1', name: 'Alix', color: 'var(--cat-1)', income: eur(250000) },
         { id: 'm2', name: 'Camille', color: 'var(--cat-2)' },
       ],
     },
@@ -48,6 +48,7 @@ function richData(): Data {
         period: { unit: 'month', every: 2, anchorDay: 31 },
         startedOn: '2025-11-30',
         endedOn: '2026-09-30',
+        shared: true,
       }),
     ],
     entries: [
@@ -60,6 +61,7 @@ function richData(): Data {
         date: '2026-07-05',
         amount: eur(95000),
         status: 'confirmed',
+        shared: false,
         note: 'juillet',
       }),
       makeEntry({
@@ -294,5 +296,63 @@ describe('migration vers les familles', () => {
     const { families } = parseImport(legacy()).data
     const kinds = new Set(families.map((f) => f.kind))
     expect(kinds).toEqual(new Set(['resource', 'charge', 'debt', 'saving']))
+  })
+})
+
+describe('migration vers la répartition entre membres', () => {
+  /** Un document tel qu'écrit avant les revenus et le partage. */
+  function v2() {
+    return JSON.stringify({
+      schemaVersion: 2,
+      household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
+      families: [{ id: 'fam-housing', label: 'Logement', kind: 'charge' }],
+      categories: [
+        { id: 'housing', label: 'Loyer', familyId: 'fam-housing', icon: '', color: 'c', direction: 'out', archived: false },
+      ],
+      recurrences: [],
+      entries: [
+        { id: 'e1', label: 'Loyer', categoryId: 'housing', direction: 'out', amount: 85000, date: '2026-06-05', status: 'confirmed' },
+      ],
+      debts: [],
+      months: [],
+      settings: { theme: 'dark', currency: 'EUR', monthStartsOn: 1 },
+    })
+  }
+
+  it('atteint la version courante sans rien perdre', () => {
+    const result = parseImport(v2())
+    expect(result.from).toBe(2)
+    expect(result.migrated).toBe(true)
+    expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    expect(result.data.entries).toHaveLength(1)
+    expect(result.data.household.members[0]?.name).toBe('Alix')
+  })
+
+  it('laisse les nouveaux champs absents, pour que la règle tranche', () => {
+    const { data } = parseImport(v2())
+    expect(data.household.members[0]).not.toHaveProperty('income')
+    expect(data.entries[0]).not.toHaveProperty('shared')
+  })
+
+  it('écarte un revenu illisible plutôt que de le ramener à zéro', () => {
+    const bogus = JSON.stringify({
+      schemaVersion: 3,
+      household: {
+        name: 'Maison',
+        members: [
+          { id: 'm1', name: 'Alix', color: 'c', income: 'beaucoup' },
+          { id: 'm2', name: 'Camille', color: 'c', income: 1234.5 },
+          { id: 'm3', name: 'Sacha', color: 'c', income: -100 },
+          { id: 'm4', name: 'Dominique', color: 'c', income: 0 },
+        ],
+      },
+      categories: [],
+    })
+    const { members } = parseImport(bogus).data.household
+    expect(members[0]).not.toHaveProperty('income')
+    expect(members[1]).not.toHaveProperty('income')
+    expect(members[2]).not.toHaveProperty('income')
+    // Zéro est une déclaration, elle survit.
+    expect(members[3]?.income).toBe(0)
   })
 })
