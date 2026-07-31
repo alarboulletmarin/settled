@@ -216,6 +216,8 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Prochaines échéances**, les 5 suivantes avec le nombre de jours restants.
 - **Total abonnements**, mensuel et annualisé.
 
+Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose. Chaque tuile s'ouvre sur une feuille qui donne son calcul et, surtout, ce qui la sépare de ses voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
+
 Tous les dashboards acceptent un filtre par membre.
 
 ### 4.7 Historique et comparatifs
