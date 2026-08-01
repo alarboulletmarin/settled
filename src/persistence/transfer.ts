@@ -14,9 +14,9 @@ export type { MigrationResult }
 
 const EXPORT_MIME = 'application/json'
 
-/** Nom de fichier horodaté : `settled-2026-07-30.json`. */
+/** Nom de fichier horodaté : `tout-compte-fait-2026-07-30.json`. */
 export function exportFilename(on: ISODate = today()): string {
-  return `settled-${on}.json`
+  return `tout-compte-fait-${on}.json`
 }
 
 /** Le document sérialisé, indenté pour rester lisible et diffable. */
@@ -37,7 +37,9 @@ export function parseImport(text: string): MigrationResult {
   try {
     parsed = JSON.parse(text)
   } catch {
-    throw new ImportError("Ce fichier n'est pas du JSON valide. Vérifie qu'il vient bien d'un export Settled.")
+    throw new ImportError(
+      "Ce fichier n'est pas du JSON valide. Vérifie qu'il vient bien d'un export Tout compte fait.",
+    )
   }
   return migrateDocument(parsed)
 }
@@ -49,7 +51,7 @@ export function parseImport(text: string): MigrationResult {
  * sauvegarde de cet appareil, pas les finances du foyer. L'inclure à l'export
  * ferait qu'un fichier importé prétendrait avoir été sauvegardé à l'instant.
  */
-export const LAST_EXPORT_KEY = 'settled.lastExport'
+export const LAST_EXPORT_KEY = 'tout-compte-fait.lastExport'
 
 export const EXPORT_REMINDER_DAYS = 30
 
@@ -65,7 +67,7 @@ export function readLastExport(): ISODate | null {
  * Date à laquelle le rappel a été écarté. Écarter est un choix, pas un
  * clignement : il survit au changement d'écran et au rechargement.
  */
-export const REMINDER_DISMISSED_KEY = 'settled.reminderDismissed'
+export const REMINDER_DISMISSED_KEY = 'tout-compte-fait.reminderDismissed'
 
 export function readReminderDismissed(): ISODate | null {
   try {

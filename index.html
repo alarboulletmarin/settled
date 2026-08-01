@@ -8,14 +8,14 @@
     <meta name="description" content="Suivi des finances du foyer. Tout reste sur ton appareil." />
     <meta name="theme-color" content="#F0F5F2" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#2F5D4C" media="(prefers-color-scheme: dark)" />
-    <title>Settled</title>
+    <title>Tout compte fait</title>
     <script>
       // Applique le thème avant le premier rendu. Le document de données vit en
       // IndexedDB (asynchrone) : sans ce miroir localStorage, l'app s'afficherait
       // une frame en clair avant de basculer.
       ;(function () {
         try {
-          var pref = localStorage.getItem('settled.theme') || 'system'
+          var pref = localStorage.getItem('tout-compte-fait.theme') || 'system'
           var dark =
             pref === 'dark' ||
             (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)

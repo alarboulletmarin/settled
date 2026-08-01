@@ -10,22 +10,22 @@ import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
 import type { Data } from '@/domain/types'
 import { migrateDocument } from './schema'
 
-const DB_NAME = 'settled'
+const DB_NAME = 'tout-compte-fait'
 const DB_VERSION = 1
 const STORE = 'document'
 const KEY = 'current'
 
-interface SettledDB extends DBSchema {
+interface ToutCompteFaitDB extends DBSchema {
   document: {
     key: string
     value: unknown
   }
 }
 
-let connection: Promise<IDBPDatabase<SettledDB>> | null = null
+let connection: Promise<IDBPDatabase<ToutCompteFaitDB>> | null = null
 
-function db(): Promise<IDBPDatabase<SettledDB>> {
-  connection ??= openDB<SettledDB>(DB_NAME, DB_VERSION, {
+function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
+  connection ??= openDB<ToutCompteFaitDB>(DB_NAME, DB_VERSION, {
     upgrade(database) {
       if (!database.objectStoreNames.contains(STORE)) {
         database.createObjectStore(STORE)

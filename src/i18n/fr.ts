@@ -5,7 +5,7 @@
 
 export const fr = {
   app: {
-    name: 'Settled',
+    name: 'Tout compte fait',
     tagline: 'Les finances du foyer, sur ton appareil.',
   },
 
@@ -832,7 +832,7 @@ export const fr = {
     membersRemoveConfirm: 'Retirer %s du foyer ?',
     solo: 'Je suis seul·e',
     start: 'Commencer',
-    importHint: 'Tu as déjà un fichier Settled ? Restaure-le sans passer par ici.',
+    importHint: 'Tu as déjà un fichier Tout compte fait ? Restaure-le sans passer par ici.',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
   },
 
