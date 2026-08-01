@@ -3,6 +3,7 @@ import { fr } from '@/i18n/fr'
 import { ImportError, type MigrationResult, parseImport } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button, type ButtonVariant } from '@/ui/Button'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { toast } from '@/ui/toast'
 
 /**
@@ -48,41 +49,37 @@ export function ImportControl({
           if (file) void stage(file)
         }}
       />
-      {pending === null ? (
-        <Button
-          variant={variant}
-          {...(className === undefined ? {} : { className })}
-          onClick={() => {
-            fileInput.current?.click()
-          }}
-        >
-          {fr.settings.import}
-        </Button>
-      ) : (
-        <div className="flex flex-col gap-2 rounded-inner bg-surface-2 p-3">
-          <p className="t-body">{fr.settings.importConfirm}</p>
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setPending(null)
-              }}
-            >
-              {fr.common.cancel}
-            </Button>
-            <Button
-              onClick={() => {
-                void replaceData(pending.data).then(() => {
-                  setPending(null)
-                  toast(pending.migrated ? fr.settings.importMigrated : fr.settings.imported)
-                })
-              }}
-            >
-              {fr.common.confirm}
-            </Button>
-          </div>
-        </div>
-      )}
+      <Button
+        variant={variant}
+        {...(className === undefined ? {} : { className })}
+        onClick={() => {
+          fileInput.current?.click()
+        }}
+      >
+        {fr.settings.import}
+      </Button>
+
+      {/* Deux pas : un import est un effacement déguisé — le fichier arrive,
+          tout le reste part —, sans aller jusqu'aux trois de la
+          réinitialisation, puisqu'il reste quelque chose après. */}
+      <ConfirmDialog
+        open={pending !== null}
+        title={fr.settings.import}
+        steps={[
+          { question: fr.settings.importConfirm, action: fr.common.confirm },
+          { question: fr.settings.importConfirm2, action: fr.settings.import },
+        ]}
+        onCancel={() => {
+          setPending(null)
+        }}
+        onConfirm={() => {
+          if (pending === null) return
+          void replaceData(pending.data).then(() => {
+            setPending(null)
+            toast(pending.migrated ? fr.settings.importMigrated : fr.settings.imported)
+          })
+        }}
+      />
     </>
   )
 }

@@ -5,6 +5,7 @@ import {
   SPLIT_PATH,
   recurrenceEditPath,
 } from '@/app/routes'
+import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { addMember, removeMember, renameMember, setHouseholdName } from '@/store/actions'
@@ -16,6 +17,7 @@ import {
   useUnassignedIncomes,
 } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, TextInput } from '@/ui/Field'
@@ -33,6 +35,7 @@ export function HouseholdSection() {
   const shares = useMemberSharesOfIncome()
   const currency = useCurrency()
   const [newMember, setNewMember] = useState('')
+  const [removing, setRemoving] = useState<Member | null>(null)
   const trimmed = newMember.trim()
 
   const incomeOf = new Map(incomes.map((i) => [i.memberId, i]))
@@ -84,7 +87,7 @@ export function HouseholdSection() {
                   <IconButton
                     label={tpl(fr.settings.memberRemove, member.name)}
                     onClick={() => {
-                      removeMember(member.id)
+                      setRemoving(member)
                     }}
                   >
                     <Close size={18} />
@@ -197,6 +200,24 @@ export function HouseholdSection() {
           </Link>
         )}
       </div>
+
+      <ConfirmDialog
+        open={removing !== null}
+        title={tpl(fr.settings.memberRemove, removing?.name ?? '')}
+        steps={[
+          {
+            question: tpl(fr.settings.memberRemoveConfirm, removing?.name ?? ''),
+            action: fr.common.delete,
+          },
+        ]}
+        onCancel={() => {
+          setRemoving(null)
+        }}
+        onConfirm={() => {
+          if (removing !== null) removeMember(removing.id)
+          setRemoving(null)
+        }}
+      />
     </Tile>
   )
 }

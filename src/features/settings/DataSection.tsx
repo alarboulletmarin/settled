@@ -10,6 +10,7 @@ import {
 } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { DataIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
@@ -30,7 +31,7 @@ export function DataSection() {
   const data = useStore((s) => s.data)
   const resetAll = useStore((s) => s.resetAll)
   const [lastExport, setLastExport] = useState(readLastExport)
-  const [resetStep, setResetStep] = useState(0)
+  const [confirming, setConfirming] = useState(false)
 
   const doExport = (): void => {
     const on = today()
@@ -61,52 +62,37 @@ export function DataSection() {
         <ImportControl className="w-fit" />
       </div>
 
-      {/* Double confirmation, comme l'exige le cahier §4.8. */}
+      {/* Triple confirmation : c'est le seul geste de l'app qui n'épargne rien,
+          et rien n'est enregistré ailleurs que dans ce navigateur. */}
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <p className="t-label">{fr.settings.resetHint}</p>
-        {resetStep === 0 && (
-          <Button
-            variant="ghost"
-            className="w-fit"
-            onClick={() => {
-              setResetStep(1)
-            }}
-          >
-            {fr.settings.reset}
-          </Button>
-        )}
-        {resetStep > 0 && (
-          <div className="flex flex-col gap-2 rounded-inner bg-surface-2 p-3">
-            <p className="t-body">
-              {resetStep === 1 ? fr.settings.resetConfirm1 : fr.settings.resetConfirm2}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setResetStep(0)
-                }}
-              >
-                {fr.common.cancel}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => {
-                  if (resetStep === 1) {
-                    setResetStep(2)
-                    return
-                  }
-                  void resetAll().then(() => {
-                    setResetStep(0)
-                    toast(fr.settings.resetDone)
-                  })
-                }}
-              >
-                {resetStep === 1 ? fr.common.confirm : fr.settings.reset}
-              </Button>
-            </div>
-          </div>
-        )}
+        <Button
+          variant="ghost"
+          className="w-fit"
+          onClick={() => {
+            setConfirming(true)
+          }}
+        >
+          {fr.settings.reset}
+        </Button>
+        <ConfirmDialog
+          open={confirming}
+          title={fr.settings.reset}
+          steps={[
+            { question: fr.settings.resetConfirm1, action: fr.common.confirm },
+            { question: fr.settings.resetConfirm2, action: fr.common.confirm },
+            { question: fr.settings.resetConfirm3, action: fr.settings.reset },
+          ]}
+          onCancel={() => {
+            setConfirming(false)
+          }}
+          onConfirm={() => {
+            void resetAll().then(() => {
+              setConfirming(false)
+              toast(fr.settings.resetDone)
+            })
+          }}
+        />
       </div>
     </Tile>
   )

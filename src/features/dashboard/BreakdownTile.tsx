@@ -2,7 +2,7 @@ import { sum } from '@/domain/money'
 import { OTHER_CATEGORY } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { useFamilyMap, useKindTotals, useSpendingByFamily } from '@/store/selectors'
+import { useFamilyMap, useSpendingByFamily } from '@/store/selectors'
 import { familyColor } from '@/persistence/defaults'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
@@ -19,13 +19,20 @@ import { DONUT_SIZE, DONUT_SLICES, DONUT_THICKNESS } from './donut'
  * Par famille et non par catégorie : à une quarantaine de catégories, six parts
  * plus un gros « Autres » ne répondent plus à la question. Et hors épargne : un
  * versement sort du compte mais reste au foyer, l'inscrire ici ferait passer un
- * mois où l'on a mis 300 € de côté pour un mois dispendieux. Le montant épargné
- * se lit dessous, à sa place, sans se mêler au reste.
+ * mois où l'on a mis 300 € de côté pour un mois dispendieux.
+ *
+ * Un « Mis de côté » se lisait sous l'anneau. Il n'y est plus, pour deux
+ * raisons. Au foyer, il additionnait des épargnes individuelles, ce que le
+ * reste de l'app refuse de faire : deux personnes qui placent 300 € et 900 €
+ * n'ont pas « 1 200 € de côté », elles ont deux décisions séparées. Et il se
+ * lisait au seul confirmé quand l'anneau au-dessus compte aussi les prévues :
+ * deux chiffres voisins sur deux bases différentes se lisent comme une erreur.
+ * Ce qu'une personne a placé se dit sur la tuile « Capacité d'épargne », sous
+ * un filtre par membre, et se détaille sur l'écran de l'épargne.
  */
 export function BreakdownTile() {
   const slices = useSpendingByFamily(DONUT_SLICES)
   const families = useFamilyMap()
-  const totals = useKindTotals()
   const currency = useCurrency()
 
   const labelOf = (id: string): string =>
@@ -81,11 +88,6 @@ export function BreakdownTile() {
           ))}
         </ul>
       </div>
-      {totals.saving > 0 && (
-        <p className="t-label">
-          {tpl(fr.dashboard.savedThisMonth, formatMoney(totals.saving, currency))}
-        </p>
-      )}
       <p className="sr-only-text">{formatMoney(total, currency)}</p>
     </Tile>
   )

@@ -18,6 +18,7 @@ import {
   type Flow,
   type KindOf,
   type KindTotals,
+  type MemberFilter,
   type MonthTotals,
   type RecurrenceTotals,
   type Upcoming,
@@ -34,7 +35,8 @@ import {
   savingsByCategory,
   spendingFlow,
   totalsByKind,
-  upcomingEntries,
+  upcomingDue,
+  withDaysLeft,
 } from '@/domain/stats'
 import { type AdvanceStatus, advanceStatus } from '@/domain/advance'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
@@ -215,16 +217,34 @@ export function useMonthScope(): MonthScope {
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
 
-  return useMemo(() => {
-    if (member === undefined) return { entries, prorated: false, partial: false }
-    const scoped = scopeToMember(entries, member, kindOf, incomes)
-    if (scoped !== null) return { entries: scoped, prorated: true, partial: false }
-    return {
-      entries: entries.filter((entry) => entry.memberId === member),
-      prorated: false,
-      partial: true,
-    }
-  }, [entries, member, kindOf, incomes])
+  return useMemo(
+    () => scopeEntries(entries, member, kindOf, incomes),
+    [entries, member, kindOf, incomes],
+  )
+}
+
+/**
+ * La même règle, sur un jeu d'entrées quelconque.
+ *
+ * Extraite pour que les échéances projetées de « Prochaines échéances » — qui
+ * ne sont dans aucune liste du document — subissent exactement le prorata des
+ * autres : deux façons de filtrer par membre finiraient par ne plus donner le
+ * même centime.
+ */
+function scopeEntries(
+  entries: readonly Entry[],
+  member: MemberFilter,
+  kindOf: (categoryId: string) => CategoryKind,
+  incomes: readonly MemberIncome[],
+): MonthScope {
+  if (member === undefined) return { entries: [...entries], prorated: false, partial: false }
+  const scoped = scopeToMember(entries, member, kindOf, incomes)
+  if (scoped !== null) return { entries: scoped, prorated: true, partial: false }
+  return {
+    entries: entries.filter((entry) => entry.memberId === member),
+    prorated: false,
+    partial: true,
+  }
 }
 
 /**
@@ -273,12 +293,29 @@ export function useCategoryBreakdown(direction: 'in' | 'out' = 'out'): CategoryS
 }
 
 /**
- * Les prochaines échéances. Elle se lit, elle ne s'actionne pas : une charge
- * commune y figure donc à la part du membre sélectionné, comme les totaux.
+ * Les prochaines échéances, projetées au-delà des mois déjà ouverts.
+ *
+ * Elle se lit, elle ne s'actionne pas : une charge commune y figure donc à la
+ * part du membre sélectionné, comme les totaux. La projection vient d'abord et
+ * le filtre ensuite, par le même `scopeEntries` que le reste du tableau de
+ * bord — posée ou projetée, une échéance y passe par la même règle.
  */
 export function useUpcoming(limit = 5): Upcoming[] {
-  const { entries } = useMonthScope()
-  return useMemo(() => upcomingEntries(entries, today(), limit), [entries, limit])
+  const entries = useEntries()
+  const recurrences = useRecurrences()
+  const months = useStore((s) => s.data.months)
+  const member = useMemberFilter()
+  const kindOf = useKindOf()
+  const incomes = useMemberIncomes()
+
+  return useMemo(() => {
+    const on = today()
+    const opened = new Set(months.map((m) => m.ym))
+    // Large devant `limit` : le filtre par membre peut en écarter, et couper à
+    // cinq avant de filtrer rendrait une liste plus courte que demandé.
+    const due = upcomingDue(entries, recurrences, opened, on, limit * 4)
+    return withDaysLeft(scopeEntries(due, member, kindOf, incomes).entries, on).slice(0, limit)
+  }, [entries, recurrences, months, member, kindOf, incomes, limit])
 }
 
 /* --- Lecture par nature ---------------------------------------------------*/
@@ -687,6 +724,18 @@ export function useMonthConfirmed(): Entry[] {
         .sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0)),
     [entries],
   )
+}
+
+/**
+ * Les échéances du mois qui peuvent redevenir prévues.
+ *
+ * Confirmées, et nées d'une récurrence : une saisie ponctuelle est un fait, pas
+ * une prévision en attente, et la renvoyer dans « À confirmer » n'aurait aucun
+ * sens. C'est la liste sur laquelle agit « Remettre le mois à confirmer ».
+ */
+export function useMonthUnconfirmable(): Entry[] {
+  const confirmed = useMonthConfirmed()
+  return useMemo(() => confirmed.filter((e) => e.recurrenceId !== undefined), [confirmed])
 }
 
 export function useIsMonthOpened(): boolean {

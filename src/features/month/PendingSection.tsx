@@ -6,10 +6,11 @@ import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDateCompact, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
-import { confirmEntries, confirmEntry } from '@/store/actions'
-import { useCategoryMap, useMonthPending } from '@/store/selectors'
+import { confirmEntries, confirmEntry, unconfirmEntries } from '@/store/actions'
+import { useCategoryMap, useMonthPending, useMonthUnconfirmable } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { AmountInput } from '@/ui/Field'
@@ -169,6 +170,8 @@ export function PendingSection() {
   const { fixed, variable } = useMonthPending()
   const categories = useCategoryMap()
   const navigate = useNavigate()
+  const unconfirmable = useMonthUnconfirmable()
+  const [undoing, setUndoing] = useState(false)
 
   const all = useMemo(
     () =>
@@ -177,7 +180,50 @@ export function PendingSection() {
   )
   const toFill = useMemo(() => new Set(variable.map((e) => e.id)), [variable])
 
-  if (all.length === 0) return null
+  const undo = (
+    <ConfirmDialog
+      open={undoing}
+      title={fr.month.unconfirmAll}
+      steps={[
+        {
+          question: tpl(fr.month.unconfirmAllConfirm, unconfirmable.length),
+          action: fr.month.unconfirm,
+        },
+      ]}
+      onCancel={() => {
+        setUndoing(false)
+      }}
+      onConfirm={() => {
+        setUndoing(false)
+        unconfirmEntries(unconfirmable.map((e) => e.id))
+        toast(fr.month.unconfirmedAll)
+      }}
+    />
+  )
+
+  /* Le mois bouclé n'efface pas la section : c'est ici qu'on a confirmé, c'est
+     donc ici qu'on doit pouvoir revenir dessus. Elle se réduit à sa phrase et
+     au geste inverse — sans quoi « Confirmer le mois » fait disparaître le seul
+     endroit où l'on aurait cherché comment le défaire. */
+  if (all.length === 0) {
+    if (unconfirmable.length === 0) return null
+    return (
+      <Tile className="flex flex-col gap-3">
+        <Eyebrow icon={ToConfirmIcon}>{fr.month.toConfirm}</Eyebrow>
+        <p className="t-label">{fr.month.done}</p>
+        <Button
+          variant="ghost"
+          className="self-start"
+          onClick={() => {
+            setUndoing(true)
+          }}
+        >
+          {fr.month.unconfirmAll}
+        </Button>
+        {undo}
+      </Tile>
+    )
+  }
 
   const colorOf = (categoryId: string): string =>
     categories.get(categoryId)?.color ?? 'var(--cat-rest)'
@@ -229,6 +275,22 @@ export function PendingSection() {
           ),
         )}
       </ul>
+
+      {/* Le retour en arrière reste atteignable tant qu'il reste quelque chose
+          à ramener, y compris quand le mois n'est confirmé qu'à moitié. */}
+      {unconfirmable.length > 0 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          onClick={() => {
+            setUndoing(true)
+          }}
+        >
+          {fr.month.unconfirmAll}
+        </Button>
+      )}
+      {undo}
     </Tile>
   )
 }

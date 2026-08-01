@@ -1,4 +1,5 @@
 import type { Member } from '@/domain/types'
+import { memberPatch } from '@/features/split/memberDraft'
 import { fr } from '@/i18n/fr'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { kindsOfNature } from '@/ui/categoryKinds'
@@ -116,7 +117,7 @@ export function IdentityFields({ draft, patch, errors, members, needsMember = fa
               value={draft.memberId}
               invalid={Boolean(errors.member)}
               onChange={(e) => {
-                patch({ memberId: e.target.value })
+                patch(memberPatch(e.target.value))
               }}
             >
               <option value="">{fr.shell.everyone}</option>

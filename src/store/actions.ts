@@ -176,7 +176,7 @@ export function removeAdvance(id: string): void {
     const without = updates.removeAdvance(data, id)
     return recurrenceId === undefined
       ? without
-      : updates.removeRecurrence(without, recurrenceId, today())
+      : updates.removeRecurrence(without, recurrenceId)
   })
 }
 
@@ -239,7 +239,7 @@ export function resumeRecurrence(id: string): void {
 }
 
 export function removeRecurrence(id: string): void {
-  mutate((data) => updates.removeRecurrence(data, id, today()))
+  mutate((data) => updates.removeRecurrence(data, id))
 }
 
 /* --- Entrées --------------------------------------------------------------*/
@@ -269,6 +269,14 @@ export function confirmEntry(id: string, amount?: Money): void {
 
 export function confirmEntries(ids: readonly string[]): void {
   mutate((data) => updates.confirmEntries(data, ids))
+}
+
+export function unconfirmEntry(id: string): void {
+  mutate((data) => updates.unconfirmEntries(data, [id]))
+}
+
+export function unconfirmEntries(ids: readonly string[]): void {
+  mutate((data) => updates.unconfirmEntries(data, ids))
 }
 
 /* --- Réglages -------------------------------------------------------------*/

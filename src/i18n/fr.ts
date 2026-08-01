@@ -127,6 +127,8 @@ export const fr = {
     memberRename: 'Prénom de %s',
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
+    memberRemoveConfirm:
+      'Ses entrées et ses récurrences repassent au foyer : rien n’est effacé. Retirer %s ?',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
     /* Le revenu ne se saisit pas ici : il se lit sur les récurrences de
        ressources du membre. Le stocker à côté en ferait une seconde vérité.
@@ -182,12 +184,21 @@ export const fr = {
     import: 'Importer un fichier',
     importHint: 'Remplace intégralement les données actuelles.',
     importConfirm: 'Remplacer toutes les données par ce fichier ?',
+    /* Un import est un effacement déguisé : le fichier arrive, tout le reste
+       part. Il se confirme donc deux fois, comme un remplacement, sans aller
+       jusqu'aux trois de la réinitialisation — il reste quelque chose après. */
+    importConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
     reset: 'Tout effacer',
     resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
+    /* Trois questions, et trois questions différentes : ce qui part, le fait
+       qu'il n'y a pas de retour, puis la dernière chance d'exporter. Trois fois
+       la même phrase ne se lit pas, elle se clique. */
     resetConfirm1: 'Effacer toutes les données de cet appareil ?',
-    resetConfirm2: 'Vraiment tout effacer ? Exporte d’abord si tu veux garder une trace.',
+    resetConfirm2:
+      'Le foyer, les membres, les récurrences, les crédits et toutes les entrées partent. Il n’y a pas de retour.',
+    resetConfirm3: 'Dernière question. Exporte d’abord si tu veux garder une trace.',
     resetDone: 'Données effacées',
 
     reminderTitle: 'Ton dernier export date de plus de 30 jours.',
@@ -244,12 +255,12 @@ export const fr = {
     breakdown: 'Répartition',
     breakdownHint: 'sorties du mois',
     upcoming: 'Prochaines échéances',
-    subscriptions: 'Récurrences',
-    subscriptionsHint: '%s par an',
     inflow: 'Entrées',
     outflow: 'Sorties',
     noBreakdown: 'Aucune sortie ce mois-ci.',
-    noUpcoming: 'Plus d’échéance ce mois-ci.',
+    /* La tuile ne s'arrête pas au mois affiché : elle lit les règles au-delà
+       des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout. */
+    noUpcoming: 'Aucune échéance à venir.',
     progress: 'Jour %s sur %s',
     monthAhead: 'Mois à venir',
     monthDone: 'Mois terminé',
@@ -259,10 +270,16 @@ export const fr = {
        taux décrit le mois passé, le reste appelle un geste — c'est lui qui fait
        ouvrir l'écran. Le taux s'y lit, à côté de sa ventilation. */
     savingLeft: 'reste %s à placer',
+    /* Sous un filtre par membre seulement : ce qu'il a déjà placé et ce qu'il
+       lui reste à placer, les deux moitiés de sa capacité. Au foyer, la somme
+       de deux épargnes individuelles ne décide de rien et ne se dit pas.
+       Deux versions, parce qu'un dépassement n'est pas un reste : placer plus
+       qu'on ne dégage se dit, et ne s'annonce pas comme « reste −57 € ». */
+    savingPlacedLeft: '%s placé · reste %s',
+    savingPlacedOver: '%s placé · %s de plus que la capacité',
     showSavings: 'Voir où placer %s',
     spending: 'Où part l’argent',
     spendingHint: 'charges et crédits, hors épargne',
-    savedThisMonth: 'Mis de côté : %s',
     credits: 'Crédits',
     creditsRemaining: 'capital restant dû',
     noCredits: 'Aucun crédit en cours.',
@@ -354,6 +371,15 @@ export const fr = {
     confirmAllHint: 'Les montants à saisir restent à confirmer un par un.',
     openEntry: 'Modifier %s',
     done: 'Tout est confirmé pour ce mois.',
+    /* Confirmer n'est pas un aller simple. Le geste s'appelle « remettre à
+       confirmer » et non « annuler » : « Annuler » est déjà le bouton qui ferme
+       une boîte de dialogue, et les deux se seraient répondu dans la même. */
+    unconfirm: 'Remettre à confirmer',
+    unconfirmed: 'Échéance remise à confirmer',
+    unconfirmAll: 'Remettre le mois à confirmer',
+    unconfirmAllConfirm:
+      'Les %s échéances confirmées de ce mois repassent dans « À confirmer », avec leurs montants.',
+    unconfirmedAll: 'Mois remis à confirmer',
     entries: 'Ce mois',
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',
     groupBy: 'Regrouper par',
@@ -400,6 +426,7 @@ export const fr = {
     removedOut: 'Dépense supprimée',
     removedIn: 'Revenu supprimé',
     remove: 'Supprimer l’entrée',
+    removeConfirm: 'Elle disparaît du mois et de l’historique, sans retour. Supprimer ?',
     amount: 'Montant',
     category: 'Catégorie',
     date: 'Date',
@@ -408,6 +435,11 @@ export const fr = {
     categoryPlaceholder: 'Choisis une catégorie',
     shared: 'Charge commune, à partager entre les membres',
     sharedHint: 'Elle entre dans la répartition au prorata des revenus.',
+    /* Sur « tout le foyer », la case ne se décoche pas : une charge que
+       personne ne s'attribue est commune par règle, et la décocher sans dire à
+       qui elle est la ferait sortir du compte du foyer sans apparaître dans le
+       mois de personne. La case reste, cochée, pour dire ce qui se passe. */
+    sharedLocked: 'Personne ne s’attribue cette ligne : elle est commune, et se répartit au prorata.',
     member: 'Membre',
     note: 'Note',
     direction: 'Sens',
@@ -512,11 +544,16 @@ export const fr = {
     priceChanged: 'Le prix a changé : %s → %s',
     priceChangedSince: 'depuis le %s',
     stop: 'Arrêter la récurrence',
+    stopAction: 'Arrêter',
+    stopConfirm:
+      'Ses échéances à venir sont retirées, les confirmées restent, et la récurrence pourra être reprise. Arrêter ?',
     stopped: 'Récurrence arrêtée',
     resume: 'Reprendre la récurrence',
     remove: 'Supprimer la récurrence',
+    /* Les deux moitiés, parce que l'ancienne copie n'en disait qu'une : la
+       règle disparaît vraiment de la liste, et ce qui a été payé reste. */
     removeConfirm:
-      'Les échéances déjà confirmées sont conservées. Supprimer cette récurrence ?',
+      'La récurrence disparaît avec ses échéances à venir. Celles déjà confirmées restent dans l’historique.',
     stopHint: 'Les échéances déjà confirmées restent dans l’historique.',
     form: {
       label: 'Libellé',
@@ -787,6 +824,10 @@ export const fr = {
     membersEmpty: 'Personne pour l’instant. Ajoute un prénom, ou passe.',
     membersRename: 'Prénom de %s',
     membersRemove: 'Retirer %s',
+    /* Rien à perdre au premier lancement — aucune entrée n'existe encore —,
+       mais un retrait se demande partout de la même façon : apprendre ici que
+       la croix agit sans prévenir se paierait plus tard, ailleurs. */
+    membersRemoveConfirm: 'Retirer %s du foyer ?',
     solo: 'Je suis seul·e',
     start: 'Commencer',
     importHint: 'Tu as déjà un fichier Settled ? Restaure-le sans passer par ici.',
