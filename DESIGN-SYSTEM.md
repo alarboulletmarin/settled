@@ -186,6 +186,21 @@ Ce maximum n'est pas un dû : une tuile d'une seule rangée fait 88px, dont 56 u
 
 **Tile** — `background: var(--surface)`, `border-radius: var(--r-tile)`, bordure 1px en thème sombre, ombre en thème clair. Variante `accent` : fond lime, texte encre. Variante `accent-2` : fond violet, texte blanc. Une seule tuile accentuée par écran.
 
+**Repère d'action d'une tuile** — une tuile cliquable dit au coin ce que le clic fait, parce que rien d'autre ne le dit : le survol qui la soulève d'un pixel n'existe pas au doigt, et douze tuiles identiques à l'œil peuvent cacher trois gestes différents. Mono 11px et glyphe 14px, en `--text-muted`, `aria-hidden` — le nom accessible de la tuile porte déjà le sens.
+
+| Ce que fait le clic | Repère |
+|---|---|
+| Mène à un autre écran | nom de l'écran + chevron `›` — `ÉPARGNE ›`. Sans le nom quand l'eyebrow le dit déjà : `RÉPARTITION … ›` |
+| Ouvre une feuille sur place | glyphe d'information seul. Pas de nom : il n'y a pas de destination |
+| Fait défiler vers une section de la page | nom de la section + flèche vers le bas — `CE MOIS ⌄`. Elle descend, elle ne pointe pas de côté |
+| Rien | **aucun repère.** C'est cette règle-là qui rend les trois autres lisibles |
+
+Le repère vit en haut à droite, hors du flux — les tuiles ne s'accordent pas sur ce qu'elles posent en tête, et un repère dans le flux les décalerait chacune différemment. Sur une **2×1** de la grille mobile il descend au coin bas : « PRÉVISIONNEL » consomme à lui seul les cent pixels utiles, et la lecture secondaire y est masquée, donc c'est le bas qui est libre. Au-delà de 1024px l'inverse est vrai, et il remonte.
+
+Une tuile dont le **contenu est une liste à lire** garde un vrai lien plutôt que de devenir une cible d'un bloc : l'envelopper dans un bouton effacerait ses lignes derrière un nom unique pour un lecteur d'écran. Le lien prend alors la typographie et le glyphe du repère, au même coin.
+
+Un état **pressé** sur toute tuile actionnable, et pas seulement un survol : la moitié des écrans n'a pas de curseur.
+
 **Eyebrow** — mono 11px majuscules dans une pilule `--surface-2`, ancrée en haut à gauche de la tuile. C'est ce qui donne le rythme de la référence : la tuile n'a pas de titre, elle a une étiquette. Elle accepte un repère (§9) à sa gauche, 13px. L'étiquette tient toujours sur une ligne : sur une tuile trop étroite elle resserre d'abord ses marges et son interlettrage, et n'abandonne le repère qu'ensuite — c'est le libellé qui porte le sens.
 
 **Field** — libellé, contrôle, aide ou erreur. Le libellé porte la mention `· obligatoire` ou `· facultatif`, dans la même graisse atténuée. Elle vit dans le `<label>`, donc dans le nom accessible du contrôle : aucun `aria-required` à poser en plus. On la met sur les formulaires qui créent ou modifient une entité, pas sur les rangées d'ajout à un seul champ — un bouton désactivé tant que le champ est vide y dit déjà tout.

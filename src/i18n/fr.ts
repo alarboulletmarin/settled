@@ -282,6 +282,9 @@ export const fr = {
     spendingHint: 'charges et crédits, hors épargne',
     credits: 'Crédits',
     creditsRemaining: 'capital restant dû',
+    creditsRunningOne: '%s crédit en cours',
+    creditsRunningMany: '%s crédits en cours',
+    showCredits: 'Voir le détail des %s',
     noCredits: 'Aucun crédit en cours.',
     split: 'Répartition',
     splitHint: 'charges communes du mois',
@@ -302,7 +305,6 @@ export const fr = {
     memberShare: 'À verser sur le commun',
     memberShareOwn: 'Charges perso',
     memberShareTotal: 'Total à payer',
-    memberShareHint: 'détail',
     srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun

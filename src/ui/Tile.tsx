@@ -1,10 +1,38 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { ChevronDown, ChevronRight, InfoIcon } from './Icons'
 
 /** Formats autorisés par le DS §5. Rien d'autre, sinon la grille se délite. */
 export type TileSpan = '2x1' | '2x2' | '4x1' | '4x2' | '6x2'
 
 export type TileVariant = 'default' | 'accent' | 'accent-2'
+
+/**
+ * Ce que le clic fait — et donc le repère posé au coin de la tuile.
+ *
+ * Douze tuiles rigoureusement identiques à l'œil cachaient cinq comportements :
+ * ouvrir une feuille d'explication, partir sur un autre écran, faire défiler
+ * vers une section plus bas, ne rien faire, ou ne rien faire sauf par un lien
+ * minuscule posé à l'intérieur. Le seul indice était un survol qui soulève la
+ * tuile d'un pixel — donc rien du tout au doigt.
+ *
+ * Un repère par comportement, et rien sur ce qui ne fait rien : c'est cette
+ * dernière règle qui rend les trois autres lisibles. Une tuile sans repère est
+ * une tuile qu'on lit, pas une tuile qu'on rate.
+ */
+export type TileAffordance =
+  /**
+   * Mène ailleurs. `destination` nomme l'écran d'arrivée — savoir que c'est
+   * cliquable ne dit pas encore où l'on atterrit —, et se tait quand cet écran
+   * porte déjà le nom de la tuile : « RÉPARTITION … Répartition › » n'apprend
+   * rien de plus que le chevron seul, et prend la largeur du chiffre.
+   */
+  | { kind: 'navigate'; destination?: string }
+  /** Ouvre une feuille sur place. Pas de destination, il n'y en a pas. */
+  | { kind: 'explain' }
+  /** Fait défiler vers une section de la même page. La flèche descend, elle ne
+   *  pointe pas de côté : « plus bas », et non « ailleurs ». */
+  | { kind: 'scroll'; destination: string }
 
 export type TileProps = {
   children: ReactNode
@@ -15,6 +43,8 @@ export type TileProps = {
   /** Rend la tuile actionnable. La cible tactile fait alors toute la tuile. */
   onClick?: () => void
   label?: string
+  /** Sans objet sans `onClick` : on n'annonce pas un geste qui n'existe pas. */
+  affordance?: TileAffordance
 }
 
 const VARIANT_CLASS: Record<TileVariant, string> = {
@@ -34,10 +64,66 @@ const PADDING = 'p-5 md:p-6'
 const PADDING_FLAT = 'p-4'
 const FLAT: readonly TileSpan[] = ['2x1', '4x1']
 
-export function Tile({ children, variant = 'default', span, className, onClick, label }: TileProps) {
+/**
+ * Le repère, au coin haut-droit, hors du flux du contenu.
+ *
+ * En position absolue et non dans une rangée avec l'eyebrow : les tuiles ne
+ * s'accordent pas sur ce qu'elles posent en tête — certaines une étiquette
+ * seule, d'autres un chiffre héros collé dessous — et un repère qui participe
+ * au flux les décalerait chacune différemment. Aligné sur le cadre de la tuile,
+ * il tombe toujours sur la ligne de l'eyebrow.
+ *
+ * `aria-hidden` : le nom accessible de la tuile dit déjà où elle mène (« Voir
+ * où placer 2 500 € »), et l'annoncer deux fois ne l'apprendrait pas mieux.
+ */
+function Affordance({ affordance, span }: { affordance: TileAffordance; span?: TileSpan }) {
+  const Glyph =
+    affordance.kind === 'explain'
+      ? InfoIcon
+      : affordance.kind === 'scroll'
+        ? ChevronDown
+        : ChevronRight
+  const flat = span !== undefined && FLAT.includes(span)
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'pointer-events-none absolute flex max-w-[60%] items-center gap-1 text-text-muted',
+        flat ? 'right-4' : 'right-5 md:right-6',
+        /* Une 2×1 de la grille mobile n'offre qu'une centaine de pixels utiles,
+           et « PRÉVISIONNEL » les consomme déjà à lui seul — le repère posé en
+           haut lui passait dessus. Il descend donc au coin bas, libre tant que
+           la lecture secondaire est masquée à cette largeur (`max-lg:sr-only`
+           sur les tuiles concernées). Au-delà de 1024px, c'est l'inverse : la
+           rangée du bas se remplit, celle du haut se dégage, et le repère
+           remonte. Deux coins, jamais deux en même temps. */
+        span === '2x1' ? 'bottom-4 lg:top-4 lg:bottom-auto' : flat ? 'top-4' : 'top-5 md:top-6',
+      )}
+    >
+      {affordance.kind !== 'explain' && affordance.destination !== undefined && (
+        <span className={cn('t-axis truncate', span === '2x1' && 'max-lg:hidden')}>
+          {affordance.destination}
+        </span>
+      )}
+      <Glyph size={14} />
+    </span>
+  )
+}
+
+export function Tile({
+  children,
+  variant = 'default',
+  span,
+  className,
+  onClick,
+  label,
+  affordance,
+}: TileProps) {
+  const flat = span !== undefined && FLAT.includes(span)
   const classes = cn(
     'tile flex min-w-0 flex-col overflow-hidden',
-    span !== undefined && FLAT.includes(span) ? PADDING_FLAT : PADDING,
+    flat ? PADDING_FLAT : PADDING,
     VARIANT_CLASS[variant],
     span && `span-${span}`,
     className,
@@ -51,10 +137,13 @@ export function Tile({ children, variant = 'default', span, className, onClick, 
         aria-label={label}
         className={cn(
           classes,
-          'text-left transition-[transform,box-shadow] duration-[var(--dur)] ease-ds',
-          'hover:-translate-y-px active:translate-y-0',
+          'text-left transition-[transform,box-shadow,filter] duration-[var(--dur)] ease-ds',
+          // Le survol n'existe pas au doigt : sans état pressé, la moitié des
+          // utilisateurs n'a aucun retour que le geste a été pris.
+          'hover:-translate-y-px active:translate-y-0 active:brightness-95',
         )}
       >
+        {affordance && <Affordance affordance={affordance} {...(span ? { span } : {})} />}
         {children}
       </button>
     )

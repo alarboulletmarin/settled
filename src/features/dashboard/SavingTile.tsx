@@ -73,6 +73,7 @@ export function SavingTile() {
         void navigate(SAVINGS_PATH)
       }}
       label={tpl(fr.dashboard.showSavings, fr.dashboard.capacity)}
+      affordance={{ kind: 'navigate', destination: fr.savings.title }}
     >
       <Eyebrow icon={SavingsIcon}>{fr.dashboard.capacity}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">

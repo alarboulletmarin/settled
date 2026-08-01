@@ -32,6 +32,7 @@ import { Database } from '@phosphor-icons/react/dist/csr/Database'
 import { GearSix } from '@phosphor-icons/react/dist/csr/GearSix'
 import { HandCoins } from '@phosphor-icons/react/dist/csr/HandCoins'
 import { House } from '@phosphor-icons/react/dist/csr/House'
+import { Info } from '@phosphor-icons/react/dist/csr/Info'
 import { ListBullets } from '@phosphor-icons/react/dist/csr/ListBullets'
 import { Palette } from '@phosphor-icons/react/dist/csr/Palette'
 import { PiggyBank } from '@phosphor-icons/react/dist/csr/PiggyBank'
@@ -75,6 +76,9 @@ export const Plus = adapt(PhPlus)
 export const Close = adapt(X)
 export const Check = adapt(PhCheck)
 export const Warning = adapt(WarningCircle)
+/* Le repère d'une tuile qui s'explique sur place, par opposition au chevron de
+   celle qui mène ailleurs : deux gestes, deux glyphes. */
+export const InfoIcon = adapt(Info)
 
 /* --- Repère — navigation --------------------------------------------------*/
 

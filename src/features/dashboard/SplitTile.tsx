@@ -52,8 +52,18 @@ export function SplitTile() {
   return (
     /* La tuile entière est la cible : un lien de 44px à l'intérieur ferait
        déborder les 148px de contenu d'une 2×2, et l'anneau remonterait sur
-       l'eyebrow. La cible tactile y gagne, en prime. */
-    <Tile span="2x2" className="gap-3" onClick={open} label={fr.dashboard.split}>
+       l'eyebrow. La cible tactile y gagne, en prime.
+
+       Le repère n'a pas de nom de destination : l'eyebrow dit déjà
+       « Répartition », et l'écrire une seconde fois au coin n'apprendrait rien
+       de plus que le chevron seul. */
+    <Tile
+      span="2x2"
+      className="gap-3"
+      onClick={open}
+      label={fr.dashboard.split}
+      affordance={{ kind: 'navigate' }}
+    >
       <Eyebrow icon={SplitIcon}>{fr.dashboard.split}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         <Ring
@@ -80,7 +90,10 @@ export function SplitTile() {
           ))}
         </ul>
       </div>
-      <p className="t-label underline underline-offset-2">{fr.dashboard.splitHint}</p>
+      {/* Plus souligné : c'était un faux lien — un texte qui promet un clic
+          dans une tuile qui en portait déjà un, sur une autre destination
+          supposée. Le repère du coin tient ce rôle, et lui seul. */}
+      <p className="t-label">{fr.dashboard.splitHint}</p>
     </Tile>
   )
 }
