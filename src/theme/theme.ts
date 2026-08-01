@@ -10,7 +10,7 @@
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
 
-export const THEME_STORAGE_KEY = 'settled.theme'
+export const THEME_STORAGE_KEY = 'tout-compte-fait.theme'
 
 const THEME_COLOR: Record<ResolvedTheme, string> = {
   light: '#F0F5F2',

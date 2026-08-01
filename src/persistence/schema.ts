@@ -162,7 +162,7 @@ export type MigrationResult = {
  */
 export function migrateDocument(raw: unknown): MigrationResult {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    throw new ImportError('Le fichier ne contient pas un document Settled.')
+    throw new ImportError('Le fichier ne contient pas un document Tout compte fait.')
   }
 
   let doc = raw as RawDocument
@@ -170,7 +170,7 @@ export function migrateDocument(raw: unknown): MigrationResult {
 
   if (from > CURRENT_SCHEMA_VERSION) {
     throw new ImportError(
-      `Ce fichier vient d'une version plus récente de l'app (schéma ${String(from)}). Mets Settled à jour avant de l'importer.`,
+      `Ce fichier vient d'une version plus récente de l'app (schéma ${String(from)}). Mets Tout compte fait à jour avant de l'importer.`,
     )
   }
 

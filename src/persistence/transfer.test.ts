@@ -134,7 +134,7 @@ describe('import — fichiers hostiles', () => {
 
   it('refuse un schéma venu du futur, en disant quoi faire', () => {
     const future = JSON.stringify({ ...emptyData(), schemaVersion: 99 })
-    expect(() => parseImport(future)).toThrow(/mets settled à jour/i)
+    expect(() => parseImport(future)).toThrow(/mets tout compte fait à jour/i)
   })
 
   it('écarte une entrée au montant fractionnaire plutôt que de l’arrondir', () => {
@@ -179,7 +179,7 @@ describe('migrations', () => {
 
 describe('nom de fichier', () => {
   it('est horodaté', () => {
-    expect(exportFilename('2026-07-30')).toBe('settled-2026-07-30.json')
+    expect(exportFilename('2026-07-30')).toBe('tout-compte-fait-2026-07-30.json')
   })
 })
 

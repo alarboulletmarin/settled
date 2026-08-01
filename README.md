@@ -1,4 +1,4 @@
-# Settled
+# Tout compte fait
 
 Suivi des finances du foyer. Full frontend, sans compte ni serveur : les données
 vivent dans le navigateur et rien ne sort de l'appareil.

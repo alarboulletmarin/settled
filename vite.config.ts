@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Settled — finances du foyer',
-        short_name: 'Settled',
+        name: 'Tout compte fait — finances du foyer',
+        short_name: 'Tout compte fait',
         description: 'Suivi des finances du foyer. Tout reste sur ton appareil.',
         lang: 'fr',
         dir: 'ltr',
