@@ -5,11 +5,18 @@ import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Direction, Entry } from '@/domain/types'
 import { DIRECTION_PARAM, NATURE_PARAM, directionFromParam, natureFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
-import { addEntry, addRecurrencePaidOn, removeEntry, replaceEntry } from '@/store/actions'
+import {
+  addEntry,
+  addRecurrencePaidOn,
+  removeEntry,
+  replaceEntry,
+  unconfirmEntry,
+} from '@/store/actions'
 import { memberRequired } from '@/domain/split'
 import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
@@ -24,6 +31,7 @@ import {
   periodOf,
 } from '@/features/recurrences/period'
 import { SharedField } from '@/features/split/SharedField'
+import { memberPatch } from '@/features/split/memberDraft'
 import { defaultDateFor } from './defaultDate'
 
 /**
@@ -163,6 +171,14 @@ function EntryForm({
     initial(entry, defaultDate, defaultDirection, defaultNature, (id) => kindOf(id) === 'saving'),
   )
   const [showErrors, setShowErrors] = useState(false)
+  const [confirmingRemoval, setConfirmingRemoval] = useState(false)
+
+  /* Ce qui peut redevenir « prévu » : une échéance de récurrence déjà
+     confirmée, et rien d'autre. */
+  const unconfirmable =
+    entry !== null && entry.status === 'confirmed' && entry.recurrenceId !== undefined
+      ? entry
+      : null
 
   const amount = parseAmount(draft.amountText)
   /* Une ligne qui n'entre pas dans les charges communes doit être à quelqu'un :
@@ -394,7 +410,7 @@ function EntryForm({
                   value={draft.memberId}
                   invalid={Boolean(shown.member)}
                   onChange={(e) => {
-                    patch({ memberId: e.target.value })
+                    patch(memberPatch(e.target.value))
                   }}
                 >
                   <option value="">{fr.shell.everyone}</option>
@@ -408,20 +424,18 @@ function EntryForm({
             </Field>
           )}
 
-          {/* L'épargne ne se partage jamais : elle sort du compte, mais elle
-              reste à qui la met de côté. La case n'a donc rien à faire ici, et
-              l'y laisser permettrait de pousser un versement dans le pot
-              commun — ce que la répartition refuse par ailleurs. */}
-          {draft.nature !== 'saving' && (
-            <SharedField
-              categoryId={draft.categoryId}
-              memberId={draft.memberId}
-              value={draft.shared}
-              onChange={(shared) => {
-                patch({ shared })
-              }}
-            />
-          )}
+          {/* `SharedField` décide seul de son affichage : il ne se montre que
+              sur une sortie de nature charge ou dette. L'épargne et le revenu
+              n'ont donc rien à écarter ici — ils tombent sous la même règle,
+              au même endroit, pour la même raison. */}
+          <SharedField
+            categoryId={draft.categoryId}
+            memberId={draft.memberId}
+            value={draft.shared}
+            onChange={(shared) => {
+              patch({ shared })
+            }}
+          />
         </Tile>
       </form>
 
@@ -432,6 +446,22 @@ function EntryForm({
         <Button variant="secondary" onClick={onDone}>
           {fr.common.cancel}
         </Button>
+        {/* Confirmer n'est pas un aller simple, et seule une échéance peut
+            faire demi-tour : une saisie ponctuelle est un fait, jamais une
+            prévision en attente — elle se corrige ou se supprime. Pas de
+            confirmation, le geste se refait d'un clic. */}
+        {unconfirmable !== null && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              unconfirmEntry(unconfirmable.id)
+              toast(fr.month.unconfirmed)
+              onDone()
+            }}
+          >
+            {fr.month.unconfirm}
+          </Button>
+        )}
       </div>
 
       {/* La suppression ne se mêle pas aux deux boutons qui closent la saisie. */}
@@ -440,13 +470,25 @@ function EntryForm({
           <Button
             variant="ghost"
             onClick={() => {
-              removeEntry(entry.id)
-              toast(TOAST.removed[toastKey(draft.nature, entry.direction)])
-              onDone()
+              setConfirmingRemoval(true)
             }}
           >
             {fr.entry.remove}
           </Button>
+          <ConfirmDialog
+            open={confirmingRemoval}
+            title={fr.entry.remove}
+            steps={[{ question: fr.entry.removeConfirm, action: fr.common.delete }]}
+            onCancel={() => {
+              setConfirmingRemoval(false)
+            }}
+            onConfirm={() => {
+              setConfirmingRemoval(false)
+              removeEntry(entry.id)
+              toast(TOAST.removed[toastKey(draft.nature, entry.direction)])
+              onDone()
+            }}
+          />
         </div>
       )}
     </div>

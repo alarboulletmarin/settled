@@ -18,7 +18,8 @@ import {
   ymOf,
 } from './date'
 import { type Money, ZERO, add, ratio, sub, sum } from './money'
-import { monthlyEquivalent, annualCost } from './recurrence'
+import { buildPlannedEntry } from './month'
+import { expandRecurrence, monthlyEquivalent, annualCost } from './recurrence'
 import type { CategoryKind, Direction, Entry, Recurrence } from './types'
 
 /** Filtre par membre. `undefined` = tout le foyer. */
@@ -352,22 +353,67 @@ export function savingsByCategory(
 
 export type Upcoming = { entry: Entry; daysLeft: number }
 
-export function upcomingEntries(
+/** Un an et un peu : de quoi couvrir une annuelle sans jamais boucler à vide. */
+const UPCOMING_HORIZON_DAYS = 400
+
+/**
+ * Les prochaines échéances, qu'elles existent déjà ou non.
+ *
+ * `upcomingEntries` ne lisait que les `Entry` posées, et une récurrence n'en
+ * pose aucune tant que son mois n'a pas été *ouvert* — c'est-à-dire affiché.
+ * Un foyer qui avait bouclé son mois puis jeté un œil trois mois plus loin
+ * n'avait donc rien en septembre ni en octobre : la tuile sautait par-dessus et
+ * annonçait « dans 92 jours », alors que deux mois d'échéances tombaient avant.
+ * Le tri n'y était pour rien, le vivier était troué.
+ *
+ * La lecture se fait donc à deux sources, et la frontière est le mois ouvert :
+ *
+ * - **Mois ouvert, l'échéance fait foi.** On y prend les `planned` telles
+ *   quelles, sans rien projeter : leur date ou leur montant ont pu être
+ *   corrigés, et l'une d'elles a pu être supprimée — la règle n'a pas à la
+ *   ressusciter derrière l'utilisateur.
+ * - **Mois non ouvert, la règle projette.** Les échéances sont fabriquées à la
+ *   volée par `buildPlannedEntry`, exactement comme le ferait l'ouverture du
+ *   mois, montant variable compris. Rien n'est écrit : afficher un mois plus
+ *   loin ne doit pas peupler le document de mois que personne n'a demandés.
+ *
+ * Les **retards** comptent aussi, à partir du mois courant : une échéance passée
+ * que personne n'a confirmée est la plus proche de toutes, et la faire
+ * disparaître du seul écran qui la rappelait était le meilleur moyen de
+ * l'oublier. Au-delà du mois courant en arrière, on s'arrête : ce qui n'a pas
+ * été confirmé il y a six mois se règle sur l'écran du mois en question, pas
+ * dans une tuile qui parle de ce qui vient.
+ */
+export function upcomingDue(
   entries: readonly Entry[],
+  recurrences: readonly Recurrence[],
+  openedMonths: ReadonlySet<YearMonth>,
   from: ISODate,
   limit = 5,
-  memberId?: MemberFilter,
-): Upcoming[] {
-  return entries
-    .filter(
-      (e) =>
-        e.status === 'planned' &&
-        e.date >= from &&
-        (memberId === undefined || e.memberId === memberId),
-    )
+): Entry[] {
+  const fromMonth = ymOf(from)
+  const horizon = addDays(from, UPCOMING_HORIZON_DAYS)
+
+  const posed = entries.filter((e) => e.status === 'planned' && ymOf(e.date) >= fromMonth)
+
+  const projected: Entry[] = []
+  for (const recurrence of recurrences) {
+    for (const { date } of expandRecurrence(recurrence, from, horizon)) {
+      if (openedMonths.has(ymOf(date))) continue
+      projected.push(
+        buildPlannedEntry(recurrence, date, entries, () => `${recurrence.id}@${date}`),
+      )
+    }
+  }
+
+  return [...posed, ...projected]
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .slice(0, limit)
-    .map((entry) => ({ entry, daysLeft: diffDays(from, entry.date) }))
+}
+
+/** Le délai de chaque échéance, négatif pour un retard. */
+export function withDaysLeft(entries: readonly Entry[], from: ISODate): Upcoming[] {
+  return entries.map((entry) => ({ entry, daysLeft: diffDays(from, entry.date) }))
 }
 
 export type UpcomingRow = Upcoming & {
@@ -385,7 +431,7 @@ export type UpcomingRow = Upcoming & {
  *
  * Dans un jour, le plus gros mouvement d'abord — c'est la règle que se donne
  * déjà `groupEntries` : c'est ce qu'on vient chercher. L'ordre des jours, lui,
- * reste celui de `upcomingEntries`, chronologique.
+ * reste celui de `upcomingDue`, chronologique.
  *
  * Le tri s'applique après la coupe : il change l'ordre d'affichage, jamais
  * quelles échéances sont retenues.

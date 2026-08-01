@@ -2,8 +2,8 @@
  * Mutations du document — fonctions pures `Data → Data`.
  *
  * Le store ne fait que les appliquer : c'est ici, et nulle part dans un
- * composant, que vivent les règles (une récurrence supprimée mais déjà
- * confirmée est arrêtée, pas effacée ; un membre retiré libère ses entrées).
+ * composant, que vivent les règles (une récurrence supprimée laisse derrière
+ * elle ses échéances confirmées ; un membre retiré libère ses entrées).
  * ==========================================================================*/
 
 import { type ISODate, type YearMonth, today, ymOf } from './date'
@@ -275,16 +275,41 @@ export function resumeRecurrence(data: Data, id: string): Data {
 }
 
 /**
- * Supprime une récurrence. Si des échéances ont déjà été confirmées, elle est
- * arrêtée au lieu d'être effacée — l'historique ne se réécrit pas (cahier §3).
+ * Supprime une récurrence, et la supprime vraiment.
+ *
+ * Supprimer et arrêter sont deux gestes distincts (cahier §4.2), et rabattre le
+ * premier sur le second dès qu'une échéance avait été confirmée rendait la
+ * suppression inatteignable : la règle restait dans la liste, sous « Arrêtée »,
+ * pendant que le message annonçait qu'elle était supprimée.
+ *
+ * L'historique ne se réécrit pas pour autant. Les échéances déjà confirmées ont
+ * eu lieu : elles restent, simplement **détachées** de la règle qui les avait
+ * posées. Les prévues, elles, partent avec — une échéance prévue n'est qu'une
+ * projection de la règle, et sans règle elle ne projette plus rien.
+ *
+ * Un crédit ou une avance qui pointait sur elle voit son lien retiré, pas son
+ * suivi supprimé : `useDebtStatuses` lirait sinon la mensualité d'une règle
+ * disparue, donc `null`, sans que rien ne dise pourquoi.
  */
-export function removeRecurrence(data: Data, id: string, on: ISODate = today()): Data {
-  const hasConfirmed = data.entries.some((e) => e.recurrenceId === id && e.status === 'confirmed')
-  if (hasConfirmed) return stopRecurrence(data, id, on)
+export function removeRecurrence(data: Data, id: string): Data {
+  const detach = (entry: Entry): Entry => {
+    if (entry.recurrenceId !== id) return entry
+    const { recurrenceId: _dropped, ...rest } = entry
+    return rest
+  }
+  const unlink = <T extends { recurrenceId?: string }>(item: T): T => {
+    if (item.recurrenceId !== id) return item
+    const { recurrenceId: _dropped, ...rest } = item
+    return rest as T
+  }
   return {
     ...data,
     recurrences: data.recurrences.filter((r) => r.id !== id),
-    entries: data.entries.filter((e) => e.recurrenceId !== id),
+    entries: data.entries
+      .filter((e) => !(e.recurrenceId === id && e.status === 'planned'))
+      .map(detach),
+    debts: data.debts.map(unlink),
+    advances: data.advances.map(unlink),
   }
 }
 
@@ -367,6 +392,34 @@ export function confirmEntries(data: Data, ids: readonly string[]): Data {
   return {
     ...data,
     entries: data.entries.map((e) => (set.has(e.id) ? { ...e, status: 'confirmed' } : e)),
+  }
+}
+
+/**
+ * Le geste inverse : des échéances confirmées redeviennent prévues.
+ *
+ * Confirmer n'a jamais eu à être un aller simple. Une case cochée d'un doigt de
+ * trop laissait l'écran sans aucun retour, et il fallait supprimer la ligne
+ * pour la retrouver — ce qui n'est pas la même chose, et perd son montant.
+ *
+ * Seules les échéances de récurrence font demi-tour : une saisie ponctuelle est
+ * un fait, pas une prévision en attente. Le montant, lui, ne bouge pas — c'est
+ * peut-être celui d'une échéance variable, saisi à la main, et le rendre à la
+ * règle perdrait la saisie ; reconfirmer le retrouve tel quel.
+ *
+ * À savoir : redevenue prévue dans le mois courant ou un mois à venir, une
+ * échéance repasse sous la coupe de `syncRecurrenceEntries`, qui jette et refait
+ * les prévues dès qu'on touche à la règle. C'est cohérent — elle est de nouveau
+ * gouvernée par la règle — mais ça veut dire qu'un montant corrigé puis
+ * déconfirmé ne survit pas à une modification de la récurrence.
+ */
+export function unconfirmEntries(data: Data, ids: readonly string[]): Data {
+  const set = new Set(ids)
+  return {
+    ...data,
+    entries: data.entries.map((e) =>
+      set.has(e.id) && e.recurrenceId !== undefined ? { ...e, status: 'planned' } : e,
+    ),
   }
 }
 

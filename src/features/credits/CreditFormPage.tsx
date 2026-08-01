@@ -11,6 +11,7 @@ import { useDebtStatus, useRecurrenceRows } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
@@ -282,51 +283,33 @@ function Form({ debt, onDone }: { debt: Debt | null; onDone: () => void }) {
   )
 }
 
-/** Suppression en deux temps : le bouton devient sa propre confirmation. */
 function RemoveDebt({ debt, onDone }: { debt: Debt; onDone: () => void }) {
   const [confirming, setConfirming] = useState(false)
 
   return (
     <div className="border-t border-border pt-4">
-      {confirming ? (
-        <div className="flex max-w-sm flex-col gap-2 rounded-inner bg-surface-2 p-3">
-          <p className="t-label">{fr.credits.removeConfirm}</p>
-          {/* Grille et non flex, pour la raison qui vaut sur la fiche d'une
-              récurrence : deux boutons `full` que `shrink-0` empêche de
-              rétrécir débordent de leur boîte, et le second sort de l'écran. */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="secondary"
-              full
-              onClick={() => {
-                setConfirming(false)
-              }}
-            >
-              {fr.common.cancel}
-            </Button>
-            <Button
-              variant="danger"
-              full
-              onClick={() => {
-                removeDebt(debt.id)
-                toast(fr.credits.removed)
-                onDone()
-              }}
-            >
-              {fr.common.delete}
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button
-          variant="ghost"
-          onClick={() => {
-            setConfirming(true)
-          }}
-        >
-          {fr.credits.remove}
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setConfirming(true)
+        }}
+      >
+        {fr.credits.remove}
+      </Button>
+      <ConfirmDialog
+        open={confirming}
+        title={fr.credits.remove}
+        steps={[{ question: fr.credits.removeConfirm, action: fr.common.delete }]}
+        onCancel={() => {
+          setConfirming(false)
+        }}
+        onConfirm={() => {
+          setConfirming(false)
+          removeDebt(debt.id)
+          toast(fr.credits.removed)
+          onDone()
+        }}
+      />
     </div>
   )
 }

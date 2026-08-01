@@ -20,8 +20,10 @@ import {
   nextIncomeDate,
   restToLive,
   recurrenceTotals,
-  upcomingEntries,
+  type Upcoming,
+  upcomingDue,
   upcomingRows,
+  withDaysLeft,
 } from './stats'
 
 const july = [
@@ -151,23 +153,75 @@ describe('répartition par catégorie', () => {
 })
 
 describe('prochaines échéances', () => {
+  const OPENED = new Set(['2026-07'])
+  const due = (from: string, limit = 5, recurrences: Recurrence[] = []): Upcoming[] =>
+    withDaysLeft(upcomingDue(july, recurrences, OPENED, from, limit), from)
+
   it('renvoie les suivantes avec le nombre de jours restants', () => {
-    const upcoming = upcomingEntries(july, '2026-07-10', 5)
+    const upcoming = due('2026-07-10')
     expect(upcoming).toHaveLength(2)
     expect(upcoming[0]?.daysLeft).toBe(10)
     expect(upcoming[1]?.daysLeft).toBe(18)
   })
 
   it('inclut une échéance tombant le jour même', () => {
-    expect(upcomingEntries(july, '2026-07-20')[0]?.daysLeft).toBe(0)
+    expect(due('2026-07-20')[0]?.daysLeft).toBe(0)
   })
 
   it('se limite au nombre demandé', () => {
-    expect(upcomingEntries(july, '2026-07-01', 1)).toHaveLength(1)
+    expect(due('2026-07-01', 1)).toHaveLength(1)
   })
 
   it('ignore les entrées confirmées : elles ne sont plus à venir', () => {
-    expect(upcomingEntries(july, '2026-07-01').every((u) => u.entry.status === 'planned')).toBe(true)
+    expect(due('2026-07-01').every((u) => u.entry.status === 'planned')).toBe(true)
+  })
+
+  /* Une échéance passée que personne n'a confirmée est la plus proche de
+     toutes : la faire disparaître du seul écran qui la rappelait était le
+     meilleur moyen de l'oublier. */
+  it('remonte un retard du mois courant, en tête et en jours négatifs', () => {
+    const upcoming = due('2026-07-25')
+    expect(upcoming[0]?.entry.categoryId).toBe('loisirs')
+    expect(upcoming[0]?.daysLeft).toBe(-5)
+  })
+
+  /* Le trou que la tuile annonçait « dans 92 jours » : une récurrence ne pose
+     d'échéance que dans un mois ouvert, et août ne l'est pas ici. */
+  it('projette les échéances des mois non encore ouverts', () => {
+    const loyer = makeRecurrence({
+      id: 'r-loyer',
+      label: 'Loyer',
+      startedOn: '2026-01-05',
+      period: { unit: 'month', every: 1, anchorDay: 5 },
+    })
+    const upcoming = due('2026-07-25', 4, [loyer])
+    expect(upcoming.map((u) => u.entry.date)).toEqual([
+      '2026-07-20',
+      '2026-07-28',
+      '2026-08-05',
+      '2026-09-05',
+    ])
+    // Août et septembre ne sont pas ouverts : ces deux-là n'existent nulle part
+    // dans le document, la règle les a fabriquées pour l'affichage.
+    expect(upcoming.slice(2).map((u) => u.entry.label)).toEqual(['Loyer', 'Loyer'])
+  })
+
+  it('ne projette rien dans un mois ouvert : l’échéance posée y fait foi', () => {
+    const juillet = makeRecurrence({
+      id: 'r-juillet',
+      startedOn: '2026-01-20',
+      period: { unit: 'month', every: 1, anchorDay: 20 },
+    })
+    const dates = due('2026-07-01', 5, [juillet]).map((u) => u.entry.date)
+    // Le 20 juillet n'apparaît qu'une fois, celle du document.
+    expect(dates.filter((d) => d === '2026-07-20')).toHaveLength(1)
+  })
+
+  it('n’exhume pas un retard antérieur au mois courant', () => {
+    const vieux = [makeEntry({ date: '2026-05-03', status: 'planned' }), ...july]
+    expect(
+      upcomingDue(vieux, [], OPENED, '2026-07-10', 5).some((e) => e.date === '2026-05-03'),
+    ).toBe(false)
   })
 })
 
@@ -200,7 +254,11 @@ describe('prochaines échéances, prêtes à afficher', () => {
     }),
   ]
 
-  const rows = upcomingRows(upcomingEntries(sameDay, '2026-08-01'))
+  const source = withDaysLeft(
+    upcomingDue(sameDay, [], new Set(['2026-08', '2026-09']), '2026-08-01', 5),
+    '2026-08-01',
+  )
+  const rows = upcomingRows(source)
 
   it('ne porte le délai que sur la première échéance de chaque jour', () => {
     expect(rows.map((r) => r.leadsDay)).toEqual([true, false, false, true])
@@ -224,7 +282,6 @@ describe('prochaines échéances, prêtes à afficher', () => {
   })
 
   it('garde exactement les mêmes échéances, avec leur délai', () => {
-    const source = upcomingEntries(sameDay, '2026-08-01')
     expect(rows).toHaveLength(source.length)
     expect(new Set(rows.map((r) => r.entry.id))).toEqual(new Set(source.map((u) => u.entry.id)))
     expect(rows.every((r) => r.daysLeft === (r.entry.date === '2026-09-01' ? 31 : 35))).toBe(true)

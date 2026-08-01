@@ -3,6 +3,7 @@ import {
   eur,
   makeCategory,
   makeData,
+  makeDebt,
   makeEntry,
   makeMember,
   makeRecurrence,
@@ -25,6 +26,7 @@ import {
   setHouseholdName,
   stopRecurrence,
   syncRecurrenceEntries,
+  unconfirmEntries,
   updateRecurrence,
   updateSettings,
 } from './updates'
@@ -158,16 +160,53 @@ describe('récurrences', () => {
       recurrences: [makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 5 } })],
       entries: [makeEntry({ id: 'p', recurrenceId: 'r1', date: '2026-08-05', status: 'planned' })],
     })
-    const after = removeRecurrence(fresh, 'r1', '2026-07-15')
+    const after = removeRecurrence(fresh, 'r1')
     expect(after.recurrences).toEqual([])
     expect(after.entries).toEqual([])
   })
 
-  it('arrête au lieu de supprimer dès qu’une échéance a été confirmée', () => {
-    const after = removeRecurrence(base, 'r1', '2026-07-15')
-    expect(after.recurrences).toHaveLength(1)
-    expect(after.recurrences[0]?.endedOn).toBe('2026-07-15')
-    expect(after.entries.some((e) => e.id === 'passe')).toBe(true)
+  /* Supprimer et arrêter sont deux gestes distincts : le premier ne se rabat
+     jamais sur le second, sinon la règle reste dans la liste sous « Arrêtée »
+     alors que l'écran vient d'annoncer qu'elle était supprimée. */
+  it('supprime la règle même quand une échéance a été confirmée', () => {
+    const after = removeRecurrence(base, 'r1')
+    expect(after.recurrences).toEqual([])
+  })
+
+  it('détache les échéances confirmées au lieu de les perdre', () => {
+    const after = removeRecurrence(base, 'r1')
+    expect(after.entries.map((e) => e.id)).toEqual(['passe'])
+    expect(after.entries[0]).not.toHaveProperty('recurrenceId')
+  })
+
+  it('retire le lien d’un crédit et d’une avance vers la règle disparue', () => {
+    const linked = makeData({
+      recurrences: [
+        makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 5 } }),
+        makeRecurrence({ id: 'r2', period: { unit: 'month', every: 1, anchorDay: 8 } }),
+      ],
+      debts: [
+        makeDebt({ id: 'd1', recurrenceId: 'r1' }),
+        makeDebt({ id: 'd2', recurrenceId: 'r2' }),
+      ],
+      advances: [
+        {
+          id: 'a1',
+          label: 'Assurance',
+          categoryId: 'cat-1',
+          memberId: 'm1',
+          amount: eur(60000),
+          paidOn: '2026-01-10',
+          from: '2026-01',
+          to: '2026-12',
+          recurrenceId: 'r1',
+        },
+      ],
+    })
+    const after = removeRecurrence(linked, 'r1')
+    expect(after.debts[0]).not.toHaveProperty('recurrenceId')
+    expect(after.debts[1]?.recurrenceId).toBe('r2')
+    expect(after.advances[0]).not.toHaveProperty('recurrenceId')
   })
 
   /* Le formulaire envoie l'état complet de ce qu'il montre : remettre un
@@ -209,6 +248,34 @@ describe('entrées', () => {
     })
     const after = confirmEntries(before, ['a', 'c'])
     expect(after.entries.map((e) => e.status)).toEqual(['confirmed', 'planned', 'confirmed'])
+  })
+
+  it('remet une échéance confirmée en prévue, sans toucher à son montant', () => {
+    const before = makeData({
+      entries: [
+        makeEntry({
+          id: 'e1',
+          recurrenceId: 'r1',
+          date: '2026-07-01',
+          amount: eur(4237),
+          status: 'confirmed',
+        }),
+      ],
+    })
+    const after = unconfirmEntries(before, ['e1'])
+    expect(after.entries[0]?.status).toBe('planned')
+    // Le montant a pu être saisi à la main sur une échéance variable : le
+    // rendre à la règle perdrait la saisie, et reconfirmer le retrouve tel quel.
+    expect(after.entries[0]?.amount).toBe(4237)
+  })
+
+  /* Une saisie ponctuelle est un fait, pas une prévision en attente : la
+     renvoyer dans « À confirmer » ne voudrait rien dire. */
+  it('laisse une saisie ponctuelle confirmée où elle est', () => {
+    const before = makeData({
+      entries: [makeEntry({ id: 'e1', date: '2026-07-01', status: 'confirmed' })],
+    })
+    expect(unconfirmEntries(before, ['e1']).entries[0]?.status).toBe('confirmed')
   })
 
   it('efface le membre vidé sans couper l’entrée de sa récurrence', () => {

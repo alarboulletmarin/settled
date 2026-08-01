@@ -9,7 +9,6 @@ import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
 import { SavingTile } from './SavingTile'
 import { SplitTile } from './SplitTile'
-import { RecurrencesTile } from './RecurrencesTile'
 import { UpcomingTile } from './UpcomingTile'
 
 /**
@@ -38,6 +37,11 @@ import { UpcomingTile } from './UpcomingTile'
  * Un sens dont rien n'est confirmé n'a aucune ligne à montrer : sa tuile porte
  * quand même un chiffre, qui compte les échéances encore prévues. Elle ne
  * s'ouvre alors pas, plutôt que de mener à une liste où son chiffre n'est pas.
+ *
+ * Pas de tuile « Récurrences » : le total mensuel et annualisé est déjà en tête
+ * de l'onglet du même nom, à un doigt de la barre de navigation. Une tuile qui
+ * ne fait que répéter un chiffre pour mener à l'écran où il vit prend la place
+ * de ce que le mois est seul à savoir dire.
  */
 export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
   const [metric, setMetric] = useState<Metric | null>(null)
@@ -61,7 +65,6 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
         <SavingTile />
         <SplitTile />
         <UpcomingTile />
-        <RecurrencesTile />
         <CreditsTile />
       </BentoGrid>
 

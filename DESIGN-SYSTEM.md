@@ -186,15 +186,32 @@ Ce maximum n'est pas un dû : une tuile d'une seule rangée fait 88px, dont 56 u
 
 **Tile** — `background: var(--surface)`, `border-radius: var(--r-tile)`, bordure 1px en thème sombre, ombre en thème clair. Variante `accent` : fond lime, texte encre. Variante `accent-2` : fond violet, texte blanc. Une seule tuile accentuée par écran.
 
+**Repère d'action d'une tuile** — une tuile cliquable dit au coin ce que le clic fait, parce que rien d'autre ne le dit : le survol qui la soulève d'un pixel n'existe pas au doigt, et douze tuiles identiques à l'œil peuvent cacher trois gestes différents. Mono 11px et glyphe 14px, en `--text-muted`, `aria-hidden` — le nom accessible de la tuile porte déjà le sens.
+
+| Ce que fait le clic | Repère |
+|---|---|
+| Mène à un autre écran | nom de l'écran + chevron `›` — `ÉPARGNE ›`. Sans le nom quand l'eyebrow le dit déjà : `RÉPARTITION … ›` |
+| Ouvre une feuille sur place | glyphe d'information seul. Pas de nom : il n'y a pas de destination |
+| Fait défiler vers une section de la page | nom de la section + flèche vers le bas — `CE MOIS ⌄`. Elle descend, elle ne pointe pas de côté |
+| Rien | **aucun repère.** C'est cette règle-là qui rend les trois autres lisibles |
+
+Le repère vit en haut à droite, hors du flux — les tuiles ne s'accordent pas sur ce qu'elles posent en tête, et un repère dans le flux les décalerait chacune différemment. Sur une **2×1** de la grille mobile il descend au coin bas : « PRÉVISIONNEL » consomme à lui seul les cent pixels utiles, et la lecture secondaire y est masquée, donc c'est le bas qui est libre. Au-delà de 1024px l'inverse est vrai, et il remonte.
+
+Une tuile dont le **contenu est une liste à lire** garde un vrai lien plutôt que de devenir une cible d'un bloc : l'envelopper dans un bouton effacerait ses lignes derrière un nom unique pour un lecteur d'écran. Le lien prend alors la typographie et le glyphe du repère, au même coin.
+
+Un état **pressé** sur toute tuile actionnable, et pas seulement un survol : la moitié des écrans n'a pas de curseur.
+
 **Eyebrow** — mono 11px majuscules dans une pilule `--surface-2`, ancrée en haut à gauche de la tuile. C'est ce qui donne le rythme de la référence : la tuile n'a pas de titre, elle a une étiquette. Elle accepte un repère (§9) à sa gauche, 13px. L'étiquette tient toujours sur une ligne : sur une tuile trop étroite elle resserre d'abord ses marges et son interlettrage, et n'abandonne le repère qu'ensuite — c'est le libellé qui porte le sens.
 
 **Field** — libellé, contrôle, aide ou erreur. Le libellé porte la mention `· obligatoire` ou `· facultatif`, dans la même graisse atténuée. Elle vit dans le `<label>`, donc dans le nom accessible du contrôle : aucun `aria-required` à poser en plus. On la met sur les formulaires qui créent ou modifient une entité, pas sur les rangées d'ajout à un seul champ — un bouton désactivé tant que le champ est vide y dit déjà tout.
 
-**Écrans de saisie** — un formulaire ou une fiche est un écran plein avec son URL, jamais une feuille modale : chevron de retour et titre en haut, le formulaire dans une tuile, les actions dessous dans le flux. Rien à faire glisser, rien à refermer pour revenir.
+**Écrans de saisie** — un formulaire ou une fiche est un écran plein avec son URL, jamais une feuille modale : chevron de retour et titre en haut, le formulaire dans une tuile, les actions dessous dans le flux. Rien à faire glisser, rien à refermer pour revenir. La règle vise la **saisie**, pas la confirmation : une question fermée qui n'attend que oui ou non est exactement ce pour quoi un `<dialog>` existe.
+
+**ConfirmDialog** — la confirmation d'un geste destructif, la même partout, sur la feuille modale et donc sur `<dialog>` natif : piège de focus, Échap, clic sur le fond et retour du focus au bouton d'origine viennent du navigateur. Le pied de feuille pose ses deux boutons à largeur égale — `Annuler` en `secondary`, l'action en `danger`. Le nombre de questions fait la gravité : une pour une ligne, deux pour un import qui remplace tout, trois pour l'effacement des données, avec un compteur `n / N` dès qu'il y en a plus d'une. Chaque question dit **ce qui est perdu** et porte le verbe de l'action sur son bouton, jamais « êtes-vous sûr » suivi d'un « OK ». Une seule boîte par écran, qui sait sur quoi elle porte : une par ligne d'une liste en monterait autant dans le DOM.
 
 **Amount** — composant unique pour tout montant. Props : valeur en centimes, taille, sens. Gère seul le tabular-nums, le symbole, les centimes réduits et la couleur.
 
-**Checkbox** — un attribut vrai ou faux, pas un choix entre deux modes : `Segmented` sert à choisir parmi des positions qui s'excluent, la case dit qu'une chose est vraie ou ne l'est pas. Carré de 24px dans une cible de 44px, coché en `--accent` sur texte encre — lime reste un remplissage. La case native reste dans le DOM, masquée : c'est elle qui porte l'état pour un lecteur d'écran et qui répond à la barre d'espace.
+**Checkbox** — un attribut vrai ou faux, pas un choix entre deux modes : `Segmented` sert à choisir parmi des positions qui s'excluent, la case dit qu'une chose est vraie ou ne l'est pas. Carré de 24px dans une cible de 44px, coché en `--accent` sur texte encre — lime reste un remplissage. La case native reste dans le DOM, masquée : c'est elle qui porte l'état pour un lecteur d'écran et qui répond à la barre d'espace. Elle peut être **verrouillée** — cochée, non modifiable, et alors toujours accompagnée d'un `hint` qui dit pourquoi : une case bloquée sans raison se lit comme une panne. Elle garde sa couleur de texte pleine, contrairement aux boutons désactivés : elle n'est pas hors service, elle informe, et atténuer sous le plancher AA du §8 ce qu'on met là pour être lu reviendrait à le cacher. Elle reste affichée plutôt que de disparaître quand elle informe de ce qui va se passer ; elle se retire quand la question ne se pose pas.
 
 **Disclosure** — section repliable, sur `<details>` natif : il porte déjà l'état pour un lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir ce qui est replié. En-tête de 44px, chevron qui pivote, et une lecture de droite — total ou compte — qui reste visible replié : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait pas gagner de défilement. Une liste longue s'accompagne d'un « tout replier ».
 

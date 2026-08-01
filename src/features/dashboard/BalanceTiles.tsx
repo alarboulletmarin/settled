@@ -36,7 +36,9 @@ export function BalanceTile({ onExplain }: { onExplain: (metric: Metric) => void
 
   return (
     /* La tuile entière ouvre l'explication : sur une 2×1, un bouton « i » et
-       l'eyebrow ne tiennent pas côte à côte dans les 134px utiles. */
+       l'eyebrow ne tiennent pas côte à côte dans les 134px utiles. Le glyphe du
+       coin n'est donc pas une cible — c'est un repère, qui dit que le geste
+       existe et qu'il reste sur la page. */
     <Tile
       span="2x2"
       variant="accent"
@@ -45,6 +47,7 @@ export function BalanceTile({ onExplain }: { onExplain: (metric: Metric) => void
         onExplain({ key: 'balance', value: totals.balance, hint })
       }}
       label={tpl(fr.dashboard.explain, fr.dashboard.balance)}
+      affordance={{ kind: 'explain' }}
     >
       <Eyebrow icon={BalanceIcon}>{fr.dashboard.balance}</Eyebrow>
       {/* Un eyebrow, un chiffre, une lecture secondaire — le maximum qu'une
@@ -72,6 +75,7 @@ export function ForecastTile({ onExplain }: { onExplain: (metric: Metric) => voi
         })
       }}
       label={tpl(fr.dashboard.explain, fr.dashboard.forecast)}
+      affordance={{ kind: 'explain' }}
     >
       <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -99,6 +103,7 @@ export function RemainingTile({ onExplain }: { onExplain: (metric: Metric) => vo
         onExplain({ key: 'remaining', value: remaining, hint })
       }}
       label={tpl(fr.dashboard.explain, fr.dashboard.remaining)}
+      affordance={{ kind: 'explain' }}
     >
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">

@@ -8,7 +8,7 @@ import { useCategoryMap, useUpcoming } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { UpcomingIcon } from '@/ui/Icons'
+import { ChevronRight, UpcomingIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 
 /** En deçà, le délai passe en encre pleine : c'est ce qui tombe tout de suite. */
@@ -39,14 +39,26 @@ export function UpcomingTile() {
     <Tile span="4x2" className="gap-1">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow icon={UpcomingIcon}>{fr.dashboard.upcoming}</Eyebrow>
-        {/* La cible de 44px du DS §8 déborde dans le cadre de la tuile, où
-            rien d'autre n'est actionnable : la liste garde sa place, et le
-            lien garde sa cible. */}
+        {/* Un vrai lien, et la seule tuile du tableau de bord qui en garde un :
+            son contenu est une liste qu'on lit ligne à ligne, avec sa date
+            dite au lecteur d'écran sur chacune. L'envelopper dans un bouton
+            pour la rendre cliquable d'un bloc, comme les autres, effacerait
+            tout ça derrière un nom unique — la cohérence coûterait ici plus
+            qu'elle ne rapporte.
+
+            Il prend en revanche la typographie et le chevron du repère des
+            autres tuiles : même coin, même mono, même glyphe. La cible de 44px
+            du DS §8 déborde dans le cadre, où rien d'autre n'est actionnable. */}
         <Link
           to="/calendrier"
-          className="t-label -my-2 inline-flex min-h-11 shrink-0 items-center rounded-input underline underline-offset-2"
+          className="t-axis -my-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-input underline underline-offset-2"
         >
           {fr.nav.calendar}
+          {/* À 320px, « PROCHAINES ÉCHÉANCES » et « Calendrier » se partagent la
+              largeur au pixel près : le chevron passait par-dessus le bord. Il
+              s'efface, et le soulignement continue de dire que c'est un lien —
+              c'est le repère qu'on sacrifie, jamais le texte (DS §9.1). */}
+          <ChevronRight size={14} aria-hidden="true" className="max-sm:hidden" />
         </Link>
       </div>
 

@@ -90,19 +90,24 @@ export function MemberShareTile() {
        La tuile entière est la cible, comme la Répartition : le détail du calcul
        est à un doigt, et un lien de 44px à l'intérieur ferait déborder les
        148px de contenu. */
-    <Tile span="4x2" className="gap-3" onClick={open} label={spoken}>
+    <Tile
+      span="4x2"
+      className="gap-3"
+      onClick={open}
+      label={spoken}
+      affordance={{ kind: 'navigate', destination: fr.split.title }}
+    >
       {/* L'eyebrow nomme le chiffre, au lieu qu'un libellé le refasse juste
           au-dessus : la tuile portait cinq éléments là où le DS §5 en autorise
           quatre, et les trente pixels de trop se coupaient en haut comme en
           bas — le libellé remontait sous l'eyebrow, le total à payer sortait
-          par le bas. Le renvoi vers le détail tient sur la même ligne : il ne
-          coûte pas une hauteur puisque l'eyebrow est plus haut que lui. */}
-      <div className="flex items-center justify-between gap-2">
-        <Eyebrow icon={SplitIcon}>{fr.dashboard.memberShare}</Eyebrow>
-        <span className="t-label shrink-0 underline underline-offset-2">
-          {fr.dashboard.memberShareHint}
-        </span>
-      </div>
+          par le bas.
+
+          Le renvoi vers le détail était ici, souligné comme un lien sans en
+          être un, et occupait exactement la place où la tuile pose désormais
+          son repère. C'est le repère qui le porte, et il nomme l'écran
+          d'arrivée au lieu de dire « détail ». */}
+      <Eyebrow icon={SplitIcon}>{fr.dashboard.memberShare}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         {/* Une jauge et non un donut : la question n'est pas comment le pot
             commun se découpe entre tous — c'est la tuile Répartition — mais

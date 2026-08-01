@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { totalRemaining } from '@/domain/debt'
 import { CREDITS_PATH } from '@/app/routes'
 import { fr } from '@/i18n/fr'
@@ -16,23 +16,34 @@ import { Tile } from '@/ui/Tile'
  */
 export function CreditsTile() {
   const statuses = useDebtStatuses()
+  const navigate = useNavigate()
   if (statuses.length === 0) return null
 
   const remaining = totalRemaining(statuses)
   const running = statuses.filter((status) => !status.settled).length
 
   return (
-    <Tile span="2x2" className="justify-between">
+    /* La tuile entière mène au détail, comme la capacité d'épargne mène à
+       l'épargne. Elle portait jusqu'ici un lien de la taille du compte de
+       crédits, posé dans une tuile morte : deux motifs opposés pour le même
+       travail, et le plus petit des deux était la seule porte. Le compte reste,
+       en texte — c'est une lecture, pas un chemin. */
+    <Tile
+      span="2x2"
+      className="justify-between"
+      onClick={() => {
+        void navigate(CREDITS_PATH)
+      }}
+      label={tpl(fr.dashboard.showCredits, fr.dashboard.credits)}
+      affordance={{ kind: 'navigate' }}
+    >
       <Eyebrow icon={CreditsIcon}>{fr.dashboard.credits}</Eyebrow>
       <div className="flex flex-col gap-1">
         <Amount value={remaining} size="tile-fit" />
         <span className="t-label">{fr.dashboard.creditsRemaining}</span>
-        <Link
-          to={CREDITS_PATH}
-          className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"
-        >
-          {tpl(running > 1 ? '%s crédits' : '%s crédit', running)}
-        </Link>
+        <span className="t-label">
+          {tpl(running > 1 ? fr.dashboard.creditsRunningMany : fr.dashboard.creditsRunningOne, running)}
+        </span>
       </div>
     </Tile>
   )

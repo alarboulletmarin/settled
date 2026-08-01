@@ -55,6 +55,9 @@ function FlowTile({
               onShow(direction)
             },
             label: tpl(fr.dashboard.showLines, label),
+            // Une flèche vers le bas, pas un chevron : la liste est plus bas
+            // sur cette page, elle n'est pas sur un autre écran.
+            affordance: { kind: 'scroll' as const, destination: fr.month.entries },
           })}
     >
       <Eyebrow icon={icon}>{label}</Eyebrow>

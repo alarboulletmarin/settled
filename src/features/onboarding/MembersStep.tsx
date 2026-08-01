@@ -3,6 +3,7 @@ import type { Member } from '@/domain/types'
 import { tpl } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { Button, IconButton } from '@/ui/Button'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Dot } from '@/ui/Dot'
 import { Field, TextInput } from '@/ui/Field'
 import { Close } from '@/ui/Icons'
@@ -23,6 +24,7 @@ export function MembersStep({
   onDone: () => void
 }) {
   const [name, setName] = useState('')
+  const [removing, setRemoving] = useState<Member | null>(null)
   const trimmed = name.trim()
 
   const submit = (): void => {
@@ -85,7 +87,7 @@ export function MembersStep({
                 label={tpl(fr.onboarding.membersRemove, member.name)}
                 className="ml-auto"
                 onClick={() => {
-                  onRemove(member.id)
+                  setRemoving(member)
                 }}
               >
                 <Close size={18} />
@@ -98,6 +100,24 @@ export function MembersStep({
       <Button onClick={onDone} full>
         {members.length === 0 ? fr.onboarding.solo : fr.onboarding.start}
       </Button>
+
+      <ConfirmDialog
+        open={removing !== null}
+        title={tpl(fr.onboarding.membersRemove, removing?.name ?? '')}
+        steps={[
+          {
+            question: tpl(fr.onboarding.membersRemoveConfirm, removing?.name ?? ''),
+            action: fr.common.delete,
+          },
+        ]}
+        onCancel={() => {
+          setRemoving(null)
+        }}
+        onConfirm={() => {
+          if (removing !== null) onRemove(removing.id)
+          setRemoving(null)
+        }}
+      />
     </div>
   )
 }

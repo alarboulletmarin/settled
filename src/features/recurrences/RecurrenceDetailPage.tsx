@@ -9,6 +9,7 @@ import { removeRecurrence, resumeRecurrence, stopRecurrence } from '@/store/acti
 import { useRecurrenceRow } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { ChevronLeft, Warning } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
@@ -36,7 +37,10 @@ export function RecurrenceDetailPage() {
   const row = useRecurrenceRow(id)
   const navigate = useNavigate()
   const currency = useCurrency()
-  const [confirmingRemoval, setConfirmingRemoval] = useState(false)
+  const [confirming, setConfirming] = useState<'stop' | 'remove' | null>(null)
+  const close = (): void => {
+    setConfirming(null)
+  }
 
   // Supprimé depuis un autre onglet, ou URL fausse.
   if (row === null) return <Navigate to={RECURRENCES_PATH} replace />
@@ -139,10 +143,11 @@ export function RecurrenceDetailPage() {
             {fr.recurrences.resume}
           </Button>
         ) : (
+          /* Arrêter emporte toutes les échéances prévues au-delà du jour :
+             c'est destructif, donc ça se demande, comme tout le reste. */
           <Button
             onClick={() => {
-              stopRecurrence(recurrence.id, today())
-              toast(fr.recurrences.stopped)
+              setConfirming('stop')
             }}
           >
             {fr.recurrences.stop}
@@ -152,52 +157,41 @@ export function RecurrenceDetailPage() {
 
       <p className="t-label">{fr.recurrences.stopHint}</p>
 
-      {/* Suppression en deux temps : le bouton devient sa propre confirmation,
-          plutôt qu'une boîte de dialogue empilée sur l'écran. */}
       <div className="border-t border-border pt-4">
-        {confirmingRemoval ? (
-          <div className="flex max-w-sm flex-col gap-2 rounded-inner bg-surface-2 p-3">
-            <p className="t-label">{fr.recurrences.removeConfirm}</p>
-            {/* Une grille et non une rangée flex : un `Button` porte `shrink-0`
-                pour ne pas se faire écraser dans un flux, et deux boutons
-                pleine largeur qui refusent tous deux de rétrécir font 200 % de
-                leur boîte. Le second sortait donc de l'écran par la droite — on
-                voyait le liseré rouge au bord, et la suppression était
-                inatteignable. Une cellule de grille, elle, borne son contenu. */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setConfirmingRemoval(false)
-                }}
-                full
-              >
-                {fr.common.cancel}
-              </Button>
-              <Button
-                variant="danger"
-                onClick={() => {
-                  removeRecurrence(recurrence.id)
-                  toast(fr.recurrences.deleted)
-                  void navigate(RECURRENCES_PATH, { replace: true })
-                }}
-                full
-              >
-                {fr.common.delete}
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setConfirmingRemoval(true)
-            }}
-          >
-            {fr.recurrences.remove}
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setConfirming('remove')
+          }}
+        >
+          {fr.recurrences.remove}
+        </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirming === 'stop'}
+        title={fr.recurrences.stop}
+        steps={[{ question: fr.recurrences.stopConfirm, action: fr.recurrences.stopAction }]}
+        onCancel={close}
+        onConfirm={() => {
+          close()
+          stopRecurrence(recurrence.id, today())
+          toast(fr.recurrences.stopped)
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirming === 'remove'}
+        title={fr.recurrences.remove}
+        steps={[{ question: fr.recurrences.removeConfirm, action: fr.common.delete }]}
+        onCancel={close}
+        onConfirm={() => {
+          close()
+          removeRecurrence(recurrence.id)
+          toast(fr.recurrences.deleted)
+          void navigate(RECURRENCES_PATH, { replace: true })
+        }}
+      />
     </div>
   )
 }

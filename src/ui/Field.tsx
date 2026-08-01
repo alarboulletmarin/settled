@@ -98,6 +98,12 @@ export type CheckboxProps = {
   label: string
   /** Une phrase sous le libellé, quand la case demande à être expliquée. */
   hint?: string
+  /**
+   * La case dit ce qui est vrai sans qu'on puisse le changer. À n'employer
+   * qu'avec un `hint` qui dit pourquoi : une case grisée sans raison se lit
+   * comme une panne.
+   */
+  disabled?: boolean
   className?: string
 }
 
@@ -112,7 +118,14 @@ export type CheckboxProps = {
  * l'état pour un lecteur d'écran et qui répond à la barre d'espace. Le carré
  * dessiné n'est qu'un décor, d'où son `aria-hidden`.
  */
-export function Checkbox({ checked, onChange, label, hint, className }: CheckboxProps) {
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+  hint,
+  disabled = false,
+  className,
+}: CheckboxProps) {
   const id = useId()
   const helpId = `${id}-help`
 
@@ -120,18 +133,31 @@ export function Checkbox({ checked, onChange, label, hint, className }: Checkbox
     <div className={cn('flex flex-col gap-1.5', className)}>
       <label
         htmlFor={id}
-        className="flex min-h-11 cursor-pointer items-center gap-3 text-[15px] text-text"
+        className={cn(
+          'flex min-h-11 items-center gap-3 text-[15px] text-text',
+          // Verrouillée, la case garde sa couleur de texte pleine, contrairement
+          // aux boutons désactivés qui passent à 40 % : elle n'est pas hors
+          // service, elle informe — atténuer ce qu'on met là pour être lu, et
+          // sous le plancher AA du DS §8, reviendrait à le cacher. C'est le
+          // curseur, l'attribut natif et la phrase d'aide qui disent qu'on n'y
+          // touche pas.
+          disabled ? 'cursor-default' : 'cursor-pointer',
+        )}
       >
         <span className="relative inline-flex shrink-0 items-center justify-center">
           <input
             id={id}
             type="checkbox"
             checked={checked}
+            disabled={disabled}
             aria-describedby={hint === undefined ? undefined : helpId}
             onChange={(event) => {
               onChange(event.target.checked)
             }}
-            className="peer absolute size-6 cursor-pointer opacity-0"
+            className={cn(
+              'peer absolute size-6 opacity-0',
+              disabled ? 'cursor-default' : 'cursor-pointer',
+            )}
           />
           <span
             aria-hidden="true"

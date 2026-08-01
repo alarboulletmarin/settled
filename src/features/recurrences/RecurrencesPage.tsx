@@ -15,6 +15,7 @@ import {
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Disclosure } from '@/ui/Disclosure'
 import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { EmptyState } from '@/ui/EmptyState'
@@ -237,6 +238,7 @@ function AdvancesSection({ onCreate }: { onCreate: () => void }) {
   const categories = useCategoryMap()
   const members = useMemberMap()
   const currency = useCurrency()
+  const [confirming, setConfirming] = useState<string | null>(null)
 
   return (
     <section className="flex flex-col gap-3">
@@ -297,9 +299,7 @@ function AdvancesSection({ onCreate }: { onCreate: () => void }) {
                     variant="ghost"
                     className="self-start"
                     onClick={() => {
-                      if (!confirm(fr.advances.removeConfirm)) return
-                      removeAdvance(advance.id)
-                      toast(fr.advances.deleted)
+                      setConfirming(advance.id)
                     }}
                   >
                     {fr.advances.remove}
@@ -310,6 +310,22 @@ function AdvancesSection({ onCreate }: { onCreate: () => void }) {
           })}
         </ul>
       )}
+
+      {/* Une seule boîte pour toute la liste : elle sait laquelle des avances
+          elle vise, et n'en monte pas une par ligne dans le DOM. */}
+      <ConfirmDialog
+        open={confirming !== null}
+        title={fr.advances.remove}
+        steps={[{ question: fr.advances.removeConfirm, action: fr.common.delete }]}
+        onCancel={() => {
+          setConfirming(null)
+        }}
+        onConfirm={() => {
+          if (confirming !== null) removeAdvance(confirming)
+          setConfirming(null)
+          toast(fr.advances.deleted)
+        }}
+      />
     </section>
   )
 }
