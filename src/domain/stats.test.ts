@@ -9,16 +9,17 @@ import {
   breakdownByFamily,
   incomeFlow,
   savingCapacity,
+  savingLeft,
   savingRate,
+  savingsByCategory,
   spendingFlow,
   totalsByKind,
-  dailyBreakdown,
   entriesOfMonth,
   monthProgress,
   monthTotals,
   nextIncomeDate,
   restToLive,
-  subscriptionTotals,
+  recurrenceTotals,
   upcomingEntries,
   upcomingRows,
 } from './stats'
@@ -149,33 +150,6 @@ describe('répartition par catégorie', () => {
   })
 })
 
-describe('dépenses par jour', () => {
-  it('produit un point par jour, y compris les jours vides', () => {
-    const days = dailyBreakdown(july, '2026-07')
-    expect(days).toHaveLength(31)
-    expect(days[0]?.date).toBe('2026-07-01')
-    expect(days[0]?.total).toBe(0)
-    expect(days[4]?.total).toBe(95000)
-  })
-
-  it('empile les catégories d’un même jour', () => {
-    const entries = [
-      makeEntry({ date: '2026-07-03', amount: eur(1000), categoryId: 'a' }),
-      makeEntry({ date: '2026-07-03', amount: eur(2000), categoryId: 'b' }),
-      makeEntry({ date: '2026-07-03', amount: eur(500), categoryId: 'a' }),
-    ]
-    const day = dailyBreakdown(entries, '2026-07')[2]
-    expect(day?.total).toBe(3500)
-    expect(day?.slices).toHaveLength(2)
-  })
-
-  it('compte 28 barres en février, 29 en année bissextile', () => {
-    expect(dailyBreakdown([], '2026-02')).toHaveLength(28)
-    expect(dailyBreakdown([], '2024-02')).toHaveLength(29)
-    expect(dailyBreakdown([], '2026-04')).toHaveLength(30)
-  })
-})
-
 describe('prochaines échéances', () => {
   it('renvoie les suivantes avec le nombre de jours restants', () => {
     const upcoming = upcomingEntries(july, '2026-07-10', 5)
@@ -257,8 +231,8 @@ describe('prochaines échéances, prêtes à afficher', () => {
   })
 })
 
-describe('total des abonnements', () => {
-  /* Le résolveur répond pour chaque abonnement, fixe ou variable — c'est le
+describe('total des récurrences', () => {
+  /* Le résolveur répond pour chaque récurrence, fixe ou variable — c'est le
      même que celui du revenu d'un membre. Ici, un variable reste sans réponse. */
   const unpriced = (r: Recurrence): Money | null => r.amount
 
@@ -271,12 +245,12 @@ describe('total des abonnements', () => {
         period: { unit: 'year', every: 1, anchorDay: 1 },
       }),
     ]
-    const totals = subscriptionTotals(recurrences, unpriced, '2026-07-01')
+    const totals = recurrenceTotals(recurrences, unpriced, '2026-07-01')
     expect(totals.monthly).toBe(1998)
     expect(totals.annual).toBe(23976)
   })
 
-  it('ignore les entrées d’argent par défaut : ce ne sont pas des abonnements', () => {
+  it('ignore les entrées d’argent par défaut : ce ne sont pas des récurrences', () => {
     const recurrences = [
       makeRecurrence({
         id: 'salaire',
@@ -285,7 +259,7 @@ describe('total des abonnements', () => {
         period: { unit: 'month', every: 1, anchorDay: 28 },
       }),
     ]
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
   })
 
   it('sait aussi totaliser les entrées, quand on les lui demande', () => {
@@ -302,8 +276,8 @@ describe('total des abonnements', () => {
         period: { unit: 'month', every: 1, anchorDay: 15 },
       }),
     ]
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01', 'in').monthly).toBe(240_000)
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01', 'out').monthly).toBe(1_399)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01', 'in').monthly).toBe(240_000)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01', 'out').monthly).toBe(1_399)
   })
 
   it('ignore une récurrence arrêtée', () => {
@@ -315,14 +289,14 @@ describe('total des abonnements', () => {
         endedOn: '2026-05-31',
       }),
     ]
-    expect(subscriptionTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
   })
 
   it('compte une variable non estimable plutôt que de la valoriser à zéro', () => {
     const recurrences = [
       makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
     ]
-    const totals = subscriptionTotals(recurrences, unpriced, '2026-07-01')
+    const totals = recurrenceTotals(recurrences, unpriced, '2026-07-01')
     expect(totals.unknownCount).toBe(1)
     expect(totals.monthly).toBe(0)
   })
@@ -331,13 +305,13 @@ describe('total des abonnements', () => {
     const recurrences = [
       makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
     ]
-    const totals = subscriptionTotals(recurrences, () => eur(8450), '2026-07-01')
+    const totals = recurrenceTotals(recurrences, () => eur(8450), '2026-07-01')
     expect(totals.monthly).toBe(8450)
     expect(totals.unknownCount).toBe(0)
   })
 
   it('vaut zéro sans aucune récurrence', () => {
-    expect(subscriptionTotals([], unpriced, '2026-07-01')).toEqual({
+    expect(recurrenceTotals([], unpriced, '2026-07-01')).toEqual({
       monthly: 0,
       annual: 0,
       unknownCount: 0,
@@ -413,6 +387,55 @@ describe('lecture par nature', () => {
     expect(slices.map((s) => s.categoryId)).toEqual(['fam-loyer', 'fam-pret'])
     expect(slices.map((s) => s.total)).toEqual([80000, 30000])
   })
+
+  it('déduit de la capacité ce qui est déjà versé', () => {
+    expect(savingLeft(totalsByKind(month, '2026-07', kindOf))).toBe(70000)
+  })
+
+  it('rend un reste négatif quand on verse plus qu’on ne dégage', () => {
+    const greedy = [
+      ...month,
+      makeEntry({ id: 'f', categoryId: 'livret', date: '2026-07-20', amount: eur(100000) }),
+    ]
+    expect(savingLeft(totalsByKind(greedy, '2026-07', kindOf))).toBe(-30000)
+  })
+})
+
+describe('où va l’épargne', () => {
+  const KINDS: Record<string, CategoryKind> = {
+    salaire: 'resource',
+    loyer: 'charge',
+    pea: 'saving',
+    livret: 'saving',
+  }
+  const kindOf = (id: string): CategoryKind => KINDS[id] ?? 'charge'
+
+  const month = [
+    makeEntry({ id: 'a', categoryId: 'salaire', direction: 'in', date: '2026-07-01', amount: eur(200000) }),
+    makeEntry({ id: 'b', categoryId: 'loyer', date: '2026-07-05', amount: eur(80000) }),
+    makeEntry({ id: 'c', categoryId: 'livret', date: '2026-07-10', amount: eur(15000) }),
+    makeEntry({ id: 'd', categoryId: 'pea', date: '2026-07-10', amount: eur(30000) }),
+    makeEntry({ id: 'e', categoryId: 'livret', date: '2026-07-25', amount: eur(5000) }),
+  ]
+
+  /* Le livret est saisi le premier et en deux fois : sans tri, il sortirait en
+     tête, et l'ordre d'un écran qui répond « où va l'argent » n'est pas celui
+     de la saisie. */
+  it('ne garde que les versements, du plus gros support au plus petit', () => {
+    const slices = savingsByCategory(month, '2026-07', kindOf)
+    expect(slices.map((s) => s.categoryId)).toEqual(['pea', 'livret'])
+    expect(slices.map((s) => s.total)).toEqual([30000, 20000])
+  })
+
+  it('donne à chaque support sa part du versé, pas du mois', () => {
+    const slices = savingsByCategory(month, '2026-07', kindOf)
+    expect(slices[0]?.share).toBeCloseTo(0.6, 5)
+  })
+
+  it('ne rend rien quand le mois ne place rien', () => {
+    const plain = month.filter((e) => kindOf(e.categoryId) !== 'saving')
+    expect(savingsByCategory(plain, '2026-07', kindOf)).toEqual([])
+  })
 })
 
 describe('ce qui rentre et ce qui se paie', () => {
@@ -473,5 +496,51 @@ describe('ce qui rentre et ce qui se paie', () => {
     const empty = totalsByKind([], '2026-07', kindOf)
     expect(incomeFlow(empty, empty)).toEqual({ total: 0, done: 0, left: 0 })
     expect(spendingFlow(empty, empty)).toEqual({ total: 0, done: 0, left: 0 })
+  })
+})
+
+/* Une reprise d'épargne — payer l'assurance de l'année depuis le livret —
+   entre en sens `in` sur une catégorie d'épargne. La compter comme un
+   versement dirait que le mois où l'on a vidé 600 € du livret est un mois où
+   l'on a mis 600 € de côté. */
+describe('une reprise d’épargne se retranche des versements', () => {
+  const kindOf = (id: string): CategoryKind =>
+    id === 'salaire' ? 'resource' : id === 'livret' ? 'saving' : 'charge'
+
+  const month = [
+    makeEntry({ id: 'a', categoryId: 'salaire', direction: 'in', date: '2026-07-01', amount: eur(200000) }),
+    makeEntry({ id: 'b', categoryId: 'loyer', date: '2026-07-05', amount: eur(80000) }),
+    makeEntry({ id: 'c', categoryId: 'livret', date: '2026-07-10', amount: eur(5000) }),
+    makeEntry({ id: 'd', categoryId: 'livret', direction: 'in', date: '2026-07-15', amount: eur(60000) }),
+  ]
+
+  it('rend une épargne nette, versements moins reprises', () => {
+    expect(totalsByKind(month, '2026-07', kindOf).saving).toBe(-55000)
+  })
+
+  it('ne touche ni aux ressources ni aux charges', () => {
+    const totals = totalsByKind(month, '2026-07', kindOf)
+    expect(totals.resource).toBe(200000)
+    expect(totals.charge).toBe(80000)
+    expect(savingCapacity(totals)).toBe(120000)
+  })
+
+  /* Reprendre 600 € et n'en remettre que 50 laisse 550 € à replacer en plus de
+     la capacité du mois : c'est bien ce qu'il faudrait pour être quitte. */
+  it('ajoute au reste à placer ce qui a été repris', () => {
+    expect(savingLeft(totalsByKind(month, '2026-07', kindOf))).toBe(175000)
+  })
+
+  it('rend le support à son solde net, pas à la somme des mouvements', () => {
+    const slices = savingsByCategory(month, '2026-07', kindOf)
+    expect(slices).toEqual([{ categoryId: 'livret', total: -55000, share: 1 }])
+  })
+
+  it('retire un support autant repris que reconstitué : il n’a rien reçu', () => {
+    const wash = [
+      makeEntry({ id: 'x', categoryId: 'livret', date: '2026-07-10', amount: eur(60000) }),
+      makeEntry({ id: 'y', categoryId: 'livret', direction: 'in', date: '2026-07-15', amount: eur(60000) }),
+    ]
+    expect(savingsByCategory(wash, '2026-07', kindOf)).toEqual([])
   })
 })

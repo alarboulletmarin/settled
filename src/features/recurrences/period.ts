@@ -10,7 +10,7 @@ export type PeriodKind = 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'everyN
 
 /**
  * La tranche de formulaire qui décrit une périodicité. Extraite du brouillon
- * d'abonnement pour que la saisie d'une dépense puisse la porter aussi : les
+ * de récurrence pour que la saisie d'une dépense puisse la porter aussi : les
  * deux écrans posent la même règle, ils ne peuvent pas la décrire deux fois.
  */
 export type PeriodDraft = {

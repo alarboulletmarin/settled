@@ -2,7 +2,7 @@
  * Expansion d'une récurrence en échéances.
  *
  * Toute la difficulté tient en une règle : le jour d'échéance est *borné*, pas
- * *reporté*. Un abonnement au 31 tombe le 31 janvier, le 28 février, puis de
+ * *reporté*. Une récurrence au 31 tombe le 31 janvier, le 28 février, puis de
  * nouveau le 31 mars. La borne ne se propage jamais à l'échéance suivante,
  * sinon une récurrence au 31 dériverait vers le 28 au premier février venu.
  * ==========================================================================*/

@@ -4,11 +4,20 @@ import {
   NavCalendar,
   NavHistory,
   NavMonth,
+  NavRecurrences,
   NavSettings,
-  NavSubscriptions,
 } from '@/ui/Icons'
 
 export type RouteDef = { path: string; label: string; icon: IconComponent }
+
+/* Déclaré avant la table : un `const` ne remonte pas, et `NAV_ROUTES` le lit à
+   l'évaluation du module. */
+export const RECURRENCES_PATH = '/recurrences'
+/* Segment fixe : React Router le classe avant `/recurrences/:id`, une
+   récurrence ne peut donc pas éclipser le formulaire de création. */
+export const RECURRENCE_NEW_PATH = `${RECURRENCES_PATH}/nouveau`
+export const recurrencePath = (id: string): string => `${RECURRENCES_PATH}/${id}`
+export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/${id}/modifier`
 
 /**
  * L'ordre fait foi : il pilote la barre d'onglets comme la colonne latérale.
@@ -18,7 +27,7 @@ export type RouteDef = { path: string; label: string; icon: IconComponent }
 export const NAV_ROUTES: RouteDef[] = [
   { path: '/', label: fr.nav.month, icon: NavMonth },
   { path: '/calendrier', label: fr.nav.calendar, icon: NavCalendar },
-  { path: '/abonnements', label: fr.nav.subscriptions, icon: NavSubscriptions },
+  { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: NavRecurrences },
   { path: '/historique', label: fr.nav.history, icon: NavHistory },
   { path: '/reglages', label: fr.nav.settings, icon: NavSettings },
 ]
@@ -40,9 +49,27 @@ export function directionFromParam(value: string | null): 'in' | 'out' {
   return value === DIRECTION_VALUE.in ? 'in' : 'out'
 }
 
-export function entryNewPath(options: { direction?: 'in' | 'out'; date?: string } = {}): string {
+/* La nature voyage à côté du sens, et en clair elle aussi : un virement
+   d'épargne s'ouvre déjà réglé dessus, depuis l'écran du mois comme depuis
+   celui de l'épargne. Le sens reste utile même en épargne — il dit si l'on
+   place ou si l'on reprend. */
+export const NATURE_PARAM = 'nature'
+const SAVING_NATURE = 'epargne'
+
+export function natureFromParam(
+  nature: string | null,
+  direction: string | null,
+): 'expense' | 'income' | 'saving' {
+  if (nature === SAVING_NATURE) return 'saving'
+  return directionFromParam(direction) === 'in' ? 'income' : 'expense'
+}
+
+export function entryNewPath(
+  options: { direction?: 'in' | 'out'; date?: string; saving?: boolean } = {},
+): string {
   const params = new URLSearchParams()
   if (options.direction !== undefined) params.set(DIRECTION_PARAM, DIRECTION_VALUE[options.direction])
+  if (options.saving === true) params.set(NATURE_PARAM, SAVING_NATURE)
   if (options.date !== undefined) params.set('date', options.date)
   const query = params.toString()
   return query === '' ? ENTRY_NEW_PATH : `${ENTRY_NEW_PATH}?${query}`
@@ -55,12 +82,15 @@ export const CREDITS_PATH = '/credits'
    mois, qui s'efface tant qu'il n'y a rien à répartir. */
 export const SPLIT_PATH = '/repartition'
 
-export const RECURRENCES_PATH = '/abonnements'
-/* Segment fixe : React Router le classe avant `/abonnements/:id`, un
-   abonnement ne peut donc pas éclipser le formulaire de création. */
-export const RECURRENCE_NEW_PATH = `${RECURRENCES_PATH}/nouveau`
-export const recurrencePath = (id: string): string => `${RECURRENCES_PATH}/${id}`
-export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/${id}/modifier`
+/* Même règle, même porte : la tuile Capacité d'épargne du mois y mène, et elle,
+   ne s'efface jamais — un mois sans versement est justement celui où la
+   question « où je place » se pose. */
+export const SAVINGS_PATH = '/epargne'
+
+/* Une avance se pose depuis la liste des récurrences, où elle vit : sa
+   mensualité en est une. L'écran de saisie est plein, comme tous les
+   formulaires — d'où une URL, hors navigation. */
+export const ADVANCE_NEW_PATH = '/avances/nouveau'
 
 /**
  * Écrans qui n'ont qu'une chose à montrer — une saisie, une fiche. Aucune
@@ -69,6 +99,7 @@ export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/$
 export function isFocusScreen(pathname: string): boolean {
   return (
     pathname.startsWith(ENTRY_NEW_PATH) ||
+    pathname.startsWith(ADVANCE_NEW_PATH) ||
     (pathname.startsWith(`${RECURRENCES_PATH}/`) && pathname !== `${RECURRENCES_PATH}/`) ||
     (pathname.startsWith(`${CREDITS_PATH}/`) && pathname !== `${CREDITS_PATH}/`)
   )

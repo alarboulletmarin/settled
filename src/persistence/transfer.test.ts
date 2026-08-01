@@ -350,7 +350,7 @@ describe('migration vers la répartition entre membres', () => {
   })
 })
 
-describe('montant habituel d’un abonnement variable (v4)', () => {
+describe('montant habituel d’une récurrence variable (v4)', () => {
   const doc = (recurrence: Record<string, unknown>) =>
     JSON.stringify({
       schemaVersion: 4,
@@ -387,5 +387,58 @@ describe('montant habituel d’un abonnement variable (v4)', () => {
     const result = parseImport(v3)
     expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(result.data.recurrences[0]).not.toHaveProperty('estimate')
+  })
+})
+
+describe('avances (v5)', () => {
+  const doc = (advances: unknown) =>
+    JSON.stringify({
+      schemaVersion: 5,
+      household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'var(--cat-1)' }] },
+      categories: [],
+      advances,
+    })
+
+  const complete = {
+    id: 'av1',
+    label: 'Assurance auto',
+    categoryId: 'car-insurance',
+    memberId: 'm1',
+    amount: 60_000,
+    paidOn: '2026-01-15',
+    from: '2026-01',
+    to: '2026-12',
+    recurrenceId: 'r1',
+  }
+
+  it('survit à l’aller-retour', () => {
+    expect(parseImport(doc([complete])).data.advances[0]).toEqual(complete)
+  })
+
+  /* Le montant est le seul chiffre qu'une avance apporte : sans lui, il n'y a
+     rien à reconstituer, et la ligne ne dirait rien de juste. */
+  it('écarte une avance sans montant lisible', () => {
+    expect(parseImport(doc([{ ...complete, amount: 'six cents' }])).data.advances).toEqual([])
+  })
+
+  /* Une épargne est toujours à quelqu'un : sans porteur, la mensualité ne
+     reviendrait sur le livret de personne. */
+  it('écarte une avance que personne ne porte', () => {
+    const { memberId: _, ...orphan } = complete
+    expect(parseImport(doc([orphan])).data.advances).toEqual([])
+  })
+
+  it('replie une période illisible sur le mois du paiement', () => {
+    const vague = { ...complete, from: 'plus tard', to: 'jamais' }
+    const advance = parseImport(doc([vague])).data.advances[0]
+    expect(advance?.from).toBe('2026-01')
+    expect(advance?.to).toBe('2026-01')
+  })
+
+  it('un document v4 reste lisible, simplement sans avance', () => {
+    const v4 = doc([complete]).replace('"schemaVersion":5', '"schemaVersion":4')
+    const result = parseImport(v4)
+    expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    expect(result.data.advances).toEqual([])
   })
 })

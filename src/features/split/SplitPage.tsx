@@ -60,7 +60,7 @@ function missingIncomes(unknown: readonly Member[], unpriced: number): Missing {
   const who = de(enumerate(names))
 
   // Tous les revenus manquants sont des variables non chiffrés : les
-  // abonnements sont là, il n'y a qu'un montant à poser.
+  // récurrences sont là, il n'y a qu'un montant à poser.
   if (unpriced > 0 && unpriced === names.length) {
     return {
       message: tpl(names.length === 1 ? fr.split.unpricedOne : fr.split.unpricedMany, who),

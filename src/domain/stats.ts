@@ -93,6 +93,13 @@ const EMPTY_KINDS: KindTotals = { resource: ZERO, charge: ZERO, debt: ZERO, savi
  * `planned` compris ou non selon `forecast` : la lecture réalisée et la
  * lecture prévisionnelle répondent à deux questions différentes, et mélanger
  * les deux donnerait un taux d'épargne qui bouge tout seul au fil du mois.
+ *
+ * L'épargne se compte **en net**, seule des quatre natures : ce qu'on y met
+ * moins ce qu'on y reprend. Une reprise — payer l'assurance de l'année depuis
+ * le livret — entre en sens `in`, et la compter comme un versement dirait que
+ * le mois où l'on a vidé 600 € du livret est un mois où l'on a mis 600 € de
+ * côté. Les trois autres natures n'ont qu'un sens possible, il n'y a rien à
+ * y compenser.
  */
 export function totalsByKind(
   entries: readonly Entry[],
@@ -107,7 +114,10 @@ export function totalsByKind(
   const totals = { ...EMPTY_KINDS }
   for (const entry of scoped) {
     const kind = kindOf(entry.categoryId)
-    totals[kind] = add(totals[kind], entry.amount)
+    totals[kind] =
+      kind === 'saving' && entry.direction === 'in'
+        ? sub(totals[kind], entry.amount)
+        : add(totals[kind], entry.amount)
   }
   return totals
 }
@@ -131,6 +141,22 @@ export function savingCapacity(totals: KindTotals): Money {
 export function savingRate(totals: KindTotals): number | null {
   if (totals.resource <= 0) return null
   return totals.saving / totals.resource
+}
+
+/**
+ * Ce qu'il reste à placer : la capacité moins ce qui est déjà versé.
+ *
+ * C'est la question qui suit la capacité, et à laquelle aucun chiffre ne
+ * répondait. Savoir qu'on peut mettre 1 000 € de côté ne dit pas s'il en reste
+ * à répartir entre les supports : 800 € partent peut-être déjà d'eux-mêmes sur
+ * un livret et un plan, et les 200 € restants sont les seuls dont on décide.
+ *
+ * Négatif, il a un sens tout aussi net : on verse plus qu'on ne dégage, donc le
+ * mois se termine à découvert d'autant. C'est une lecture, pas une erreur — on
+ * ne le borne donc pas à zéro.
+ */
+export function savingLeft(totals: KindTotals): Money {
+  return sub(savingCapacity(totals), totals.saving)
 }
 
 /* --- Ce qui rentre, ce qui se paie ----------------------------------------*/
@@ -281,35 +307,45 @@ export function breakdownByCategory(
   return topSlices(byCategory, limit)
 }
 
-/* --- Dépenses par jour ----------------------------------------------------*/
-
-export type DaySlice = { categoryId: string; total: Money }
-export type DayTotals = { date: ISODate; total: Money; slices: DaySlice[] }
-
-/** Un point par jour du mois, y compris les jours vides : la barre doit exister. */
-export function dailyBreakdown(
+/**
+ * Où va l'épargne du mois, par support.
+ *
+ * La répartition par sens ne sait pas séparer un virement sur un PEA d'un plein
+ * d'essence : les deux sortent. La nature, elle, le sait — c'est la frontière
+ * de `spendingFlow`, prise par l'autre bout.
+ *
+ * Le plafond est plus haut que celui des dépenses : un foyer tient une
+ * quarantaine de postes de charges, dont un « Autres » sauve la lisibilité,
+ * mais rarement plus de six ou sept supports d'épargne — et les regrouper sous
+ * « Autres » retirerait à l'écran la seule chose qu'il a à dire, où l'argent
+ * est placé.
+ */
+export function savingsByCategory(
   entries: readonly Entry[],
   month: YearMonth,
-  direction: Direction = 'out',
+  kindOf: KindOf,
   memberId?: MemberFilter,
-): DayTotals[] {
-  const { y, m } = parseYm(month)
-  const scoped = entriesOfMonth(entries, month, memberId).filter((e) => e.direction === direction)
-  const days = new Map<ISODate, Map<string, Money>>()
-
+  limit = 8,
+): CategorySlice[] {
+  const scoped = entriesOfMonth(entries, month, memberId).filter(
+    (e) => kindOf(e.categoryId) === 'saving',
+  )
+  const byCategory = new Map<string, Money>()
   for (const entry of scoped) {
-    const day = days.get(entry.date) ?? new Map<string, Money>()
-    day.set(entry.categoryId, add(day.get(entry.categoryId) ?? ZERO, entry.amount))
-    days.set(entry.date, day)
+    // Net, comme `totalsByKind` : un livret dans lequel on a repris 600 € et
+    // remis 50 € n'a pas reçu 650 € ce mois-ci.
+    const current = byCategory.get(entry.categoryId) ?? ZERO
+    byCategory.set(
+      entry.categoryId,
+      entry.direction === 'in' ? sub(current, entry.amount) : add(current, entry.amount),
+    )
   }
 
-  return Array.from({ length: daysInMonth(y, m) }, (_, i) => {
-    const date = `${month}-${String(i + 1).padStart(2, '0')}`
-    const slices = [...(days.get(date) ?? new Map<string, Money>())].map(
-      ([categoryId, total]) => ({ categoryId, total }),
-    )
-    return { date, total: sum(slices.map((s) => s.total)), slices }
-  })
+  // Un support autant repris que reconstitué dans le même mois n'a rien reçu :
+  // l'afficher à zéro ajouterait une ligne qui ne dit rien.
+  for (const [id, total] of byCategory) if (total === ZERO) byCategory.delete(id)
+
+  return topSlices(byCategory, limit)
 }
 
 /* --- Prochaines échéances -------------------------------------------------*/
@@ -369,9 +405,9 @@ export function upcomingRows(upcoming: readonly Upcoming[]): UpcomingRow[] {
   )
 }
 
-/* --- Abonnements ----------------------------------------------------------*/
+/* --- Récurrences ----------------------------------------------------------*/
 
-export type SubscriptionTotals = {
+export type RecurrenceTotals = {
   monthly: Money
   annual: Money
   /** Récurrences variables dont rien ne permet encore de dire le montant. */
@@ -390,12 +426,12 @@ export type SubscriptionTotals = {
  * un total qui ne compterait que les sorties sans le dire décrirait mal la
  * liste qu'il surplombe.
  */
-export function subscriptionTotals(
+export function recurrenceTotals(
   recurrences: readonly Recurrence[],
   amountOf: (recurrence: Recurrence) => Money | null,
   on: ISODate,
   direction: Direction = 'out',
-): SubscriptionTotals {
+): RecurrenceTotals {
   let monthly = ZERO
   let annual = ZERO
   let unknownCount = 0

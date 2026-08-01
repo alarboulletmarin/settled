@@ -15,26 +15,28 @@ import { type PriceChange, amountOn, detectPriceChange } from '@/domain/priceHis
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
 import {
   type CategorySlice,
-  type DayTotals,
   type Flow,
   type KindOf,
   type KindTotals,
   type MonthTotals,
-  type SubscriptionTotals,
+  type RecurrenceTotals,
   type Upcoming,
   breakdownByCategory,
   breakdownByFamily,
-  dailyBreakdown,
   entriesOfMonth,
   incomeFlow,
   monthProgress,
   monthTotals,
+  recurrenceTotals,
   restToLive,
+  savingCapacity,
+  savingLeft,
+  savingsByCategory,
   spendingFlow,
-  subscriptionTotals,
   totalsByKind,
   upcomingEntries,
 } from '@/domain/stats'
+import { type AdvanceStatus, advanceStatus } from '@/domain/advance'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
 import {
   type MemberCharges,
@@ -48,6 +50,7 @@ import {
   unassignedIncomes,
 } from '@/domain/split'
 import {
+  type Advance,
   type Category,
   type CategoryKind,
   type Debt,
@@ -66,6 +69,7 @@ export const useRecurrences = (): Recurrence[] => useStore((s) => s.data.recurre
 export const useCategories = (): Category[] => useStore((s) => s.data.categories)
 export const useFamilies = (): Family[] => useStore((s) => s.data.families)
 export const useDebts = (): Debt[] => useStore((s) => s.data.debts)
+export const useAdvances = (): Advance[] => useStore((s) => s.data.advances)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
@@ -110,12 +114,12 @@ export function useKindOf(): KindOf {
 }
 
 /**
- * Combien vaut un abonnement à une date — montant fixe, échéance chiffrée ou
+ * Combien vaut une récurrence à une date — montant fixe, échéance chiffrée ou
  * montant habituel, dans cet ordre (voir `amountOn`). Aujourd'hui par défaut,
  * fin de mois pour ce qui se lit sur un mois.
  *
  * Passée aux fonctions du domaine comme `kindOf`, et pour la même raison : le
- * revenu d'un membre, le total des abonnements et la fiche d'un abonnement
+ * revenu d'un membre, le total des récurrences et la fiche d’une récurrence
  * posent la même question, et il n'y a qu'ici qu'on y répond. Trois lectures
  * qui divergent, ce sont trois chiffres qui se contredisent d'un écran à
  * l'autre — et un prorata qui reste muet sans qu'on sache pourquoi.
@@ -268,12 +272,6 @@ export function useCategoryBreakdown(direction: 'in' | 'out' = 'out'): CategoryS
   )
 }
 
-export function useDailyBreakdown(direction: 'in' | 'out' = 'out'): DayTotals[] {
-  const { entries } = useMonthScope()
-  const month = useCurrentYm()
-  return useMemo(() => dailyBreakdown(entries, month, direction), [entries, month, direction])
-}
-
 /**
  * Les prochaines échéances. Elle se lit, elle ne s'actionne pas : une charge
  * commune y figure donc à la part du membre sélectionné, comme les totaux.
@@ -368,8 +366,8 @@ export type MonthSplit = {
  * suivant n'existait pas encore — le foyer qui venait de poser ses deux
  * salaires n'avait aucune répartition, et en aurait eu une le lendemain.
  *
- * Le montant de chaque abonnement passe par `useAmountOf` — le même que celui
- * du total des abonnements et de la liste : le salaire qui pèse dans le prorata
+ * Le montant de chaque récurrence passe par `useAmountOf` — le même que celui
+ * du total des récurrences et de la liste : le salaire qui pèse dans le prorata
  * est au centime celui qui s'affiche sur sa fiche. Il se lit en fin de mois,
  * comme les charges qu'il sert à répartir : c'est la même question, « combien
  * ce mois-ci », et non « combien à cet instant ».
@@ -471,6 +469,136 @@ export function useMemberCharges(): MemberCharges | null {
   )
 }
 
+/* --- Épargne --------------------------------------------------------------*/
+
+/** Où va l'épargne du mois affiché, à la portée de lecture courante. */
+export function useSavingsByCategory(limit?: number): CategorySlice[] {
+  const { entries } = useMonthScope()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  return useMemo(
+    () => savingsByCategory(entries, month, kindOf, undefined, limit),
+    [entries, month, kindOf, limit],
+  )
+}
+
+/**
+ * Les versements du mois que personne ne porte.
+ *
+ * L'épargne ne se partage jamais : un versement laissé « tout le foyer » ne
+ * tombe donc dans le scope d'aucun membre, et n'entre dans la capacité de
+ * personne. Il sort bien du compte du foyer, mais la somme des lectures
+ * individuelles cesse de valoir celle du foyer sans que rien ne le dise —
+ * exactement le silence que `unassignedIncomes` lève sur la répartition.
+ */
+export function useUnassignedSavings(): Entry[] {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  return useMemo(
+    () =>
+      entriesOfMonth(entries, month).filter(
+        (entry) => entry.memberId === undefined && kindOf(entry.categoryId) === 'saving',
+      ),
+    [entries, month, kindOf],
+  )
+}
+
+/** Ce qu'un membre dégage, ce qu'il place, et ce qu'il lui reste à placer. */
+export type MemberSaving = {
+  memberId: string
+  /** Ressources − charges − crédits, sa part du pot commun comprise. */
+  capacity: Money
+  /** Ce qu'il a déjà versé sur ses supports. */
+  saved: Money
+  /** La différence. Négative, il verse plus qu'il ne dégage. */
+  left: Money
+}
+
+/**
+ * La même lecture pour chaque membre, sans avoir à passer d'un filtre à l'autre.
+ *
+ * L'épargne est le seul chiffre du mois qui n'a aucun sens au foyer : deux
+ * personnes qui dégagent 300 € et 900 € n'ont pas « 1 200 € à placer », elles
+ * ont deux décisions séparées à prendre, sur deux comptes séparés. Hors filtre,
+ * l'écran montre donc les deux colonnes plutôt qu'une somme qui ne se décide
+ * nulle part.
+ *
+ * `scopeToMember` fait tout le travail — les lignes du membre, plus sa part de
+ * chaque charge commune : la capacité tient compte du loyer qu'il porte, sans
+ * qu'aucun prorata soit recalculé ici.
+ */
+export function useMemberSavings(): MemberSaving[] {
+  const members = useMembers()
+  const entries = useEntries()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  const incomes = useMemberIncomes()
+
+  return useMemo(
+    () =>
+      members.flatMap((member) => {
+        const scoped = scopeToMember(entries, member.id, kindOf, incomes)
+        // Prorata incalculable : une capacité qui ignorerait le loyer vaudrait
+        // moins qu'une ligne absente. L'écran dit déjà ce qui manque.
+        if (scoped === null) return []
+        const totals = totalsByKind(scoped, month, kindOf, undefined, true)
+        return [
+          {
+            memberId: member.id,
+            capacity: savingCapacity(totals),
+            saved: totals.saving,
+            left: savingLeft(totals),
+          },
+        ]
+      }),
+    [members, entries, month, kindOf, incomes],
+  )
+}
+
+/**
+ * Où en est chaque avance, la plus lourde à reconstituer d'abord.
+ *
+ * Sur le mois affiché et non au jour où l'on regarde : ouvrir novembre doit
+ * dire ce qu'il restera à se rembourser fin novembre, pas ce qu'il reste
+ * aujourd'hui. C'est la règle que suit déjà le revenu qui sert au prorata.
+ */
+export function useAdvanceStatuses(): AdvanceStatus[] {
+  const advances = useAdvances()
+  const entries = useEntries()
+  const month = useCurrentYm()
+  return useMemo(
+    () =>
+      advances
+        .map((advance) => advanceStatus(advance, entries, month))
+        .sort((a, b) => b.remaining - a.remaining),
+    [advances, entries, month],
+  )
+}
+
+/** L'état d'une avance. `null` si elle n'existe pas (ou plus). */
+export function useAdvanceStatus(id: string | undefined): AdvanceStatus | null {
+  const statuses = useAdvanceStatuses()
+  return useMemo(
+    () => (id === undefined ? null : (statuses.find((s) => s.advance.id === id) ?? null)),
+    [statuses, id],
+  )
+}
+
+/** Les récurrences que des avances portent : elles se lisent sur leur avance. */
+export function useAdvanceRecurrenceIds(): Set<string> {
+  const advances = useAdvances()
+  return useMemo(
+    () =>
+      new Set(
+        advances.flatMap((advance) =>
+          advance.recurrenceId === undefined ? [] : [advance.recurrenceId],
+        ),
+      ),
+    [advances],
+  )
+}
+
 /* --- Crédits --------------------------------------------------------------*/
 
 /**
@@ -511,13 +639,13 @@ export function useMonthProgress(): number {
   return useMemo(() => monthProgress(month, today()), [month])
 }
 
-/* --- Abonnements ----------------------------------------------------------*/
+/* --- Récurrences ----------------------------------------------------------*/
 
-export function useSubscriptionTotals(direction: 'in' | 'out' = 'out'): SubscriptionTotals {
+export function useRecurrenceTotals(direction: 'in' | 'out' = 'out'): RecurrenceTotals {
   const recurrences = useRecurrences()
   const amountOf = useAmountOf()
   return useMemo(
-    () => subscriptionTotals(recurrences, amountOf, today(), direction),
+    () => recurrenceTotals(recurrences, amountOf, today(), direction),
     [recurrences, amountOf, direction],
   )
 }
@@ -578,7 +706,7 @@ export type RecurrenceRow = {
 }
 
 /**
- * La liste des abonnements, triée par prochaine échéance. Ceux qui n'ont plus
+ * La liste des récurrences, triée par prochaine échéance. Celles qui n'ont plus
  * d'échéance passent à la fin : ils ne se disputent pas l'attention.
  */
 export function useRecurrenceRows(): RecurrenceRow[] {
@@ -596,7 +724,7 @@ export function useRecurrenceRows(): RecurrenceRow[] {
         annual: annualCost(priced),
         priceChange: detectPriceChange(entries, recurrence.id),
         // `endedOn` est la dernière date couverte : `expandRecurrence` s'arrête
-        // dessus, incluse. Un abonnement arrêté aujourd'hui n'a donc plus
+        // dessus, incluse. Une récurrence arrêtée aujourd'hui n'a donc plus
         // d'échéance à venir — le compter encore actif jusqu'à demain laissait
         // « Arrêter » sans effet visible le jour même où on l'actionne.
         stopped: recurrence.endedOn !== undefined && recurrence.endedOn <= now,
@@ -619,7 +747,7 @@ export function useTrailingMonths(count = 12): MonthPoint[] {
 }
 
 /** Bornes de navigation : on ne remonte pas avant la première donnée. */
-/** Un abonnement et ses chiffres dérivés. `null` s'il n'existe pas (ou plus). */
+/** Une récurrence et ses chiffres dérivés. `null` si elle n'existe pas (ou plus). */
 export function useRecurrenceRow(id: string | undefined): RecurrenceRow | null {
   const rows = useRecurrenceRows()
   return useMemo(

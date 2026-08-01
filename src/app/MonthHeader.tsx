@@ -1,5 +1,6 @@
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
+import { cn } from '@/lib/cn'
 import {
   useMemberFilter,
   useMemberMap,
@@ -96,14 +97,48 @@ export function MonthHeader({
   const bounds = useMonthBounds()
 
   return (
-    <header className="mb-5 flex flex-col gap-4">
-      <MonthNav value={ym} onChange={setYm} min={bounds.min} max={bounds.max} className="max-w-sm" />
-      {withMemberFilter && (
-        <div className="flex flex-col gap-2">
-          <MemberFilter />
-          {prorataNote && <ProrataNote />}
-        </div>
-      )}
-    </header>
+    /* C'est l'en-tête lui-même qui colle, et non un bloc à l'intérieur : un
+       élément collant ne dépasse jamais les bornes de son parent, et un parent
+       haut de deux commandes le laisse partir au premier écran de défilement.
+       Son parent à lui est `main`, c'est-à-dire la page entière — et la note de
+       lecture sort donc de l'en-tête pour ne pas coller avec.
+
+       Les marges négatives annulent le cadre de `main` : sans elles, le fond
+       s'arrête aux bords du contenu et les lignes passent dans les gouttières
+       pendant qu'elles défilent dessous. Le fond est celui de la page, pas
+       d'une tuile — le bandeau n'est pas une surface de plus, c'est la page qui
+       reste en place. Le cadre vertical est le sien, et non celui de `main` qui
+       défile : sans lui, le mois toucherait le bord de l'écran une fois figé.
+
+       Sous la barre d'onglets (`z-20`) et sous les surcouches : un bandeau
+       collant qui passerait devant un toast masquerait ce qu'on vient de
+       faire. */
+    <>
+      <header
+        className={cn(
+          'sticky top-0 z-10 -mx-4 flex flex-col gap-4 bg-bg px-4 py-3',
+          'md:-mx-8 md:px-8',
+        )}
+      >
+        <MonthNav
+          value={ym}
+          onChange={setYm}
+          min={bounds.min}
+          max={bounds.max}
+          className="max-w-sm"
+        />
+        {withMemberFilter && <MemberFilter />}
+      </header>
+
+      {/* La note de lecture ne colle pas : c'est une phrase qui s'explique une
+          fois, pas une commande, et elle coûterait deux lignes de haut d'écran
+          à chaque défilement sur téléphone.
+
+          Le bloc est rendu même vide : sa marge est celle que l'en-tête portait
+          avant de coller, et une marge sur un élément collant laisserait une
+          bande transparente sous le bandeau, dans laquelle le contenu se
+          verrait défiler. */}
+      <div className="mb-5">{withMemberFilter && prorataNote && <ProrataNote />}</div>
+    </>
   )
 }

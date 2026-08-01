@@ -54,7 +54,7 @@ function Rows() {
       />
       <ListRow
         color="var(--cat-4)"
-        label="Abonnement musique"
+        label="Récurrence musique"
         meta="12/07"
         planned
         trailing={<Amount value={money(1099)} direction="out" />}

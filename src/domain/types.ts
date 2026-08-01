@@ -94,7 +94,7 @@ export type Recurrence = {
    * montant fixe.
    *
    * Ce n'est pas une seconde vérité à côté de `amount` : c'est la seule qu'un
-   * abonnement variable puisse porter avant sa première échéance. Un salaire
+   * récurrence variable puisse porter avant sa première échéance. Un salaire
    * qui varie n'a aucun chiffre tant que rien n'est tombé, et il ne pouvait
    * donc peser dans aucun prorata — le foyer entier restait sans répartition
    * parce qu'une personne venait d'arriver. Dès qu'une échéance est chiffrée,
@@ -136,7 +136,7 @@ export type Entry = {
 /**
  * Un crédit en cours. Il ne produit aucun chiffre de trésorerie par lui-même :
  * c'est la récurrence liée qui pose les mensualités, comme n'importe quel
- * abonnement. Ce que le crédit ajoute, c'est le capital — ce qu'on doit encore,
+ * récurrence. Ce que le crédit ajoute, c'est le capital — ce qu'on doit encore,
  * qu'aucune somme de mensualités ne dit lorsqu'il y a des intérêts.
  */
 export type Debt = {
@@ -157,6 +157,51 @@ export type Debt = {
    * versé, exactement.
    */
   rateBp?: number
+  note?: string
+}
+
+/**
+ * Une charge payée en une fois, depuis l'épargne, et remboursée à soi-même mois
+ * par mois.
+ *
+ * L'assurance auto se règle en un versement de 600 € qui couvre douze mois. La
+ * payer depuis un livret et se reverser 50 € chaque mois est le montage le plus
+ * courant d'un foyer qui n'encaisse pas un tel coup sur un seul mois — et
+ * jusqu'ici l'app ne savait le dire d'aucune manière : soit le mois du paiement
+ * portait 600 € de charges et les onze suivants rien, soit la mensualité était
+ * saisie à la main comme une charge, ce qu'elle n'est pas.
+ *
+ * Car la mensualité n'est pas une dépense : la dépense a eu lieu, une fois. Ce
+ * qui se passe ensuite est un retour d'épargne — on remet sur le livret ce
+ * qu'on lui a pris. C'est pour ça qu'elle ne pèse pas dans les charges du mois
+ * mais dans ce qu'on place, et qu'elle réduit le reste à placer plutôt que la
+ * capacité.
+ *
+ * Comme un `Debt`, une avance ne produit aucun chiffre de trésorerie par
+ * elle-même : c'est la récurrence liée qui pose les mensualités, sur le support
+ * d'épargne à reconstituer. Ce que l'avance ajoute, c'est ce qui a été avancé —
+ * donc ce qu'il reste à se rembourser, qu'aucune somme de mensualités ne dit.
+ */
+export type Advance = {
+  id: string
+  label: string
+  /** La catégorie de la charge avancée — assurance véhicule, taxe foncière. */
+  categoryId: string
+  /**
+   * Qui a avancé, et qui se rembourse. Jamais facultatif : une épargne est
+   * toujours à quelqu'un, et une avance que personne ne porte ne se reconstitue
+   * sur le livret de personne.
+   */
+  memberId: string
+  /** Ce qui a été payé, en une fois. */
+  amount: Money
+  /** Le jour du paiement — celui où l'épargne a été reprise. */
+  paidOn: ISODate
+  /** Premier et dernier mois couverts, inclus. La mensualité en découle. */
+  from: YearMonth
+  to: YearMonth
+  /** La mensualité qui reconstitue l'épargne. Sans elle, rien ne revient. */
+  recurrenceId?: string
   note?: string
 }
 
@@ -187,6 +232,7 @@ export type Data = {
   recurrences: Recurrence[]
   entries: Entry[]
   debts: Debt[]
+  advances: Advance[]
   months: MonthState[]
   settings: Settings
 }
@@ -199,12 +245,12 @@ export function isActiveOn(recurrence: Recurrence, date: ISODate): boolean {
 }
 
 /**
- * L'abonnement décrit-il la situation du foyer sur ce mois-là ?
+ * La récurrence décrit-elle la situation du foyer sur ce mois-là ?
  *
- * Un abonnement arrêté avant le mois ne la décrit plus. Un abonnement dont la
+ * Une récurrence arrêtée avant le mois ne la décrit plus. Une récurrence dont la
  * première échéance est encore à venir, si : il a été déclaré, il va tomber.
- * L'asymétrie est voulue, et c'est déjà celle du total des abonnements, qui
- * compte un abonnement à venir et exclut un abonnement arrêté — un foyer qui
+ * L'asymétrie est voulue, et c'est déjà celle du total des récurrences, qui
+ * compte une récurrence à venir et exclut une récurrence arrêtée — un foyer qui
  * pose ses salaires au 1er du mois prochain n'a pas à attendre ce 1er pour
  * savoir dans quelle proportion il partage ses charges.
  *

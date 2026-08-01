@@ -28,10 +28,12 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Catégories rangées en familles, sous quatre natures
 - Membres du foyer comme étiquette
 - Répartition des charges communes entre membres, au prorata des revenus
+- Capacité d'épargne, ventilation par support et reste à placer, par personne
+- Avances : une charge payée en une fois depuis l'épargne, remboursée mois par mois
 - Export / import du fichier de données
 - Thème clair et sombre
 
-**Hors v1** — épargne et objectifs, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
+**Hors v1** — objectifs d'épargne datés, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
 
 ---
 
@@ -50,6 +52,7 @@ type Data = {
   recurrences: Recurrence[]
   entries: Entry[]
   debts: Debt[]
+  advances: Advance[]
   months: MonthState[]
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
@@ -83,6 +86,21 @@ type Debt = {
   startedOn: string
   endsOn: string
   rateBp?: number               // taux annuel en points de base, 450 = 4,50 %
+  note?: string
+}
+
+// Une charge payée en une fois depuis l'épargne, remboursée à soi-même mois
+// par mois. La mensualité est de nature `saving` : la charge a déjà eu lieu.
+type Advance = {
+  id: string
+  label: string
+  categoryId: string            // la nature de la charge avancée
+  memberId: string              // jamais facultatif : une épargne est à quelqu'un
+  amount: Money                 // ce qui a été payé, en une fois
+  paidOn: string                // le jour de la reprise sur le livret
+  from: string                  // "2026-08" — premier mois couvert
+  to: string                    // "2027-07" — dernier mois couvert, inclus
+  recurrenceId?: string         // la mensualité qui reconstitue l'épargne
   note?: string
 }
 
@@ -126,15 +144,17 @@ type MonthState = {
 
 - Les montants sont des entiers en centimes. Aucun flottant nulle part.
 - Une `Entry` est la seule source de vérité pour les statistiques. Une récurrence ne produit jamais de chiffre directement.
-- L'historique de prix d'un abonnement se déduit des `Entry` liées à sa `recurrenceId`, il n'est pas stocké.
-- **Un abonnement vaut la même chose partout.** « Combien vaut cet abonnement ? » est posée par le total des abonnements, par sa fiche, par le revenu d'un membre et par le montant proposé à l'ouverture d'un mois : une seule fonction y répond, sinon les quatre écrans se contredisent. Trois sources, dans cet ordre — le montant fixe ; sinon l'échéance chiffrée la plus proche, le passé d'abord et le jour même compris ; sinon l'`estimate`. Une échéance encore `planned` dont on a saisi le montant compte : c'est ce qu'on s'attend à payer ou à toucher. La case laissée à zéro par l'ouverture du mois ne compte pas — c'est un emplacement vide, pas un montant nul.
-- `estimate` n'est **pas** une seconde vérité à côté de `amount` : c'est la seule qu'un abonnement variable puisse porter avant sa première échéance. Une échéance chiffrée l'emporte toujours, sans quoi une augmentation resterait invisible tant qu'on n'aurait pas pensé à corriger l'abonnement.
+- L'historique de prix d’une récurrence se déduit des `Entry` liées à sa `recurrenceId`, il n'est pas stocké.
+- **Une récurrence vaut la même chose partout.** « Combien vaut cette récurrence ? » est posée par le total des récurrences, par sa fiche, par le revenu d'un membre et par le montant proposé à l'ouverture d'un mois : une seule fonction y répond, sinon les quatre écrans se contredisent. Trois sources, dans cet ordre — le montant fixe ; sinon l'échéance chiffrée la plus proche, le passé d'abord et le jour même compris ; sinon l'`estimate`. Une échéance encore `planned` dont on a saisi le montant compte : c'est ce qu'on s'attend à payer ou à toucher. La case laissée à zéro par l'ouverture du mois ne compte pas — c'est un emplacement vide, pas un montant nul.
+- `estimate` n'est **pas** une seconde vérité à côté de `amount` : c'est la seule qu'une récurrence variable puisse porter avant sa première échéance. Une échéance chiffrée l'emporte toujours, sans quoi une augmentation resterait invisible tant qu'on n'aurait pas pensé à corriger la récurrence.
 - Supprimer une récurrence n'efface pas les `Entry` déjà confirmées : elle est marquée `endedOn`.
-- Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` **datée dans le passé** s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas. Une `Entry` `confirmed` **datée dans le futur** est une prévision validée d'avance, pas un fait : changer la règle la requalifie — libellé, catégorie, sens, membre, partage — sans jamais toucher à son montant, sa date ni son statut, qui ont pu être saisis à la main. Sans quoi un foyer qui confirme son mois à venir ne peut plus corriger l'abonnement qui l'a produit.
-- Un formulaire de reprise envoie l'**état complet** de ce qu'il montre, jamais un correctif : le champ qu'il n'envoie pas a été vidé, et l'enregistrement l'efface. Fusionner ne saurait pas distinguer « inchangé » d'« effacé », et remettre un abonnement à « tout le foyer » n'aurait aucun effet.
+- Une `Entry` `planned` reste sous la coupe de sa récurrence : changer la règle refait les échéances à venir. Une `Entry` `confirmed` **datée dans le passé** s'en détache définitivement — elle a eu lieu, et l'historique ne se réécrit pas. Une `Entry` `confirmed` **datée dans le futur** est une prévision validée d'avance, pas un fait : changer la règle la requalifie — libellé, catégorie, sens, membre, partage — sans jamais toucher à son montant, sa date ni son statut, qui ont pu être saisis à la main. Sans quoi un foyer qui confirme son mois à venir ne peut plus corriger la récurrence qui l'a produit.
+- Un formulaire de reprise envoie l'**état complet** de ce qu'il montre, jamais un correctif : le champ qu'il n'envoie pas a été vidé, et l'enregistrement l'efface. Fusionner ne saurait pas distinguer « inchangé » d'« effacé », et remettre une récurrence à « tout le foyer » n'aurait aucun effet.
 - Le sens d'une catégorie découle de la nature de sa famille, jamais l'inverse : `resource` entre, les trois autres sortent. Un versement sort du compte exactement comme une charge — c'est la nature, pas le sens, qui les distingue.
 - Un `Debt` ne produit aucun chiffre de trésorerie : ce sont les `Entry` de la récurrence liée qui font sortir l'argent. Il n'ajoute que le capital, que la somme des mensualités ne dit pas dès qu'il y a des intérêts.
 - Le revenu d'un membre est **dérivé de ses récurrences** de nature `resource`, ramenées au mois — jamais stocké à côté. Le déclarer en plus en ferait une seconde vérité, et la première augmentation les ferait diverger. C'est aussi ce qui donne au coefficient sa stabilité : une récurrence est une règle, une prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce qu'on gagne.
+- Un `Advance` ne produit aucun chiffre de trésorerie non plus : la reprise du jour du paiement et les mensualités qui la reconstituent sont des `Entry`. Il n'ajoute que ce qui a été avancé, donc ce qu'il reste à se rendre.
+- **L'épargne se compte en net**, seule des quatre natures : les versements moins les reprises. Une reprise est une `Entry` de sens `in` sur une catégorie `saving` — sans quoi le mois où l'on vide 600 € d'un livret se lirait comme un mois où l'on a mis 600 € de côté.
 - `shared` est une **exception** à la règle de partage, jamais sa copie. Absent, la règle tranche — et c'est ce qui permet à tout ce qui a déjà été saisi de rester exploitable sans être requalifié.
 
 ---
@@ -160,10 +180,10 @@ Tout est modifiable : renommer une famille, en créer une avec sa nature, ajoute
 
 ### 4.2 Récurrences
 
-- Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable », membre selon la même règle que la saisie ponctuelle (§4.7 ter). Un abonnement pose une échéance par période : sans propriétaire ni partage, il creuserait le trou à chaque fois.
+- Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable », membre selon la même règle que la saisie ponctuelle (§4.7 ter). Une récurrence pose une échéance par période : sans propriétaire ni partage, elle creuserait le trou à chaque fois.
 - Périodicités : hebdomadaire, mensuelle, trimestrielle, annuelle, ou tous les *n* mois.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
-- Liste regroupée sur un axe au choix : **sens**, **catégorie** ou **personne**, chaque groupe portant son nombre d'abonnements et son solde mensuel. Par sens, les deux groupes s'ouvrent — le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d'un abonnement dans une liste qui les mêle, d'autant que la pastille prend la teinte de la catégorie et pas du sens. Sur les deux autres axes ils se replient. Le total en tête de page, lui, ne compte que les sorties.
+- Liste regroupée sur un axe au choix : **sens**, **catégorie** ou **personne**, chaque groupe portant son nombre de récurrences et son solde mensuel. Par sens, les deux groupes s'ouvrent — le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d’une charge dans une liste qui les mêle, d'autant que la pastille prend la teinte de la catégorie et pas du sens. Sur les deux autres axes ils se replient. Le total en tête de page, lui, ne compte que les sorties.
 - Un groupe dont tout est à montant variable affiche « montant variable » plutôt qu'un zéro, et un groupe qui n'en contient qu'une partie ne compte que ce qu'il sait chiffrer.
 - Les périodicités non mensuelles sont amorties au mois dans toutes les statistiques.
 - Une récurrence peut être arrêtée sans être supprimée.
@@ -192,7 +212,13 @@ Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 Le membre est **facultatif tant que le partage prend la ligne en charge, obligatoire dès qu'il ne la prend pas** — voir « à quelqu'un, ou à tout le monde » en §4.7 ter. Le champ le dit à l'ouverture, avec la raison, et pas seulement après un échec d'enregistrement.
 
-Une bascule **Ponctuel / Abonnement** y siège, à la création seulement. En abonnement, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en abonnement réécrirait un historique.
+Une bascule **Nature** y siège en tête : **Dépense**, **Revenu**, **Épargne**. Elle ne demande pas le sens de trésorerie, elle demande ce qu'on enregistre — et en déduit le sens. Verser sur un livret sort du compte, donc se saisissait par « Dépense », et il fallait aller chercher « Livrets » entre les courses et le carburant : on ne dépense pas son épargne, on la déplace. Les catégories d'épargne ne figurent donc plus dans la liste d'une dépense, et réciproquement.
+
+En **Épargne**, une seconde bascule dit le mouvement : **Je place** (l'argent quitte le compte pour un support) ou **Je reprends** (il en revient). Le second n'existait nulle part : le sens « entrée » ne proposait que des ressources, et un retrait de livret n'en est pas une. C'est la même écriture que la reprise d'une avance — une `Entry` de sens `in` sur une catégorie `saving` — et l'épargne se comptant en net, elle s'y retranche des versements.
+
+La case « à partager » ne s'affiche pas en Épargne : un versement sort du compte mais reste à qui le fait, et il n'entre jamais dans le pot commun.
+
+Une bascule **Ponctuel / Récurrence** y siège aussi, à la création seulement. En récurrence, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en récurrence réécrirait un historique.
 
 Dépense et revenu sont deux points d'entrée distincts, côte à côte, sur le mois comme sur le calendrier : le sens est choisi avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. Titre et confirmation le suivent — on n'annonce pas « dépense ajoutée » après un salaire.
 
@@ -223,7 +249,7 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Crédits** : capital restant dû, tous crédits confondus.
 - **Dépenses par jour**, barres empilées par catégorie.
 - **Prochaines échéances**, les 5 suivantes avec le nombre de jours restants.
-- **Total abonnements**, mensuel et annualisé.
+- **Total récurrences**, mensuel et annualisé.
 
 Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose, et aucun ne répond à « combien je gagne, combien je paie » : un solde a déjà fait la soustraction. C'est pourquoi les deux totaux qu'il combine se lisent à côté de lui, avant les trois autres. Les six tuiles s'ouvrent sur une feuille qui donne leur calcul et, surtout, ce qui les sépare de leurs voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
 
@@ -241,33 +267,49 @@ Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, cal
 
 ### 4.7 bis Crédits et dettes
 
-Un crédit se déclare avec son capital emprunté, ses dates de première et dernière mensualité, un taux annuel facultatif, et l'abonnement qui le rembourse.
+Un crédit se déclare avec son capital emprunté, ses dates de première et dernière mensualité, un taux annuel facultatif, et la récurrence qui le rembourse.
 
-- Le **capital restant dû** est dérivé, jamais saisi : `Rₖ = Rₖ₋₁(1+i) − Mₖ`, appliqué à chaque mensualité **effectivement confirmée**, à son montant à elle. C'est la formule d'amortissement classique — `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1)/i` — écrite sous forme de récurrence : les deux donnent le même chiffre à mensualité constante, mais seule la récurrence accepte qu'un versement diffère des autres. Une renégociation, un différé, un remboursement anticipé changent le montant en cours de route, et rejouer le passé à la mensualité d'aujourd'hui inventerait un historique. La mensualité de l'abonnement lié ne sert donc qu'à annoncer la suite.
-- Une échéance **antérieure à la date de début** du crédit ne le rembourse pas : l'abonnement a pu servir à autre chose avant d'y être rattaché.
+- Le **capital restant dû** est dérivé, jamais saisi : `Rₖ = Rₖ₋₁(1+i) − Mₖ`, appliqué à chaque mensualité **effectivement confirmée**, à son montant à elle. C'est la formule d'amortissement classique — `Rₙ = P(1+i)ⁿ − M((1+i)ⁿ − 1)/i` — écrite sous forme de récurrence : les deux donnent le même chiffre à mensualité constante, mais seule la récurrence accepte qu'un versement diffère des autres. Une renégociation, un différé, un remboursement anticipé changent le montant en cours de route, et rejouer le passé à la mensualité d'aujourd'hui inventerait un historique. La mensualité de la récurrence liée ne sert donc qu'à annoncer la suite.
+- Une échéance **antérieure à la date de début** du crédit ne le rembourse pas : la récurrence a pu servir à autre chose avant d'y être rattachée.
 - Sans taux, le capital décroît exactement de ce qui a été versé.
-- Sans abonnement lié, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
-- Retirer un crédit du suivi n'efface ni les mensualités versées ni l'abonnement qui les pose. Seul le suivi du capital s'arrête.
+- Sans récurrence liée, le capital ne bouge pas — et l'écran le dit plutôt que de laisser croire à un crédit figé.
+- Retirer un crédit du suivi n'efface ni les mensualités versées ni la récurrence qui les pose. Seul le suivi du capital s'arrête.
 
 ### 4.7 ter Répartition entre membres
 
 À deux revenus inégaux, des parts égales ne le sont pas : sur 2 500 € et 2 000 €, un loyer partagé en deux pèse un quart plus lourd pour le second. La répartition dit ce que chacun verse sur les charges communes, **au prorata des revenus déclarés**.
 
 - **Coefficient** : `revenu du membre ÷ revenus du foyer`. Sur 2 500 € et 2 000 €, 55,6 % et 44,4 %.
-- **Le revenu ne se saisit nulle part** : il est la somme des récurrences de nature `resource` du membre — salaire, allocations, pension — ramenées au mois. Le montant de chacune est celui du §3 — la même fonction que pour le total des abonnements : le salaire qui pèse dans le prorata est au centime celui qu'affiche sa fiche. Une augmentation se saisit là où elle a lieu, dans l'abonnement, et la répartition suit.
-- **Un salaire à montant variable pèse dès qu'un chiffre existe** — dernière échéance chiffrée, ou montant habituel déclaré sur l'abonnement. C'est le montage le plus courant d'un foyer dont les revenus bougent, et rien ne doit l'obliger à attendre un mois entier pour que le foyer se répartisse.
-- **Le revenu se lit sur le mois affiché, jamais sur le jour où l'on regarde.** La répartition d'août se lit avec les revenus d'août, qu'on l'ouvre le 31 juillet ou le 15 août. Un abonnement compte pour un mois tant qu'il n'est pas arrêté avant ce mois ; une première échéance encore à venir ne l'exclut pas — il a été déclaré, il va tomber. C'est la même asymétrie que le total des abonnements, qui compte un abonnement à venir et exclut un abonnement arrêté. Sans quoi le foyer qui pose ses deux salaires au 1er du mois prochain n'a aucune répartition, et en aurait une le lendemain : un chiffre de partage ne peut pas dépendre du moment où on ouvre l'écran.
+- **Le revenu ne se saisit nulle part** : il est la somme des récurrences de nature `resource` du membre — salaire, allocations, pension — ramenées au mois. Le montant de chacune est celui du §3 — la même fonction que pour le total des récurrences : le salaire qui pèse dans le prorata est au centime celui qu'affiche sa fiche. Une augmentation se saisit là où elle a lieu, dans la récurrence, et la répartition suit.
+- **Un salaire à montant variable pèse dès qu'un chiffre existe** — dernière échéance chiffrée, ou montant habituel déclaré sur la récurrence. C'est le montage le plus courant d'un foyer dont les revenus bougent, et rien ne doit l'obliger à attendre un mois entier pour que le foyer se répartisse.
+- **Le revenu se lit sur le mois affiché, jamais sur le jour où l'on regarde.** La répartition d'août se lit avec les revenus d'août, qu'on l'ouvre le 31 juillet ou le 15 août. Une récurrence compte pour un mois tant qu'elle n'est pas arrêtée avant ce mois ; une première échéance encore à venir ne l'exclut pas — elle a été déclarée, elle va tomber. C'est la même asymétrie que le total des récurrences, qui compte une récurrence à venir et exclut une récurrence arrêtée. Sans quoi le foyer qui pose ses deux salaires au 1er du mois prochain n'a aucune répartition, et en aurait une le lendemain : un chiffre de partage ne peut pas dépendre du moment où on ouvre l'écran.
 - **Une ressource laissée « tout le foyer » ne compte dans le revenu de personne** : le prorata compare ce que chacun gagne, et un revenu commun ne dit rien de cet écart. Elle rentre bien sur le mois du foyer, mais elle ne pèse dans aucune part — les écrans qui parlent de revenus le **disent**, parce que c'est la première explication d'une répartition qui ne se calcule pas et la seule qui ne se devinait nulle part.
 - **Charges communes** : les sorties de nature `charge` ou `debt` que personne ne s'est attribuées, plus celles cochées « à partager ». C'est la frontière de la capacité d'épargne, et pour la même raison : un versement sort du compte mais reste à qui le fait, il n'a rien à faire dans un partage.
 - Les échéances **prévues** comptent : la question est « combien verser ce mois-ci », pas « combien a déjà été payé ». Répondre au réalisé ferait grimper la part de chacun au fil du mois.
 - La somme des parts vaut **exactement** le total, au centime. Arrondir chaque part dans son coin ne le garantirait pas ; les centimes restants vont aux plus forts restes, et l'écran affiche le total des parts pour qu'on le vérifie.
 - Le partage se fait **charge par charge**, et non sur leur somme. Les deux donnent le même total au centime près, mais seul le découpage par charge se recompose : la part d'un poste, d'un jour ou d'une moitié de mois s'additionne alors exactement pour redonner la part du mois. C'est ce qui permet à l'écran du mois filtré sur quelqu'un et à celui-ci d'annoncer le même chiffre, et non deux chiffres à un centime l'un de l'autre.
 - Le calcul ne se fait pas tant qu'un membre n'a aucune ressource récurrente à son nom, ou qu'il n'y en a qu'un. L'écran **nomme ce qui manque** au lieu d'afficher un zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
-- Et il nomme **laquelle des deux raisons** c'est : aucun abonnement de ressource, ou bien un abonnement variable pas encore chiffré. Les deux n'appellent pas le même geste — envoyer créer un revenu qui existe déjà fait ajouter un doublon là où il ne manque qu'un montant.
+- Et il nomme **laquelle des deux raisons** c'est : aucune récurrence de ressource, ou bien une récurrence variable pas encore chiffrée. Les deux n'appellent pas le même geste — envoyer créer un revenu qui existe déjà fait ajouter un doublon là où il ne manque qu'un montant.
 - Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, et sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre. Sous ce filtre, c'est la tuile **Part du foyer** (§4.6) qui prend le relais : la même règle, lue du point de vue d'une seule personne, et le même écran de détail au bout.
 - Le total **s'ouvre** sur la liste de ce qu'il compte, de la plus lourde à la plus légère. Un chiffre de répartition qu'on ne peut pas vérifier ne se vérifie pas, et une dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
 - **À quelqu'un, ou à tout le monde.** Une ligne sans propriétaire et hors partage sort du compte du foyer sans apparaître dans le mois de personne : la somme des soldes individuels cesse alors de valoir celui du foyer, sans que rien ne le dise. C'est le cas d'un versement d'épargne que personne ne revendique — l'épargne ne se partage jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle est, et de toute entrée d'argent, qui ne se partage pas davantage. La saisie exige donc le membre dans ces cas-là, et seulement dans ces cas-là : ailleurs, la règle de partage sait déjà où ranger la ligne. C'est une contrainte de saisie, pas une validation d'import : un document plus ancien garde ses lignes telles quelles, et les corriger se fait en les rouvrant.
 - La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
+
+### 4.7 quater Avances
+
+Une **avance** est une charge payée en une fois depuis l'épargne, et remboursée à soi-même mois par mois. L'assurance auto se règle en un versement de 600 € qui couvre douze mois : la payer depuis un livret et se reverser 50 € chaque mois est le montage le plus courant d'un foyer qui n'encaisse pas un tel coup sur un seul mois.
+
+Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la charge, le support d'épargne repris, qui a avancé, et la période couverte — deux mois, bornes comprises.
+
+- **La mensualité n'est pas une charge.** La charge a eu lieu, une fois. Ce qui se passe ensuite est un retour d'épargne : on remet sur le livret ce qu'on lui a pris. Elle est donc de nature `saving`, ne pèse pas dans les charges du mois, et réduit le reste à placer plutôt que la capacité d'épargne.
+- **La mensualité se déduit, elle ne se saisit pas.** Répartie aux plus forts restes sur les mois couverts : sept mois à 85,71 € laisseraient trois centimes qu'aucune mensualité ne rendrait jamais. Deux chiffres saisis séparément finiraient de toute façon par ne plus se répondre.
+- Comme un crédit, une avance ne produit aucun chiffre de trésorerie par elle-même : c'est **la récurrence liée** qui pose les mensualités, sur le support à reconstituer. Elle figure donc dans la liste des récurrences, sous ce support.
+- **Le jour du paiement, une reprise d'épargne est enregistrée** : une `Entry` de sens `in` sur le support, du montant avancé. Le livret baisse d'autant, et cet argent redevient disponible. La dépense qu'elle a financée se saisit comme les autres — l'app ne l'invente pas à la place de qui l'a faite.
+- **L'épargne se compte donc en net**, seule des quatre natures : ce qu'on y met moins ce qu'on y reprend. Sans quoi le mois où l'on vide 600 € d'un livret se lirait comme un mois où l'on a mis 600 € de côté. Les trois autres natures n'ont qu'un sens possible, il n'y a rien à y compenser.
+- **Ce qui reste à remettre est dérivé**, jamais saisi : le montant avancé moins les échéances **effectivement confirmées**, à leur montant à elles, et jamais négatif. Même raison qu'un crédit — on peut se rembourser plus vite, sauter un mois, corriger un montant, et rejouer le passé au montant d'aujourd'hui inventerait un historique. Une échéance antérieure au paiement ne compte pas.
+- Cochée « à partager », la mensualité entre dans les charges communes : chacun en porte sa part au prorata, et celui qui a avancé se retrouve remboursé.
+- Le membre n'est **jamais facultatif** : une épargne est toujours à quelqu'un, et une avance que personne ne porte ne se reconstituerait sur le livret de personne.
+- **Pas d'écran de reprise** : une avance décrit un paiement qui a eu lieu, une fois. La corriger, c'est la retirer et la reposer. Le retrait emporte la mensualité à venir — une avance qu'on ne suit plus n'a plus de raison de se reverser — mais jamais ce qui est déjà revenu sur le livret.
 
 ### 4.8 Données
 

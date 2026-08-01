@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AdvanceFormPage } from '@/features/advances/AdvanceFormPage'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
 import { CreditFormPage } from '@/features/credits/CreditFormPage'
 import { CreditsPage } from '@/features/credits/CreditsPage'
@@ -10,11 +11,13 @@ import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPage'
 import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
 import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
+import { SavingsPage } from '@/features/savings/SavingsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { SplitPage } from '@/features/split/SplitPage'
 import { useStore } from '@/store/store'
 import { StyleguidePage } from '@/styleguide/StyleguidePage'
 import { useApplyTheme } from '@/theme/useTheme'
+import { ADVANCE_NEW_PATH, RECURRENCES_PATH, RECURRENCE_NEW_PATH } from './routes'
 import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
 import { AppShell } from './AppShell'
@@ -30,14 +33,20 @@ function AppRoutes() {
         <Route path="/depense" element={<EntryPage />} />
         <Route path="/depense/:id" element={<EntryPage />} />
         <Route path="/calendrier" element={<CalendarPage />} />
-        <Route path="/abonnements" element={<RecurrencesPage />} />
-        <Route path="/abonnements/nouveau" element={<RecurrenceFormPage />} />
-        <Route path="/abonnements/:id" element={<RecurrenceDetailPage />} />
-        <Route path="/abonnements/:id/modifier" element={<RecurrenceFormPage />} />
+        <Route path={RECURRENCES_PATH} element={<RecurrencesPage />} />
+        <Route path={RECURRENCE_NEW_PATH} element={<RecurrenceFormPage />} />
+        <Route path={`${RECURRENCES_PATH}/:id`} element={<RecurrenceDetailPage />} />
+        <Route path={`${RECURRENCES_PATH}/:id/modifier`} element={<RecurrenceFormPage />} />
+        {/* L'écran s'appelait « Abonnements », et son URL le disait. Un lien
+            partagé, un signet ou une icône posée sur l'écran d'accueil pointent
+            encore là : ils atterrissent sur la liste plutôt que sur le mois. */}
+        <Route path="/abonnements/*" element={<Navigate to={RECURRENCES_PATH} replace />} />
         <Route path="/credits" element={<CreditsPage />} />
         <Route path="/credits/nouveau" element={<CreditFormPage />} />
         <Route path="/credits/:id" element={<CreditFormPage />} />
         <Route path="/repartition" element={<SplitPage />} />
+        <Route path="/epargne" element={<SavingsPage />} />
+        <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
         <Route path="/historique" element={<HistoryPage />} />
         <Route path="/reglages" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -5,10 +5,11 @@
  * métier ne vit ici, et encore moins dans un composant.
  * ==========================================================================*/
 
-import { type ISODate, today } from '@/domain/date'
+import { type ISODate, endOfMonth, parseISO, startOfMonth, today } from '@/domain/date'
+import { monthlyInstalment } from '@/domain/advance'
 import { makeId } from '@/domain/ids'
 import type { Money } from '@/domain/money'
-import { type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
+import { type Advance, type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
 import * as updates from '@/domain/updates'
 import { nextCategoryColor, nextMemberColor } from '@/persistence/defaults'
 import { useStore } from './store'
@@ -90,6 +91,95 @@ export function removeDebt(id: string): void {
   mutate((data) => updates.removeDebt(data, id))
 }
 
+/* --- Avances --------------------------------------------------------------*/
+
+/** Ce qu'un écran a à dire pour poser une avance. Le reste s'en déduit. */
+export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId'> & {
+  /** Le support d'épargne repris, puis reconstitué. */
+  savingCategoryId: string
+  /** La charge avancée entre-t-elle dans le pot commun du foyer ? */
+  shared?: boolean
+}
+
+/**
+ * Traduit une avance en ce qu'elle est vraiment : une reprise sur le livret, et
+ * la récurrence qui l'y remet mois après mois.
+ *
+ * Les trois écritures tiennent dans une seule mutation — donc un seul rendu,
+ * une seule sauvegarde — et surtout la reprise ne peut pas rester seule si la
+ * récurrence échouait : une épargne qu'on a prise sans jamais la rendre est
+ * exactement le trou que cet écran existe pour éviter.
+ *
+ * La reprise part **confirmée** : elle a eu lieu, c'est même tout le propos —
+ * l'argent est déjà sorti du livret. Elle entre en sens `in` parce que c'est ce
+ * qu'elle est du point de vue du foyer, de l'argent qui revient de l'épargne
+ * vers ce qu'on peut dépenser. La dépense qu'elle a financée, elle, se saisit
+ * comme n'importe quelle autre — l'app ne l'invente pas à la place de qui l'a
+ * faite.
+ */
+export function addAdvance(input: AdvanceInput): Advance {
+  const { savingCategoryId, shared, ...rest } = input
+  const recurrence: Recurrence = {
+    id: makeId(),
+    label: rest.label,
+    categoryId: savingCategoryId,
+    memberId: rest.memberId,
+    direction: 'out',
+    amount: monthlyInstalment(rest),
+    period: { unit: 'month', every: 1, anchorDay: parseISO(rest.paidOn).d },
+    startedOn: startOfMonth(rest.from),
+    endedOn: endOfMonth(rest.to),
+    ...(shared === undefined ? {} : { shared }),
+  }
+  const advance: Advance = { ...rest, id: makeId(), recurrenceId: recurrence.id }
+  const drawdown: Entry = {
+    id: makeId(),
+    label: rest.label,
+    categoryId: savingCategoryId,
+    memberId: rest.memberId,
+    direction: 'in',
+    amount: rest.amount,
+    date: rest.paidOn,
+    status: 'confirmed',
+  }
+
+  mutate((data) =>
+    updates.addAdvance(
+      updates.addEntry(
+        updates.syncRecurrenceEntries(
+          updates.addRecurrence(data, recurrence),
+          recurrence.id,
+          makeId,
+        ),
+        drawdown,
+      ),
+      advance,
+    ),
+  )
+  return advance
+}
+
+/**
+ * Retire l'avance du suivi, et avec elle la mensualité qui la reconstitue —
+ * mais pas ce qui est déjà revenu sur le livret.
+ *
+ * C'est la différence avec un crédit, dont la mensualité survit au retrait : le
+ * remboursement d'un crédit continue après qu'on a cessé d'en suivre le
+ * capital, alors qu'une avance qu'on ne suit plus n'a plus de raison de se
+ * reverser. La récurrence part donc avec elle, sans toucher aux échéances déjà
+ * confirmées, que `removeRecurrence` conserve.
+ */
+export function removeAdvance(id: string): void {
+  const advance = useStore.getState().data.advances.find((a) => a.id === id)
+  const recurrenceId = advance?.recurrenceId
+  mutate((data) => {
+    const without = updates.removeAdvance(data, id)
+    return recurrenceId === undefined
+      ? without
+      : updates.removeRecurrence(without, recurrenceId, today())
+  })
+}
+
 export function updateCategory(id: string, patch: Partial<Category>): void {
   mutate((data) => updates.updateCategory(data, id, patch))
 }
@@ -113,9 +203,9 @@ export function addRecurrence(input: Omit<Recurrence, 'id'>): Recurrence {
 }
 
 /**
- * Pose l'abonnement et marque l'échéance du jour saisi comme déjà payée.
+ * Pose la récurrence et marque l'échéance du jour saisi comme déjà payée.
  *
- * C'est le geste de la saisie d'une dépense qu'on bascule en abonnement :
+ * C'est le geste de la saisie d'une dépense qu'on bascule en récurrence :
  * celle-là a eu lieu, les suivantes sont à venir. Les trois étapes tiennent
  * dans une seule mutation — donc un seul rendu, une seule écriture — et surtout
  * l'échéance du jour ne peut pas rester prévue si la suite échouait.

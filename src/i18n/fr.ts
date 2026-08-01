@@ -88,7 +88,7 @@ export const fr = {
     credits: 'Crédits',
     month: 'Le mois',
     calendar: 'Calendrier',
-    subscriptions: 'Abonnements',
+    subscriptions: 'Récurrences',
     history: 'Historique',
     settings: 'Réglages',
     styleguide: 'Styleguide',
@@ -121,19 +121,23 @@ export const fr = {
     memberAdd: 'Ajouter un membre',
     memberName: 'Prénom',
     memberPlaceholder: 'Alix',
+    /* Le prénom se corrige sur place, comme le libellé d'une catégorie. Le nom
+       accessible porte celui qu'on modifie : la liste compte un champ par
+       membre, et « Prénom » seul les annoncerait tous pareil. */
+    memberRename: 'Prénom de %s',
     memberRemove: 'Retirer %s',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
-    /* Le revenu ne se saisit pas ici : il se lit sur les abonnements de
+    /* Le revenu ne se saisit pas ici : il se lit sur les récurrences de
        ressources du membre. Le stocker à côté en ferait une seconde vérité.
        Reste à dire *pourquoi* il ne se lit pas, quand c'est le cas : les deux
        causes n'appellent pas le même geste, et « aucun revenu enregistré »
-       envoyait créer un abonnement qui existait déjà. */
+       envoyait créer une récurrence qui existait déjà. */
     memberNoIncome: 'aucun revenu enregistré',
     memberIncomeUnpriced: 'revenu à montant variable, pas encore chiffré',
     memberIncomeUnpricedFix: 'Indiquer un montant habituel',
     memberIncomeHint:
-      'Le revenu de chacun se lit sur ses abonnements de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
+      'Le revenu de chacun se lit sur ses récurrences de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
     /* Un salaire resté « tout le foyer » ne compte dans le revenu de personne,
        et c'est la première explication d'une répartition qui ne se calcule pas. */
@@ -181,7 +185,7 @@ export const fr = {
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
     reset: 'Tout effacer',
-    resetHint: 'Efface le foyer, les abonnements et toutes les entrées. Sans retour.',
+    resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
     resetConfirm1: 'Effacer toutes les données de cet appareil ?',
     resetConfirm2: 'Vraiment tout effacer ? Exporte d’abord si tu veux garder une trace.',
     resetDone: 'Données effacées',
@@ -239,22 +243,23 @@ export const fr = {
     remainingNoIncome: 'jusqu’à la fin du mois',
     breakdown: 'Répartition',
     breakdownHint: 'sorties du mois',
-    daily: 'Dépenses par jour',
     upcoming: 'Prochaines échéances',
-    subscriptions: 'Abonnements',
+    subscriptions: 'Récurrences',
     subscriptionsHint: '%s par an',
     inflow: 'Entrées',
     outflow: 'Sorties',
     noBreakdown: 'Aucune sortie ce mois-ci.',
     noUpcoming: 'Plus d’échéance ce mois-ci.',
-    noDaily: 'Aucune dépense ce mois-ci.',
     progress: 'Jour %s sur %s',
     monthAhead: 'Mois à venir',
     monthDone: 'Mois terminé',
     capacity: 'Capacité d’épargne',
     capacityHint: 'ressources − charges − crédits',
-    savingRate: '%s de tes ressources mises de côté',
-    savingRateNone: 'aucune ressource ce mois-ci',
+    /* La seconde lecture porte le reste à placer, et non le taux d'épargne : le
+       taux décrit le mois passé, le reste appelle un geste — c'est lui qui fait
+       ouvrir l'écran. Le taux s'y lit, à côté de sa ventilation. */
+    savingLeft: 'reste %s à placer',
+    showSavings: 'Voir où placer %s',
     spending: 'Où part l’argent',
     spendingHint: 'charges et crédits, hors épargne',
     savedThisMonth: 'Mis de côté : %s',
@@ -267,13 +272,21 @@ export const fr = {
     /* La contrepartie de la tuile Répartition, sous un filtre par membre :
        celle-ci montre les parts de tout le monde, celle-là ce que la personne
        filtrée porte du pot commun — et le coefficient qui le produit, qui
-       n'apparaissait nulle part sur son mois. */
-    memberShare: 'Part du foyer',
-    memberShareMine: 'Sa part',
-    memberShareCommon: 'Communes',
-    memberShareOwn: 'Personnelles',
-    memberShareHint: 'au prorata des revenus',
-    srMemberShare: 'Part de %s dans les charges communes : %s, soit %s sur %s.',
+       n'apparaissait nulle part sur son mois.
+
+       Le montant à virer est le chiffre de tête, et non une ligne parmi trois.
+       C'est le geste que la tuile sert : un virement sur le compte joint, dont
+       la somme se recopie telle quelle. Le total des charges communes du foyer
+       en est parti — c'est un chiffre qu'on ne doit pas, et il se lit encore
+       sur l'écran Répartition, qui est fait pour ça. */
+    /* L'eyebrow nomme le chiffre plutôt que la tuile : « Part du foyer » puis
+       « À verser sur le commun » juste en dessous disaient deux fois la même
+       chose, et cette redite valait les trente pixels qui débordaient. */
+    memberShare: 'À verser sur le commun',
+    memberShareOwn: 'Charges perso',
+    memberShareTotal: 'Total à payer',
+    memberShareHint: 'détail',
+    srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
        dit son calcul, puis ce qui le sépare de son voisin — c'est la question
@@ -305,15 +318,12 @@ export const fr = {
         apart:
           'C’est le prévisionnel arrêté plus tôt : lui va jusqu’au bout du mois, celui-ci s’arrête au prochain salaire. Sans rentrée en vue, les deux se rejoignent — l’horizon devient la fin du mois.',
       },
-      capacity: {
-        lead: 'Ce que tu pouvais mettre de côté ce mois-ci, avant de l’avoir fait.',
-        calculation: 'Les ressources, moins les charges et les crédits — donc avant les versements.',
-        apart:
-          'Le solde compte un virement sur un livret comme une sortie, si bien qu’un mois où l’on met 300 € de côté s’y lit comme un mois où l’on a dépensé 300 € de plus. Celui-ci ne s’y laisse pas prendre.',
-      },
+      /* La capacité d'épargne n'a plus sa feuille : elle ouvre son écran, où le
+         calcul est posé terme par terme et suivi de ce qu'il reste à placer.
+         Devant un chiffre qui appelle un geste, définir n'était pas la
+         réponse. */
     },
     srBreakdown: 'Répartition des sorties : %s',
-    srDaily: 'Jours les plus dépensiers : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
   },
 
@@ -401,6 +411,28 @@ export const fr = {
     member: 'Membre',
     note: 'Note',
     direction: 'Sens',
+
+    /* L'écran demande ce qu'on enregistre, pas le sens de trésorerie : verser
+       200 € sur un livret sortait du compte, donc se saisissait par
+       « Dépense », et il fallait aller chercher « Livrets » entre les courses
+       et le carburant. On ne dépense pas son épargne, on la déplace. */
+    nature: 'Nature',
+    natureExpense: 'Dépense',
+    natureIncome: 'Revenu',
+    natureSaving: 'Épargne',
+    savingMovement: 'Mouvement',
+    /* Dit du point de vue de l'épargne, pas du compte courant : « je place »
+       et « je reprends » se comprennent sans savoir dans quel sens l'argent
+       traverse. Le second n'existait pas — on pouvait verser sur un livret,
+       jamais y reprendre. */
+    savingIn: 'Je place',
+    savingOut: 'Je reprends',
+    addSaving: 'Mouvement d’épargne',
+    editSaving: 'Modifier le mouvement',
+    addedSaving: 'Mouvement d’épargne enregistré',
+    updatedSaving: 'Mouvement d’épargne modifié',
+    removedSaving: 'Mouvement d’épargne supprimé',
+    newSaving: 'Épargne',
     amountRequired: 'Indique un montant supérieur à zéro.',
     categoryRequired: 'Choisis une catégorie.',
     labelRequired: 'Donne un libellé à cette entrée.',
@@ -411,50 +443,66 @@ export const fr = {
     planned: 'Prévue',
     confirmed: 'Confirmée',
 
-    /* Ponctuel ou abonnement — la bascule du cahier §4.4. */
+    /* Ponctuel ou récurrent — la bascule du cahier §4.4. */
     rhythm: 'Rythme',
     once: 'Ponctuel',
-    recurring: 'Abonnement',
+    recurring: 'Récurrence',
     firstDate: 'Première échéance',
     recurringHint:
       'Celle-ci est enregistrée comme payée, les suivantes arrivent à confirmer chaque mois.',
   },
 
   recurrences: {
-    title: 'Abonnements',
-    add: 'Ajouter un abonnement',
-    edit: 'Modifier l’abonnement',
-    added: 'Abonnement ajouté',
-    updated: 'Abonnement modifié',
-    resumed: 'Abonnement repris',
-    deleted: 'Abonnement supprimé',
-    empty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
+    title: 'Récurrences',
+    add: 'Ajouter une récurrence',
+    edit: 'Modifier la récurrence',
+    added: 'Récurrence ajoutée',
+    updated: 'Récurrence modifiée',
+    resumed: 'Récurrence reprise',
+    deleted: 'Récurrence supprimée',
+    empty: 'Aucune récurrence pour l’instant. Ajoute la première.',
     /* La seule porte des crédits était une tuile du mois qui se retire tant
        qu'aucun crédit n'est suivi : on ne pouvait donc jamais créer le premier.
-       Elle est ici, parce que c'est un abonnement qui pose les mensualités. */
-    creditsHint: 'Une mensualité de crédit est un abonnement comme un autre. Pour suivre en plus le capital qu’il reste à devoir :',
-    emptyStopped: 'Aucun abonnement arrêté.',
-    showStopped: 'Voir les abonnements arrêtés',
-    hideStopped: 'Masquer les abonnements arrêtés',
-    stoppedBadge: 'Arrêté',
+       Elle est ici, parce que c'est une récurrence qui pose les mensualités. */
+    creditsHint: 'Une mensualité de crédit est une récurrence comme une autre. Pour suivre en plus le capital qu’il reste à devoir :',
+    emptyStopped: 'Aucune récurrence arrêtée.',
+    showStopped: 'Voir les récurrences arrêtées',
+    hideStopped: 'Masquer les récurrences arrêtées',
+    stoppedBadge: 'Arrêtée',
     nextDue: 'Prochaine échéance',
     noNextDue: 'Plus d’échéance',
     monthlyCost: 'Par mois',
     annualCost: 'Par an',
     perYear: '%s par an',
-    totalMonthly: 'Total abonnements',
+    /* Le total suit la pastille : un total qui ne compterait que les sorties
+       sans le dire décrirait mal la liste qu'il surplombe.
+
+       Et il dit son périmètre, parce qu'un total sans périmètre ne se vérifie
+       pas. Deux questions restaient sans réponse à l'écran : de qui, et de
+       quoi. Cette page ne connaît pas le filtre par membre — elle montre les
+       règles du foyer — et le sens « ce qui sort » ramasse les charges, les
+       crédits et les versements d'épargne. */
+    totalMonthly: 'Total par mois',
+    totalScopeOut: 'Tout le foyer · ce qui sort chaque mois, épargne et crédits compris',
+    totalScopeIn: 'Tout le foyer · ce qui rentre chaque mois',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
-    /* Le sens en titre de section : dans une liste qui les mêle, le « + » des
-       entrées ne suffit pas à distinguer un salaire d'un abonnement. */
-    inflow: 'Ce qui rentre',
-    outflow: 'Ce qui sort',
     groupBy: 'Regrouper par',
-    bySense: 'Sens',
     byCategory: 'Catégorie',
     byMember: 'Personne',
-    groupCountOne: '%s abonnement',
-    groupCount: '%s abonnements',
+    /* Le sens ne regroupe pas, il filtre — la règle qu'applique déjà la liste
+       du mois. En axe, il rendait deux blocs dont le total en tête de page
+       donne déjà les chiffres ; en filtre, il se combine aux deux axes qui
+       restent : les charges par poste, les revenus par personne. Les mots sont
+       ceux de la page du mois, à la lettre. */
+    show: 'Montrer',
+    showAll: 'Tout',
+    showOut: 'Charges',
+    showIn: 'Revenus',
+    showEmptyOut: 'Aucune charge récurrente.',
+    showEmptyIn: 'Aucun revenu récurrent.',
+    groupCountOne: '%s récurrence',
+    groupCount: '%s récurrences',
     collapseAll: 'Tout replier',
     expandAll: 'Tout déplier',
     unknownAmounts: '%s à montant variable, non chiffré%s',
@@ -463,12 +511,12 @@ export const fr = {
     fixedAmount: 'Montant fixe',
     priceChanged: 'Le prix a changé : %s → %s',
     priceChangedSince: 'depuis le %s',
-    stop: 'Arrêter l’abonnement',
-    stopped: 'Abonnement arrêté',
-    resume: 'Reprendre l’abonnement',
-    remove: 'Supprimer l’abonnement',
+    stop: 'Arrêter la récurrence',
+    stopped: 'Récurrence arrêtée',
+    resume: 'Reprendre la récurrence',
+    remove: 'Supprimer la récurrence',
     removeConfirm:
-      'Les échéances déjà confirmées sont conservées. Supprimer cet abonnement ?',
+      'Les échéances déjà confirmées sont conservées. Supprimer cette récurrence ?',
     stopHint: 'Les échéances déjà confirmées restent dans l’historique.',
     form: {
       label: 'Libellé',
@@ -483,7 +531,7 @@ export const fr = {
          ce champ est le seul endroit où l'on peut s'avancer avant. */
       estimate: 'Montant habituel',
       estimateHint:
-        'Sert d’ordre de grandeur — pour le total des abonnements, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
+        'Sert d’ordre de grandeur — pour le total des récurrences, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
       period: 'Périodicité',
       everyMonths: 'Tous les combien de mois',
       weekday: 'Jour de la semaine',
@@ -493,13 +541,13 @@ export const fr = {
       notePlaceholder: 'Résiliable en ligne',
       categoryPlaceholder: 'Choisis une catégorie',
       shared: 'Charge commune, à partager entre les membres',
-      labelRequired: 'Donne un libellé à cet abonnement.',
+      labelRequired: 'Donne un libellé à cette récurrence.',
       amountRequired: 'Indique un montant, ou choisis « montant variable ».',
       categoryRequired: 'Choisis une catégorie.',
-      /* Un abonnement pose une échéance par mois : sans propriétaire ni
+      /* Une récurrence pose une échéance par mois : sans propriétaire ni
          partage, il creuse le trou à chaque fois. */
       memberRequired:
-        'Dis à qui est cet abonnement : il n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
+        'Dis à qui est cette récurrence : elle n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
       monthDayHint: 'Un jour qui n’existe pas est ramené au dernier jour du mois.',
     },
     periods: {
@@ -533,12 +581,12 @@ export const fr = {
     advancedBy: 'avancé par %s',
     method: 'Comment c’est calculé',
     methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
-    /* Le revenu est dérivé des abonnements de ressources, jamais déclaré à
+    /* Le revenu est dérivé des récurrences de ressources, jamais déclaré à
        part : une seconde vérité finirait par diverger de la première. */
     methodIncome:
-      'Le revenu vient des abonnements de salaire et d’allocation de chacun, ramenés au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
+      'Le revenu vient des récurrences de salaire et d’allocation de chacun, ramenées au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
     methodVariable:
-      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Un abonnement laissé « tout le foyer » ne compte dans le revenu de personne.',
+      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Une récurrence laissée « tout le foyer » ne compte dans le revenu de personne.',
     methodIncluded: 'Les charges et les crédits que personne ne s’est attribués.',
     methodFlagged: 'Les dépenses cochées « à partager ».',
     methodExcluded:
@@ -555,20 +603,137 @@ export const fr = {
        nommer, et le prorata n'a pas de dénominateur pour autant. */
     missingNone: 'Ajoute un revenu à chacun pour répartir les charges.',
     missingHint:
-      'Un abonnement de salaire ou d’allocation à son nom suffit. À montant variable, il se lit sur la dernière échéance chiffrée.',
-    /* Le cas où l'abonnement existe déjà : envoyer « ajouter un revenu » ferait
+      'Une récurrence de salaire ou d’allocation à son nom suffit. À montant variable, elle se lit sur la dernière échéance chiffrée.',
+    /* Le cas où la récurrence existe déjà : envoyer « ajouter un revenu » ferait
        créer un doublon là où il ne manque qu'un chiffre. Le « de » s'élide
        comme au-dessus, et pour la même raison. */
     unpricedOne: 'Le revenu %s est à montant variable et pas encore chiffré.',
     unpricedMany: 'Les revenus %s sont à montant variable et pas encore chiffrés.',
     unpricedHint:
-      'Confirme une échéance, ou indique un montant habituel sur l’abonnement : la répartition se calcule dès qu’un chiffre existe.',
+      'Confirme une échéance, ou indique un montant habituel sur la récurrence : la répartition se calcule dès qu’un chiffre existe.',
     goToIncome: 'Ajouter un revenu',
-    goToSubscriptions: 'Voir les abonnements',
+    goToSubscriptions: 'Voir les récurrences',
     soloTitle: 'La répartition demande au moins deux membres.',
     soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
     goToSettings: 'Aller aux réglages',
     srShares: 'Parts de chacun : %s',
+  },
+
+  advances: {
+    title: 'Avances',
+    /* Le mot dit le geste : tu as avancé de l'argent, tu te le rembourses. La
+       liste vit sous les récurrences parce que c'en est une — la mensualité
+       qui remet l'épargne en place. */
+    section: 'Avances',
+    sectionHint:
+      'Une charge payée en une fois depuis l’épargne, que tu te remets sur ton livret mois par mois.',
+    add: 'Ajouter une avance',
+    added: 'Avance ajoutée',
+    deleted: 'Avance retirée',
+    empty: 'Aucune avance en cours.',
+
+    label: 'Ce que tu as payé',
+    labelPlaceholder: 'Assurance auto',
+    labelRequired: 'Donne un libellé à cette avance.',
+    amount: 'Montant payé',
+    amountHint: 'Le versement unique, en entier.',
+    amountRequired: 'Indique ce que tu as payé.',
+    paidOn: 'Payé le',
+    category: 'Nature de la charge',
+    categoryRequired: 'Dis de quelle charge il s’agit.',
+    /* Le support est une catégorie d'épargne, et pas n'importe laquelle : c'est
+       celui qu'on a vidé, donc celui qu'on remplit. */
+    savingCategory: 'Repris sur',
+    savingCategoryHint: 'Le livret ou le plan qui a payé, et qu’on reconstitue.',
+    savingCategoryRequired: 'Dis sur quel support tu as pris l’argent.',
+    member: 'Avancé par',
+    memberRequired: 'Dis qui a avancé : une épargne est toujours à quelqu’un.',
+    memberNone: 'Ajoute un membre au foyer pour enregistrer une avance.',
+    from: 'Du mois de',
+    to: 'Au mois de',
+    periodInvalid: 'Le dernier mois ne peut pas précéder le premier.',
+
+    monthly: 'Mensualité',
+    monthlyOf: '%s par mois sur %s mois',
+    restored: 'Déjà remis',
+    remaining: 'Reste à remettre',
+    settled: 'Entièrement reconstituée',
+    over: 'Couvre %s → %s',
+    remove: 'Retirer l’avance',
+    removeConfirm:
+      'Les mensualités déjà remises sur le livret sont conservées. Seule la mensualité à venir s’arrête. Retirer cette avance ?',
+
+    /* Ce que l'écran doit dire une fois, sinon le chiffre paraît sorti de
+       nulle part : la reprise est une entrée d'argent, la dépense qu'elle a
+       financée reste à saisir comme n'importe quelle autre. */
+    method: 'Comment c’est enregistré',
+    methodDrawdown:
+      'Le jour du paiement, l’app enregistre une reprise sur ton épargne : le livret baisse du montant avancé, et cet argent redevient disponible.',
+    methodInstalments:
+      'Chaque mois de la période, une mensualité repart sur le même support. Elle compte dans ton épargne, jamais dans tes charges — la charge, elle, a déjà eu lieu.',
+    methodExpense:
+      'La dépense que cette reprise a financée se saisit comme les autres, à sa date. L’app ne l’invente pas à ta place.',
+    methodShared:
+      'Cochée « à partager », la mensualité entre dans les charges communes : chacun en porte sa part au prorata, et celui qui a avancé se retrouve remboursé.',
+
+    srStatus: '%s : %s remis sur %s, il reste %s.',
+  },
+
+  savings: {
+    title: 'Épargne',
+    subtitle: 'Ce que le mois dégage, et où ça se place.',
+
+    /* La cascade, terme par terme. Le résultat seul se croit sur parole ; les
+       trois lignes qui le produisent se vérifient, et disent surtout *quoi
+       changer* — un crédit qui mange la moitié de la capacité se voit ici, et
+       nulle part ailleurs. */
+    flow: 'Ce que le mois dégage',
+    flowIncome: 'Revenus',
+    flowCharges: 'Charges',
+    flowDebts: 'Crédits',
+    capacity: 'Capacité d’épargne',
+    capacityHint: 'échéances prévues comprises',
+    capacityNegative: 'Les charges dépassent les revenus : il n’y a rien à placer ce mois-ci.',
+
+    placed: 'Où ça se place',
+    placedTotal: 'Versé ce mois',
+    placedEmpty: 'Aucun versement ce mois-ci.',
+    /* Un versement au foyer entier n'est à personne, et l'épargne ne se partage
+       pas : il ne compte donc dans la capacité de personne. C'est le pendant
+       exact du salaire resté « tout le foyer » sur la répartition. */
+    placedUnassigned:
+      'Un versement laissé « tout le foyer » n’entre dans l’épargne de personne. Attribue-le pour qu’il compte.',
+
+    left: 'Reste à placer',
+    leftHint: 'capacité − versements',
+    leftNone: 'Toute la capacité est placée.',
+    /* Verser plus qu'on ne dégage n'est pas une erreur de saisie : c'est une
+       lecture, et celle qu'on vient chercher. */
+    over: 'Dépassement',
+    overHint: 'les versements dépassent la capacité de %s',
+    rate: '%s des ressources mises de côté',
+    rateNone: 'aucune ressource ce mois-ci',
+    /* Le mois où une avance est posée : le livret a payé une charge de l'année,
+       et il a donc rendu plus qu'il n'a reçu. Sans cette phrase, le chiffre
+       négatif au-dessus se lit comme une erreur. */
+    withdrawn: 'Plus repris que placé ce mois-ci — une avance est passée par là.',
+
+    /* Chacun décide sur son compte : une somme des capacités ne se place nulle
+       part. Hors filtre, l'écran montre donc les colonnes plutôt qu'un total. */
+    byMember: 'Chacun de son côté',
+    byMemberHint: 'L’épargne ne se partage pas : chacun place ce qu’il dégage.',
+
+    method: 'Comment c’est calculé',
+    methodFormula: 'Capacité = revenus − charges − crédits.',
+    methodExcluded:
+      'Un versement n’est pas une charge : il sort du compte, mais il reste à qui le fait. Il ne pèse donc ni dans les charges du mois, ni dans le partage du foyer.',
+    methodShared:
+      'Sous un filtre, la capacité tient compte de la part des charges communes que la personne porte — au prorata des revenus, comme partout ailleurs.',
+    methodBalance:
+      'Le solde du mois, lui, compte le versement comme une sortie : c’est exact en trésorerie, et c’est pour ça que les deux chiffres diffèrent.',
+
+    empty: 'Rien à placer tant que le mois n’a ni revenu ni charge.',
+    srMemberSaving: '%s dégage %s, en place %s, il lui reste %s.',
   },
 
   credits: {
@@ -580,7 +745,7 @@ export const fr = {
     removed: 'Crédit retiré du suivi',
     remove: 'Retirer du suivi',
     removeConfirm:
-      'Les mensualités déjà versées sont conservées, ainsi que l’abonnement qui les pose. Seul le suivi du capital s’arrête. Retirer ce crédit ?',
+      'Les mensualités déjà versées sont conservées, ainsi que la récurrence qui les pose. Seul le suivi du capital s’arrête. Retirer ce crédit ?',
     empty: 'Aucun crédit suivi. Ajoute le premier pour voir ce qu’il te reste à devoir.',
     remaining: 'Capital restant dû',
     principal: 'Capital emprunté',
@@ -593,10 +758,10 @@ export const fr = {
     endsOn: 'Dernière mensualité',
     monthsLeft: '%s mensualité%s restante%s',
     settled: 'Soldé',
-    linked: 'Abonnement qui le rembourse',
+    linked: 'Récurrence qui le rembourse',
     linkedNone: 'Aucun — le capital ne bougera pas',
     linkedHint:
-      'C’est l’abonnement qui pose les mensualités et fait décroître le capital. Sans lui, seul le montant emprunté est connu.',
+      'C’est la récurrence qui pose les mensualités et fait décroître le capital. Sans elle, seul le montant emprunté est connu.',
     total: 'Reste à devoir',
     totalMonthly: 'Mensualités',
     progress: '%s remboursé',
@@ -620,6 +785,7 @@ export const fr = {
     membersPlaceholder: 'Alix',
     membersAdd: 'Ajouter',
     membersEmpty: 'Personne pour l’instant. Ajoute un prénom, ou passe.',
+    membersRename: 'Prénom de %s',
     membersRemove: 'Retirer %s',
     solo: 'Je suis seul·e',
     start: 'Commencer',
@@ -657,8 +823,8 @@ export const fr = {
     themePreview: 'Aperçu forcé',
     sampleAmount: 'Montant',
     sampleRing: 'Anneau',
-    sampleEmpty: 'Aucun abonnement pour l’instant. Ajoute le premier.',
-    sampleEmptyAction: 'Ajouter un abonnement',
+    sampleEmpty: 'Aucune récurrence pour l’instant. Ajoute la première.',
+    sampleEmptyAction: 'Ajouter une récurrence',
     variants: 'Variantes',
     states: 'États',
   },

@@ -96,7 +96,7 @@ export const useStore = create<Store>()((set, get) => ({
     set({ ym })
     // Consulter un mois à venir suffit à le peupler. Sans quoi il s'affiche
     // vide — pas d'échéance au calendrier, rien dans le prévisionnel — alors
-    // que les abonnements qui doivent y tomber sont déjà connus.
+    // que les récurrences qui doivent y tomber sont déjà connus.
     get().ensureMonthOpen(ym)
   },
 

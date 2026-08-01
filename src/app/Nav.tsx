@@ -1,7 +1,14 @@
 import { NavLink } from 'react-router-dom'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
+import { scrollToTop } from '@/lib/reveal'
 import { NAV_ROUTES, STYLEGUIDE_ROUTE } from './routes'
+
+/* Un onglet ramène en haut de sa section, qu'on y soit déjà ou non — c'est ce
+   que fait le logo d'un site. Sans ça, toucher l'onglet actif ne produisait
+   rien, et changer d'onglet rouvrait l'écran suivant à la hauteur qu'on avait
+   quittée sur le précédent. Le bouton « retour » du navigateur, lui, n'est pas
+   concerné : il n'y a que la navigation par onglet qui remonte. */
 
 const ITEM = cn(
   'flex items-center justify-center rounded-input px-3 text-[13px] font-medium',
@@ -27,6 +34,7 @@ export function Sidebar({ householdName }: { householdName: string }) {
             key={route.path}
             to={route.path}
             end={route.path === '/'}
+            onClick={scrollToTop}
             className={({ isActive }) =>
               cn(
                 ITEM,
@@ -75,6 +83,7 @@ export function TabBar() {
               <NavLink
                 to={route.path}
                 end={route.path === '/'}
+                onClick={scrollToTop}
                 className={({ isActive }) =>
                   cn(
                     'flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-center',

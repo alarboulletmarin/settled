@@ -6,7 +6,7 @@ import { Checkbox } from '@/ui/Field'
 
 /**
  * La case « à partager », posée sur la saisie d'une dépense comme sur celle
- * d'un abonnement.
+ * d’une récurrence.
  *
  * Elle affiche ce que la règle donnerait tant que personne ne l'a touchée, et
  * suit donc le membre et la catégorie qu'on choisit. Cochée ou décochée à la

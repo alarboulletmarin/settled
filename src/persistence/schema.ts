@@ -12,7 +12,7 @@ import type { Data } from '@/domain/types'
 import { defaultCategories, defaultFamilies, fallbackFamilyId } from './defaults'
 import { normalizeData } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 5
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
@@ -106,9 +106,9 @@ function toVersion3(doc: RawDocument): RawDocument {
 }
 
 /**
- * Le montant habituel d'un abonnement à montant variable — `Recurrence.estimate`.
+ * Le montant habituel d’une récurrence à montant variable — `Recurrence.estimate`.
  *
- * Facultatif, et son absence a le sens qu'elle avait déjà : l'abonnement vaut
+ * Facultatif, et son absence a le sens qu'elle avait déjà : la récurrence vaut
  * ce que disent ses échéances, et rien tant qu'aucune n'est chiffrée. Un
  * document v3 est donc déjà un document v4 valide, et la migration n'a que la
  * version à inscrire — elle existe quand même, parce que le pipeline veut une
@@ -118,11 +118,25 @@ function toVersion4(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 4 }
 }
 
+/**
+ * Les avances — une charge payée en une fois, remboursée à soi-même mois par
+ * mois sur le livret qui l'a financée.
+ *
+ * Le tableau est ajouté vide, comme `debts` l'avait été : un foyer qui n'en
+ * déclare aucune n'en a aucune, et rien dans un document v4 ne permettrait d'en
+ * deviner une. Le reste du document ne bouge pas — une avance ne se déduit pas
+ * des récurrences existantes, elle se déclare.
+ */
+function toVersion5(doc: RawDocument): RawDocument {
+  return { ...doc, advances: [], schemaVersion: 5 }
+}
+
 export const MIGRATIONS: Migration[] = [
   { to: 1, migrate: toVersion1 },
   { to: 2, migrate: toVersion2 },
   { to: 3, migrate: toVersion3 },
   { to: 4, migrate: toVersion4 },
+  { to: 5, migrate: toVersion5 },
 ]
 
 export class ImportError extends Error {

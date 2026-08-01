@@ -71,7 +71,7 @@ export function buildPlannedEntry(
   entries: readonly Entry[],
   makeId: () => string,
 ): Entry {
-  // Montant variable : on propose celui que l'abonnement vaut à cette date —
+  // Montant variable : on propose celui que la récurrence vaut à cette date —
   // la même règle qu'ailleurs, pour que le chiffre proposé à la confirmation
   // soit celui-là même que les totaux ont déjà compté.
   const amount = amountOn(recurrence, entries, date) ?? ZERO
@@ -85,7 +85,7 @@ export function buildPlannedEntry(
     amount,
     date,
     status: 'planned',
-    // La règle de partage est portée par l'abonnement : ses échéances en
+    // La règle de partage est portée par la récurrence : ses échéances en
     // héritent, comme elles héritent du membre.
     ...(recurrence.shared === undefined ? {} : { shared: recurrence.shared }),
   }

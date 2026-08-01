@@ -291,7 +291,10 @@ function RemoveDebt({ debt, onDone }: { debt: Debt; onDone: () => void }) {
       {confirming ? (
         <div className="flex max-w-sm flex-col gap-2 rounded-inner bg-surface-2 p-3">
           <p className="t-label">{fr.credits.removeConfirm}</p>
-          <div className="flex gap-2">
+          {/* Grille et non flex, pour la raison qui vaut sur la fiche d'une
+              récurrence : deux boutons `full` que `shrink-0` empêche de
+              rétrécir débordent de leur boîte, et le second sort de l'écran. */}
+          <div className="grid grid-cols-2 gap-2">
             <Button
               variant="secondary"
               full

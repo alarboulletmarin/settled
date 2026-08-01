@@ -3,13 +3,14 @@ import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from '
 import { type ISODate, isValidISO } from '@/domain/date'
 import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Direction, Entry } from '@/domain/types'
-import { DIRECTION_PARAM, directionFromParam } from '@/app/routes'
+import { DIRECTION_PARAM, NATURE_PARAM, directionFromParam, natureFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { addEntry, addRecurrencePaidOn, removeEntry, replaceEntry } from '@/store/actions'
 import { memberRequired } from '@/domain/split'
 import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
 import { Button, IconButton } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
+import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
 import { Segmented } from '@/ui/Segmented'
@@ -25,9 +26,29 @@ import {
 import { SharedField } from '@/features/split/SharedField'
 import { defaultDateFor } from './defaultDate'
 
-const DIRECTIONS = [
-  { value: 'out' as const, label: fr.direction.out },
-  { value: 'in' as const, label: fr.direction.in },
+/**
+ * Ce qu'on enregistre, du point de vue de qui le fait.
+ *
+ * Le modèle n'a que deux sens, et c'est juste : un virement d'épargne sort bien
+ * du compte. Mais l'écran demandait le sens, si bien que mettre 200 € de côté
+ * passait par « Dépense » et allait chercher « Livrets » entre les courses et
+ * le carburant. On ne dépense pas son épargne, on la déplace — et l'épargne a
+ * donc sa position, d'où l'écran déduit le sens.
+ */
+const NATURES = [
+  { value: 'expense' as const, label: fr.entry.natureExpense },
+  { value: 'income' as const, label: fr.entry.natureIncome },
+  { value: 'saving' as const, label: fr.entry.natureSaving },
+]
+
+/**
+ * Les deux sens d'un mouvement d'épargne. Le second n'existait pas : on pouvait
+ * verser sur un livret, jamais y reprendre — l'écran n'offrait alors que des
+ * catégories de revenus, et un retrait de livret n'en est pas un.
+ */
+const MOVEMENTS = [
+  { value: 'out' as const, label: fr.entry.savingIn },
+  { value: 'in' as const, label: fr.entry.savingOut },
 ]
 
 const RHYTHMS = [
@@ -37,12 +58,14 @@ const RHYTHMS = [
 
 /**
  * La périodicité vit dans le brouillon, mais pas sa date de départ : c'est
- * `date` qui la porte. Une dépense qu'on bascule en abonnement a déjà dit
+ * `date` qui la porte. Une dépense qu'on bascule en récurrence a déjà dit
  * quand elle a lieu, et deux champs de date pour une seule réponse feraient
  * douter de laquelle compte.
  */
 type Draft = Omit<PeriodDraft, 'startedOn'> & {
   amountText: string
+  /** Ce qu'on enregistre. Le sens en découle, sauf en épargne. */
+  nature: EntryNature
   direction: Direction
   categoryId: string
   date: ISODate
@@ -56,13 +79,31 @@ type Draft = Omit<PeriodDraft, 'startedOn'> & {
 
 const periodDraftOf = (draft: Draft): PeriodDraft => ({ ...draft, startedOn: draft.date })
 
-function initial(entry: Entry | null, defaultDate: ISODate, defaultDirection: Direction): Draft {
+function initial(
+  entry: Entry | null,
+  defaultDate: ISODate,
+  defaultDirection: Direction,
+  defaultNature: EntryNature,
+  isSaving: (categoryId: string) => boolean,
+): Draft {
   const date = entry?.date ?? defaultDate
   const { startedOn: _unused, ...period } = monthlyDraftFrom(date)
+  const direction = entry?.direction ?? defaultDirection
   return {
     ...period,
     amountText: entry ? toAmountInput(entry.amount) : '',
-    direction: entry?.direction ?? defaultDirection,
+    /* En reprise, la nature se relit sur la catégorie plutôt que d'être
+       stockée : elle est déjà dans la donnée, et un second champ finirait par
+       en diverger. */
+    nature:
+      entry === null
+        ? defaultNature
+        : isSaving(entry.categoryId)
+          ? 'saving'
+          : direction === 'in'
+            ? 'income'
+            : 'expense',
+    direction,
     categoryId: entry?.categoryId ?? '',
     date,
     label: entry?.label ?? '',
@@ -73,22 +114,28 @@ function initial(entry: Entry | null, defaultDate: ISODate, defaultDirection: Di
   }
 }
 
-/** Le titre suit le sens choisi : on n'ajoute pas « une dépense » de 2 300 € de salaire. */
-function titleFor(entry: Entry | null, direction: Direction, recurring: boolean): string {
+/** Le titre suit ce qu'on enregistre : on n'ajoute pas « une dépense » de
+ *  2 300 € de salaire, ni « une dépense » de 200 € versés sur un livret. */
+function titleFor(entry: Entry | null, nature: EntryNature, recurring: boolean): string {
+  if (nature === 'saving') return entry === null ? fr.entry.addSaving : fr.entry.editSaving
   if (entry === null) {
     if (recurring) return fr.recurrences.add
-    return direction === 'in' ? fr.entry.addIn : fr.entry.addOut
+    return nature === 'income' ? fr.entry.addIn : fr.entry.addOut
   }
-  return direction === 'in' ? fr.entry.editIn : fr.entry.editOut
+  return nature === 'income' ? fr.entry.editIn : fr.entry.editOut
 }
 
 /** Et la confirmation aussi : annoncer « Dépense ajoutée » après un salaire
  *  ferait douter de ce qui vient d'être enregistré. */
 const TOAST = {
-  added: { in: fr.entry.addedIn, out: fr.entry.addedOut },
-  updated: { in: fr.entry.updatedIn, out: fr.entry.updatedOut },
-  removed: { in: fr.entry.removedIn, out: fr.entry.removedOut },
+  added: { in: fr.entry.addedIn, out: fr.entry.addedOut, saving: fr.entry.addedSaving },
+  updated: { in: fr.entry.updatedIn, out: fr.entry.updatedOut, saving: fr.entry.updatedSaving },
+  removed: { in: fr.entry.removedIn, out: fr.entry.removedOut, saving: fr.entry.removedSaving },
 } as const
+
+/** La clé du toast : l'épargne parle d'elle-même, les deux autres du sens. */
+const toastKey = (nature: EntryNature, direction: Direction): 'in' | 'out' | 'saving' =>
+  nature === 'saving' ? 'saving' : direction
 
 /**
  * Formulaire court du cahier §4.4 : montant, catégorie, date, libellé, membre.
@@ -101,16 +148,20 @@ function EntryForm({
   entry,
   defaultDate,
   defaultDirection,
+  defaultNature,
   onDone,
 }: {
   entry: Entry | null
   defaultDate: ISODate
   defaultDirection: Direction
+  defaultNature: EntryNature
   onDone: () => void
 }) {
   const members = useMembers()
   const kindOf = useKindOf()
-  const [draft, setDraft] = useState<Draft>(() => initial(entry, defaultDate, defaultDirection))
+  const [draft, setDraft] = useState<Draft>(() =>
+    initial(entry, defaultDate, defaultDirection, defaultNature, (id) => kindOf(id) === 'saving'),
+  )
   const [showErrors, setShowErrors] = useState(false)
 
   const amount = parseAmount(draft.amountText)
@@ -134,7 +185,7 @@ function EntryForm({
     setDraft((current) => {
       // Changer la date réaligne les ancres de périodicité tant que
       // l'utilisateur ne les a pas lui-même touchées — c'est la même règle que
-      // sur l'écran des abonnements, et ici la date *est* la première échéance.
+      // sur l'écran des récurrences, et ici la date *est* la première échéance.
       if (next.date !== undefined && next.date !== current.date) {
         return { ...current, ...next, ...defaultsFrom(next.date) }
       }
@@ -162,7 +213,7 @@ function EntryForm({
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
     }
 
-    // Basculé en abonnement, l'écran ne pose plus un fait mais une règle. Elle
+    // Basculé en récurrence, l'écran ne pose plus un fait mais une règle. Elle
     // produit ses échéances dans la foulée, et celle du jour saisi part déjà
     // confirmée : l'utilisateur vient de dire qu'elle a eu lieu.
     if (entry === null && draft.recurring) {
@@ -180,10 +231,10 @@ function EntryForm({
     const payload = { ...common, amount, date: draft.date, status: entry?.status ?? 'confirmed' }
     if (entry === null) {
       addEntry(payload)
-      toast(TOAST.added[draft.direction])
+      toast(TOAST.added[toastKey(draft.nature, draft.direction)])
     } else {
       replaceEntry(entry.id, payload)
-      toast(TOAST.updated[draft.direction])
+      toast(TOAST.updated[toastKey(draft.nature, draft.direction)])
     }
     onDone()
   }
@@ -195,7 +246,7 @@ function EntryForm({
           <ChevronLeft />
         </IconButton>
         <h1 className="t-section min-w-0 truncate">
-          {titleFor(entry, draft.direction, draft.recurring)}
+          {titleFor(entry, draft.nature, draft.recurring)}
         </h1>
       </div>
 
@@ -209,16 +260,38 @@ function EntryForm({
         <Tile className="gap-4">
           <div className="flex flex-wrap gap-2">
             <Segmented
-              options={DIRECTIONS}
-              value={draft.direction}
-              onChange={(direction) => {
-                patch({ direction, categoryId: '' })
+              options={NATURES}
+              value={draft.nature}
+              onChange={(nature) => {
+                /* Changer de nature vide la catégorie : les listes ne se
+                   recouvrent pas, et une catégorie de charge restée en place
+                   sur une saisie d'épargne serait enregistrée telle quelle.
+                   L'épargne arrive en versement — c'est le geste courant ; on
+                   n'y reprend qu'exceptionnellement. */
+                patch({
+                  nature,
+                  direction: nature === 'income' ? 'in' : 'out',
+                  categoryId: '',
+                })
               }}
-              label={fr.entry.direction}
+              label={fr.entry.nature}
             />
 
+            {/* Les deux sens d'un mouvement d'épargne. Ailleurs, le sens
+                découle de la nature et n'a pas à être demandé. */}
+            {draft.nature === 'saving' && (
+              <Segmented
+                options={MOVEMENTS}
+                value={draft.direction}
+                onChange={(direction) => {
+                  patch({ direction })
+                }}
+                label={fr.entry.savingMovement}
+              />
+            )}
+
             {/* Seulement à la création. Convertir après coup une dépense passée
-                en abonnement — ou l'inverse — réécrirait un historique, et
+                en récurrence — ou l'inverse — réécrirait un historique, et
                 c'est une autre histoire que celle de cet écran. */}
             {entry === null && (
               <Segmented
@@ -254,6 +327,7 @@ function EntryForm({
                 id={id}
                 aria-describedby={describedBy}
                 direction={draft.direction}
+                kinds={kindsOfNature(draft.nature)}
                 value={draft.categoryId}
                 onChange={(e) => {
                   patch({ categoryId: e.target.value })
@@ -263,7 +337,7 @@ function EntryForm({
           </Field>
 
           {/* Un seul champ de date, dont le libellé suit le rythme : en
-              abonnement, la date saisie est la première échéance. */}
+              récurrence, la date saisie est la première échéance. */}
           <Field
             label={draft.recurring ? fr.entry.firstDate : fr.entry.date}
             required
@@ -334,14 +408,20 @@ function EntryForm({
             </Field>
           )}
 
-          <SharedField
-            categoryId={draft.categoryId}
-            memberId={draft.memberId}
-            value={draft.shared}
-            onChange={(shared) => {
-              patch({ shared })
-            }}
-          />
+          {/* L'épargne ne se partage jamais : elle sort du compte, mais elle
+              reste à qui la met de côté. La case n'a donc rien à faire ici, et
+              l'y laisser permettrait de pousser un versement dans le pot
+              commun — ce que la répartition refuse par ailleurs. */}
+          {draft.nature !== 'saving' && (
+            <SharedField
+              categoryId={draft.categoryId}
+              memberId={draft.memberId}
+              value={draft.shared}
+              onChange={(shared) => {
+                patch({ shared })
+              }}
+            />
+          )}
         </Tile>
       </form>
 
@@ -361,7 +441,7 @@ function EntryForm({
             variant="ghost"
             onClick={() => {
               removeEntry(entry.id)
-              toast(TOAST.removed[entry.direction])
+              toast(TOAST.removed[toastKey(draft.nature, entry.direction)])
               onDone()
             }}
           >
@@ -405,6 +485,7 @@ export function EntryPage() {
       entry={entry}
       defaultDate={defaultDate}
       defaultDirection={directionFromParam(params.get(DIRECTION_PARAM))}
+      defaultNature={natureFromParam(params.get(NATURE_PARAM), params.get(DIRECTION_PARAM))}
       onDone={goBack}
     />
   )

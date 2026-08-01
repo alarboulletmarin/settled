@@ -165,13 +165,13 @@ describe('total des charges communes', () => {
 
 /* --- Parts de chacun ------------------------------------------------------*/
 
-describe('le revenu d’un membre, lu sur ses abonnements', () => {
+describe('le revenu d’un membre, lu sur ses récurrences', () => {
   const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 28 }
   const salaire = makeRecurrence({
     id: 'r-1', categoryId: 'salaire', memberId: 'm-1', direction: 'in',
     amount: eur(250_000), startedOn: '2025-01-28', period: MONTHLY,
   })
-  /* Le résolveur du domaine : c'est lui qui répond pour chaque abonnement,
+  /* Le résolveur du domaine : c'est lui qui répond pour chaque récurrence,
      fixe ou variable. `unpriced` est celui d'un variable dont rien ne dit encore
      le montant. */
   const unpriced: Parameters<typeof monthlyIncome>[3] = (r) => r.amount
@@ -241,7 +241,7 @@ describe('le revenu d’un membre, lu sur ses abonnements', () => {
   })
 
   it('dit lequel des deux manques c’est', () => {
-    // Sans la distinction, l'écran envoie créer un abonnement qui existe déjà.
+    // Sans la distinction, l'écran envoie créer une récurrence qui existe déjà.
     expect(gap([])).toBe('none')
     expect(gap([{ ...salaire, amount: null }])).toBe('unpriced')
     expect(gap([salaire])).toBeNull()
@@ -566,7 +566,7 @@ describe('les charges d’un membre, les siennes et sa part du foyer', () => {
 /* --- Le chemin complet, tel qu'on le vit -----------------------------------*/
 
 /**
- * Deux salaires notés en abonnements à montant variable, et la répartition qui
+ * Deux salaires notés en récurrences à montant variable, et la répartition qui
  * doit en sortir.
  *
  * C'est le montage le plus courant d'un foyer à deux salaires qui bougent, et

@@ -1,13 +1,13 @@
 /* ============================================================================
- * Les montants d'un abonnement, lus sur ses échéances.
+ * Les montants d’une récurrence, lus sur ses échéances.
  *
- * Rien n'est stocké : un abonnement à montant variable ne porte aucun chiffre,
+ * Rien n'est stocké : une récurrence à montant variable ne porte aucun chiffre,
  * le sien se déduit des `Entry` liées à sa `recurrenceId` (cahier §3).
  *
  * Ce module est le seul endroit où cette lecture se fait. Le total des
- * abonnements, la fiche d'un abonnement, le revenu d'un membre et le montant
+ * récurrences, la fiche d’une récurrence, le revenu d'un membre et le montant
  * proposé à l'ouverture d'un mois posent tous la même question — « combien vaut
- * cet abonnement ? » — et trois réponses différentes à la même question, ce sont
+ * cette récurrence ? » — et trois réponses différentes à la même question, ce sont
  * trois chiffres qui se contredisent d'un écran à l'autre.
  * ==========================================================================*/
 
@@ -18,13 +18,13 @@ import type { Direction, Entry, Recurrence } from './types'
 /* --- Le montant en vigueur ------------------------------------------------*/
 
 /**
- * Le montant qu'on peut attribuer à un abonnement le jour `on`, ou `null`
+ * Le montant qu'on peut attribuer à une récurrence le jour `on`, ou `null`
  * quand rien ne permet de le dire — et non zéro : un montant qu'on ne connaît
  * pas encore n'est pas un montant nul.
  *
  * Trois sources, dans cet ordre. Le montant fixe, quand il y en a un. Sinon ce
  * que disent les échéances, qui font foi dès qu'il y en a une de chiffrée.
- * Sinon seulement le montant habituel déclaré sur l'abonnement : c'est une
+ * Sinon seulement le montant habituel déclaré sur la récurrence : c'est une
  * estimation, et une estimation ne peut jamais couvrir un fait.
  */
 export function amountOn(
@@ -47,7 +47,7 @@ export function amountOn(
  *
  * Le jour même compte : un salaire confirmé le 27 vaut le 27, pas seulement le
  * 28. Et faute de passé, la prochaine échéance déjà chiffrée fait l'affaire —
- * un abonnement qui n'est pas encore tombé n'est pas pour autant inconnu.
+ * une récurrence qui n'est pas encore tombée n'est pas pour autant inconnue.
  */
 export function knownAmount(
   entries: readonly Entry[],
@@ -73,7 +73,7 @@ export function knownAmount(
  * Dernier montant confirmé d'une récurrence *strictement avant* `before`.
  *
  * C'est la question de l'historique de prix, et elle seule : ce qui était payé
- * jusque-là. `amountOn` répond à une autre — ce que vaut l'abonnement — et les
+ * jusque-là. `amountOn` répond à une autre — ce que vaut la récurrence — et les
  * deux ne se remplacent pas, une échéance prévue n'étant pas un prix pratiqué.
  */
 export function lastConfirmedAmount(

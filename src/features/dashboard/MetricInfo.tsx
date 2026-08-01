@@ -4,7 +4,7 @@ import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Sheet } from '@/ui/Sheet'
 
-export type MetricKey = 'balance' | 'forecast' | 'remaining' | 'capacity'
+export type MetricKey = 'balance' | 'forecast' | 'remaining'
 
 /**
  * Ce qu'une tuile passe à la feuille en s'ouvrant : sa clé, son chiffre, et la
@@ -31,7 +31,6 @@ const CONTENT: Record<MetricKey, Explanation> = {
   balance: { title: fr.dashboard.balance, ...fr.dashboard.info.balance },
   forecast: { title: fr.dashboard.forecast, ...fr.dashboard.info.forecast },
   remaining: { title: fr.dashboard.remaining, ...fr.dashboard.info.remaining },
-  capacity: { title: fr.dashboard.capacity, ...fr.dashboard.info.capacity },
 }
 
 /**

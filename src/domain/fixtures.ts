@@ -24,7 +24,7 @@ export function makeRecurrence(
 ): Recurrence {
   return {
     id: 'rec-1',
-    label: 'Abonnement',
+    label: 'Récurrence',
     categoryId: 'cat-1',
     direction: 'out',
     amount: money(999),
@@ -64,13 +64,14 @@ export function makeData(over: Partial<Data> = {}): Data {
   return {
     // La version courante du document : un aller-retour export / import doit
     // pouvoir se comparer à l'identique, sans qu'une migration s'intercale.
-    schemaVersion: 4,
+    schemaVersion: 5,
     household: { name: 'Maison', members: [] },
     families: [makeFamily({ id: 'fam-leisure' })],
     categories: [],
     recurrences: [],
     entries: [],
     debts: [],
+    advances: [],
     months: [],
     settings: { theme: 'system', currency: 'EUR', monthStartsOn: 1 },
     ...over,

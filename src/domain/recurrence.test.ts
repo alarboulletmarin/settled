@@ -16,7 +16,7 @@ type Spec = Period & Partial<Omit<Recurrence, 'period'>>
 function make({ unit, every, anchorDay, ...rest }: Spec): Recurrence {
   return {
     id: 'r1',
-    label: 'Abonnement',
+    label: 'Récurrence',
     categoryId: 'c1',
     direction: 'out',
     amount: money(999),
