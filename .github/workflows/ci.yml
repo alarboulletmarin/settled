@@ -1,0 +1,45 @@
+name: CI
+
+# La CI rejoue exactement `npm run verify`, la porte de sortie locale : ce qui
+# passe sur la machine passe ici, et l'inverse. Deux commandes différentes de
+# chaque côté finissent toujours par diverger, et c'est celle qu'on ne lit pas
+# qui reste fausse.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Une nouvelle poussée sur une branche annule la vérification précédente :
+# personne n'a besoin du verdict d'un commit déjà remplacé.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Vérification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v5
+
+      # Une seule version de Node, celle que l'hébergeur exécute : ce n'est pas
+      # une librairie qu'on publie, c'est une app qu'on déploie. Tester une
+      # version que personne ne servira coûte du temps et ne dit rien.
+      - name: Installer Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Typecheck, lint, tests et build
+        run: npm run verify

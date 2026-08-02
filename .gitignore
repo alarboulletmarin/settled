@@ -1,7 +1,24 @@
+# Dépendances et sorties de build
 node_modules
 dist
 dev-dist
 coverage
+.vite
+
+# Hébergement
+.vercel
+
+# Environnement local — aucune variable n'est nécessaire au projet, mais un
+# fichier créé par erreur ne doit pas partir dans un commit.
+.env
+.env.*
+
+# Journaux
+*.log
+npm-debug.log*
+
+# Éditeurs et systèmes de fichiers
 *.local
 .DS_Store
-.vite
+.idea
+.vscode
