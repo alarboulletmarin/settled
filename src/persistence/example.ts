@@ -1,0 +1,796 @@
+/* ============================================================================
+ * Le jeu d'exemple — un foyer complet, pour voir l'app pleine sans rien saisir.
+ *
+ * Une app neuve n'a rien à montrer : pas de courbe, pas de répartition, pas de
+ * capital restant dû. Tout ce qui fait l'intérêt du produit demande des mois de
+ * données, et personne ne saisit quinze mois d'historique pour décider s'il va
+ * s'en servir.
+ *
+ * **Construit, jamais figé.** Le document est bâti à partir d'une date, donc il
+ * est toujours à l'heure : le mois courant a ses échéances, l'historique remonte
+ * derrière, les comparatifs ont deux années. Un fichier commité une fois pour
+ * toutes serait vide du mois courant dès le mois suivant — c'est-à-dire
+ * exactement l'écran que cet exemple existe pour éviter.
+ *
+ * **Bâti par le code de l'app, pas à côté.** Aucune `Entry` n'est écrite à la
+ * main : les récurrences sont posées, puis chaque mois est *ouvert* par
+ * `openMonth`, chiffré et confirmé comme l'utilisateur le ferait. L'exemple
+ * n'est donc pas ressemblant, il est produit par les mêmes règles que l'usage
+ * réel — une règle qui change le change avec elle. C'est aussi pour ça que les
+ * mois se font du plus ancien au plus récent : `buildPlannedEntry` lit le
+ * montant d'une récurrence variable sur les échéances déjà posées, et les
+ * montants se propagent donc comme ils le font dans l'app.
+ *
+ * **Déterministe.** Identifiants séquentiels, montants lus dans des tables
+ * d'entiers. Aucun `Math.random`, aucun flottant : deux appels à la même date
+ * rendent le même octet, et le test peut donc comparer.
+ * ==========================================================================*/
+
+import {
+  type ISODate,
+  type YearMonth,
+  addMonthsToYm,
+  monthRange,
+  startOfMonth,
+  today,
+  ymOf,
+} from '@/domain/date'
+import { money } from '@/domain/money'
+import { clampToMonth } from '@/domain/recurrence'
+import type { Category, Data, Debt, Direction, Entry, Family, Recurrence } from '@/domain/types'
+import {
+  addCategory,
+  addDebt,
+  addFamily,
+  addMember,
+  addEntry,
+  archiveCategory,
+  confirmEntries,
+  createAdvance,
+  addRecurrence,
+  openMonth,
+  setHouseholdName,
+  updateEntry,
+  updateRecurrence,
+} from '@/domain/updates'
+import { emptyData, memberColorAt, nextCategoryColor } from './defaults'
+
+/** Mois d'historique posés derrière le mois courant. Deux années civiles. */
+const HISTORY_MONTHS = 15
+
+/**
+ * Aucun mois d'avance : afficher un mois non passé l'ouvre, donc naviguer vers
+ * l'avant suffit à le peupler (cahier §4.3). En poser un ici ne montrerait rien
+ * de plus, et fausserait le comparatif de mois — qui se cale sur les deux
+ * derniers mois couverts, et opposerait alors un mois vécu à un mois entièrement
+ * prévu.
+ */
+const FUTURE_MONTHS = 0
+
+const ALIX = 'ex-alix'
+const CAMILLE = 'ex-camille'
+const PETS_FAMILY = 'ex-fam-pets'
+const PETS_CATEGORY = 'ex-cat-pets'
+
+/** Compteur d'identifiants — séquentiel, pour que le document soit comparable. */
+function counter(): () => string {
+  let n = 0
+  return () => {
+    n += 1
+    return `ex-${String(n)}`
+  }
+}
+
+/* --- Les règles du foyer --------------------------------------------------*/
+
+/**
+ * Les récurrences, définies par leur décalage en mois par rapport au premier
+ * mois d'historique — c'est ce qui rend le jeu ancrable à n'importe quelle date.
+ */
+type RecurrenceSeed = Omit<Recurrence, 'startedOn' | 'endedOn'> & {
+  /** Rang du mois de la première échéance, 0 = début de l'historique. */
+  from: number
+  /** Rang du mois du dernier jour où elle peut tomber. Absent = toujours en cours. */
+  until?: number
+}
+
+const RECURRENCES: RecurrenceSeed[] = [
+  /* --- Ressources. Une par personne, sans quoi aucun prorata ne se calcule.
+         Versées en tête de mois : c'est courant, et surtout c'est ce qui fait
+         que le solde du mois dit quelque chose dès le 2 — sinon l'exemple
+         s'ouvre sur un zéro les premiers jours, c'est-à-dire sur l'écran vide
+         qu'il existe pour éviter. */
+  {
+    id: 'ex-r-salaire-alix',
+    label: 'Salaire',
+    categoryId: 'salary',
+    memberId: ALIX,
+    direction: 'in',
+    amount: money(275000),
+    period: { unit: 'month', every: 1, anchorDay: 1 },
+    from: 0,
+  },
+  /* Un salaire à montant variable : c'est le cas que le prorata a le plus de mal
+     à tenir, et celui qui montre `estimate` — l'ordre de grandeur qui fait
+     exister le calcul avant la première échéance chiffrée. */
+  {
+    id: 'ex-r-salaire-camille',
+    label: 'Salaire',
+    categoryId: 'salary',
+    memberId: CAMILLE,
+    direction: 'in',
+    amount: null,
+    estimate: money(218000),
+    period: { unit: 'month', every: 1, anchorDay: 2 },
+    from: 0,
+    note: 'Fixe plus commissions : le montant bouge chaque mois.',
+  },
+  {
+    id: 'ex-r-allocations',
+    label: 'Allocations familiales',
+    categoryId: 'family-benefits',
+    memberId: CAMILLE,
+    direction: 'in',
+    amount: money(14100),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+
+  /* --- Crédits. Leurs mensualités sont des `Entry` comme les autres. */
+  {
+    id: 'ex-r-credit-immo',
+    label: 'Crédit immobilier',
+    categoryId: 'mortgage',
+    direction: 'out',
+    amount: money(108500),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-credit-auto',
+    label: 'Crédit voiture',
+    categoryId: 'car-loan',
+    direction: 'out',
+    amount: money(27900),
+    period: { unit: 'month', every: 1, anchorDay: 10 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-pret-travaux',
+    label: 'Prêt travaux',
+    categoryId: 'consumer-loan',
+    direction: 'out',
+    amount: money(16800),
+    period: { unit: 'month', every: 1, anchorDay: 15 },
+    from: 2,
+  },
+
+  /* --- Logement et énergie. L'électricité varie, le gaz tombe tous les deux
+         mois, l'eau n'a pas encore de premier chiffre. */
+  {
+    id: 'ex-r-electricite',
+    label: 'Électricité',
+    categoryId: 'energy',
+    direction: 'out',
+    amount: null,
+    estimate: money(9500),
+    period: { unit: 'month', every: 1, anchorDay: 12 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-gaz',
+    label: 'Gaz',
+    categoryId: 'energy',
+    direction: 'out',
+    amount: money(8200),
+    period: { unit: 'month', every: 2, anchorDay: 18 },
+    from: 0,
+  },
+  /* Variable, sans montant habituel et sans échéance chiffrée : c'est ce qui
+     fait dire « montant variable » au total des récurrences au lieu d'un zéro. */
+  {
+    id: 'ex-r-eau',
+    label: 'Eau',
+    categoryId: 'energy',
+    direction: 'out',
+    amount: null,
+    period: { unit: 'month', every: 3, anchorDay: 20 },
+    from: HISTORY_MONTHS + 1,
+    note: 'Contrat repris ce trimestre, on verra bien la première facture.',
+  },
+  {
+    id: 'ex-r-assurance-habitation',
+    label: 'Assurance habitation',
+    categoryId: 'home-insurance',
+    direction: 'out',
+    amount: money(26400),
+    period: { unit: 'year', every: 1, anchorDay: 3 },
+    from: 3,
+  },
+  {
+    id: 'ex-r-taxe-fonciere',
+    label: 'Taxe foncière',
+    categoryId: 'property-tax',
+    direction: 'out',
+    amount: money(98000),
+    period: { unit: 'year', every: 1, anchorDay: 15 },
+    from: 1,
+  },
+
+  /* --- Communication. Les mobiles sont à chacun, l'internet au foyer. */
+  {
+    id: 'ex-r-mobile-alix',
+    label: 'Mobile Alix',
+    categoryId: 'mobile',
+    memberId: ALIX,
+    direction: 'out',
+    amount: money(1999),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-mobile-camille',
+    label: 'Mobile Camille',
+    categoryId: 'mobile',
+    memberId: CAMILLE,
+    direction: 'out',
+    amount: money(1499),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-internet',
+    label: 'Internet',
+    categoryId: 'internet',
+    direction: 'out',
+    amount: money(3899),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-streaming',
+    label: 'Abonnements TV',
+    categoryId: 'streaming',
+    memberId: ALIX,
+    direction: 'out',
+    amount: money(1798),
+    period: { unit: 'month', every: 1, anchorDay: 8 },
+    from: 0,
+  },
+
+  /* --- Santé, famille, impôts. */
+  {
+    id: 'ex-r-mutuelle',
+    label: 'Mutuelle',
+    categoryId: 'health-insurance',
+    direction: 'out',
+    amount: money(12600),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-creche',
+    label: 'Crèche',
+    categoryId: 'childcare',
+    direction: 'out',
+    amount: money(32000),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-impots',
+    label: 'Impôt sur le revenu',
+    categoryId: 'income-tax',
+    direction: 'out',
+    amount: money(29500),
+    period: { unit: 'month', every: 1, anchorDay: 15 },
+    from: 0,
+  },
+
+  /* --- Les deux charges qu'une personne règle mais que le foyer partage : la
+         case « à partager » est ici une exception à la règle, et c'est elle qui
+         fait exister la régularisation du mois suivant. */
+  {
+    id: 'ex-r-courses',
+    label: 'Courses',
+    categoryId: 'groceries',
+    memberId: CAMILLE,
+    direction: 'out',
+    amount: null,
+    estimate: money(12000),
+    period: { unit: 'week', every: 1, anchorDay: 6 },
+    shared: true,
+    from: 0,
+  },
+  {
+    id: 'ex-r-carburant',
+    label: 'Carburant',
+    categoryId: 'fuel',
+    memberId: ALIX,
+    direction: 'out',
+    amount: null,
+    estimate: money(14000),
+    period: { unit: 'month', every: 1, anchorDay: 22 },
+    shared: true,
+    from: 0,
+  },
+
+  /* --- La famille maison, pour montrer que le catalogue s'étend. */
+  {
+    id: 'ex-r-croquettes',
+    label: 'Croquettes',
+    categoryId: PETS_CATEGORY,
+    direction: 'out',
+    amount: money(4500),
+    period: { unit: 'month', every: 1, anchorDay: 25 },
+    from: 0,
+  },
+
+  /* --- Arrêtée sans être supprimée : la règle reste, et se reprend. */
+  {
+    id: 'ex-r-sport',
+    label: 'Salle de sport',
+    categoryId: 'culture',
+    memberId: ALIX,
+    direction: 'out',
+    amount: money(3490),
+    period: { unit: 'month', every: 1, anchorDay: 3 },
+    from: 0,
+    until: HISTORY_MONTHS - 4,
+  },
+
+  /* --- Versements. Le 31 montre la règle d'échéance : bornée, jamais
+         reportée — le 31 janvier, le 28 février, puis de nouveau le 31 mars. */
+  {
+    id: 'ex-r-livret-alix',
+    label: 'Virement livret',
+    categoryId: 'passbook',
+    memberId: ALIX,
+    direction: 'out',
+    amount: money(30000),
+    period: { unit: 'month', every: 1, anchorDay: 31 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-livret-camille',
+    label: 'Virement livret',
+    categoryId: 'passbook',
+    memberId: CAMILLE,
+    direction: 'out',
+    amount: money(25000),
+    period: { unit: 'month', every: 1, anchorDay: 31 },
+    from: 0,
+  },
+  {
+    id: 'ex-r-pel',
+    label: 'PEL',
+    categoryId: 'plans',
+    memberId: ALIX,
+    direction: 'out',
+    amount: money(15000),
+    period: { unit: 'month', every: 1, anchorDay: 5 },
+    from: 0,
+  },
+]
+
+/**
+ * Ce qui change en cours de route, appliqué avant l'ouverture du mois de rang
+ * `at`. Les échéances déjà confirmées ne bougent pas : c'est ce qui fait exister
+ * l'historique de prix, et l'alerte de la fiche — rouge sur une charge qui
+ * monte, muette sur un salaire qui monte.
+ */
+const CHANGES: { at: number; id: string; patch: Partial<Recurrence> }[] = [
+  { at: 9, id: 'ex-r-salaire-alix', patch: { amount: money(289000) } },
+  { at: 11, id: 'ex-r-mutuelle', patch: { amount: money(13800) } },
+]
+
+/**
+ * Les montants d'une récurrence variable, mois après mois. L'électricité suit
+ * les saisons, les courses et le carburant flottent : c'est ce qui donne aux
+ * courbes et aux comparatifs quelque chose à comparer.
+ */
+const VARIABLE: Record<string, number[]> = {
+  'ex-r-electricite': [12400, 13100, 11200, 9600, 8200, 7400, 7100, 7600, 8900, 10300, 11800, 13500],
+  'ex-r-carburant': [13500, 14800, 12900, 15600, 14100, 13200, 16400, 15100, 13800, 14500, 15900, 12700],
+  'ex-r-courses': [11800, 13400, 10900, 12600, 14100, 11200, 12900, 13700, 10400, 12100, 13900, 11600, 12300],
+  'ex-r-salaire-camille': [
+    218000, 224500, 209000, 231000, 217500, 226000, 213000, 235000, 220500, 228000, 211500, 223000,
+  ],
+}
+
+/* --- Ce qui n'est pas une règle : les dépenses ponctuelles ----------------*/
+
+type AdHocSeed = {
+  day: number
+  label: string
+  categoryId: string
+  memberId?: string
+  direction: Direction
+  /** Repris en boucle sur les mois : chaque mois a les siens, et ils diffèrent. */
+  amounts: number[]
+  note?: string
+}
+
+const AD_HOC: AdHocSeed[] = [
+  /* Tôt dans le mois, quand la paie vient de tomber : c'est réaliste, et ça
+     donne au mois courant de quoi se lire dès ses premiers jours. */
+  {
+    day: 2,
+    label: 'Restaurant',
+    categoryId: 'outings',
+    direction: 'out',
+    amounts: [4200, 6800, 3400, 5600, 7900, 4700],
+  },
+  {
+    day: 11,
+    label: 'Pharmacie',
+    categoryId: 'pharmacy',
+    memberId: CAMILLE,
+    direction: 'out',
+    amounts: [1840, 2260, 940, 3120, 1560, 2780],
+  },
+  {
+    day: 14,
+    label: 'Habillement',
+    categoryId: 'clothing',
+    memberId: ALIX,
+    direction: 'out',
+    amounts: [5900, 0, 8400, 0, 4300, 0],
+  },
+  {
+    day: 17,
+    label: 'Produits d’entretien',
+    categoryId: 'household',
+    direction: 'out',
+    amounts: [2340, 1890, 2670, 1450, 3010, 2120],
+  },
+  {
+    day: 19,
+    label: 'Coiffeur',
+    categoryId: 'hygiene',
+    memberId: CAMILLE,
+    direction: 'out',
+    amounts: [0, 4500, 0, 3800, 0, 4500],
+  },
+  {
+    day: 21,
+    label: 'Cinéma',
+    categoryId: 'culture',
+    direction: 'out',
+    amounts: [2400, 0, 3600, 1800, 0, 2400],
+  },
+  {
+    day: 23,
+    label: 'Transports en commun',
+    categoryId: 'public-transport',
+    memberId: CAMILLE,
+    direction: 'out',
+    amounts: [8620, 8620, 8620, 8620, 8620, 8620],
+  },
+  {
+    day: 26,
+    label: 'Cadeaux',
+    categoryId: 'gifts',
+    memberId: ALIX,
+    direction: 'out',
+    amounts: [0, 3500, 0, 0, 6200, 0],
+  },
+]
+
+/** Ce qui n'arrive qu'une fois, posé au rang de mois indiqué. */
+const ONE_OFFS: (AdHocSeed & { at: number })[] = [
+  {
+    at: 4,
+    day: 8,
+    label: 'Vacances',
+    categoryId: 'outings',
+    direction: 'out',
+    amounts: [145000],
+    note: 'Une semaine à quatre. Personne ne se l’attribue : c’est le foyer.',
+  },
+  {
+    at: 8,
+    day: 16,
+    label: 'Reprise livret',
+    categoryId: 'passbook',
+    memberId: CAMILLE,
+    direction: 'in',
+    amounts: [62000],
+    note: 'Le lave-linge a rendu l’âme. L’épargne se compte en net : ceci s’en retranche.',
+  },
+  {
+    at: 10,
+    day: 28,
+    label: 'Prime annuelle',
+    categoryId: 'salary',
+    memberId: ALIX,
+    direction: 'in',
+    amounts: [120000],
+    note: 'Une prime a lieu, mais elle ne dit rien de ce qu’on gagne : le prorata ne bouge pas.',
+  },
+  {
+    at: 12,
+    day: 9,
+    label: 'Frais médicaux',
+    categoryId: 'medical',
+    memberId: ALIX,
+    direction: 'out',
+    amounts: [8500],
+  },
+  {
+    at: 13,
+    day: 4,
+    label: 'Vétérinaire',
+    categoryId: PETS_CATEGORY,
+    direction: 'out',
+    amounts: [13400],
+  },
+]
+
+/* --- Assemblage -----------------------------------------------------------*/
+
+const at = <T,>(table: readonly T[], index: number): T => table[index % table.length] as T
+
+/** La date du rang `day` dans un mois, bornée à son dernier jour. */
+const dayOf = (ym: YearMonth, day: number): ISODate => clampToMonth(ym, day)
+
+/**
+ * Un foyer de deux personnes, quinze mois d'historique, le mois courant à
+ * moitié confirmé et le suivant déjà prévu.
+ */
+export function exampleData(on: ISODate = today()): Data {
+  const ids = counter()
+  const anchor = ymOf(on)
+  const first = addMonthsToYm(anchor, -HISTORY_MONTHS)
+  const months = monthRange(first, addMonthsToYm(anchor, FUTURE_MONTHS))
+
+  let data = setHouseholdName(emptyData(), 'Maison')
+  data = addMember(data, { id: ALIX, name: 'Alix', color: memberColorAt(0) })
+  data = addMember(data, { id: CAMILLE, name: 'Camille', color: memberColorAt(1) })
+
+  data = withCatalogue(data)
+  data = withRules(data, first)
+  data = withDebts(data, first)
+  data = withAdvances(data, anchor, ids)
+
+  months.forEach((ym, index) => {
+    for (const change of CHANGES) {
+      if (change.at === index) data = updateRecurrence(data, change.id, change.patch)
+    }
+    data = openMonth(data, ym, ids, openedOn(ym, anchor, on)).data
+    data = priceVariables(data, ym, index)
+    data = withAdHoc(data, ym, index, on, anchor, ids)
+    data = confirmWhatHappened(data, ym, anchor, on)
+  })
+
+  return data
+}
+
+/** Une famille maison et sa catégorie, et une catégorie du catalogue archivée. */
+function withCatalogue(data: Data): Data {
+  const family: Family = { id: PETS_FAMILY, label: 'Animaux', kind: 'charge' }
+  const category: Category = {
+    id: PETS_CATEGORY,
+    label: 'Chien',
+    familyId: PETS_FAMILY,
+    icon: '',
+    color: nextCategoryColor(PETS_FAMILY),
+    direction: 'out',
+    archived: false,
+  }
+  /* Archiver n'efface rien et se défait : la location longue durée n'a jamais
+     servi à ce foyer, elle sort des listes de saisie sans quitter le document. */
+  return archiveCategory(addCategory(addFamily(data, family), category), 'leasing')
+}
+
+function withRules(data: Data, first: YearMonth): Data {
+  return RECURRENCES.reduce((acc, seed) => {
+    const { from, until, ...rest } = seed
+    const startedOn = startOfMonth(addMonthsToYm(first, from))
+    const recurrence: Recurrence = {
+      ...rest,
+      startedOn:
+        rest.period.unit === 'year' ? dayOf(addMonthsToYm(first, from), rest.period.anchorDay) : startedOn,
+      ...(until === undefined ? {} : { endedOn: dayOf(addMonthsToYm(first, until), 28) }),
+    }
+    return addRecurrence(acc, recurrence)
+  }, data)
+}
+
+/**
+ * Trois crédits, dont un sans taux.
+ *
+ * Tous démarrent dans l'historique : le capital restant dû ne se dérive que des
+ * mensualités **confirmées**, et un crédit ouvert avant le premier mois du
+ * document annoncerait un capital qu'aucune échéance n'a amorti.
+ */
+function withDebts(data: Data, first: YearMonth): Data {
+  const debts: Debt[] = [
+    {
+      id: 'ex-d-immo',
+      label: 'Crédit immobilier',
+      categoryId: 'mortgage',
+      recurrenceId: 'ex-r-credit-immo',
+      principal: money(21000000),
+      startedOn: startOfMonth(first),
+      endsOn: endOfSpan(first, 300),
+      rateBp: 385,
+      note: 'Vingt-cinq ans. La somme des mensualités ne dit pas ce qu’il reste à devoir.',
+    },
+    {
+      id: 'ex-d-auto',
+      label: 'Crédit voiture',
+      categoryId: 'car-loan',
+      recurrenceId: 'ex-r-credit-auto',
+      principal: money(1450000),
+      startedOn: startOfMonth(first),
+      endsOn: endOfSpan(first, 60),
+      rateBp: 490,
+    },
+    /* Sans taux, le capital décroît exactement de ce qui a été versé. C'est
+       l'autre branche du calcul, et la seule où le raccourci serait juste. */
+    {
+      id: 'ex-d-travaux',
+      label: 'Prêt travaux',
+      categoryId: 'consumer-loan',
+      recurrenceId: 'ex-r-pret-travaux',
+      principal: money(500000),
+      startedOn: startOfMonth(addMonthsToYm(first, 2)),
+      endsOn: endOfSpan(addMonthsToYm(first, 2), 30),
+    },
+  ]
+  return debts.reduce(addDebt, data)
+}
+
+const endOfSpan = (from: YearMonth, months: number): ISODate =>
+  dayOf(addMonthsToYm(from, months - 1), 5)
+
+/**
+ * Deux avances — une charge payée en une fois depuis le livret, remboursée à
+ * soi-même mois par mois. L'une est partagée, l'autre non : la première entre
+ * dans le pot commun, la seconde reste à qui l'a avancée.
+ */
+function withAdvances(data: Data, anchor: YearMonth, ids: () => string): Data {
+  const car = addMonthsToYm(anchor, -5)
+  const glasses = addMonthsToYm(anchor, -2)
+
+  let next = createAdvance(
+    data,
+    {
+      label: 'Assurance auto',
+      categoryId: 'car-insurance',
+      memberId: ALIX,
+      amount: money(67200),
+      paidOn: dayOf(car, 14),
+      from: car,
+      to: addMonthsToYm(car, 11),
+      savingCategoryId: 'passbook',
+      shared: true,
+      note: 'Réglée en une fois depuis le livret, remise 56 € par mois.',
+    },
+    ids,
+    startOfMonth(car),
+  ).data
+
+  next = createAdvance(
+    next,
+    {
+      label: 'Lunettes',
+      categoryId: 'medical',
+      memberId: CAMILLE,
+      amount: money(48000),
+      paidOn: dayOf(glasses, 6),
+      from: glasses,
+      to: addMonthsToYm(glasses, 9),
+      savingCategoryId: 'passbook',
+    },
+    ids,
+    startOfMonth(glasses),
+  ).data
+
+  return next
+}
+
+/** Le jour où le mois a été ouvert : le premier du mois, sauf pour l'à-venir. */
+const openedOn = (ym: YearMonth, anchor: YearMonth, on: ISODate): ISODate =>
+  ym > anchor ? on : startOfMonth(ym)
+
+/**
+ * Chiffre les échéances à montant variable du mois.
+ *
+ * Elles arrivent déjà valorisées — `openMonth` propose ce que la récurrence vaut
+ * à cette date — mais toutes au même montant. La table leur donne le mouvement
+ * qui fait exister les courbes, les comparatifs et la détection de changement de
+ * prix.
+ */
+function priceVariables(data: Data, ym: YearMonth, index: number): Data {
+  const seen = new Map<string, number>()
+  return data.entries.reduce((acc, entry) => {
+    if (entry.recurrenceId === undefined || ymOf(entry.date) !== ym) return acc
+    const table = VARIABLE[entry.recurrenceId]
+    if (table === undefined || entry.status === 'confirmed') return acc
+    const rank = seen.get(entry.recurrenceId) ?? 0
+    seen.set(entry.recurrenceId, rank + 1)
+    return updateEntry(acc, entry.id, { amount: money(at(table, index * 5 + rank)) })
+  }, data)
+}
+
+/** Les dépenses ponctuelles du mois — celles qu'aucune règle ne pose. */
+function withAdHoc(
+  data: Data,
+  ym: YearMonth,
+  index: number,
+  on: ISODate,
+  anchor: YearMonth,
+  ids: () => string,
+): Data {
+  if (ym > anchor) return data
+  const seeds: AdHocSeed[] = [
+    ...AD_HOC.map((seed) => ({ ...seed, amounts: [at(seed.amounts, index)] })),
+    ...ONE_OFFS.filter((seed) => seed.at === index),
+  ]
+
+  return seeds.reduce((acc, seed) => {
+    const amount = seed.amounts[0] ?? 0
+    const date = dayOf(ym, seed.day)
+    // Un ponctuel est un fait : il ne se pose pas dans un jour qui n'est pas
+    // encore arrivé, et un montant nul veut dire qu'il n'a pas eu lieu ce mois.
+    if (amount === 0 || date > on) return acc
+    const entry: Entry = {
+      id: ids(),
+      label: seed.label,
+      categoryId: seed.categoryId,
+      ...(seed.memberId === undefined ? {} : { memberId: seed.memberId }),
+      direction: seed.direction,
+      amount: money(amount),
+      date,
+      status: 'confirmed',
+      ...(seed.note === undefined ? {} : { note: seed.note }),
+    }
+    return addEntry(acc, entry)
+  }, data)
+}
+
+/**
+ * Confirme ce qui a eu lieu, laisse prévu ce qui reste à venir.
+ *
+ * Le mois courant garde une échéance passée **non confirmée** — la plus légère,
+ * pour que l'exemple ne s'ouvre pas sur un loyer impayé : une échéance que
+ * personne n'a confirmée est la plus proche de toutes, et « Prochaines
+ * échéances » la compte en jours négatifs. C'est le seul endroit de l'app où un
+ * retard se voit, et il n'existe pas sans une ligne pour le porter.
+ */
+function confirmWhatHappened(data: Data, ym: YearMonth, anchor: YearMonth, on: ISODate): Data {
+  if (ym > anchor) return data
+
+  const due = data.entries.filter(
+    (entry) => ymOf(entry.date) === ym && entry.status === 'planned' && entry.date <= on,
+  )
+  if (ym < anchor) return confirmEntries(data, due.map((entry) => entry.id))
+
+  /* Un retard ne se met en scène que s'il reste un mois à côté de lui. Les
+     premiers jours d'un mois, deux ou trois échéances seulement sont tombées :
+     en retenir une laisserait un solde à zéro, et le retard qu'on voulait
+     montrer aurait mangé tout ce qu'il y avait à voir. */
+  const overdue =
+    due.length < MIN_CONFIRMED_FOR_OVERDUE
+      ? undefined
+      : due
+          .filter((entry) => entry.direction === 'out' && entry.date < on)
+          .sort((a, b) => a.amount - b.amount || a.date.localeCompare(b.date))
+          .at(0)
+
+  return confirmEntries(
+    data,
+    due.filter((entry) => entry.id !== overdue?.id).map((entry) => entry.id),
+  )
+}
+
+/** En deçà, tout se confirme : le mois n'a pas encore de quoi porter un retard. */
+const MIN_CONFIRMED_FOR_OVERDUE = 4
+
+/** Les bornes couvertes par le jeu, pour que le test n'ait pas à les recopier. */
+export function exampleBounds(on: ISODate = today()): { first: YearMonth; last: YearMonth } {
+  const anchor = ymOf(on)
+  return { first: addMonthsToYm(anchor, -HISTORY_MONTHS), last: addMonthsToYm(anchor, FUTURE_MONTHS) }
+}

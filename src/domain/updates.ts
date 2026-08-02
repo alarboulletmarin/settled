@@ -6,7 +6,8 @@
  * elle ses échéances confirmées ; un membre retiré libère ses entrées).
  * ==========================================================================*/
 
-import { type ISODate, type YearMonth, today, ymOf } from './date'
+import { monthlyInstalment } from './advance'
+import { type ISODate, type YearMonth, endOfMonth, parseISO, startOfMonth, today, ymOf } from './date'
 import { buildPlannedEntry, planMonth } from './month'
 import type {
   Advance,
@@ -132,6 +133,77 @@ export function replaceAdvance(data: Data, id: string, next: Omit<Advance, 'id'>
  */
 export function removeAdvance(data: Data, id: string): Data {
   return { ...data, advances: data.advances.filter((a) => a.id !== id) }
+}
+
+/** Ce qu'un écran a à dire pour poser une avance. Le reste s'en déduit. */
+export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId'> & {
+  /** Le support d'épargne repris, puis reconstitué. */
+  savingCategoryId: string
+  /** La charge avancée entre-t-elle dans le pot commun du foyer ? */
+  shared?: boolean
+}
+
+/**
+ * Traduit une avance en ce qu'elle est vraiment : une reprise sur le livret, et
+ * la récurrence qui l'y remet mois après mois.
+ *
+ * Les trois écritures tiennent dans une seule mutation — donc un seul rendu,
+ * une seule sauvegarde — et surtout la reprise ne peut pas rester seule si la
+ * récurrence échouait : une épargne qu'on a prise sans jamais la rendre est
+ * exactement le trou que cet écran existe pour éviter.
+ *
+ * La reprise part **confirmée** : elle a eu lieu, c'est même tout le propos —
+ * l'argent est déjà sorti du livret. Elle entre en sens `in` parce que c'est ce
+ * qu'elle est du point de vue du foyer, de l'argent qui revient de l'épargne
+ * vers ce qu'on peut dépenser. La dépense qu'elle a financée, elle, se saisit
+ * comme n'importe quelle autre — l'app ne l'invente pas à la place de qui l'a
+ * faite.
+ *
+ * La règle vit ici, dans le domaine, et non dans l'action qui l'appelait :
+ * l'écran de saisie n'est plus le seul à poser des avances, et deux copies de
+ * cette composition finiraient par ne plus se répondre.
+ */
+export function createAdvance(
+  data: Data,
+  input: AdvanceInput,
+  makeId: () => string,
+  on: ISODate = today(),
+): { data: Data; advance: Advance } {
+  const { savingCategoryId, shared, ...rest } = input
+  const recurrence: Recurrence = {
+    id: makeId(),
+    label: rest.label,
+    categoryId: savingCategoryId,
+    memberId: rest.memberId,
+    direction: 'out',
+    amount: monthlyInstalment(rest),
+    period: { unit: 'month', every: 1, anchorDay: parseISO(rest.paidOn).d },
+    startedOn: startOfMonth(rest.from),
+    endedOn: endOfMonth(rest.to),
+    ...(shared === undefined ? {} : { shared }),
+  }
+  const advance: Advance = { ...rest, id: makeId(), recurrenceId: recurrence.id }
+  const drawdown: Entry = {
+    id: makeId(),
+    label: rest.label,
+    categoryId: savingCategoryId,
+    memberId: rest.memberId,
+    direction: 'in',
+    amount: rest.amount,
+    date: rest.paidOn,
+    status: 'confirmed',
+  }
+
+  return {
+    data: addAdvance(
+      addEntry(
+        syncRecurrenceEntries(addRecurrence(data, recurrence), recurrence.id, makeId, on),
+        drawdown,
+      ),
+      advance,
+    ),
+    advance,
+  }
 }
 
 /* --- Récurrences ----------------------------------------------------------*/

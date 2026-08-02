@@ -157,7 +157,7 @@ export function defaultFamilies(): Family[] {
 
 /**
  * La teinte est portée par la famille, pas par la catégorie : c'est au niveau
- * de la famille que se lit la répartition, et trente-huit pastilles toutes
+ * de la famille que se lit la répartition, et quarante-six pastilles toutes
  * différentes ne distinguent plus rien.
  */
 export function familyColor(familyId: string): string {

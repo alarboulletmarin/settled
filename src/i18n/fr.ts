@@ -201,6 +201,29 @@ export const fr = {
     importConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
+
+    /* Le pendant de l'import : le seul moyen d'obtenir un fichier importable
+       était jusqu'ici d'avoir déjà saisi ce qu'on cherche à saisir. */
+    schema: 'Schéma de données',
+    schemaHint:
+      'Le modèle complet, à donner à un assistant avec tes notes : il te rendra un fichier à importer ici.',
+    schemaCopy: 'Copier le schéma',
+    schemaDownload: 'Télécharger le schéma',
+    schemaCopied: 'Schéma copié',
+    schemaCopyFailed: 'La copie a échoué. Télécharge le fichier à la place.',
+
+    example: 'Jeu d’exemple',
+    exampleHint:
+      'Un foyer complet — deux salaires, trois crédits, une avance, plus d’un an d’historique — pour voir l’app pleine sans rien saisir.',
+    exampleLoad: 'Charger l’exemple',
+    /* Un exemple remplace tout, exactement comme un import : deux questions, ni
+       une de moins ni les trois de l'effacement, puisqu'il reste quelque chose
+       après. Au premier lancement, en revanche, il n'y a rien à perdre et on
+       n'en pose aucune. */
+    exampleConfirm: 'Remplacer toutes les données par le jeu d’exemple ?',
+    exampleConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
+    exampleLoaded: 'Jeu d’exemple chargé',
+
     reset: 'Tout effacer',
     resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
     /* Trois questions, et trois questions différentes : ce qui part, le fait
@@ -873,6 +896,13 @@ export const fr = {
     solo: 'Je suis seul·e',
     start: 'Commencer',
     importHint: 'Tu as déjà un fichier Tout compte fait ? Restaure-le sans passer par ici.',
+    /* Les deux personnes qui arrivent ici sans export sont celles qui ont le
+       plus à gagner : l'une a déjà tout écrit ailleurs, l'autre veut seulement
+       voir. Les envoyer d'abord créer un foyer pour trouver de quoi s'en
+       passer serait exactement l'inverse du service rendu. */
+    schemaHint:
+      'Tes comptes sont déjà écrits quelque part ? Donne ce schéma à un assistant avec tes notes, il t’en fera un fichier à importer.',
+    exampleHint: 'Juste voir à quoi ça ressemble ? Un foyer d’exemple, complet, en un clic.',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
   },
 
