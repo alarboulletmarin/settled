@@ -361,6 +361,9 @@ export const fr = {
     importConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
+    /* Un import qui n'aboutit pas et qui ne le dit pas est la pire des pertes :
+       on vient d'accepter d'effacer ce qu'il remplace. */
+    importFailed: 'L’import n’a pas abouti. Recharge la page avant de réessayer.',
 
     /* Le pendant de l'import : le seul moyen d'obtenir un fichier importable
        était jusqu'ici d'avoir déjà saisi ce qu'on cherche à saisir. */
@@ -371,6 +374,9 @@ export const fr = {
     schemaDownload: 'Télécharger le schéma',
     schemaCopied: 'Schéma copié',
     schemaCopyFailed: 'La copie a échoué. Télécharge le fichier à la place.',
+    /* Les deux modules chargés à la demande. Hors ligne, la requête échoue et
+       les boutons restaient désactivés pour toujours, sans un mot. */
+    schemaUnavailable: 'Le schéma n’a pas pu être chargé. Vérifie ta connexion, puis recharge.',
 
     example: 'Jeu d’exemple',
     exampleHint:
@@ -383,6 +389,7 @@ export const fr = {
     exampleConfirm: 'Remplacer toutes les données par le jeu d’exemple ?',
     exampleConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
     exampleLoaded: 'Jeu d’exemple chargé',
+    exampleFailed: 'Le jeu d’exemple n’a pas pu être chargé. Vérifie ta connexion, puis réessaie.',
 
     reset: 'Tout effacer',
     resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
@@ -394,6 +401,7 @@ export const fr = {
       'Le foyer, les membres, les récurrences, les crédits et toutes les entrées partent. Il n’y a pas de retour.',
     resetConfirm3: 'Dernière question. Exporte d’abord si tu veux garder une trace.',
     resetDone: 'Données effacées',
+    resetFailed: 'L’effacement n’a pas abouti. Recharge la page et réessaie.',
 
     reminderTitle: 'Ton dernier export date de plus de 30 jours.',
     reminderTitleNever: 'Tes données ne sont enregistrées que dans ce navigateur.',

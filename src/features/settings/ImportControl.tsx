@@ -74,10 +74,18 @@ export function ImportControl({
         }}
         onConfirm={() => {
           if (pending === null) return
-          void replaceData(pending.data).then(() => {
-            setPending(null)
-            toast(pending.migrated ? fr.settings.importMigrated : fr.settings.imported)
-          })
+          void replaceData(pending.data)
+            .then(() => {
+              setPending(null)
+              toast(pending.migrated ? fr.settings.importMigrated : fr.settings.imported)
+            })
+            // Sans ce filet, un échec d'écriture laissait le toast de réussite
+            // s'afficher quand même : on annonçait comme rangé ce qui n'était
+            // nulle part.
+            .catch(() => {
+              setPending(null)
+              toast(fr.settings.importFailed, 'danger')
+            })
         }}
       />
     </>
