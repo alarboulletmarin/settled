@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
@@ -28,10 +29,49 @@ import { MonthNav } from '@/ui/MonthNav'
  * pastille y disparaissait, exactement comme celle du premier membre avant
  * qu'il quitte le vert pomme.
  */
+/**
+ * Amène la pilule active dans la vue, à l'arrivée sur l'écran.
+ *
+ * Une piste qui défile démarre à zéro : à 320px, même à deux membres, elle
+ * montre « Tout le monde », « Commun » et un bout du premier prénom. Filtré sur
+ * le second, on arrivait donc sur un mois dont rien ne disait de qui il parle —
+ * la sélection était hors champ. Le défilement aurait remplacé un défaut visible,
+ * l'orphelin en fin de ligne, par un défaut invisible, ce qui est pire.
+ *
+ * Le décalage est posé à la main plutôt que par `scrollIntoView` : celui-ci
+ * remonte tous les ancêtres défilants, et déplacerait la page elle-même si
+ * l'en-tête n'était pas déjà en vue — au retour sur un écran restauré à mi-
+ * hauteur, par exemple. Ici rien d'autre que la piste ne bouge.
+ *
+ * Et il ne bouge que si la pilule dépasse : sans cette garde, arriver sur
+ * « Tout le monde » recentrerait la première pilule et ouvrirait un vide à sa
+ * gauche.
+ */
+function useActiveChipInView(): React.RefObject<HTMLDivElement | null> {
+  const track = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const box = track.current
+    // `aria-pressed` porte déjà l'état actif : pas de second ref à tenir en
+    // parallèle, qui pourrait diverger de ce que le lecteur d'écran annonce.
+    const chip = box?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (!box || !chip) return
+
+    const pad = 16 // le même écart que `scroll-padding-inline`
+    const start = chip.offsetLeft
+    const end = start + chip.offsetWidth
+    if (start < box.scrollLeft) box.scrollLeft = Math.max(0, start - pad)
+    else if (end > box.scrollLeft + box.clientWidth) box.scrollLeft = end - box.clientWidth + pad
+  }, [])
+
+  return track
+}
+
 function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
   const members = useMembers()
   const filter = useMonthFilter()
   const setFilter = useStore((s) => s.setFilter)
+  const track = useActiveChipInView()
   if (members.length === 0) return null
   const common = withCommon && members.length > 1
 
@@ -42,6 +82,7 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
        cadre vertical logent l'anneau de focus, et la marge négative les reprend
        pour que la hauteur du bandeau ne bouge pas. */
     <div
+      ref={track}
       className="filter-scroller -mx-4 -my-1 flex gap-2 px-4 py-1 md:-mx-8 md:px-8"
       role="group"
       aria-label={fr.shell.filterByMember}
