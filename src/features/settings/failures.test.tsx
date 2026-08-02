@@ -29,6 +29,18 @@ const dangers = (): string[] =>
 
 const messages = (): string[] => useToasts.getState().toasts.map((t) => t.message)
 
+/** Le champ de fichier est en `sr-only` : il n'a pas de nom accessible. */
+function fileInput(): HTMLInputElement {
+  const input = document.querySelector('input[type="file"]')
+  if (!(input instanceof HTMLInputElement)) throw new Error('champ de fichier introuvable')
+  return input
+}
+
+async function upload(payload: unknown): Promise<void> {
+  const file = new File([JSON.stringify(payload)], 'export.json', { type: 'application/json' })
+  await userEvent.upload(fileInput(), file)
+}
+
 beforeEach(() => {
   useToasts.setState({ toasts: [] })
 })
@@ -58,6 +70,50 @@ describe('un chargement à la demande qui n’aboutit pas', () => {
   })
 })
 
+describe('un fichier dont des lignes ne passent pas', () => {
+  /* Une dépense illisible disparaissait en silence — dans un geste qui remplace
+     tout le document, c'est-à-dire au seul moment où l'on peut encore comparer
+     avec ce qu'il y avait avant. */
+  it('dit ce qu’il écarte avant qu’on confirme', async () => {
+    useStore.setState({ replaceData: vi.fn().mockResolvedValue(undefined) })
+    render(<ImportControl />)
+
+    await upload({
+      schemaVersion: 6,
+      categories: [{ id: 'courses', label: 'Courses', familyId: 'fam-daily', direction: 'out' }],
+      entries: [
+        { id: 'e1', label: 'Loyer', categoryId: 'courses', amount: 95000, date: '2026-07-05' },
+        { id: 'e2', label: 'Courses', categoryId: 'courses', amount: 12.5, date: '2026-07-06' },
+      ],
+    })
+
+    await screen.findByText(fr.settings.importConfirm)
+    const dialog = within(screen.getByRole('dialog'))
+    expect(dialog.getByText(fr.settings.reportDiscardedOne)).toBeInTheDocument()
+    expect(
+      dialog.getByText(
+        `${fr.settings.reportCollection.entries} « Courses » — ${fr.settings.reportReason.amount}`,
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('ne montre aucun rapport quand le fichier passe entier', async () => {
+    useStore.setState({ replaceData: vi.fn().mockResolvedValue(undefined) })
+    render(<ImportControl />)
+
+    await upload({
+      schemaVersion: 6,
+      categories: [{ id: 'courses', label: 'Courses', familyId: 'fam-daily', direction: 'out' }],
+      entries: [
+        { id: 'e1', label: 'Loyer', categoryId: 'courses', amount: 95000, date: '2026-07-05' },
+      ],
+    })
+
+    await screen.findByText(fr.settings.importConfirm)
+    expect(screen.queryByText(fr.settings.reportDiscardedOne)).not.toBeInTheDocument()
+  })
+})
+
 describe('une écriture qui n’aboutit pas', () => {
   it('n’annonce pas un import qui a échoué comme réussi', async () => {
     const replaceData = vi.fn().mockRejectedValue(new Error('disque plein'))
@@ -65,10 +121,7 @@ describe('une écriture qui n’aboutit pas', () => {
 
     render(<ImportControl />)
 
-    const file = new File(['{"schemaVersion":6}'], 'export.json', { type: 'application/json' })
-    const input = document.querySelector('input[type="file"]')
-    if (!(input instanceof HTMLInputElement)) throw new Error('champ de fichier introuvable')
-    await userEvent.upload(input, file)
+    await upload({ schemaVersion: 6 })
 
     // Deux pas avant que l'import parte : un remplacement se confirme.
     await screen.findByText(fr.settings.importConfirm)

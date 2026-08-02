@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { eur, makeData, makeEntry } from '@/domain/fixtures'
+import { eur, makeCategory, makeData, makeEntry } from '@/domain/fixtures'
 import {
   type DbEvent,
   clearDocument,
@@ -30,6 +30,9 @@ describe('document IndexedDB', () => {
   it('relit exactement ce qu’il a écrit', async () => {
     const data = makeData({
       household: { name: 'Chez nous', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
+      // La catégorie que l'entrée désigne existe : la relecture répare les
+      // liens morts, et un document cohérent doit en ressortir intact.
+      categories: [makeCategory({ id: 'cat-1' })],
       entries: [makeEntry({ date: '2026-07-05', amount: eur(95000) })],
     })
     await saveDocument(data, 1)

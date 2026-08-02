@@ -10,7 +10,7 @@
 
 import type { Data } from '@/domain/types'
 import { defaultCategories, defaultFamilies, fallbackFamilyId, memberColorAt } from './defaults'
-import { normalizeData } from './validate'
+import { type ImportNotice, normalizeDocument } from './validate'
 
 export const CURRENT_SCHEMA_VERSION = 6
 
@@ -182,6 +182,14 @@ export type MigrationResult = {
   from: number
   /** Vrai si au moins une migration a été appliquée. */
   migrated: boolean
+  /**
+   * Ce que la lecture a écarté et réparé, ligne par ligne.
+   *
+   * Un import remplace tout le document : jeter une dépense en silence dans un
+   * geste pareil est la façon la plus sûre de ne jamais s'en apercevoir. Ce que
+   * l'écran en fait le regarde — la lecture, elle, ne se tait plus.
+   */
+  notices: ImportNotice[]
 }
 
 /**
@@ -205,5 +213,6 @@ export function migrateDocument(raw: unknown): MigrationResult {
   const applied = MIGRATIONS.filter((m) => m.to > from).sort((a, b) => a.to - b.to)
   for (const migration of applied) doc = migration.migrate(doc)
 
-  return { data: normalizeData(doc), from, migrated: applied.length > 0 }
+  const { data, notices } = normalizeDocument(doc)
+  return { data, from, migrated: applied.length > 0, notices }
 }

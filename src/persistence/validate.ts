@@ -4,6 +4,15 @@
  * Une donnée illisible est écartée plutôt que corrigée au jugé : un montant
  * fractionnaire ou une date invalide feraient dérailler tout le domaine.
  * Ce qui est simplement absent, en revanche, reprend sa valeur par défaut.
+ *
+ * Deux ajouts qui vont ensemble. Le module **dit** désormais ce qu'il a écarté
+ * et ce qu'il a réparé, ligne par ligne : jeter une dépense en silence dans un
+ * geste qui remplace tout le document est la façon la plus sûre de ne jamais
+ * s'en apercevoir. Et il **répare les liens** — une catégorie, un membre ou une
+ * récurrence désignés mais absents —, parce que rien ne les vérifiait : une
+ * catégorie orpheline retombait sur « charge » par un double repli, donc
+ * devenait commune et partagée, et une entrée au membre inexistant disparaissait
+ * de toutes les vues filtrées tout en pesant sur le foyer.
  * ==========================================================================*/
 
 import { isValidYm, isValidISO, today, ymOf } from '@/domain/date'
@@ -25,10 +34,75 @@ import type {
   Settings,
   ThemeSetting,
 } from '@/domain/types'
-import { defaultFamilies, fallbackFamilyId } from './defaults'
+import { defaultFamilies, fallbackFamilyId, repairedCategory } from './defaults'
 import { CURRENT_SCHEMA_VERSION } from './schema'
 
+/* --- Ce que la lecture a à dire -------------------------------------------*/
+
+/** La collection du document où la ligne se trouvait. */
+export type ImportCollection =
+  | 'members'
+  | 'families'
+  | 'categories'
+  | 'recurrences'
+  | 'entries'
+  | 'debts'
+  | 'advances'
+  | 'months'
+
+/**
+ * Pourquoi une ligne a été écartée ou réparée.
+ *
+ * Un code, pas une phrase : les textes vivent dans `i18n/fr.ts`, et c'est
+ * l'écran qui décide comment le dire.
+ */
+export type ImportReason =
+  /** Ce n'est pas un objet — rien à lire. */
+  | 'shape'
+  /** Montant absent ou fractionnaire. */
+  | 'amount'
+  /** Capital d'un crédit absent ou fractionnaire. */
+  | 'principal'
+  /** Date absente ou inexistante au calendrier. */
+  | 'date'
+  /** Mois absent, mal formé, ou hors des douze. */
+  | 'month'
+  /** Avance sans porteur : une épargne est toujours à quelqu'un. */
+  | 'noMember'
+  /** Période dont la fin précède le début. */
+  | 'period'
+  /** Identifiant déjà porté par une autre ligne de la même collection. */
+  | 'duplicateId'
+  /** Désigne une catégorie qui n'existe pas dans le document. */
+  | 'unknownCategory'
+  /** Désigne une famille qui n'existe pas. */
+  | 'unknownFamily'
+  /** Désigne un membre qui n'existe pas. */
+  | 'unknownMember'
+  /** Désigne une récurrence qui n'existe pas. */
+  | 'unknownRecurrence'
+
+export type ImportNotice = {
+  /** Écartée : la ligne n'est plus là. Réparée : elle est là, autrement. */
+  kind: 'discarded' | 'repaired'
+  collection: ImportCollection
+  /** Rang dans sa collection, pour retrouver la ligne dans le fichier. */
+  index: number
+  reason: ImportReason
+  /** Son libellé, quand il était lisible — plus parlant qu'un rang. */
+  label?: string
+}
+
+export type NormalizedDocument = { data: Data; notices: ImportNotice[] }
+
+/* --- Lectures élémentaires ------------------------------------------------*/
+
 type Raw = Record<string, unknown>
+
+/** Une entité lue, ou la raison pour laquelle elle ne l'est pas. */
+type Read<T> = T | ImportReason
+
+const rejected = <T>(value: Read<T>): value is ImportReason => typeof value === 'string'
 
 const isRecord = (v: unknown): v is Raw =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
@@ -64,8 +138,8 @@ function moneyOrNull(v: unknown): Money | null {
 
 /* --- Entités --------------------------------------------------------------*/
 
-function member(raw: unknown, index: number): Member | null {
-  if (!isRecord(raw)) return null
+function member(raw: unknown, index: number): Read<Member> {
+  if (!isRecord(raw)) return 'shape'
   return {
     id: str(raw['id'], `member-${String(index)}`),
     name: str(raw['name'], '—'),
@@ -78,8 +152,8 @@ const KINDS = new Set<CategoryKind>(['resource', 'charge', 'debt', 'saving'])
 const kind = (v: unknown): CategoryKind =>
   typeof v === 'string' && KINDS.has(v as CategoryKind) ? (v as CategoryKind) : 'charge'
 
-function family(raw: unknown, index: number): Family | null {
-  if (!isRecord(raw)) return null
+function family(raw: unknown, index: number): Read<Family> {
+  if (!isRecord(raw)) return 'shape'
   return {
     id: str(raw['id'], `family-${String(index)}`),
     label: str(raw['label'], '—'),
@@ -87,8 +161,8 @@ function family(raw: unknown, index: number): Family | null {
   }
 }
 
-function category(raw: unknown, index: number): Category | null {
-  if (!isRecord(raw)) return null
+function category(raw: unknown, index: number): Read<Category> {
+  if (!isRecord(raw)) return 'shape'
   const dir = direction(raw['direction'])
   return {
     id: str(raw['id'], `category-${String(index)}`),
@@ -102,9 +176,9 @@ function category(raw: unknown, index: number): Category | null {
 }
 
 /** Un crédit sans capital lisible est écarté : il ne dirait rien de juste. */
-function debt(raw: unknown, index: number): Debt | null {
-  if (!isRecord(raw)) return null
-  if (!isMoney(raw['principal'])) return null
+function debt(raw: unknown, index: number): Read<Debt> {
+  if (!isRecord(raw)) return 'shape'
+  if (!isMoney(raw['principal'])) return 'principal'
   const recurrenceId = optionalStr(raw['recurrenceId'])
   const note = optionalStr(raw['note'])
   const rate = int(raw['rateBp'], 0)
@@ -130,11 +204,11 @@ function debt(raw: unknown, index: number): Debt | null {
  * Le membre, lui, ne peut pas manquer : une épargne est toujours à quelqu'un.
  * Faute de savoir à qui, on écarte plutôt que d'inventer un porteur.
  */
-function advance(raw: unknown, index: number): Advance | null {
-  if (!isRecord(raw)) return null
-  if (!isMoney(raw['amount'])) return null
+function advance(raw: unknown, index: number): Read<Advance> {
+  if (!isRecord(raw)) return 'shape'
+  if (!isMoney(raw['amount'])) return 'amount'
   const memberId = optionalStr(raw['memberId'])
-  if (memberId === undefined) return null
+  if (memberId === undefined) return 'noMember'
   const recurrenceId = optionalStr(raw['recurrenceId'])
   const note = optionalStr(raw['note'])
   const paidOn = isoDate(raw['paidOn'], today())
@@ -144,7 +218,7 @@ function advance(raw: unknown, index: number): Advance | null {
      récurrence qui reconstitue le livret s'arrête avant sa première mensualité,
      donc rien ne revient jamais et `remaining` reste éternellement plein. Le
      formulaire l'interdit déjà ; un document venu d'ailleurs, non. */
-  if (to < from) return null
+  if (to < from) return 'period'
   return {
     id: str(raw['id'], `advance-${String(index)}`),
     label: str(raw['label'], '—'),
@@ -171,8 +245,8 @@ function period(raw: unknown): Period {
   }
 }
 
-function recurrence(raw: unknown, index: number): Recurrence | null {
-  if (!isRecord(raw)) return null
+function recurrence(raw: unknown, index: number): Read<Recurrence> {
+  if (!isRecord(raw)) return 'shape'
   const startedOn = isoDate(raw['startedOn'], today())
   const endedOn = typeof raw['endedOn'] === 'string' && isValidISO(raw['endedOn'])
     ? raw['endedOn']
@@ -201,10 +275,10 @@ function recurrence(raw: unknown, index: number): Recurrence | null {
 }
 
 /** Une entrée dont le montant ou la date est illisible est écartée. */
-function entry(raw: unknown, index: number): Entry | null {
-  if (!isRecord(raw)) return null
-  if (!isMoney(raw['amount'])) return null
-  if (typeof raw['date'] !== 'string' || !isValidISO(raw['date'])) return null
+function entry(raw: unknown, index: number): Read<Entry> {
+  if (!isRecord(raw)) return 'shape'
+  if (!isMoney(raw['amount'])) return 'amount'
+  if (typeof raw['date'] !== 'string' || !isValidISO(raw['date'])) return 'date'
 
   const recurrenceId = optionalStr(raw['recurrenceId'])
   const memberId = optionalStr(raw['memberId'])
@@ -231,11 +305,11 @@ function entry(raw: unknown, index: number): Entry | null {
  * La forme seule — quatre chiffres, un tiret, deux chiffres — laissait passer
  * `"2026-13"`, que `startOfMonth` puis `parseISO` traversent ensuite sans
  * bruit : le mois s'affichait sans nom. `isValidYm` borne le mois, et c'est le
- * même contrôle que celui des avances, deux fonctions plus haut.
+ * même contrôle que celui des avances, plus haut.
  */
-function monthState(raw: unknown): MonthState | null {
-  if (!isRecord(raw)) return null
-  if (typeof raw['ym'] !== 'string' || !isValidYm(raw['ym'])) return null
+function monthState(raw: unknown): Read<MonthState> {
+  if (!isRecord(raw)) return 'shape'
+  if (typeof raw['ym'] !== 'string' || !isValidYm(raw['ym'])) return 'month'
   return {
     ym: raw['ym'],
     openedAt: isoDate(raw['openedAt'], today()),
@@ -257,38 +331,275 @@ function settings(raw: unknown): Settings {
 
 /* --- Document -------------------------------------------------------------*/
 
-function compact<T>(items: unknown[], parse: (raw: unknown, index: number) => T | null): T[] {
+/** Ce qu'un libellé lisible apporte à un rapport. Absent, le rang suffit. */
+function labelOf(raw: unknown): string | undefined {
+  if (!isRecord(raw)) return undefined
+  return optionalStr(raw['label']) ?? optionalStr(raw['name'])
+}
+
+function compact<T>(
+  items: unknown[],
+  collection: ImportCollection,
+  parse: (raw: unknown, index: number) => Read<T>,
+  notices: ImportNotice[],
+): T[] {
   const parsed: T[] = []
   items.forEach((item, index) => {
     const value = parse(item, index)
-    if (value !== null) parsed.push(value)
+    if (!rejected(value)) {
+      parsed.push(value)
+      return
+    }
+    const label = labelOf(item)
+    notices.push({
+      kind: 'discarded',
+      collection,
+      index,
+      reason: value,
+      ...(label === undefined ? {} : { label }),
+    })
   })
   return parsed
 }
 
-/** Met un document brut en forme. Ne lève jamais : il rend toujours un Data. */
-export function normalizeData(raw: unknown): Data {
+/**
+ * Met un document brut en forme, et dit ce qu'il lui en a coûté.
+ * Ne lève jamais : il rend toujours un `Data`.
+ */
+export function normalizeDocument(raw: unknown): NormalizedDocument {
+  const notices: ImportNotice[] = []
   const source = isRecord(raw) ? raw : {}
   const household = isRecord(source['household']) ? source['household'] : {}
 
-  return {
+  const data: Data = {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     household: {
       name: str(household['name'], 'Maison'),
-      members: compact(array(household['members']), member),
+      members: compact(array(household['members']), 'members', member, notices),
     },
     // Un document sans famille lisible repart du catalogue : sans premier
     // niveau, aucune catégorie ne sait plus de quelle nature elle relève.
     families: (() => {
-      const parsed = compact(array(source['families']), family)
+      const parsed = compact(array(source['families']), 'families', family, notices)
       return parsed.length > 0 ? parsed : defaultFamilies()
     })(),
-    categories: compact(array(source['categories']), category),
-    recurrences: compact(array(source['recurrences']), recurrence),
-    entries: compact(array(source['entries']), entry),
-    debts: compact(array(source['debts']), debt),
-    advances: compact(array(source['advances']), advance),
-    months: compact(array(source['months']), monthState),
+    categories: compact(array(source['categories']), 'categories', category, notices),
+    recurrences: compact(array(source['recurrences']), 'recurrences', recurrence, notices),
+    entries: compact(array(source['entries']), 'entries', entry, notices),
+    debts: compact(array(source['debts']), 'debts', debt, notices),
+    advances: compact(array(source['advances']), 'advances', advance, notices),
+    months: compact(array(source['months']), 'months', monthState, notices),
     settings: settings(source['settings']),
+  }
+
+  return { data: repairReferences(data, notices), notices }
+}
+
+/** La même lecture, quand le rapport ne sert à personne. */
+export function normalizeData(raw: unknown): Data {
+  return normalizeDocument(raw).data
+}
+
+/* --- Réparation des liens -------------------------------------------------*/
+
+/**
+ * Rend uniques les identifiants d'une collection.
+ *
+ * Le doublon est renommé, jamais supprimé : rien ne dit laquelle des deux
+ * lignes est la bonne, et en jeter une perdrait une dépense. Les références qui
+ * pointaient vers cet identifiant se résolvent sur la première — elles étaient
+ * de toute façon ambiguës, et c'est le seul choix qui ne dépend pas de l'ordre
+ * de lecture. Le suffixe est déterministe : deux lectures du même fichier
+ * donnent le même document.
+ */
+function dedupeIds<T extends { id: string }>(
+  items: readonly T[],
+  collection: ImportCollection,
+  notices: ImportNotice[],
+): T[] {
+  const seen = new Set<string>()
+  return items.map((item, index) => {
+    if (!seen.has(item.id)) {
+      seen.add(item.id)
+      return item
+    }
+    let suffix = 2
+    let candidate = `${item.id}~${String(suffix)}`
+    while (seen.has(candidate)) {
+      suffix += 1
+      candidate = `${item.id}~${String(suffix)}`
+    }
+    seen.add(candidate)
+    notices.push({ kind: 'repaired', collection, index, reason: 'duplicateId' })
+    return { ...item, id: candidate }
+  })
+}
+
+/**
+ * Recolle — ou coupe — les liens qui ne mènent nulle part.
+ *
+ * Rien ne les vérifiait, et chaque lien mort avait sa manière d'être faux en
+ * silence. Une catégorie inconnue retombait sur « charge » par le double repli
+ * de `kindOfCategory` : la dépense devenait commune, donc partagée entre les
+ * membres. Un membre inconnu faisait disparaître une entrée de toutes les vues
+ * filtrées tout en la laissant peser sur le foyer — la somme des mois de chacun
+ * cessait de valoir celui du foyer. Une récurrence inconnue laissait `useDebt`
+ * lire la mensualité d'une règle absente, donc `null`, sans rien dire.
+ *
+ * Trois gestes, et le plus doux qui règle chaque cas. Un lien facultatif se
+ * **coupe** : la ligne rend son membre ou sa règle au foyer, comme après un
+ * retrait de membre, et reste modifiable. Un lien obligatoire — la catégorie —
+ * se **redirige** vers une catégorie de réparation, visible dans les listes et
+ * dans les réglages : c'est la même nature que le repli d'avant, mais on la
+ * voit, et on peut la corriger d'un geste. Ce qui ne peut être ni coupé ni
+ * redirigé — une avance dont le porteur n'existe pas — est **écarté**, la même
+ * règle que pour une avance sans membre du tout.
+ */
+function repairReferences(data: Data, notices: ImportNotice[]): Data {
+  const members = dedupeIds(data.household.members, 'members', notices)
+  const families = dedupeIds(data.families, 'families', notices)
+  const categories = dedupeIds(data.categories, 'categories', notices)
+  const recurrences = dedupeIds(data.recurrences, 'recurrences', notices)
+  const entries = dedupeIds(data.entries, 'entries', notices)
+  const debts = dedupeIds(data.debts, 'debts', notices)
+  const advances = dedupeIds(data.advances, 'advances', notices)
+
+  const memberIds = new Set(members.map((m) => m.id))
+  const familyIds = new Set(families.map((f) => f.id))
+  const recurrenceIds = new Set(recurrences.map((r) => r.id))
+  const categoryIds = new Set(categories.map((c) => c.id))
+
+  /* Les catégories de réparation ne sont ajoutées que si elles servent : un
+     document sain ne gagne pas deux lignes dans ses réglages. */
+  const repairs = new Map<Direction, Category>()
+  const rerouted = (dir: Direction): string => {
+    const existing = categories.find((c) => c.id === repairedCategory(dir).id)
+    if (existing !== undefined) return existing.id
+    const category = repairs.get(dir) ?? repairedCategory(dir)
+    repairs.set(dir, category)
+    return category.id
+  }
+
+  const note = (
+    collection: ImportCollection,
+    index: number,
+    reason: ImportReason,
+    label?: string,
+  ): void => {
+    notices.push({
+      kind: 'repaired',
+      collection,
+      index,
+      reason,
+      ...(label === undefined ? {} : { label }),
+    })
+  }
+
+  const repairedFamilies = categories.map((category, index) => {
+    if (familyIds.has(category.familyId)) return category
+    note('categories', index, 'unknownFamily', category.label)
+    return { ...category, familyId: fallbackFamilyId(category.direction) }
+  })
+
+  /** Les deux liens que portent une entrée comme une récurrence. */
+  const relink = <T extends { categoryId: string; memberId?: string; direction: Direction }>(
+    item: T,
+    collection: ImportCollection,
+    index: number,
+    label: string,
+  ): T => {
+    let next = item
+    if (!categoryIds.has(next.categoryId)) {
+      note(collection, index, 'unknownCategory', label)
+      next = { ...next, categoryId: rerouted(next.direction) }
+    }
+    if (next.memberId !== undefined && !memberIds.has(next.memberId)) {
+      note(collection, index, 'unknownMember', label)
+      const { memberId: _dropped, ...rest } = next
+      next = rest as T
+    }
+    return next
+  }
+
+  const repairedRecurrences = recurrences.map((item, index) =>
+    relink(item, 'recurrences', index, item.label),
+  )
+
+  const repairedEntries = entries.map((item, index) => {
+    let next = relink(item, 'entries', index, item.label)
+    if (next.recurrenceId !== undefined && !recurrenceIds.has(next.recurrenceId)) {
+      note('entries', index, 'unknownRecurrence', next.label)
+      const { recurrenceId: _dropped, ...rest } = next
+      next = rest
+    }
+    return next
+  })
+
+  const repairedDebts = debts.map((item, index) => {
+    let next = item
+    if (!categoryIds.has(next.categoryId)) {
+      note('debts', index, 'unknownCategory', next.label)
+      // Un crédit sort toujours du compte : il n'a pas de sens à porter.
+      next = { ...next, categoryId: rerouted('out') }
+    }
+    if (next.recurrenceId !== undefined && !recurrenceIds.has(next.recurrenceId)) {
+      note('debts', index, 'unknownRecurrence', next.label)
+      const { recurrenceId: _dropped, ...rest } = next
+      next = rest
+    }
+    return next
+  })
+
+  const repairedAdvances: Advance[] = []
+  advances.forEach((item, index) => {
+    /* Une avance dont le porteur n'existe pas ne se répare pas : `memberId`
+       n'est pas facultatif, et lui en inventer un attribuerait à quelqu'un une
+       épargne qu'il n'a pas reprise. */
+    if (!memberIds.has(item.memberId)) {
+      notices.push({
+        kind: 'discarded',
+        collection: 'advances',
+        index,
+        reason: 'unknownMember',
+        label: item.label,
+      })
+      return
+    }
+    let next = item
+    if (!categoryIds.has(next.categoryId)) {
+      note('advances', index, 'unknownCategory', next.label)
+      next = { ...next, categoryId: rerouted('out') }
+    }
+    if (next.recurrenceId !== undefined && !recurrenceIds.has(next.recurrenceId)) {
+      note('advances', index, 'unknownRecurrence', next.label)
+      const { recurrenceId: _dropped, ...rest } = next
+      next = rest
+    }
+    repairedAdvances.push(next)
+  })
+
+  /* Un mois ouvert deux fois est une redite, pas une donnée : personne ne l'a
+     saisi, et le second n'apporte rien que le premier n'ait déjà. */
+  const seenMonths = new Set<string>()
+  const months: MonthState[] = []
+  data.months.forEach((state, index) => {
+    if (seenMonths.has(state.ym)) {
+      notices.push({ kind: 'discarded', collection: 'months', index, reason: 'duplicateId' })
+      return
+    }
+    seenMonths.add(state.ym)
+    months.push(state)
+  })
+
+  return {
+    ...data,
+    household: { ...data.household, members },
+    families,
+    categories: [...repairedFamilies, ...repairs.values()],
+    recurrences: repairedRecurrences,
+    entries: repairedEntries,
+    debts: repairedDebts,
+    advances: repairedAdvances,
+    months,
   }
 }

@@ -73,7 +73,7 @@ function richData(): Data {
         amount: eur(240000),
         status: 'planned',
       }),
-      makeEntry({ id: 'e3', date: '2026-07-12', amount: eur(-1250) }),
+      makeEntry({ id: 'e3', categoryId: 'logement', date: '2026-07-12', amount: eur(-1250) }),
     ],
     months: [
       { ym: '2026-07', openedAt: '2026-07-01', closed: false },
@@ -391,11 +391,16 @@ describe('montant habituel d’une récurrence variable (v4)', () => {
 })
 
 describe('avances (v5)', () => {
+  /* Les liens de l'avance mènent quelque part : la lecture répare ceux qui ne
+     mènent nulle part, et ce n'est pas ce qui se teste ici. */
   const doc = (advances: unknown) =>
     JSON.stringify({
       schemaVersion: 5,
       household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'var(--cat-1)' }] },
-      categories: [],
+      categories: [makeCategory({ id: 'car-insurance' })],
+      recurrences: [
+        makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 15 } }),
+      ],
       advances,
     })
 

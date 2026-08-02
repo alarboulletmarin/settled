@@ -1,0 +1,229 @@
+/* ============================================================================
+ * Ce que la lecture d'un document écarte, répare, et dit avoir fait.
+ *
+ * Les deux vont ensemble : rien ne vérifiait les liens, et rien ne racontait
+ * les lignes perdues — or un import remplace tout le document, donc c'est le
+ * seul moment où l'on peut encore comparer avec ce qu'il y avait avant.
+ * ==========================================================================*/
+
+import { describe, expect, it } from 'vitest'
+import { makeCategory, makeData, makeEntry, makeFamily, makeRecurrence } from '@/domain/fixtures'
+import { kindOfCategory } from '@/domain/types'
+import { repairedCategory } from './defaults'
+import { type ImportNotice, normalizeDocument } from './validate'
+
+/** Le document tel qu'il part à l'export, en JSON brut. */
+const raw = (data: unknown): unknown => JSON.parse(JSON.stringify(data))
+
+const reasons = (notices: readonly ImportNotice[]): string[] => notices.map((n) => n.reason)
+
+/** Un foyer minimal mais cohérent : tous ses liens mènent quelque part. */
+function sound() {
+  return makeData({
+    household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
+    families: [makeFamily({ id: 'fam-leisure' })],
+    categories: [makeCategory({ id: 'courses' })],
+    recurrences: [
+      makeRecurrence({
+        id: 'r1',
+        categoryId: 'courses',
+        memberId: 'm1',
+        period: { unit: 'month', every: 1, anchorDay: 5 },
+      }),
+    ],
+    entries: [
+      makeEntry({
+        id: 'e1',
+        categoryId: 'courses',
+        memberId: 'm1',
+        recurrenceId: 'r1',
+        date: '2026-07-05',
+      }),
+    ],
+  })
+}
+
+describe('un document cohérent', () => {
+  it('traverse la lecture sans une réparation ni un mot', () => {
+    const { data, notices } = normalizeDocument(raw(sound()))
+    expect(notices).toEqual([])
+    expect(data).toStrictEqual(sound())
+  })
+})
+
+describe('ce que la lecture écarte', () => {
+  it('nomme la ligne, son rang et la raison', () => {
+    const document = raw(sound()) as Record<string, unknown>
+    const { data, notices } = normalizeDocument({
+      ...document,
+      entries: [
+        ...(document['entries'] as unknown[]),
+        { id: 'e2', label: 'Courses', categoryId: 'courses', amount: 12.5, date: '2026-07-06' },
+      ],
+    })
+
+    expect(data.entries).toHaveLength(1)
+    expect(notices).toEqual([
+      { kind: 'discarded', collection: 'entries', index: 1, reason: 'amount', label: 'Courses' },
+    ])
+  })
+
+  it('se rabat sur le rang quand la ligne n’a pas de nom lisible', () => {
+    const { notices } = normalizeDocument({ debts: [{ id: 'd1' }] })
+    expect(notices).toEqual([
+      { kind: 'discarded', collection: 'debts', index: 0, reason: 'principal' },
+    ])
+  })
+
+  it('dit chaque ligne, pas seulement la première', () => {
+    const { notices } = normalizeDocument({
+      entries: [{ amount: 1.5, date: '2026-07-05' }, 'pas un objet', { amount: 100 }],
+    })
+    expect(reasons(notices)).toEqual(['amount', 'shape', 'date'])
+  })
+})
+
+describe('les liens qui ne mènent nulle part', () => {
+  it('range une catégorie inconnue dans « À ranger », plutôt que de la taire', () => {
+    /* Le repli silencieux de `kindOfCategory` en faisait une charge, donc une
+       dépense commune et partagée entre les membres. */
+    const document = raw(makeData({ entries: [makeEntry({ id: 'e1', date: '2026-07-05' })] }))
+    const { data, notices } = normalizeDocument(document)
+
+    const entry = data.entries[0]
+    expect(entry?.categoryId).toBe(repairedCategory('out').id)
+    expect(data.categories.map((c) => c.id)).toContain(repairedCategory('out').id)
+    expect(notices).toEqual([
+      { kind: 'repaired', collection: 'entries', index: 0, reason: 'unknownCategory', label: 'Entrée' },
+    ])
+    // La nature ne change pas : c'est la même famille d'accueil qu'avant.
+    expect(kindOfCategory(data.families, data.categories, entry?.categoryId ?? '')).toBe('charge')
+  })
+
+  it('n’ajoute la catégorie de réparation que si elle sert', () => {
+    const { data } = normalizeDocument(raw(sound()))
+    expect(data.categories.map((c) => c.id)).not.toContain(repairedCategory('out').id)
+  })
+
+  it('rend au foyer une entrée dont le membre n’existe pas', () => {
+    const document = raw(
+      makeData({
+        categories: [makeCategory({ id: 'courses' })],
+        entries: [makeEntry({ id: 'e1', categoryId: 'courses', memberId: 'fantôme', date: '2026-07-05' })],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+
+    // Elle disparaissait de toutes les vues filtrées tout en pesant sur le
+    // foyer : la somme des mois de chacun cessait de valoir celui du foyer.
+    expect(data.entries[0]).not.toHaveProperty('memberId')
+    expect(reasons(notices)).toEqual(['unknownMember'])
+  })
+
+  it('coupe le lien d’une entrée vers une récurrence absente', () => {
+    const document = raw(
+      makeData({
+        categories: [makeCategory({ id: 'courses' })],
+        entries: [
+          makeEntry({ id: 'e1', categoryId: 'courses', recurrenceId: 'r-parti', date: '2026-07-05' }),
+        ],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+
+    expect(data.entries[0]).not.toHaveProperty('recurrenceId')
+    expect(reasons(notices)).toEqual(['unknownRecurrence'])
+  })
+
+  it('délie un crédit de la mensualité qui n’existe plus', () => {
+    const { data, notices } = normalizeDocument({
+      categories: [makeCategory({ id: 'car-loan' })],
+      debts: [
+        { id: 'd1', label: 'Auto', categoryId: 'car-loan', principal: 1_200_000, recurrenceId: 'r-parti' },
+      ],
+    })
+    expect(data.debts[0]).not.toHaveProperty('recurrenceId')
+    expect(reasons(notices)).toEqual(['unknownRecurrence'])
+  })
+
+  /* Une avance dont le porteur n'existe pas ne se répare pas : `memberId` n'est
+     pas facultatif, et lui en inventer un attribuerait à quelqu'un une épargne
+     qu'il n'a pas reprise. */
+  it('écarte une avance dont le porteur n’existe pas', () => {
+    const { data, notices } = normalizeDocument({
+      advances: [
+        {
+          id: 'av1',
+          label: 'Assurance',
+          categoryId: 'car-insurance',
+          memberId: 'fantôme',
+          amount: 60_000,
+          paidOn: '2026-01-15',
+          from: '2026-01',
+          to: '2026-12',
+        },
+      ],
+    })
+    expect(data.advances).toEqual([])
+    expect(notices).toEqual([
+      { kind: 'discarded', collection: 'advances', index: 0, reason: 'unknownMember', label: 'Assurance' },
+    ])
+  })
+
+  it('rattache une catégorie dont la famille a disparu', () => {
+    const { data, notices } = normalizeDocument({
+      families: [makeFamily({ id: 'fam-leisure' })],
+      categories: [makeCategory({ id: 'courses', familyId: 'fam-partie' })],
+    })
+    expect(data.categories[0]?.familyId).toBe('fam-leisure')
+    expect(reasons(notices)).toEqual(['unknownFamily'])
+  })
+})
+
+describe('identifiants en double', () => {
+  /* Le doublon est renommé, jamais supprimé : rien ne dit laquelle des deux
+     lignes est la bonne, et en jeter une perdrait une dépense. */
+  it('renomme le second au lieu de le perdre', () => {
+    const { data, notices } = normalizeDocument({
+      categories: [makeCategory({ id: 'courses' })],
+      entries: [
+        { id: 'e1', label: 'Un', categoryId: 'courses', amount: 100, date: '2026-07-05' },
+        { id: 'e1', label: 'Deux', categoryId: 'courses', amount: 200, date: '2026-07-06' },
+      ],
+    })
+    expect(data.entries.map((e) => e.id)).toEqual(['e1', 'e1~2'])
+    expect(data.entries.map((e) => e.label)).toEqual(['Un', 'Deux'])
+    expect(reasons(notices)).toEqual(['duplicateId'])
+  })
+
+  it('rend deux lectures du même fichier identiques', () => {
+    const document = {
+      categories: [makeCategory({ id: 'courses' })],
+      entries: [
+        { id: 'e1', categoryId: 'courses', amount: 100, date: '2026-07-05' },
+        { id: 'e1', categoryId: 'courses', amount: 200, date: '2026-07-06' },
+        { id: 'e1', categoryId: 'courses', amount: 300, date: '2026-07-07' },
+      ],
+    }
+    expect(normalizeDocument(document).data).toStrictEqual(normalizeDocument(document).data)
+    expect(normalizeDocument(document).data.entries.map((e) => e.id)).toEqual([
+      'e1',
+      'e1~2',
+      'e1~3',
+    ])
+  })
+
+  /* Un mois ouvert deux fois est une redite, pas une donnée : personne ne l'a
+     saisi, et le second n'apporte rien que le premier n'ait déjà. */
+  it('écarte un mois ouvert deux fois', () => {
+    const { data, notices } = normalizeDocument({
+      months: [
+        { ym: '2026-07', openedAt: '2026-07-01' },
+        { ym: '2026-07', openedAt: '2026-07-09' },
+      ],
+    })
+    expect(data.months).toHaveLength(1)
+    expect(data.months[0]?.openedAt).toBe('2026-07-01')
+    expect(reasons(notices)).toEqual(['duplicateId'])
+  })
+})

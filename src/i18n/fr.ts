@@ -378,6 +378,45 @@ export const fr = {
        on vient d'accepter d'effacer ce qu'il remplace. */
     importFailed: 'L’import n’a pas abouti. Recharge la page avant de réessayer.',
 
+    /* Ce que la lecture a écarté et réparé, dit avant qu'on confirme.
+       Jusqu'ici une dépense illisible disparaissait en silence dans un geste
+       qui remplace tout le document : le meilleur moyen de ne jamais s'en
+       apercevoir, puisque le fichier, lui, a l'air d'être passé. */
+    reportDiscardedOne: '1 ligne ne sera pas importée :',
+    reportDiscarded: '%s lignes ne seront pas importées :',
+    reportRepairedOne: '1 lien ne menait nulle part et a été rattaché :',
+    reportRepaired: '%s liens ne menaient nulle part et ont été rattachés :',
+    reportMore: '… et %s de plus.',
+    /* « Entrée « Loyer » — montant illisible », ou son rang à défaut de nom. */
+    reportLine: '%s — %s',
+    reportNamed: '%s « %s »',
+    reportRanked: '%s n° %s',
+
+    reportCollection: {
+      members: 'Membre',
+      families: 'Famille',
+      categories: 'Catégorie',
+      recurrences: 'Récurrence',
+      entries: 'Entrée',
+      debts: 'Crédit',
+      advances: 'Avance',
+      months: 'Mois',
+    },
+    reportReason: {
+      shape: 'ligne illisible',
+      amount: 'montant illisible',
+      principal: 'capital illisible',
+      date: 'date inexistante',
+      month: 'mois inexistant',
+      noMember: 'sans personne à qui elle est',
+      period: 'période à l’envers',
+      duplicateId: 'identifiant en double',
+      unknownCategory: 'catégorie introuvable, rangée dans « À ranger »',
+      unknownFamily: 'famille introuvable',
+      unknownMember: 'membre introuvable, rendue au foyer',
+      unknownRecurrence: 'récurrence introuvable, lien retiré',
+    },
+
     /* Le pendant de l'import : le seul moyen d'obtenir un fichier importable
        était jusqu'ici d'avoir déjà saisi ce qu'on cherche à saisir. */
     schema: 'Schéma de données',
@@ -1293,6 +1332,10 @@ export const fr = {
 
   defaults: {
     householdName: 'Maison',
+    /* Où atterrit une ligne dont la catégorie n'existait pas. Le nom dit ce
+       qu'il reste à faire, plutôt que ce qui s'est passé : « à ranger » est un
+       geste, « catégorie introuvable » est un constat. */
+    repairedCategory: 'À ranger',
   },
 
   a11y: {

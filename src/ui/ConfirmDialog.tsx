@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { fr } from '@/i18n/fr'
 import { Button } from './Button'
 import { Sheet } from './Sheet'
@@ -16,6 +16,13 @@ export type ConfirmDialogProps = {
   title: string
   /** Un pas d'ordinaire. Trois pour un effacement total (cahier §4.8). */
   steps: readonly ConfirmStep[]
+  /**
+   * Ce que la question ne peut pas dire en une phrase, sous elle et à tous les
+   * pas — le détail des lignes qu'un import s'apprête à écarter, par exemple.
+   * Une question posée sur un chiffre qu'on ne peut pas ouvrir ne se vérifie
+   * pas ; elle se clique.
+   */
+  details?: ReactNode
   onCancel: () => void
   onConfirm: () => void
 }
@@ -40,7 +47,14 @@ export type ConfirmDialogProps = {
  * question *différente* — répéter la même trois fois ne se lit plus, ça se
  * clique.
  */
-export function ConfirmDialog({ open, title, steps, onCancel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({
+  open,
+  title,
+  steps,
+  details,
+  onCancel,
+  onConfirm,
+}: ConfirmDialogProps) {
   const [step, setStep] = useState(0)
 
   const current = steps[Math.min(step, steps.length - 1)]
@@ -84,6 +98,7 @@ export function ConfirmDialog({ open, title, steps, onCancel, onConfirm }: Confi
       }
     >
       <p className="t-body">{current.question}</p>
+      {details !== undefined && <div className="mt-3">{details}</div>}
       {/* Où l'on en est, quand il y a plusieurs pas : sans repère, le second
           écran se lit comme si le premier clic n'avait rien fait. Deux nombres
           et une barre, pas une phrase — rien à traduire ici. */}
