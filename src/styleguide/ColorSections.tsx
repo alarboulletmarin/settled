@@ -1,7 +1,13 @@
 import { fr } from '@/i18n/fr'
 import { Section, SubTitle } from './Section'
 import { ThemePane } from './ThemePane'
-import { BASE_PALETTE, CATEGORY_PALETTE, SEMANTIC_TOKENS, type TokenEntry } from './tokens.data'
+import {
+  BASE_PALETTE,
+  CATEGORY_PALETTE,
+  MEMBER_PALETTE,
+  SEMANTIC_TOKENS,
+  type TokenEntry,
+} from './tokens.data'
 
 function Swatch({ entry }: { entry: TokenEntry }) {
   return (
@@ -70,6 +76,18 @@ export function CategoryPaletteSection() {
     <Section title={fr.styleguide.sections.categories} note={fr.styleguide.categoriesNote}>
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
         {CATEGORY_PALETTE.map((entry) => (
+          <Swatch key={entry.name} entry={entry} />
+        ))}
+      </ul>
+    </Section>
+  )
+}
+
+export function MemberPaletteSection() {
+  return (
+    <Section title={fr.styleguide.sections.members} note={fr.styleguide.membersNote}>
+      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
+        {MEMBER_PALETTE.map((entry) => (
           <Swatch key={entry.name} entry={entry} />
         ))}
       </ul>

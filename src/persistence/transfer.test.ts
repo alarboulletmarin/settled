@@ -442,3 +442,58 @@ describe('avances (v5)', () => {
     expect(result.data.advances).toEqual([])
   })
 })
+
+describe('palette propre aux membres (v6)', () => {
+  const v5 = (members: unknown[]) =>
+    JSON.stringify({
+      schemaVersion: 5,
+      household: { name: 'Maison', members },
+      categories: [],
+      advances: [],
+    })
+
+  /* Le premier membre portait `var(--cat-1)`, qui vaut `--accent` : sa pastille
+     se lisait comme une sélection, et disparaissait dans une pilule active. */
+  it('recolore les membres d’un document v5, dans l’ordre du foyer', () => {
+    const doc = v5([
+      { id: 'm1', name: 'Luca', color: 'var(--cat-1)' },
+      { id: 'm2', name: 'Clara', color: 'var(--cat-2)' },
+    ])
+    expect(parseImport(doc).data.household.members.map((m) => m.color)).toEqual([
+      'var(--member-1)',
+      'var(--member-2)',
+    ])
+  })
+
+  it('garde le nom et l’identifiant de chacun', () => {
+    const doc = v5([{ id: 'm1', name: 'Luca', color: 'var(--cat-1)' }])
+    expect(parseImport(doc).data.household.members[0]).toEqual({
+      id: 'm1',
+      name: 'Luca',
+      color: 'var(--member-1)',
+    })
+  })
+
+  /* Au-delà de cinq membres la palette recommence : cinq teintes suffisent à un
+     foyer, et deux pastilles identiques valent mieux qu'une teinte inventée. */
+  it('reprend la palette au début au sixième membre', () => {
+    const doc = v5(
+      Array.from({ length: 6 }, (_, i) => ({ id: `m${String(i)}`, name: 'X', color: 'var(--cat-1)' })),
+    )
+    const colors = parseImport(doc).data.household.members.map((m) => m.color)
+    expect(colors[5]).toBe('var(--member-1)')
+    expect(colors[0]).toBe('var(--member-1)')
+  })
+
+  it('laisse passer un foyer sans membre', () => {
+    expect(parseImport(v5([])).data.household.members).toEqual([])
+  })
+
+  it('n’a plus rien à recolorer sur un document déjà v6', () => {
+    const doc = v5([{ id: 'm1', name: 'Luca', color: 'var(--member-3)' }]).replace(
+      '"schemaVersion":5',
+      '"schemaVersion":6',
+    )
+    expect(parseImport(doc).data.household.members[0]?.color).toBe('var(--member-3)')
+  })
+})

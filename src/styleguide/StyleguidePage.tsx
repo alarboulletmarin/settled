@@ -1,7 +1,12 @@
 import { fr } from '@/i18n/fr'
 import { useStore } from '@/store/store'
 import { Segmented } from '@/ui/Segmented'
-import { BasePaletteSection, CategoryPaletteSection, SemanticTokensSection } from './ColorSections'
+import {
+  BasePaletteSection,
+  CategoryPaletteSection,
+  MemberPaletteSection,
+  SemanticTokensSection,
+} from './ColorSections'
 import { ControlsSection } from './ControlsSection'
 import { IconSection } from './IconSection'
 import { KindSection } from './KindSection'
@@ -44,6 +49,7 @@ export function StyleguidePage() {
       <BasePaletteSection />
       <SemanticTokensSection />
       <CategoryPaletteSection />
+      <MemberPaletteSection />
       <TypographySection />
       <ShapesSection />
       <TileSection />

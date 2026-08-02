@@ -52,6 +52,13 @@ import {
   unassignedIncomes,
 } from '@/domain/split'
 import {
+  type Settlement,
+  advancedEntries,
+  adjustmentOf,
+  adjustments,
+  settleMonth,
+} from '@/domain/settle'
+import {
   type Advance,
   type Category,
   type CategoryKind,
@@ -391,6 +398,10 @@ export type MonthSplit = {
   shares: MemberShare[] | null
   /** Les membres dont le revenu n'est pas connu, pour pouvoir les nommer. */
   unknown: Member[]
+  /** Le mois d'où vient la régularisation, pour la nommer à l'écran. */
+  previousYm: YearMonth
+  /** Les charges avancées le mois précédent, qui produisent le report. */
+  advanced: Entry[]
 }
 
 /**
@@ -409,16 +420,20 @@ export type MonthSplit = {
  * comme les charges qu'il sert à répartir : c'est la même question, « combien
  * ce mois-ci », et non « combien à cet instant ».
  */
-export function useMemberIncomes(): MemberIncome[] {
+export function useMemberIncomesOf(month: YearMonth): MemberIncome[] {
   const members = useMembers()
   const recurrences = useRecurrences()
-  const month = useCurrentYm()
   const amountOf = useAmountOf(endOfMonth(month))
   const kindOf = useKindOf()
   return useMemo(
     () => memberIncomes(members, recurrences, kindOf, amountOf, month),
     [members, recurrences, amountOf, kindOf, month],
   )
+}
+
+/** Les revenus du mois affiché. */
+export function useMemberIncomes(): MemberIncome[] {
+  return useMemberIncomesOf(useCurrentYm())
 }
 
 /**
@@ -467,9 +482,11 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
   const entries = useEntries()
   const current = useCurrentYm()
   const members = useMembers()
-  const incomes = useMemberIncomes()
   const kindOf = useKindOf()
   const month = ym ?? current
+  const previousYm = addMonthsToYm(month, -1)
+  const incomes = useMemberIncomesOf(month)
+  const settlements = usePreviousMonthSettlement(month)
 
   return useMemo(() => {
     const shared = sharedEntries(entries, month, kindOf)
@@ -478,10 +495,47 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
     return {
       total: sum(amounts),
       entries: shared,
-      shares: memberShares(incomes, amounts),
+      shares: memberShares(incomes, amounts, adjustments(settlements)),
       unknown: members.filter((m) => missing.has(m.id)),
+      previousYm,
+      advanced: advancedEntries(entries, previousYm, kindOf),
     }
-  }, [entries, month, kindOf, members, incomes])
+  }, [entries, month, previousYm, kindOf, members, incomes, settlements])
+}
+
+/**
+ * Ce que le mois précédent reporte sur celui qu'on affiche.
+ *
+ * Les revenus lus sont ceux **du mois précédent** : l'écart s'est creusé sous
+ * son prorata à lui, et le rattraper au coefficient d'aujourd'hui rendrait une
+ * somme que personne n'a avancée.
+ *
+ * `null` quand ce mois-là ne se répartissait pas — l'écran n'a alors rien à
+ * dire, et un report à zéro laisserait croire que les comptes étaient justes.
+ */
+export function usePreviousMonthSettlement(ym?: YearMonth): Settlement[] | null {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const kindOf = useKindOf()
+  const previous = addMonthsToYm(ym ?? current, -1)
+  const incomes = useMemberIncomesOf(previous)
+
+  return useMemo(
+    () => settleMonth(entries, previous, kindOf, incomes),
+    [entries, previous, kindOf, incomes],
+  )
+}
+
+/**
+ * Ce qu'un membre porte du mois, plus le report du mois précédent.
+ *
+ * Le report est à côté de `own` et `common`, jamais dedans : ces deux-là sont
+ * des coûts, et leur somme doit continuer de valoir exactement le total des
+ * charges du mois filtré. Le report, lui, ne change que le virement.
+ */
+export type MemberChargesWithSettlement = MemberCharges & {
+  /** Ce que le mois précédent ajoute au virement. Négatif : il verse moins. */
+  adjustment: Money
 }
 
 /**
@@ -492,18 +546,20 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
  * et tant que le prorata ne se calcule pas : l'en-tête du mois dit alors ce qui
  * manque, et une tuile de plus le répéterait sans rien ajouter.
  */
-export function useMemberCharges(): MemberCharges | null {
+export function useMemberCharges(): MemberChargesWithSettlement | null {
   const entries = useEntries()
   const current = useCurrentYm()
   const member = useMemberFilter()
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
+  const settlements = usePreviousMonthSettlement()
 
-  return useMemo(
-    () =>
-      member === undefined ? null : memberCharges(entries, current, member, kindOf, incomes),
-    [entries, current, member, kindOf, incomes],
-  )
+  return useMemo(() => {
+    if (member === undefined) return null
+    const charges = memberCharges(entries, current, member, kindOf, incomes)
+    if (charges === null) return null
+    return { ...charges, adjustment: adjustmentOf(settlements, member) }
+  }, [entries, current, member, kindOf, incomes, settlements])
 }
 
 /* --- Épargne --------------------------------------------------------------*/

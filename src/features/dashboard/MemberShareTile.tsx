@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { SPLIT_PATH } from '@/app/routes'
 import { type Money, add } from '@/domain/money'
 import { fr } from '@/i18n/fr'
-import { formatMoney, formatPercent, tpl } from '@/i18n/format'
+import { formatMoney, formatPercent, formatSignedMoney, tpl } from '@/i18n/format'
 import { useMemberCharges, useMemberFilter, useMemberMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -65,7 +65,13 @@ export function MemberShareTile() {
 
   const member = members.get(filter)
   const percent = formatPercent(charges.shareBp / 10_000, 1)
+  /* Le coût du mois, et lui seul : le report n'en fait pas partie. Ce qu'une
+     dépense a coûté à quelqu'un est arrêté au mois où elle a eu lieu, et ces
+     deux lignes doivent continuer de recomposer la tuile Charges voisine. */
   const total = add(charges.own, charges.common)
+  /* Le virement, lui, se rattrape : celui qui a trop avancé le mois passé verse
+     moins ce mois-ci, et l'autre un peu plus. */
+  const toPay = add(charges.common, charges.adjustment)
   /* La lecture du DS §8 vit sur la tuile, et non en `srText` dans l'anneau : un
      bouton porte son nom accessible, et rien de ce qu'il contient n'est lu à
      côté — le texte caché de l'anneau y serait écrit sans jamais être entendu. */
@@ -73,7 +79,7 @@ export function MemberShareTile() {
     fr.dashboard.srMemberShare,
     member?.name ?? '',
     percent,
-    formatMoney(charges.common, currency),
+    formatMoney(toPay, currency),
     formatMoney(charges.own, currency),
     formatMoney(total, currency),
   )
@@ -130,7 +136,20 @@ export function MemberShareTile() {
         <div className="flex min-w-0 max-w-xs flex-1 flex-col gap-1">
           {/* Le montant du virement, en corps de tuile : c'est la réponse, et
               on vient la recopier dans une application bancaire. */}
-          <Amount value={charges.common} size="tile-fit" direction="out" />
+          <Amount value={toPay} size="tile-fit" direction="out" />
+          {/* Le report en seconde lecture, et non en quatrième ligne : le DS §5
+              plafonne la tuile à quatre éléments, et elle y est déjà. Il dit
+              d'où vient l'écart entre la part et le virement — sans quoi le
+              chiffre de tête ne correspondrait plus au pourcentage à côté. */}
+          {charges.adjustment !== 0 && (
+            <span className="t-axis tnum">
+              {tpl(
+                fr.dashboard.memberShareSettled,
+                formatMoney(charges.common, currency, false),
+                formatSignedMoney(charges.adjustment, currency),
+              )}
+            </span>
+          )}
           <ul className="flex flex-col gap-1 border-t border-border pt-2">
             {/* Ce qu'il paie pour lui, puis la somme des deux : la tuile
                 Charges voisine mêle déjà les deux sans les séparer, et le coût

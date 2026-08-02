@@ -120,8 +120,14 @@ export function memberRequired(
   return !(direction === 'out' && (shared ?? defaultShared(kind, memberId)))
 }
 
-/** La même frontière que `sharedEntries`, en un seul endroit. */
-function isCommon(entry: Entry, kindOf: KindOf): boolean {
+/**
+ * La même frontière que `sharedEntries`, en un seul endroit.
+ *
+ * Exportée pour `settle.ts`, qui doit poser exactement la même : une ligne que
+ * la répartition compte et que la régularisation ignorerait — ou l'inverse —
+ * ferait diverger le report du total dont il se retranche.
+ */
+export function isCommon(entry: Entry, kindOf: KindOf): boolean {
   return entry.direction === 'out' && isSharedEntry(entry, kindOf(entry.categoryId))
 }
 
@@ -283,8 +289,19 @@ export type MemberShare = {
   income: Money
   /** Part du revenu du foyer, en points de base. 5556 = 55,56 %. */
   shareBp: number
-  /** Ce qu'il lui revient de verser sur les charges communes. */
+  /** Sa part des charges communes du mois — ce que le mois lui coûte. */
   due: Money
+  /**
+   * Le report du mois précédent : ce qu'il aurait dû verser sur ce que l'autre
+   * a avancé, moins ce qu'il a avancé lui-même. Négatif, il a trop avancé.
+   */
+  adjustment: Money
+  /**
+   * Ce qu'il verse ce mois-ci, régularisation comprise : `due + adjustment`.
+   * La somme vaut le total des charges communes au centime — les reports
+   * s'annulent (voir `settle.ts`).
+   */
+  toPay: Money
 }
 
 /**
@@ -296,7 +313,7 @@ export type MemberShare = {
  * c'est le raisonnement de `savingRate`, et l'écran doit dire ce qui manque
  * plutôt qu'afficher un chiffre faux.
  */
-function prorataWeights(incomes: readonly IncomeWeight[]): Money[] | null {
+export function prorataWeights(incomes: readonly IncomeWeight[]): Money[] | null {
   if (incomes.length < 2) return null
 
   const known: Money[] = []
@@ -316,10 +333,17 @@ function prorataWeights(incomes: readonly IncomeWeight[]): Money[] | null {
  * moitié de mois s'additionne alors exactement pour redonner la part du mois.
  * Répartir la somme laisserait l'écran du mois filtré sur quelqu'un et l'écran
  * Répartition annoncer deux chiffres à un centime l'un de l'autre.
+ *
+ * `adjustments` porte le report du mois précédent, quand il y en a un — une
+ * table plutôt que les `Settlement` eux-mêmes, pour que ce module n'ait pas à
+ * connaître `settle.ts`, qui le connaît déjà. Absente, chacun verse sa part et
+ * rien d'autre : c'est le comportement de toujours, et c'est aussi ce que veut
+ * le coefficient lu seul, hors de tout mois.
  */
 export function memberShares(
   incomes: readonly IncomeWeight[],
   amounts: readonly Money[],
+  adjustments: ReadonlyMap<string, Money> | null = null,
 ): MemberShare[] | null {
   const weights = prorataWeights(incomes)
   if (weights === null) return null
@@ -333,12 +357,18 @@ export function memberShares(
     }
   }
 
-  return incomes.map((entry, index) => ({
-    memberId: entry.memberId,
-    income: weights[index] ?? ZERO,
-    shareBp: shares[index] ?? 0,
-    due: money(dues[index] ?? 0),
-  }))
+  return incomes.map((entry, index) => {
+    const due = money(dues[index] ?? 0)
+    const adjustment = adjustments?.get(entry.memberId) ?? ZERO
+    return {
+      memberId: entry.memberId,
+      income: weights[index] ?? ZERO,
+      shareBp: shares[index] ?? 0,
+      due,
+      adjustment,
+      toPay: add(due, adjustment),
+    }
+  })
 }
 
 /* --- Le mois vu par un membre ---------------------------------------------*/
@@ -388,6 +418,15 @@ export function scopeToMember(
 /** Somme des parts. Vaut le total réparti — c'est ce que `allocate` garantit. */
 export function totalDue(shares: readonly MemberShare[]): Money {
   return shares.reduce((acc, share) => add(acc, share.due), ZERO)
+}
+
+/**
+ * Somme de ce que chacun verse, régularisation comprise. Vaut le même total :
+ * les reports se compensent exactement d'un membre à l'autre, puisqu'ils
+ * répartissent les mêmes montants entre les mêmes poids (voir `settle.ts`).
+ */
+export function totalToPay(shares: readonly MemberShare[]): Money {
+  return shares.reduce((acc, share) => add(acc, share.toPay), ZERO)
 }
 
 /* --- Ce qu'un membre porte du mois ----------------------------------------*/

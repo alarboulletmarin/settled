@@ -305,6 +305,13 @@ export const fr = {
     memberShare: 'À verser sur le commun',
     memberShareOwn: 'Charges perso',
     memberShareTotal: 'Total à payer',
+    /* Le report se dit en seconde lecture sous le montant à verser : il
+       explique pourquoi le virement diffère de la part, et le DS §5 ne laisse
+       pas la place d'une quatrième ligne dans la liste. Le mois d'où il vient
+       n'y tient pas sans passer à la ligne — il se lit sur Répartition, à un
+       doigt d'ici, et « la régularisation » d'un mois ne peut venir que du
+       précédent. */
+    memberShareSettled: 'part %s · régularisation %s',
     srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
@@ -618,6 +625,19 @@ export const fr = {
     detailCountOne: '%s ligne',
     detailCount: '%s lignes',
     advancedBy: 'avancé par %s',
+    /* Le report du mois précédent. Une charge commune réglée par une seule
+       personne lui fait porter plus que sa part : le mois suivant le rattrape,
+       l'un verse un peu plus, l'autre un peu moins. */
+    settlement: 'Régularisation de %s',
+    settlementShare: 'Sa part du mois',
+    settlementDetail: 'Ce qui a été avancé en %s',
+    settlementHint:
+      'Ces charges communes ont été réglées par une seule personne. Chacun en portait sa part : le mois se rattrape ici, et la somme des versements vaut toujours le total.',
+    /* Le report ne déplace pas un coût : ce que le mois a coûté à chacun est
+       arrêté au mois où la dépense a eu lieu. Ce qui se rattrape est un
+       virement, et c'est pour ça qu'il ne touche à aucun total de charges. */
+    settlementNotACost:
+      'Un report ne change pas ce que le mois a coûté à quelqu’un, seulement ce qu’il verse.',
     method: 'Comment c’est calculé',
     methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
     /* Le revenu est dérivé des récurrences de ressources, jamais déclaré à
@@ -843,6 +863,7 @@ export const fr = {
       base: 'Palette de base',
       semantic: 'Tokens sémantiques',
       categories: 'Palette catégories',
+      members: 'Palette membres',
       type: 'Échelle typographique',
       shapes: 'Formes et mouvement',
       components: 'Composants',
@@ -854,6 +875,11 @@ export const fr = {
     semanticNote: 'La seule couche que les composants consomment.',
     categoriesNote:
       'Six teintes, dans cet ordre. Au-delà, les suivantes basculent en gris sous « Autres ».',
+    /* Le vert pomme est --accent, donc le signal « actif » et la couleur du
+       commun. Le premier membre le portait : sa pastille se lisait comme une
+       sélection, et disparaissait dans une pilule de filtre active. */
+    membersNote:
+      'Les mêmes teintes, moins le vert pomme, qui reste à l’accent et donc au commun. Un membre ne le porte jamais.',
     typeNote: 'Archivo pour ce qui se lit, Geist Mono pour les libellés utilitaires.',
     shapesNote: 'Base 4px. Mouvement 160ms, 240ms à l’entrée d’une vue.',
     bentoNote: 'Formats autorisés : 2×1, 2×2, 4×1, 4×2, 6×2. Rien d’autre.',

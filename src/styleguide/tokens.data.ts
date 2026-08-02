@@ -68,6 +68,17 @@ export const CATEGORY_PALETTE: TokenEntry[] = [
   { name: '--cat-rest', value: 'au-delà de six : « Autres »' },
 ]
 
+/* Les mêmes teintes, moins le vert pomme : c'est --accent, donc le signal
+   « actif » et la couleur du commun. Un membre ne le porte jamais — sa pastille
+   se lirait comme une sélection, et disparaîtrait dans une pilule active. */
+export const MEMBER_PALETTE: TokenEntry[] = [
+  { name: '--member-1', value: 'turquoise — var(--cat-3)' },
+  { name: '--member-2', value: 'ambre — var(--cat-4)' },
+  { name: '--member-3', value: 'rose — var(--cat-5)' },
+  { name: '--member-4', value: 'bleu — var(--cat-6)' },
+  { name: '--member-5', value: 'violet — var(--cat-2)' },
+]
+
 /* Les six premières lignes sont un même chiffre à six tailles : la lettre —
    700, élargie à 112 %, serrée à -0.03em — ne change jamais. */
 export const TYPE_SCALE = [

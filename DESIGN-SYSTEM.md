@@ -101,6 +101,19 @@ Six teintes, dans cet ordre, pour les donuts et les barres empilées. Au-delà d
 --cat-4: #F5B575;  --cat-5: #F09BB5;  --cat-6: #7FB8E8;
 ```
 
+### 2.5 Palette membres
+
+Les mêmes teintes, **moins le vert pomme**, et dans un autre ordre. Cinq suffisent à un foyer ; au-delà, la palette recommence.
+
+```css
+--member-1: var(--cat-3);  --member-2: var(--cat-4);  --member-3: var(--cat-5);
+--member-4: var(--cat-6);  --member-5: var(--cat-2);
+```
+
+Le vert pomme est `--accent` : le signal « actif » de toute l'app, et la couleur du commun — la tuile Répartition est en accent. **Un membre ne le porte jamais.** Le premier le portait, et sa pastille se lisait comme une sélection : on croyait ne lire que ses données. Sur une pilule de filtre active, qui passe elle-même en `--accent`, elle disparaissait tout à fait.
+
+Turquoise et ambre en tête : un foyer en compte deux le plus souvent, et ce sont les deux teintes les plus éloignées l'une de l'autre. Le violet ferme la marche, parce qu'il avoisine `--accent-2`, qui dit les sorties.
+
 ---
 
 ## 3. Typographie
