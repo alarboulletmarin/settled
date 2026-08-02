@@ -11,8 +11,15 @@ import type { Data } from '@/domain/types'
 import { migrateDocument } from './schema'
 
 const DB_NAME = 'tout-compte-fait'
-const DB_VERSION = 1
+/**
+ * 2 depuis l'anneau de sauvegardes. C'est le premier bump de l'app, et donc la
+ * première fois qu'elle peut se bloquer elle-même : un onglet resté ouvert sur
+ * la version précédente retient la v1, et l'ouverture du nouveau reste
+ * `blocked`. Les trois callbacks de connexion sont ce qui rend ce bump vivable.
+ */
+const DB_VERSION = 2
 const STORE = 'document'
+export const BACKUP_STORE = 'backups'
 const KEY = 'current'
 
 /**
@@ -28,8 +35,13 @@ const KEY = 'current'
  */
 const REV_KEY = 'rev'
 
-interface ToutCompteFaitDB extends DBSchema {
+export interface ToutCompteFaitDB extends DBSchema {
   document: {
+    key: string
+    value: unknown
+  }
+  /** Un instantané par jour, clé = la date ISO. Voir `backups.ts`. */
+  backups: {
     key: string
     value: unknown
   }
@@ -85,9 +97,15 @@ export function handleDbEvent(event: DbEvent): void {
 
 function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
   connection ??= openDB<ToutCompteFaitDB>(DB_NAME, DB_VERSION, {
+    /* Idempotent par `contains` : une installation neuve crée les deux stores
+       en une fois, une base en v1 n'y gagne que `backups`. Aucune donnée n'est
+       transformée — l'anneau démarre vide, et c'est la bonne valeur. */
     upgrade(database) {
       if (!database.objectStoreNames.contains(STORE)) {
         database.createObjectStore(STORE)
+      }
+      if (!database.objectStoreNames.contains(BACKUP_STORE)) {
+        database.createObjectStore(BACKUP_STORE)
       }
     },
     blocked() {
@@ -104,6 +122,15 @@ function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
     return database
   })
   return connection
+}
+
+/**
+ * La connexion, pour les modules de persistance qui ont leur propre store.
+ * Un seul module ouvre la base : deux `openDB` concurrents sur des versions
+ * différentes sont précisément ce que `blocked` signale.
+ */
+export function connect(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
+  return db()
 }
 
 /** Referme la connexion. Utile aux tests et à la réinitialisation. */

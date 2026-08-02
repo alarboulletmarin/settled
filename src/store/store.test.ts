@@ -7,6 +7,7 @@ import type * as dbModule from '@/persistence/db'
 import type { LoadedDocument } from '@/persistence/db'
 import type * as tabsModule from '@/persistence/tabs'
 import type { TabMessage } from '@/persistence/tabs'
+import { backupDaily, clearBackups, listBackups, readBackup } from '@/persistence/backups'
 import { clearDocument, closeDb, loadDocument, loadRawDocument, saveDocument } from '@/persistence/db'
 import { HYDRATION_TIMEOUT_MS } from './store'
 import type { useStore as UseStore } from './store'
@@ -245,6 +246,48 @@ describe('store — échecs de persistance', () => {
 
     expect(store.getState().status).toBe('onboarding')
     expect(store.getState().rev).toBe(0)
+  })
+
+  it('archive l’état du démarrage, pas celui qu’il vient d’écrire', async () => {
+    // Un point de retour sert à revenir avant ce qui a cassé, et ce qui casse
+    // est la session en cours.
+    await clearBackups()
+    await saveDocument(makeData({ household: { name: 'Au démarrage', members: [] } }), 1)
+    const { store } = await freshStore()
+    await store.getState().hydrate()
+
+    store.getState().mutate((data) => ({
+      ...data,
+      household: { ...data.household, name: 'Après coup' },
+    }))
+    await store.getState().flush()
+
+    const [entry] = await listBackups()
+    expect(entry).toBeDefined()
+    await expect(readBackup(entry?.on ?? '2000-01-01')).resolves.toMatchObject({
+      household: { name: 'Au démarrage' },
+    })
+  })
+
+  it('n’archive rien après un onboarding : il n’y avait rien avant', async () => {
+    await clearBackups()
+    const { store } = await freshStore()
+    await store.getState().hydrate()
+
+    store.getState().finishOnboarding()
+    await store.getState().flush()
+
+    await expect(listBackups()).resolves.toStrictEqual([])
+  })
+
+  it('emporte l’anneau quand on efface tout', async () => {
+    // La triple confirmation annonce qu'il ne reste rien.
+    await backupDaily(makeData({ household: { name: 'hier', members: [] } }), '2026-08-01')
+    const { store } = await freshStore()
+
+    await store.getState().resetAll()
+
+    await expect(listBackups()).resolves.toStrictEqual([])
   })
 
   it('relit sans erreur un document valide', async () => {

@@ -255,6 +255,30 @@ export const fr = {
     crashCaches: 'Réinstaller l’app',
     crashCachesHint:
       'Si l’écran revient cassé à chaque rechargement, c’est la version en cache qui est en cause. Ceci la retélécharge. Tes données ne sont pas touchées : elles ne vivent pas dans le cache.',
+
+    /* La section des réglages. Elle parle de **ce navigateur** — la place qu'il
+       prête, ce qu'il promet de garder — là où « Données » parle des fichiers
+       qui en sortent. */
+    title: 'Sur cet appareil',
+    persisted: 'Le navigateur s’est engagé à garder tes données.',
+    notPersisted:
+      'Le navigateur n’a rien promis : il peut effacer tes données s’il manque de place. Un export régulier reste la vraie protection.',
+    persistAsk: 'Demander à les garder',
+    persistGranted: 'C’est accordé.',
+    persistRefused: 'Le navigateur a refusé. Rien n’est perdu — exporte plus souvent.',
+    usage: '%s occupés sur %s disponibles.',
+    usageUnknown: 'Ce navigateur ne dit pas la place qu’il te laisse.',
+
+    backups: 'Sauvegardes locales',
+    backupsHint:
+      'Une sauvegarde par jour de saisie, les cinq dernières. Chacune porte l’état d’avant les modifications du jour. Elles vivent dans ce navigateur : elles ne remplacent pas un export.',
+    backupsEmpty: 'Aucune sauvegarde pour l’instant. La première arrive à la prochaine journée de saisie.',
+    backupContents: '%s entrées, %s récurrences',
+    backupRestore: 'Restaurer',
+    backupConfirm1:
+      'Cette sauvegarde remplacera intégralement les données actuelles — %s, du %s.',
+    backupConfirm2: 'Tout ce qui a été saisi depuis sera perdu.',
+    backupRestored: 'Sauvegarde restaurée',
   },
 
   settings: {

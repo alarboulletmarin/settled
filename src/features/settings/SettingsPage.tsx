@@ -10,6 +10,7 @@ import { Tile } from '@/ui/Tile'
 import { CategoriesSection } from './CategoriesSection'
 import { DataSection } from './DataSection'
 import { HouseholdSection } from './HouseholdSection'
+import { StorageSection } from './StorageSection'
 
 const THEME_OPTIONS = [
   { value: 'light' as const, label: fr.theme.light },
@@ -64,6 +65,10 @@ export function SettingsPage() {
         <HouseholdSection />
         <CategoriesSection />
         <ThemeSection />
+        {/* Avant les données : celle-ci dit où elles vivent, la suivante
+            comment les en faire sortir — et se termine sur un effacement, qui
+            clôt un sujet plutôt qu'il n'en ouvre un. */}
+        <StorageSection />
         <DataSection />
         <AboutSection />
       </div>
