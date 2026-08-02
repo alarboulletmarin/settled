@@ -71,6 +71,7 @@ export function MonthNav({ value, onChange, min, max, className }: MonthNavProps
     >
       <IconButton
         label={fr.a11y.previousMonth}
+        title={fr.a11y.previousMonthKey}
         disabled={!canGoBack}
         onClick={() => {
           onChange(previous)
@@ -86,6 +87,7 @@ export function MonthNav({ value, onChange, min, max, className }: MonthNavProps
 
       <IconButton
         label={fr.a11y.nextMonth}
+        title={fr.a11y.nextMonthKey}
         disabled={!canGoForward}
         onClick={() => {
           onChange(next)

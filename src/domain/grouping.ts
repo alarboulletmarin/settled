@@ -81,6 +81,52 @@ export type RecurrenceGroupBy = 'category' | 'member'
 /** Le minimum dont le regroupement a besoin : la règle et son coût au mois. */
 export type PricedRecurrence = { recurrence: Recurrence; monthly: Money | null }
 
+/**
+ * L'ordre à l'intérieur d'un groupe.
+ *
+ * L'ordre était toujours imposé — par prochaine échéance, ce qui répond à
+ * « qu'est-ce qui tombe bientôt ». C'est la bonne réponse à une question, mais
+ * pas à celle qu'on vient poser à cet écran-là : « qu'est-ce qui me coûte le
+ * plus » ne se lisait nulle part, alors que le coût mensuel est déjà affiché
+ * sur chaque ligne.
+ */
+export type RecurrenceSortBy = 'due' | 'amount'
+
+/**
+ * Range les lignes d'une liste déjà triée par prochaine échéance.
+ *
+ * En valeur absolue : la liste mêle ce qui rentre et ce qui sort, et le plus
+ * lourd est le plus lourd des deux côtés — un salaire n'est pas « moins » qu'un
+ * abonnement parce qu'il est de l'autre signe.
+ *
+ * Une variable non chiffrable passe à la fin plutôt qu'en tête ou parmi les
+ * petits montants : elle ne vaut pas zéro, on ne sait simplement pas ce qu'elle
+ * vaut, et la ranger comme un zéro serait affirmer le contraire. Les égalités se
+ * départagent sur le libellé puis l'identifiant, pour que deux lectures de la
+ * même liste donnent le même ordre.
+ */
+export function sortRecurrences<T extends PricedRecurrence>(
+  rows: readonly T[],
+  by: RecurrenceSortBy,
+): T[] {
+  if (by === 'due') return [...rows]
+  return [...rows].sort((a, b) => {
+    if (a.monthly === null || b.monthly === null) {
+      if (a.monthly === b.monthly) return tieBreak(a, b)
+      return a.monthly === null ? 1 : -1
+    }
+    const gap = Math.abs(b.monthly) - Math.abs(a.monthly)
+    return gap === 0 ? tieBreak(a, b) : gap
+  })
+}
+
+function tieBreak(a: PricedRecurrence, b: PricedRecurrence): number {
+  return (
+    a.recurrence.label.localeCompare(b.recurrence.label, 'fr') ||
+    a.recurrence.id.localeCompare(b.recurrence.id)
+  )
+}
+
 export type RecurrenceGroup<T> = {
   /** `'in'` / `'out'`, un identifiant de catégorie, ou un de membre. */
   key: string

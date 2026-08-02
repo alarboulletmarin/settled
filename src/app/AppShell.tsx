@@ -1,16 +1,31 @@
 import type { ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { useHouseholdName } from '@/store/selectors'
+import { useHotkeys } from '@/ui/useHotkeys'
 import { Sidebar, TabBar } from './Nav'
 import { StorageAlert } from './StorageAlert'
-import { isFocusScreen } from './routes'
+import { entryNewPath, isFocusScreen } from './routes'
 
 /** Coquille de l'app : navigation et gabarit. Aucune règle métier ici. */
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation()
   const householdName = useHouseholdName()
+  const navigate = useNavigate()
+  const focus = isFocusScreen(pathname)
+
+  /* Le geste le plus fréquent de l'app, sur une touche. Pas sur un écran de
+     saisie : « n » y partirait créer une dépense par-dessus celle qu'on est en
+     train d'écrire, et il contournerait la garde de brouillon, qui ne surveille
+     que les deux boutons de sortie. */
+  useHotkeys({
+    n: focus
+      ? undefined
+      : () => {
+          void navigate(entryNewPath({ direction: 'out' }))
+        },
+  })
 
   return (
     <>
@@ -34,7 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {/* Le rappel d'export, lui, ne s'intercale pas au-dessus d'une saisie
               en cours ni d'une fiche : ces écrans-là n'ont qu'une chose à
               montrer, et un export peut attendre la fin de la phrase. */}
-          {!isFocusScreen(pathname) && <ExportReminder />}
+          {!focus && <ExportReminder />}
           {children}
         </main>
       </div>

@@ -834,6 +834,12 @@ export const fr = {
     groupBy: 'Regrouper par',
     byCategory: 'Catégorie',
     byMember: 'Personne',
+    /* L'ordre était toujours imposé par le domaine — par prochaine échéance,
+       qui répond à « qu'est-ce qui tombe bientôt ». C'est cet écran qui porte
+       l'autre question : « qu'est-ce qui me coûte le plus ». */
+    sortBy: 'Trier par',
+    byDue: 'Échéance',
+    byAmount: 'Montant',
     /* Le sens ne regroupe pas, il filtre — la règle qu'applique déjà la liste
        du mois. En axe, il rendait deux blocs dont le total en tête de page
        donne déjà les chiffres ; en filtre, il se combine aux deux axes qui
@@ -1386,6 +1392,14 @@ export const fr = {
     ringLabel: 'Anneau de progression',
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
+    /* Un raccourci que personne ne découvre ne sert personne. Il se dit en
+       infobulle sur le geste qu'il double — c'est-à-dire au survol, donc
+       exactement là où un clavier est branché. Le nom accessible, lui, ne le
+       porte pas : « flèche gauche » annoncé par un lecteur d'écran décrit une
+       touche, pas ce que le bouton fait. */
+    previousMonthKey: 'Mois précédent (←)',
+    nextMonthKey: 'Mois suivant (→)',
+    newEntryKey: 'Ajouter une dépense (n)',
   },
 } as const
 

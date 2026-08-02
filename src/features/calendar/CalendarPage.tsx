@@ -13,6 +13,7 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { Close, Plus } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
 import { Tile } from '@/ui/Tile'
+import { useHotkeys } from '@/ui/useHotkeys'
 import { CalendarGrid } from './CalendarGrid'
 import { useCalendarDays } from './useCalendarDays'
 
@@ -115,6 +116,18 @@ export function CalendarPage() {
   const toggle = (date: string): void => {
     setSelected((current) => (current === date ? null : date))
   }
+
+  /* Le panneau du jour n'est pas une feuille — il s'ouvre sous la grille, sans
+     couche par-dessus —, donc rien ne lui donnait la touche que `<dialog>`
+     offre gratuitement à toutes les autres. C'est pourtant le même geste :
+     refermer ce qu'on vient d'ouvrir. Le raccourci ne fait rien quand aucun
+     jour n'est ouvert, plutôt que d'être posé sous condition — un écouteur qui
+     apparaît et disparaît sous les doigts se comporte moins bien. */
+  useHotkeys({
+    Escape: () => {
+      setSelected(null)
+    },
+  })
 
   return (
     <>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { eur, makeEntry, makeRecurrence } from './fixtures'
-import { NO_MEMBER, groupEntries, groupRecurrences } from './grouping'
+import { NO_MEMBER, groupEntries, groupRecurrences, sortRecurrences } from './grouping'
 import type { Recurrence } from './types'
 
 const july = [
@@ -104,6 +104,59 @@ describe('regroupement des récurrences', () => {
   it('garde l’ordre reçu à l’intérieur d’un groupe', () => {
     const logement = groupRecurrences(rows, 'category').find((g) => g.key === 'logement')
     expect(logement?.rows.map((r) => r.recurrence.id)).toEqual(['loyer', 'elec'])
+  })
+})
+
+describe('tri des récurrences', () => {
+  const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 5 }
+  const priced = (over: Partial<Recurrence> & { id: string }, monthly: number | null) => ({
+    recurrence: makeRecurrence({ period: MONTHLY, ...over }),
+    monthly: monthly === null ? null : eur(monthly),
+  })
+
+  const rows = [
+    priced({ id: 'netflix', label: 'Netflix' }, 1_399),
+    priced({ id: 'salaire', label: 'Salaire', direction: 'in' }, 250_000),
+    priced({ id: 'loyer', label: 'Loyer' }, 95_000),
+  ]
+
+  it('laisse l’ordre reçu — celui de la prochaine échéance — sur « échéance »', () => {
+    expect(sortRecurrences(rows, 'due').map((r) => r.recurrence.id)).toEqual([
+      'netflix',
+      'salaire',
+      'loyer',
+    ])
+  })
+
+  it('range le plus lourd en tête, quel que soit le sens', () => {
+    /* Un salaire n'est pas « moins » qu'un abonnement parce qu'il est de
+       l'autre signe : la liste mêle les deux, le poids se lit en absolu. */
+    expect(sortRecurrences(rows, 'amount').map((r) => r.recurrence.id)).toEqual([
+      'salaire',
+      'loyer',
+      'netflix',
+    ])
+  })
+
+  it('pousse en fin de liste ce qu’on ne sait pas chiffrer', () => {
+    // Une variable non chiffrable ne vaut pas zéro : on ne sait pas ce qu'elle
+    // vaut, et la ranger parmi les petits montants l'affirmerait.
+    const withUnknown = [...rows, priced({ id: 'eau', label: 'Eau' }, null)]
+    expect(sortRecurrences(withUnknown, 'amount').at(-1)?.recurrence.id).toBe('eau')
+  })
+
+  it('départage deux montants égaux de façon stable', () => {
+    const tied = [
+      priced({ id: 'b', label: 'Zébu' }, 1_000),
+      priced({ id: 'a', label: 'Abeille' }, 1_000),
+    ]
+    expect(sortRecurrences(tied, 'amount').map((r) => r.recurrence.id)).toEqual(['a', 'b'])
+  })
+
+  it('ne modifie pas la liste qu’on lui donne', () => {
+    const given = [...rows]
+    sortRecurrences(given, 'amount')
+    expect(given.map((r) => r.recurrence.id)).toEqual(['netflix', 'salaire', 'loyer'])
   })
 })
 

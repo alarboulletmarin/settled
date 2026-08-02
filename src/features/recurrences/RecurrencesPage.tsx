@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ADVANCE_NEW_PATH, CREDITS_PATH, RECURRENCE_NEW_PATH, recurrencePath } from '@/app/routes'
-import { NO_MEMBER, type RecurrenceGroupBy, groupRecurrences } from '@/domain/grouping'
+import {
+  NO_MEMBER,
+  type RecurrenceGroupBy,
+  type RecurrenceSortBy,
+  groupRecurrences,
+  sortRecurrences,
+} from '@/domain/grouping'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
 import { removeAdvance, undoable } from '@/store/actions'
@@ -30,6 +36,15 @@ import { RecurrenceRow } from './RecurrenceRow'
 const AXES = [
   { value: 'category' as const, label: fr.recurrences.byCategory },
   { value: 'member' as const, label: fr.recurrences.byMember },
+]
+
+/* L'ordre était toujours celui du domaine — par prochaine échéance, qui répond
+   à « qu'est-ce qui tombe bientôt ». C'est cet écran-là qui porte l'autre
+   question, « qu'est-ce qui me coûte le plus », et son chiffre est déjà sur
+   chaque ligne. */
+const SORTS = [
+  { value: 'due' as const, label: fr.recurrences.byDue },
+  { value: 'amount' as const, label: fr.recurrences.byAmount },
 ]
 
 /** Le sens que la liste montre, ou `null` pour les deux. */
@@ -120,12 +135,18 @@ function GroupedList({
   const categories = useCategoryMap()
   const members = useMemberMap()
   const [by, setBy] = useState<RecurrenceGroupBy>('category')
+  const [sort, setSort] = useState<RecurrenceSortBy>('due')
 
   const shown = useMemo(
     () => (flow === null ? rows : rows.filter((row) => row.recurrence.direction === flow)),
     [rows, flow],
   )
-  const groups = useMemo(() => groupRecurrences(shown, by), [shown, by])
+  /* Le tri passe avant le regroupement, et non après : `groupRecurrences` garde
+     l'ordre qu'on lui donne à l'intérieur de chaque groupe. L'ordre des groupes
+     entre eux, lui, ne bouge pas — il suit déjà le poids, ce que le tri par
+     montant demande. */
+  const sorted = useMemo(() => sortRecurrences(shown, sort), [shown, sort])
+  const groups = useMemo(() => groupRecurrences(sorted, by), [sorted, by])
   const keys = useMemo(() => groups.map((g) => g.key), [groups])
   const disclosure = useDisclosureGroup(keys, OPEN_BY_DEFAULT[by])
 
@@ -150,6 +171,8 @@ function GroupedList({
           {disclosure.anyOpen ? fr.recurrences.collapseAll : fr.recurrences.expandAll}
         </Button>
       </div>
+
+      <Segmented options={SORTS} value={sort} onChange={setSort} label={fr.recurrences.sortBy} />
 
       <div role="group" aria-label={fr.recurrences.show} className="flex flex-wrap gap-2">
         {FLOWS.map((option) => (

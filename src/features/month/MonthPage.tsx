@@ -53,6 +53,7 @@ export function MonthPage() {
       {!isEmpty && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <Button
+            title={fr.a11y.newEntryKey}
             onClick={() => {
               create('out')
             }}
