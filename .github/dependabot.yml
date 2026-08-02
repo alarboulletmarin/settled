@@ -20,6 +20,17 @@ updates:
         update-types: [minor, patch]
     # Les majeures restent individuelles : elles se lisent une par une, avec
     # leur note de version.
+    ignore:
+      # TypeScript 7 est la réécriture native : le paquet npm n'expose plus
+      # l'API du compilateur, seulement `./unstable/*`. typescript-eslint le
+      # détecte au chargement et refuse de démarrer — la config repose sur
+      # `recommendedTypeChecked`, donc c'est tout le lint qui tombe. Forcer la
+      # résolution ne sert à rien : avec `overrides`, l'installation passe, le
+      # typecheck et les 507 tests passent aussi, et `npm run lint` meurt seul.
+      # La majeure se reprend quand typescript-eslint sait lire TS 7 :
+      # https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
 
   # Les actions GitHub utilisées par la CI.
   - package-ecosystem: github-actions
