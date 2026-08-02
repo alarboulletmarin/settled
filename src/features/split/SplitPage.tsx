@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { MonthHeader } from '@/app/MonthHeader'
 import { RECURRENCES_PATH, RECURRENCE_NEW_PATH } from '@/app/routes'
 import type { YearMonth } from '@/domain/date'
 import { sum } from '@/domain/money'
@@ -195,6 +196,11 @@ export function SplitPage() {
     return (
       <>
         <PageTitle title={fr.split.title} />
+        {/* Le mois compte jusque dans cette impasse : les revenus se lisent sur
+            le mois affiché, et une récurrence qui démarre le mois prochain
+            laisse celui-ci sans répartition. Sans navigation, il fallait
+            repasser par l'écran du mois pour s'en apercevoir. */}
+        <MonthHeader withMemberFilter={false} />
         <EmptyState
           message={missing.message}
           actionLabel={missing.actionLabel}
@@ -221,6 +227,13 @@ export function SplitPage() {
   return (
     <>
       <PageTitle title={fr.split.title} />
+      {/* L'écran lit `ym` du store — les charges communes, les revenus et le
+          report du mois précédent en dépendent tous — et n'offrait aucun moyen
+          d'en changer : vérifier la répartition de juillet imposait de repasser
+          par l'écran du mois. Sans filtre par membre : cet écran montre les
+          parts de tout le monde, et n'en garder qu'une le viderait de ce qu'il
+          existe pour dire. */}
+      <MonthHeader withMemberFilter={false} />
 
       <div className="flex max-w-3xl flex-col gap-4">
         <p className="t-label">{fr.split.subtitle}</p>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useIsCommonFilter, useMonthConfirmed } from '@/store/selectors'
+import { useIsCommonFilter, useIsCurrentMonth, useMonthConfirmed } from '@/store/selectors'
 import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile } from './BreakdownTile'
@@ -48,6 +48,7 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
   const [metric, setMetric] = useState<Metric | null>(null)
   const confirmed = useMonthConfirmed()
   const common = useIsCommonFilter()
+  const thisMonth = useIsCurrentMonth()
 
   const flow = (direction: 'in' | 'out'): { onShow?: ShowFlow } =>
     onShowFlow !== undefined && confirmed.some((entry) => entry.direction === direction)
@@ -75,7 +76,14 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
         <SettlementTile />
         <BreakdownTile />
         {!common && <ForecastTile onExplain={setMetric} />}
-        {!common && <RemainingTile onExplain={setMetric} />}
+        {/* « Reste à vivre » se lit depuis aujourd'hui, pas depuis le mois
+            affiché : c'est le prévisionnel arrêté à la prochaine rentrée
+            d'argent. Sur un mois passé l'horizon est déjà derrière, sur un
+            mois à venir il est encore devant — le chiffre se calcule dans les
+            deux cas et ne veut rien dire ni dans l'un ni dans l'autre. Il
+            s'efface donc, comme les cinq tuiles que le commun retire : une
+            lecture qui n'a pas de réponse vaut mieux absente que fausse. */}
+        {!common && thisMonth && <RemainingTile onExplain={setMetric} />}
         {!common && <SavingTile />}
         <SplitTile />
         <UpcomingTile />

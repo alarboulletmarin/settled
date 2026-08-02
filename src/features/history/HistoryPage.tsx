@@ -1,7 +1,10 @@
+import { useNavigate } from 'react-router-dom'
 import { MonthlyBars } from '@/charts/MonthlyBars'
+import { entryNewPath } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
-import { useCurrencyCode, useCurrentYm, useTrailingMonths } from '@/store/selectors'
+import { useCurrencyCode, useCurrentYm, useEntries, useTrailingMonths } from '@/store/selectors'
+import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { TrailingIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
@@ -58,6 +61,30 @@ function Trailing() {
 }
 
 export function HistoryPage() {
+  const entries = useEntries()
+  const navigate = useNavigate()
+
+  /* Aucune entrée du tout, et non « pas assez pour cette tuile-ci » : c'est le
+     seul cas où les trois n'ont rien à dire à la fois, donc le seul où les
+     remplacer ne cache rien. Dès la première dépense, chacune reprend sa place
+     et dit elle-même ce qui lui manque encore. */
+  if (entries.length === 0) {
+    return (
+      <>
+        <PageTitle title={fr.history.title} />
+        <EmptyState
+          message={fr.history.empty}
+          actionLabel={fr.entry.addOut}
+          onAction={() => {
+            void navigate(entryNewPath({ direction: 'out' }))
+          }}
+        >
+          <p className="t-label max-w-sm">{fr.history.emptyHint}</p>
+        </EmptyState>
+      </>
+    )
+  }
+
   return (
     <>
       <PageTitle title={fr.history.title} />

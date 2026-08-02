@@ -7,7 +7,7 @@
  * ==========================================================================*/
 
 import { useMemo } from 'react'
-import { type ISODate, type YearMonth, addMonthsToYm, endOfMonth, today } from '@/domain/date'
+import { type ISODate, type YearMonth, addMonthsToYm, currentYm, endOfMonth, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
 import { coveredMonths } from '@/domain/month'
 import { type Money, sum } from '@/domain/money'
@@ -83,6 +83,18 @@ export const useMembers = (): Member[] => useStore((s) => s.data.household.membe
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
 export const useMonthFilter = (): MonthFilter => useStore((s) => s.filter)
+
+/**
+ * Le mois affiché est-il celui qu'on vit ?
+ *
+ * Tout ce qui se lit depuis *aujourd'hui* en dépend. « Reste à vivre » arrête
+ * le prévisionnel à la prochaine rentrée d'argent à partir du jour où l'on
+ * regarde : sur un mois passé, l'horizon est derrière et le chiffre vaut le
+ * prévisionnel entier ; sur un mois à venir, il est avant, et il vaut zéro plus
+ * ce qui tombe d'ici là. Dans les deux cas un nombre s'affiche, et il ne
+ * répond pas à la question posée.
+ */
+export const useIsCurrentMonth = (): boolean => useStore((s) => s.ym === currentYm())
 
 /**
  * Le membre filtré, s'il y en a un.

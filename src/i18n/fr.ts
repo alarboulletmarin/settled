@@ -489,6 +489,14 @@ export const fr = {
     srTrailing: 'Solde mensuel : %s',
     srYears: 'Cumul %s contre %s : %s',
     noData: 'Aucune donnée sur cette période.',
+    /* Sur un foyer neuf, les trois tuiles empilaient trois phrases d'excuse —
+       pas assez pour une courbe, pas deux mois à comparer, pas d'année
+       complète. Trois façons de dire la même chose, et aucune ne disait quoi
+       faire. Un seul état vide les remplace tant que rien n'a été saisi, comme
+       sur les autres écrans. */
+    empty: 'L’historique se remplit tout seul, à mesure que les mois passent.',
+    emptyHint:
+      'Il n’y a encore rien à comparer : la courbe, l’écart entre deux mois et le cumul annuel arrivent avec les premières entrées.',
   },
 
   dashboard: {
