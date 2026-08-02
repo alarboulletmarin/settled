@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   eur,
+  makeAdvance,
   makeCategory,
   makeData,
   makeDebt,
@@ -16,6 +17,7 @@ import {
   confirmEntries,
   confirmEntry,
   confirmOccurrence,
+  createAdvance,
   openMonth,
   removeMember,
   removeRecurrence,
@@ -67,6 +69,42 @@ describe('foyer et membres', () => {
     expect(after.recurrences[0]).not.toHaveProperty('memberId')
   })
 
+  /* `Advance.memberId` n'est pas facultatif : faute de pouvoir la détacher, on
+     la retirait de fait sans le faire — l'avance gardait l'identifiant d'un
+     membre disparu, et l'écran d'épargne cherchait un porteur introuvable. */
+  it('emporte les avances du membre retiré, qui ne peuvent être à personne', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [makeMember({ id: 'm1' }), makeMember({ id: 'm2' })] },
+      advances: [
+        makeAdvance({ id: 'av1', memberId: 'm1' }),
+        makeAdvance({ id: 'av2', memberId: 'm2' }),
+      ],
+    })
+    const after = removeMember(before, 'm1')
+    expect(after.advances.map((a) => a.id)).toEqual(['av2'])
+  })
+
+  /* La récurrence qui reconstitue le livret reste, comme après `removeAdvance` :
+     ce qui est déjà revenu y est revenu. Elle repasse simplement au foyer. */
+  it('garde la récurrence de l’avance, rendue au foyer', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [makeMember({ id: 'm1' })] },
+      advances: [makeAdvance({ id: 'av1', memberId: 'm1', recurrenceId: 'r1' })],
+      recurrences: [
+        makeRecurrence({
+          id: 'r1',
+          memberId: 'm1',
+          period: { unit: 'month', every: 1, anchorDay: 15 },
+        }),
+      ],
+      entries: [makeEntry({ id: 'e1', recurrenceId: 'r1', date: '2026-02-15', memberId: 'm1' })],
+    })
+    const after = removeMember(before, 'm1')
+    expect(after.recurrences).toHaveLength(1)
+    expect(after.recurrences[0]).not.toHaveProperty('memberId')
+    expect(after.entries).toHaveLength(1)
+  })
+
   it('renomme un membre sans toucher aux autres', () => {
     const before = makeData({
       household: { name: 'Maison', members: [makeMember({ id: 'm1' }), makeMember({ id: 'm2' })] },
@@ -116,6 +154,47 @@ describe('échéance payée d’avance', () => {
   it('ne fabrique rien pour une récurrence inconnue', () => {
     const before = makeData({ recurrences: [monthly] })
     expect(confirmOccurrence(before, 'inconnue', '2026-07-31', sequentialIds())).toBe(before)
+  })
+})
+
+describe('poser une avance', () => {
+  const input = {
+    label: 'Assurance auto',
+    categoryId: 'car-insurance',
+    savingCategoryId: 'livret',
+    memberId: 'm1',
+    amount: eur(60000),
+    paidOn: '2026-01-15',
+    from: '2026-01',
+    to: '2026-12',
+  }
+
+  it('pose la reprise, la récurrence qui la rend, et l’avance', () => {
+    const { data, advance } = createAdvance(makeData(), input, sequentialIds(), '2026-01-15')
+    expect(data.advances).toEqual([advance])
+    expect(data.recurrences).toHaveLength(1)
+    // La reprise part confirmée : l'argent est déjà sorti du livret.
+    expect(data.entries.some((e) => e.direction === 'in' && e.status === 'confirmed')).toBe(true)
+  })
+
+  /* Une période à l'envers pose une récurrence qui s'arrête avant sa première
+     mensualité : rien ne revient jamais sur le livret, et le reste dû ne bouge
+     plus d'un centime sans que rien ne dise pourquoi. Le formulaire le
+     refusait déjà, mais il n'est plus le seul appelant. */
+  it('refuse une période qui se termine avant de commencer', () => {
+    expect(() =>
+      createAdvance(makeData(), { ...input, from: '2026-12', to: '2026-01' }, sequentialIds()),
+    ).toThrow(RangeError)
+  })
+
+  it('accepte une avance d’un seul mois, bornes confondues', () => {
+    const { advance } = createAdvance(
+      makeData(),
+      { ...input, from: '2026-03', to: '2026-03' },
+      sequentialIds(),
+      '2026-03-15',
+    )
+    expect(advance.to).toBe('2026-03')
   })
 })
 

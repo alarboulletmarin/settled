@@ -139,6 +139,12 @@ function advance(raw: unknown, index: number): Advance | null {
   const note = optionalStr(raw['note'])
   const paidOn = isoDate(raw['paidOn'], today())
   const from = yearMonth(raw['from'], ymOf(paidOn))
+  const to = yearMonth(raw['to'], from)
+  /* Une période qui se termine avant de commencer n'est pas une période : la
+     récurrence qui reconstitue le livret s'arrête avant sa première mensualité,
+     donc rien ne revient jamais et `remaining` reste éternellement plein. Le
+     formulaire l'interdit déjà ; un document venu d'ailleurs, non. */
+  if (to < from) return null
   return {
     id: str(raw['id'], `advance-${String(index)}`),
     label: str(raw['label'], '—'),
@@ -147,7 +153,7 @@ function advance(raw: unknown, index: number): Advance | null {
     amount: raw['amount'],
     paidOn,
     from,
-    to: yearMonth(raw['to'], from),
+    to,
     ...(recurrenceId === undefined ? {} : { recurrenceId }),
     ...(note === undefined ? {} : { note }),
   }
@@ -219,9 +225,17 @@ function entry(raw: unknown, index: number): Entry | null {
   }
 }
 
+/**
+ * Un mois ouvert dont on ne sait pas lire le mois est écarté.
+ *
+ * La forme seule — quatre chiffres, un tiret, deux chiffres — laissait passer
+ * `"2026-13"`, que `startOfMonth` puis `parseISO` traversent ensuite sans
+ * bruit : le mois s'affichait sans nom. `isValidYm` borne le mois, et c'est le
+ * même contrôle que celui des avances, deux fonctions plus haut.
+ */
 function monthState(raw: unknown): MonthState | null {
   if (!isRecord(raw)) return null
-  if (typeof raw['ym'] !== 'string' || !/^\d{4}-\d{2}$/.test(raw['ym'])) return null
+  if (typeof raw['ym'] !== 'string' || !isValidYm(raw['ym'])) return null
   return {
     ym: raw['ym'],
     openedAt: isoDate(raw['openedAt'], today()),

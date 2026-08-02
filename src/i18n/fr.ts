@@ -300,6 +300,14 @@ export const fr = {
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     memberRemoveConfirm:
       'Ses entrées et ses récurrences repassent au foyer : rien n’est effacé. Retirer %s ?',
+    /* Une avance est toujours à quelqu'un : elle ne peut pas repasser au foyer
+       comme le reste, donc elle part. C'est la seule chose que ce geste efface,
+       et la question ne peut pas la taire — les mensualités déjà revenues sur
+       le livret, elles, restent. */
+    memberRemoveConfirmAdvanceOne:
+      'Ses entrées et ses récurrences repassent au foyer. Son avance, elle, ne peut appartenir à personne : elle est supprimée, ses mensualités déjà versées restent. Retirer %s ?',
+    memberRemoveConfirmAdvances:
+      'Ses entrées et ses récurrences repassent au foyer. Ses %s avances, elles, ne peuvent appartenir à personne : elles sont supprimées, leurs mensualités déjà versées restent. Retirer %s ?',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
     /* Le revenu ne se saisit pas ici : il se lit sur les récurrences de
        ressources du membre. Le stocker à côté en ferait une seconde vérité.

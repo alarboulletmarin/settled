@@ -1,7 +1,17 @@
 /** Fabriques de test. Aucun module d'application ne dépend de ce fichier. */
 
 import { type Money, money } from './money'
-import type { Category, Data, Debt, Entry, Family, Member, Period, Recurrence } from './types'
+import type {
+  Advance,
+  Category,
+  Data,
+  Debt,
+  Entry,
+  Family,
+  Member,
+  Period,
+  Recurrence,
+} from './types'
 
 export function makeMember(over: Partial<Member> & { id: string }): Member {
   return { name: 'Membre', color: 'var(--member-1)', ...over }
@@ -56,6 +66,19 @@ export function makeDebt(over: Partial<Debt> & { id: string }): Debt {
     principal: money(1200000),
     startedOn: '2026-01-05',
     endsOn: '2028-12-05',
+    ...over,
+  }
+}
+
+export function makeAdvance(over: Partial<Advance> & { id: string }): Advance {
+  return {
+    label: 'Assurance auto',
+    categoryId: 'car-insurance',
+    memberId: 'm1',
+    amount: money(60000),
+    paidOn: '2026-01-15',
+    from: '2026-01',
+    to: '2026-12',
     ...over,
   }
 }

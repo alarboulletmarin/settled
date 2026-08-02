@@ -41,7 +41,22 @@ export function renameMember(data: Data, id: string, name: string): Data {
   }
 }
 
-/** Retirer un membre libère ses entrées et récurrences plutôt que de les perdre. */
+/**
+ * Retirer un membre libère ses entrées et récurrences plutôt que de les perdre.
+ *
+ * Ses **avances**, elles, partent avec lui, et c'est la seule exception :
+ * `Advance.memberId` n'est pas facultatif — une épargne est toujours à
+ * quelqu'un, et une avance que personne ne porte ne se reconstitue sur le
+ * livret de personne. Faute de pouvoir la détacher, on la retirait de fait sans
+ * le faire : l'avance gardait l'identifiant d'un membre disparu, et l'écran
+ * d'épargne cherchait un porteur qu'il ne trouvait plus.
+ *
+ * Sa récurrence reste, comme après `removeAdvance` : les mensualités déjà
+ * revenues sur le livret y sont revenues, et cesser de suivre ce qu'on se doit
+ * ne réécrit pas ce qui est sorti du compte. Elle est simplement rendue au
+ * foyer, comme toutes les autres. La confirmation le dit avant, parce que c'est
+ * la seule chose que ce geste efface.
+ */
 export function removeMember(data: Data, id: string): Data {
   const strip = <T extends { memberId?: string }>(item: T): T => {
     if (item.memberId !== id) return item
@@ -53,6 +68,7 @@ export function removeMember(data: Data, id: string): Data {
     household: { ...data.household, members: data.household.members.filter((m) => m.id !== id) },
     recurrences: data.recurrences.map(strip),
     entries: data.entries.map(strip),
+    advances: data.advances.filter((a) => a.memberId !== id),
   }
 }
 
@@ -162,6 +178,13 @@ export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId'> & {
  * La règle vit ici, dans le domaine, et non dans l'action qui l'appelait :
  * l'écran de saisie n'est plus le seul à poser des avances, et deux copies de
  * cette composition finiraient par ne plus se répondre.
+ *
+ * Et c'est bien pour ça que la période se contrôle ici : le formulaire le
+ * faisait déjà, mais il n'est plus le seul appelant. Une période à l'envers
+ * pose une récurrence qui se termine avant sa première mensualité — l'avance
+ * ne se reconstitue alors jamais, et son reste dû ne bouge plus d'un centime
+ * sans que rien à l'écran n'explique pourquoi. On lève plutôt qu'on corrige :
+ * il n'existe aucune façon de deviner laquelle des deux bornes est la bonne.
  */
 export function createAdvance(
   data: Data,
@@ -170,6 +193,11 @@ export function createAdvance(
   on: ISODate = today(),
 ): { data: Data; advance: Advance } {
   const { savingCategoryId, shared, ...rest } = input
+  if (rest.to < rest.from) {
+    throw new RangeError(
+      `Une avance ne peut pas se terminer avant de commencer : ${rest.from} → ${rest.to}`,
+    )
+  }
   const recurrence: Recurrence = {
     id: makeId(),
     label: rest.label,

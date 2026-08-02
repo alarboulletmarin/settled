@@ -139,6 +139,25 @@ export function shouldRemindExport(
   return diffDays(last, now) > EXPORT_REMINDER_DAYS
 }
 
+/**
+ * Oublie tout ce que cet appareil savait de ses sauvegardes.
+ *
+ * Les deux dates vivent hors du document, et c'est justement pour ça qu'elles
+ * survivaient à `resetAll` : effacer IndexedDB ne les touche pas. L'app
+ * repartait donc de zéro en annonçant « dernier export le 12 juin » — d'un
+ * document qui n'existe plus, et dont le fichier ne sauvegarde plus rien de ce
+ * qu'on saisira ensuite. Le refus du rappel part avec, pour la même raison : il
+ * portait sur des données qui ne sont plus là.
+ */
+export function forgetExportMarks(): void {
+  try {
+    localStorage.removeItem(LAST_EXPORT_KEY)
+    localStorage.removeItem(REMINDER_DISMISSED_KEY)
+  } catch {
+    // Pas de miroir, rien à oublier — et rien à en dire.
+  }
+}
+
 export function markExported(on: ISODate = today()): void {
   try {
     localStorage.setItem(LAST_EXPORT_KEY, on)

@@ -10,6 +10,7 @@ import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { addMember, removeMember, renameMember, setHouseholdName } from '@/store/actions'
 import {
+  useAdvances,
   useHouseholdName,
   useMemberIncomes,
   useMemberSharesOfIncome,
@@ -27,16 +28,34 @@ import { useCurrency } from '@/ui/currency'
 import { Link } from 'react-router-dom'
 import { MemberNameInput } from './MemberNameInput'
 
+/**
+ * Ce que le retrait d'un membre annonce, selon ce qu'il emporte vraiment.
+ *
+ * Tout ce qu'il libère est réversible — une entrée rendue au foyer se
+ * réattribue —, sauf ses avances : `Advance.memberId` n'est pas facultatif, une
+ * épargne est toujours à quelqu'un. Une question qui annonce « rien n'est
+ * effacé » ne peut donc pas les taire.
+ */
+function removeQuestion(name: string, advances: number): string {
+  if (advances === 0) return tpl(fr.settings.memberRemoveConfirm, name)
+  if (advances === 1) return tpl(fr.settings.memberRemoveConfirmAdvanceOne, name)
+  return tpl(fr.settings.memberRemoveConfirmAdvances, advances, name)
+}
+
 export function HouseholdSection() {
   const name = useHouseholdName()
   const members = useMembers()
   const incomes = useMemberIncomes()
   const unassigned = useUnassignedIncomes()
   const shares = useMemberSharesOfIncome()
+  const advances = useAdvances()
   const currency = useCurrency()
   const [newMember, setNewMember] = useState('')
   const [removing, setRemoving] = useState<Member | null>(null)
   const trimmed = newMember.trim()
+
+  const removedAdvances =
+    removing === null ? 0 : advances.filter((a) => a.memberId === removing.id).length
 
   const incomeOf = new Map(incomes.map((i) => [i.memberId, i]))
 
@@ -206,7 +225,7 @@ export function HouseholdSection() {
         title={tpl(fr.settings.memberRemove, removing?.name ?? '')}
         steps={[
           {
-            question: tpl(fr.settings.memberRemoveConfirm, removing?.name ?? ''),
+            question: removeQuestion(removing?.name ?? '', removedAdvances),
             action: fr.common.delete,
           },
         ]}
