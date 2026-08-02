@@ -3,13 +3,20 @@ import { MonthlyBars } from '@/charts/MonthlyBars'
 import { entryNewPath } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
-import { useCurrencyCode, useCurrentYm, useEntries, useTrailingMonths } from '@/store/selectors'
+import {
+  useCurrencyCode,
+  useCurrentYm,
+  useEntries,
+  useRecurrences,
+  useTrailingMonths,
+} from '@/store/selectors'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { TrailingIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { MonthCompare } from './MonthCompare'
+import { SearchSection } from './SearchSection'
 import { YearCompare } from './YearCompare'
 
 const LEGEND = [
@@ -62,13 +69,15 @@ function Trailing() {
 
 export function HistoryPage() {
   const entries = useEntries()
+  const recurrences = useRecurrences()
   const navigate = useNavigate()
 
-  /* Aucune entrée du tout, et non « pas assez pour cette tuile-ci » : c'est le
-     seul cas où les trois n'ont rien à dire à la fois, donc le seul où les
-     remplacer ne cache rien. Dès la première dépense, chacune reprend sa place
-     et dit elle-même ce qui lui manque encore. */
-  if (entries.length === 0) {
+  /* Rien du tout, et non « pas assez pour cette tuile-ci » : c'est le seul cas
+     où les quatre n'ont rien à dire à la fois, donc le seul où les remplacer ne
+     cache rien. Les récurrences comptent parce que la recherche les trouve —
+     un foyer qui n'a posé que des règles arrêtées n'a aucune entrée, et il
+     aurait pourtant quelque chose à chercher. */
+  if (entries.length === 0 && recurrences.length === 0) {
     return (
       <>
         <PageTitle title={fr.history.title} />
@@ -89,6 +98,7 @@ export function HistoryPage() {
     <>
       <PageTitle title={fr.history.title} />
       <div className="flex max-w-3xl flex-col gap-4">
+        <SearchSection />
         <Trailing />
         <MonthCompare />
         <YearCompare />

@@ -376,6 +376,11 @@ export const fr = {
     categoryArchived: 'Archivées',
     categoriesHint:
       'Une catégorie n’est jamais effacée : elle est archivée, et les entrées passées la gardent.',
+    /* Quarante-six catégories sous onze familles repliées : retrouver
+       « Carburant » demandait de deviner qu'elle est rangée sous Transport. */
+    categorySearch: 'Rechercher une catégorie',
+    categorySearchPlaceholder: 'Carburant',
+    categorySearchEmpty: 'Aucune catégorie ne correspond à « %s ».',
 
     data: 'Données',
     export: 'Exporter mes données',
@@ -512,6 +517,18 @@ export const fr = {
        complète. Trois façons de dire la même chose, et aucune ne disait quoi
        faire. Un seul état vide les remplace tant que rien n'a été saisi, comme
        sur les autres écrans. */
+    /* Retrouver une ligne se faisait mois par mois, ou pas du tout. La
+       recherche vit ici et non derrière un sixième onglet — la barre en porte
+       cinq et n'en tient pas six à 320px — et c'est de toute façon l'écran de
+       la question : « ce prélèvement de mars » est un regard en arrière. */
+    search: 'Retrouver une ligne',
+    searchLabel: 'Rechercher par libellé',
+    searchPlaceholder: 'EDF',
+    searchHint: 'Tous mois confondus, récurrences comprises.',
+    searchEntries: 'Entrées',
+    searchRecurrences: 'Récurrences',
+    searchEmpty: 'Aucune ligne ne correspond à « %s ».',
+    searchMore: '… et %s de plus. Précise la recherche pour les voir.',
     empty: 'L’historique se remplit tout seul, à mesure que les mois passent.',
     emptyHint:
       'Il n’y a encore rien à comparer : la courbe, l’écart entre deux mois et le cumul annuel arrivent avec les premières entrées.',

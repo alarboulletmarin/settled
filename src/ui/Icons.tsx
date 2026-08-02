@@ -39,6 +39,7 @@ import { ListBullets } from '@phosphor-icons/react/dist/csr/ListBullets'
 import { Palette } from '@phosphor-icons/react/dist/csr/Palette'
 import { PiggyBank } from '@phosphor-icons/react/dist/csr/PiggyBank'
 import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
+import { MagnifyingGlass } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { Receipt } from '@phosphor-icons/react/dist/csr/Receipt'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
@@ -117,6 +118,7 @@ export const ToConfirmIcon = adapt(CheckCircle)
 export const EntriesIcon = adapt(ListBullets)
 export const HouseholdIcon = adapt(House)
 export const CategoriesIcon = adapt(Tag)
+export const SearchIcon = adapt(MagnifyingGlass)
 export const ThemeIcon = adapt(Palette)
 export const DataIcon = adapt(Database)
 /* Le coffre, et non une seconde base : « Données » parle des fichiers qui

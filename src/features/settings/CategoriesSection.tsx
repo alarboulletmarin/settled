@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { isSearchable, matchesText, normalizeText } from '@/domain/search'
 import type { Category, CategoryKind } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
@@ -226,32 +227,80 @@ export function CategoriesSection() {
   const families = useFamilies()
   const keys = useMemo(() => groups.map((g) => g.family.id), [groups])
   const disclosure = useDisclosureGroup(keys, false)
+  const [query, setQuery] = useState('')
+  const searching = isSearchable(query)
+
+  /* Une famille apparaît si son nom apparie — elle garde alors toutes ses
+     catégories, c'est elle qu'on cherchait — ou si l'une de ses catégories
+     apparie, et elle se réduit à celles-là. */
+  const shown = useMemo(() => {
+    if (!searching) return groups
+    const needle = normalizeText(query)
+    return groups
+      .map((group) =>
+        matchesText(group.family.label, needle)
+          ? group
+          : { ...group, categories: group.categories.filter((c) => matchesText(c.label, needle)) },
+      )
+      .filter((group) => group.categories.length > 0)
+  }, [groups, query, searching])
 
   return (
     <Tile className="gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Eyebrow icon={CategoriesIcon}>{fr.settings.categories}</Eyebrow>
-        <Button size="sm" variant="ghost" onClick={disclosure.toggleAll}>
-          {disclosure.anyOpen ? fr.settings.collapseAll : fr.settings.expandAll}
-        </Button>
+        {/* Pendant une recherche, tout ce qui reste est déjà ouvert : le bouton
+            dirait « tout replier » pour un geste sans effet visible. */}
+        {!searching && (
+          <Button size="sm" variant="ghost" onClick={disclosure.toggleAll}>
+            {disclosure.anyOpen ? fr.settings.collapseAll : fr.settings.expandAll}
+          </Button>
+        )}
       </div>
       <p className="t-label">{fr.settings.categoriesHint}</p>
 
-      <div className="flex flex-col gap-1">
-        {groups.map((group) => (
-          <FamilyBlock
-            key={group.family.id}
-            id={group.family.id}
-            label={group.family.label}
-            kind={group.family.kind}
-            categories={group.categories}
-            open={disclosure.isOpen(group.family.id)}
-            onOpenChange={(open) => {
-              disclosure.setOpen(group.family.id, open)
+      {/* Quarante-six catégories sous onze familles repliées : retrouver
+          « Carburant » demandait de deviner qu'elle est rangée sous Transport,
+          et d'ouvrir les familles une par une jusqu'à tomber dessus. */}
+      <Field label={fr.settings.categorySearch}>
+        {(id) => (
+          <TextInput
+            id={id}
+            type="search"
+            value={query}
+            placeholder={fr.settings.categorySearchPlaceholder}
+            maxLength={40}
+            onChange={(event) => {
+              setQuery(event.target.value)
             }}
           />
-        ))}
-      </div>
+        )}
+      </Field>
+
+      {searching && shown.length === 0 ? (
+        <p className="t-label">{tpl(fr.settings.categorySearchEmpty, query.trim())}</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {shown.map((group) => (
+            <FamilyBlock
+              key={group.family.id}
+              id={group.family.id}
+              label={group.family.label}
+              kind={group.family.kind}
+              categories={group.categories}
+              /* Un résultat de recherche est ouvert par définition — sinon la
+                 recherche rendrait onze en-têtes à ouvrir un par un, ce qu'elle
+                 existe pour éviter. L'état de repli n'est pas touché pour
+                 autant : effacer la recherche retrouve les sections telles
+                 qu'on les avait laissées. */
+              open={searching || disclosure.isOpen(group.family.id)}
+              onOpenChange={(open) => {
+                disclosure.setOpen(group.family.id, open)
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <AddCategory familyIds={families.map((f) => ({ id: f.id, label: f.label }))} />
       <AddFamily />
