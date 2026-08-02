@@ -65,7 +65,13 @@ export function MemberShareTile() {
 
   const member = members.get(filter)
   const percent = formatPercent(charges.shareBp / 10_000, 1)
+  /* Le coût du mois, et lui seul : le report n'en fait pas partie. Ce qu'une
+     dépense a coûté à quelqu'un est arrêté au mois où elle a eu lieu, et ces
+     deux lignes doivent continuer de recomposer la tuile Charges voisine. */
   const total = add(charges.own, charges.common)
+  /* Le virement, lui, se rattrape : celui qui a trop avancé le mois passé verse
+     moins ce mois-ci, et l'autre un peu plus. */
+  const toPay = add(charges.common, charges.adjustment)
   /* La lecture du DS §8 vit sur la tuile, et non en `srText` dans l'anneau : un
      bouton porte son nom accessible, et rien de ce qu'il contient n'est lu à
      côté — le texte caché de l'anneau y serait écrit sans jamais être entendu. */
@@ -73,7 +79,7 @@ export function MemberShareTile() {
     fr.dashboard.srMemberShare,
     member?.name ?? '',
     percent,
-    formatMoney(charges.common, currency),
+    formatMoney(toPay, currency),
     formatMoney(charges.own, currency),
     formatMoney(total, currency),
   )
@@ -95,7 +101,12 @@ export function MemberShareTile() {
       className="gap-3"
       onClick={open}
       label={spoken}
-      affordance={{ kind: 'navigate', destination: fr.split.title }}
+      /* Le repère nu, sans nommer sa destination : « À VERSER SUR LE COMMUN »
+         est l'eyebrow le plus long de la grille (~195px en mono 11px, sans
+         césure possible) et « Répartition › » en demande 95 de plus, quand la
+         tuile n'en offre que 288 sur un écran de 360. Les deux se croisaient.
+         `SplitTile` passe déjà son repère nu, pour la même raison. */
+      affordance={{ kind: 'navigate' }}
     >
       {/* L'eyebrow nomme le chiffre, au lieu qu'un libellé le refasse juste
           au-dessus : la tuile portait cinq éléments là où le DS §5 en autorise
@@ -130,7 +141,7 @@ export function MemberShareTile() {
         <div className="flex min-w-0 max-w-xs flex-1 flex-col gap-1">
           {/* Le montant du virement, en corps de tuile : c'est la réponse, et
               on vient la recopier dans une application bancaire. */}
-          <Amount value={charges.common} size="tile-fit" direction="out" />
+          <Amount value={toPay} size="tile-fit" direction="out" />
           <ul className="flex flex-col gap-1 border-t border-border pt-2">
             {/* Ce qu'il paie pour lui, puis la somme des deux : la tuile
                 Charges voisine mêle déjà les deux sans les séparer, et le coût

@@ -28,12 +28,13 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Catégories rangées en familles, sous quatre natures
 - Membres du foyer comme étiquette
 - Répartition des charges communes entre membres, au prorata des revenus
+- Régularisation d'un mois sur le suivant, quand une charge commune a été avancée par une seule personne
 - Capacité d'épargne, ventilation par support et reste à placer, par personne
 - Avances : une charge payée en une fois depuis l'épargne, remboursée mois par mois
 - Export / import du fichier de données
 - Thème clair et sombre
 
-**Hors v1** — objectifs d'épargne datés, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, remboursements entre membres (qui doit combien à qui, une fois les charges avancées).
+**Hors v1** — objectifs d'épargne datés, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, solde roulant entre membres (une dette entre personnes qui court de mois en mois jusqu'à ce qu'un geste la solde ; la régularisation, elle, corrige le mois suivant et s'arrête là).
 
 ---
 
@@ -255,7 +256,14 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 
 Les quatre soldes — mois, prévisionnel, reste à vivre, capacité d'épargne — se ressemblent à l'œil sans dire la même chose, et aucun ne répond à « combien je gagne, combien je paie » : un solde a déjà fait la soustraction. C'est pourquoi les deux totaux qu'il combine se lisent à côté de lui, avant les trois autres. Les six tuiles s'ouvrent sur une feuille qui donne leur calcul et, surtout, ce qui les sépare de leurs voisines. La tuile entière est la cible : sur une rangée simple, un bouton d'aide et l'étiquette ne tiennent pas côte à côte.
 
-Tous les dashboards acceptent un filtre par membre. Filtrer sur quelqu'un ne se réduit pas à ne garder que ses lignes : une charge commune n'appartient à personne, donc aucune ne passerait le filtre, et chacun se lirait comme s'il vivait sans loyer ni électricité — capacité d'épargne à peine inférieure au salaire, « aucune sortie ce mois-ci » sur la répartition. Un membre voit donc **ses lignes et sa part de chaque charge commune**, au prorata des revenus (§4.7 ter). L'en-tête le dit là où le filtre se choisit, et nomme ce qui manque quand le prorata ne se calcule pas — on retombe alors sur ses seules lignes, faute de mieux, mais on le sait.
+**Trois lectures du mois, et non deux.** Le foyer se découpe de deux façons, et elles ne se recouvrent pas : `foyer = commun + les lignes perso de chacun` d'un côté, `foyer = la vue de chaque membre, additionnée` de l'autre. Le filtre porte donc trois positions — **tout le monde**, **le commun**, **une personne**.
+
+- **Le commun** montre le pot seul, à son **montant plein** : aucune part n'y est calculée. C'est l'exact inverse de la lecture par membre, qui découpe ces mêmes lignes en parts. Il répond à ce qu'aucun écran ne savait dire — où part l'argent qu'on paie ensemble, quand ses échéances tombent, et ce qu'il coûtait le mois d'avant.
+- Sous cette lecture, cinq tuiles s'effacent au lieu d'annoncer un zéro : un revenu ne se partage jamais, donc le pot n'en a aucun, et les quatre lectures qui soustraient des charges à des ressources — solde, prévisionnel, reste à vivre, capacité d'épargne — vaudraient toutes les charges au signe près. L'épargne s'en va pour la même raison qui l'exclut de « Où part l'argent ». Restent les charges, leur répartition par famille, les prochaines échéances et la Répartition entre membres.
+- **« Tout le monde » n'est pas « tout le foyer ».** Le premier est une lecture — tout ce qui a eu lieu ; le second est ce que vaut une ligne que personne ne porte, donc commune. Les deux ont porté la même étiquette, à un écran d'écart, en voulant dire le contraire.
+- L'épargne n'a pas de lecture commune : elle ne se partage jamais, et la proposer ne rendrait que des zéros.
+
+Tous les dashboards acceptent ce filtre. Filtrer sur quelqu'un ne se réduit pas à ne garder que ses lignes : une charge commune n'appartient à personne, donc aucune ne passerait le filtre, et chacun se lirait comme s'il vivait sans loyer ni électricité — capacité d'épargne à peine inférieure au salaire, « aucune sortie ce mois-ci » sur la répartition. Un membre voit donc **ses lignes et sa part de chaque charge commune**, au prorata des revenus (§4.7 ter). L'en-tête le dit là où le filtre se choisit, et nomme ce qui manque quand le prorata ne se calcule pas — on retombe alors sur ses seules lignes, faute de mieux, mais on le sait.
 
 Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, calendrier montrent les échéances réelles, en entier. On confirme une échéance, jamais une part.
 
@@ -296,7 +304,13 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 - Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, et sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre. Sous ce filtre, c'est la tuile **Part du foyer** (§4.6) qui prend le relais : la même règle, lue du point de vue d'une seule personne, et le même écran de détail au bout.
 - Le total **s'ouvre** sur la liste de ce qu'il compte, de la plus lourde à la plus légère. Un chiffre de répartition qu'on ne peut pas vérifier ne se vérifie pas, et une dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
 - **À quelqu'un, ou à tout le monde.** Une ligne sans propriétaire et hors partage sort du compte du foyer sans apparaître dans le mois de personne : la somme des soldes individuels cesse alors de valoir celui du foyer, sans que rien ne le dise. C'est le cas d'un versement d'épargne que personne ne revendique — l'épargne ne se partage jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle est, et de toute entrée d'argent, qui ne se partage pas davantage. La saisie exige donc le membre dans ces cas-là, et seulement dans ces cas-là : ailleurs, la règle de partage sait déjà où ranger la ligne. C'est une contrainte de saisie, pas une validation d'import : un document plus ancien garde ses lignes telles quelles, et les corriger se fait en les rouvrant.
-- La v1 s'arrête à l'allocation : elle dit ce que chacun doit verser, pas qui a avancé quoi ni qui rembourse qui.
+- **Une charge commune avancée par une seule personne se régularise le mois suivant.** Elle a réglé une dépense dont chacun portait sa part : sans rien pour la rattraper, l'écart reste entre les deux et l'app le tait. Le mois suivant, celui qui n'a pas payé verse un peu plus, celui qui a avancé un peu moins. Ce que chacun a avancé moins ce qui lui en revenait, au prorata **du mois d'origine** : l'écart s'est creusé sous ses revenus à lui, et le rattraper au coefficient d'aujourd'hui rendrait une somme que personne n'a avancée.
+- **Seules les charges communes qui portent un membre entrent dans le report.** Celles que personne ne s'est attribuées ont été réglées par le pot : elles n'avancent rien à personne, et elles sont donc hors du calcul des deux côtés à la fois. C'est cette symétrie qui fait que la somme des reports vaut **exactement zéro**, et donc que la somme des versements du mois suivant vaut encore, au centime, ses charges communes. La ligne de vérification continue de le montrer.
+- **Confirmées seulement**, à rebours de la répartition. Une échéance prévue n'a été payée par personne, et dire d'elle qu'un membre l'a avancée inventerait un fait. C'est déjà la règle de tout chiffre rétrospectif dérivé — le capital restant dû d'un crédit et ce qui reste à remettre sur une avance ne comptent que les échéances effectivement confirmées.
+- **Un report ne change pas ce qu'un mois a coûté à quelqu'un, seulement ce qu'il verse.** Le coût est arrêté au mois où la dépense a eu lieu ; ce qui se rattrape est un virement. Il n'entre donc dans aucun total de charges — ni dans le mois filtré, ni dans « ses charges » ni dans le coût de son mois, qui doivent continuer de se recomposer exactement — et se lit à côté d'eux, sur le montant à verser.
+- Le report **s'ouvre** comme le pot lui-même, sur les charges avancées qui le produisent et le nom de qui les a réglées : c'est le chiffre qu'on discute le plus, et une régularisation qu'on ne peut pas vérifier ne se vérifie pas.
+- Il porte sur **un mois, sans cumul** : l'écart de juillet corrige août, puis disparaît. L'app ne voit pas le compte joint — elle ne peut pas savoir si le virement corrigé a eu lieu, et un solde roulant qu'aucun geste ne vient solder dériverait sans fin.
+- La v1 s'arrête là : elle dit ce que chacun doit verser, régularisation du mois précédent comprise, mais elle ne tient pas de compte courant entre les personnes.
 
 ### 4.7 quater Avances
 

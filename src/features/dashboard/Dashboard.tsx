@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMonthConfirmed } from '@/store/selectors'
+import { useIsCommonFilter, useMonthConfirmed } from '@/store/selectors'
 import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile } from './BreakdownTile'
@@ -8,6 +8,7 @@ import { ChargesTile, IncomeTile, type ShowFlow } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
 import { SavingTile } from './SavingTile'
+import { SettlementTile } from './SettlementTile'
 import { SplitTile } from './SplitTile'
 import { UpcomingTile } from './UpcomingTile'
 
@@ -46,6 +47,7 @@ import { UpcomingTile } from './UpcomingTile'
 export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
   const [metric, setMetric] = useState<Metric | null>(null)
   const confirmed = useMonthConfirmed()
+  const common = useIsCommonFilter()
 
   const flow = (direction: 'in' | 'out'): { onShow?: ShowFlow } =>
     onShowFlow !== undefined && confirmed.some((entry) => entry.direction === direction)
@@ -55,14 +57,26 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
   return (
     <>
       <BentoGrid>
-        <BalanceTile onExplain={setMetric} />
-        <IncomeTile {...flow('in')} />
+        {/* Sur le commun, cinq tuiles n'ont plus de quoi répondre. Un revenu ne
+            se partage jamais : le pot n'en a aucun, donc les quatre lectures
+            qui soustraient les charges à des ressources — le solde, le
+            prévisionnel, le reste à vivre, la capacité d'épargne — vaudraient
+            toutes le même chiffre, celui des charges, au signe près. Et
+            l'épargne ne rentre pas dans un partage, par la même règle qui
+            l'exclut de « Où part l'argent ».
+            Elles s'effacent plutôt que d'annoncer un zéro ou une redite —
+            c'est déjà ce que font Répartition sous un filtre par membre et
+            Part du foyer sans filtre. Reste ce que le pot sait dire : ce qu'il
+            coûte, où il part, quand il tombe, et qui verse quoi. */}
+        {!common && <BalanceTile onExplain={setMetric} />}
+        {!common && <IncomeTile {...flow('in')} />}
         <ChargesTile {...flow('out')} />
         <MemberShareTile />
+        <SettlementTile />
         <BreakdownTile />
-        <ForecastTile onExplain={setMetric} />
-        <RemainingTile onExplain={setMetric} />
-        <SavingTile />
+        {!common && <ForecastTile onExplain={setMetric} />}
+        {!common && <RemainingTile onExplain={setMetric} />}
+        {!common && <SavingTile />}
         <SplitTile />
         <UpcomingTile />
         <CreditsTile />

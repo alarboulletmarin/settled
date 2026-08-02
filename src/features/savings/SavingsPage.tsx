@@ -270,7 +270,7 @@ export function SavingsPage() {
           {fr.entry.savingOut}
         </Button>
       </PageTitle>
-      <MonthHeader prorataNote />
+      <MonthHeader prorataNote withCommon={false} />
 
       {nothing ? (
         <EmptyState message={fr.savings.empty} />

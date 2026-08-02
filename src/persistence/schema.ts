@@ -9,13 +9,16 @@
  * ==========================================================================*/
 
 import type { Data } from '@/domain/types'
-import { defaultCategories, defaultFamilies, fallbackFamilyId } from './defaults'
+import { defaultCategories, defaultFamilies, fallbackFamilyId, memberColorAt } from './defaults'
 import { normalizeData } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 5
+export const CURRENT_SCHEMA_VERSION = 6
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
+
+const isRecord = (v: unknown): v is RawDocument =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
 
 export type Migration = {
   /** Version atteinte une fois la migration appliquée. */
@@ -131,12 +134,37 @@ function toVersion5(doc: RawDocument): RawDocument {
   return { ...doc, advances: [], schemaVersion: 5 }
 }
 
+/**
+ * Une palette propre aux membres, distincte de celle des catégories.
+ *
+ * Le premier membre recevait `var(--cat-1)`, qui vaut `--accent` au hexadécimal
+ * près : sa pastille se lisait comme une sélection, et disparaissait tout à
+ * fait dans une pilule de filtre active, qui passe elle-même en `--accent`.
+ *
+ * La réaffectation se fait au rang, sans condition. L'app n'a jamais offert de
+ * sélecteur de couleur : toute couleur enregistrée sort de `nextMemberColor`,
+ * donc aucune n'a été choisie et il n'y a rien à préserver. Ne recolorer que
+ * les `var(--cat-N)` reconnues laisserait en plus un document bricolé à la main
+ * dans un état que la palette ne décrit plus.
+ */
+function toVersion6(doc: RawDocument): RawDocument {
+  const household = doc['household']
+  if (!isRecord(household) || !Array.isArray(household['members'])) {
+    return { ...doc, schemaVersion: 6 }
+  }
+  const members = (household['members'] as unknown[]).map((member, index) =>
+    isRecord(member) ? { ...member, color: memberColorAt(index) } : member,
+  )
+  return { ...doc, household: { ...household, members }, schemaVersion: 6 }
+}
+
 export const MIGRATIONS: Migration[] = [
   { to: 1, migrate: toVersion1 },
   { to: 2, migrate: toVersion2 },
   { to: 3, migrate: toVersion3 },
   { to: 4, migrate: toVersion4 },
   { to: 5, migrate: toVersion5 },
+  { to: 6, migrate: toVersion6 },
 ]
 
 export class ImportError extends Error {

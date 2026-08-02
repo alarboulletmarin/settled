@@ -18,7 +18,6 @@ import {
   type Flow,
   type KindOf,
   type KindTotals,
-  type MemberFilter,
   type MonthTotals,
   type RecurrenceTotals,
   type Upcoming,
@@ -47,10 +46,18 @@ import {
   memberCharges,
   memberIncomes,
   memberShares,
+  isCommon,
   scopeToMember,
   sharedEntries,
   unassignedIncomes,
 } from '@/domain/split'
+import {
+  type Settlement,
+  advancedEntries,
+  adjustmentOf,
+  adjustments,
+  settleMonth,
+} from '@/domain/settle'
 import {
   type Advance,
   type Category,
@@ -62,7 +69,7 @@ import {
   type Recurrence,
   isSpending,
 } from '@/domain/types'
-import { useStore } from './store'
+import { type MonthFilter, useStore } from './store'
 
 /* --- Tranches brutes ------------------------------------------------------*/
 
@@ -75,7 +82,20 @@ export const useAdvances = (): Advance[] => useStore((s) => s.data.advances)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
-export const useMemberFilter = (): string | undefined => useStore((s) => s.memberFilter)
+export const useMonthFilter = (): MonthFilter => useStore((s) => s.filter)
+
+/**
+ * Le membre filtré, s'il y en a un.
+ *
+ * `undefined` aussi bien sur « Tout » que sur « Commun » : ces deux lectures
+ * n'ont pas de membre, et tout ce qui demande « qui ? » n'a rien à en tirer.
+ * Ce qui doit distinguer les deux lit `useMonthFilter`.
+ */
+export const useMemberFilter = (): string | undefined =>
+  useStore((s) => (s.filter.kind === 'member' ? s.filter.memberId : undefined))
+
+/** Le pot commun seul — ni les lignes de personne, ni le prorata. */
+export const useIsCommonFilter = (): boolean => useStore((s) => s.filter.kind === 'common')
 export const useCurrencyCode = (): string => useStore((s) => s.data.settings.currency)
 
 /** Les catégories utilisables : les archivées ne sont plus proposées. */
@@ -213,13 +233,13 @@ export type MonthScope = {
  */
 export function useMonthScope(): MonthScope {
   const entries = useEntries()
-  const member = useMemberFilter()
+  const filter = useMonthFilter()
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
 
   return useMemo(
-    () => scopeEntries(entries, member, kindOf, incomes),
-    [entries, member, kindOf, incomes],
+    () => scopeEntries(entries, filter, kindOf, incomes),
+    [entries, filter, kindOf, incomes],
   )
 }
 
@@ -233,15 +253,27 @@ export function useMonthScope(): MonthScope {
  */
 function scopeEntries(
   entries: readonly Entry[],
-  member: MemberFilter,
+  filter: MonthFilter,
   kindOf: (categoryId: string) => CategoryKind,
   incomes: readonly MemberIncome[],
 ): MonthScope {
-  if (member === undefined) return { entries: [...entries], prorated: false, partial: false }
-  const scoped = scopeToMember(entries, member, kindOf, incomes)
+  if (filter.kind === 'all') return { entries: [...entries], prorated: false, partial: false }
+
+  // Le pot seul, à son montant plein : c'est l'exact inverse de `scopeToMember`,
+  // qui découpe ces mêmes lignes en parts. Ici on ne découpe rien — une charge
+  // commune n'appartient à personne, et c'est précisément ce qu'on veut voir.
+  if (filter.kind === 'common') {
+    return {
+      entries: entries.filter((entry) => isCommon(entry, kindOf)),
+      prorated: false,
+      partial: false,
+    }
+  }
+
+  const scoped = scopeToMember(entries, filter.memberId, kindOf, incomes)
   if (scoped !== null) return { entries: scoped, prorated: true, partial: false }
   return {
-    entries: entries.filter((entry) => entry.memberId === member),
+    entries: entries.filter((entry) => entry.memberId === filter.memberId),
     prorated: false,
     partial: true,
   }
@@ -257,9 +289,18 @@ function scopeEntries(
 export function useMonthEntries(ym?: YearMonth): Entry[] {
   const entries = useEntries()
   const current = useCurrentYm()
-  const member = useMemberFilter()
+  const filter = useMonthFilter()
+  const kindOf = useKindOf()
   const month = ym ?? current
-  return useMemo(() => entriesOfMonth(entries, month, member), [entries, month, member])
+  return useMemo(() => {
+    // Sur le commun, la liste garde les lignes entières : c'est le pot qu'on
+    // regarde, et une charge commune y tombe pour son montant, à personne.
+    if (filter.kind === 'common') {
+      return entriesOfMonth(entries, month).filter((entry) => isCommon(entry, kindOf))
+    }
+    const member = filter.kind === 'member' ? filter.memberId : undefined
+    return entriesOfMonth(entries, month, member)
+  }, [entries, month, filter, kindOf])
 }
 
 /** Les entrées du mois affiché, à la portée de lecture courante. */
@@ -304,7 +345,7 @@ export function useUpcoming(limit = 5): Upcoming[] {
   const entries = useEntries()
   const recurrences = useRecurrences()
   const months = useStore((s) => s.data.months)
-  const member = useMemberFilter()
+  const filter = useMonthFilter()
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
 
@@ -314,8 +355,8 @@ export function useUpcoming(limit = 5): Upcoming[] {
     // Large devant `limit` : le filtre par membre peut en écarter, et couper à
     // cinq avant de filtrer rendrait une liste plus courte que demandé.
     const due = upcomingDue(entries, recurrences, opened, on, limit * 4)
-    return withDaysLeft(scopeEntries(due, member, kindOf, incomes).entries, on).slice(0, limit)
-  }, [entries, recurrences, months, member, kindOf, incomes, limit])
+    return withDaysLeft(scopeEntries(due, filter, kindOf, incomes).entries, on).slice(0, limit)
+  }, [entries, recurrences, months, filter, kindOf, incomes, limit])
 }
 
 /* --- Lecture par nature ---------------------------------------------------*/
@@ -391,6 +432,10 @@ export type MonthSplit = {
   shares: MemberShare[] | null
   /** Les membres dont le revenu n'est pas connu, pour pouvoir les nommer. */
   unknown: Member[]
+  /** Le mois d'où vient la régularisation, pour la nommer à l'écran. */
+  previousYm: YearMonth
+  /** Les charges avancées le mois précédent, qui produisent le report. */
+  advanced: Entry[]
 }
 
 /**
@@ -409,16 +454,20 @@ export type MonthSplit = {
  * comme les charges qu'il sert à répartir : c'est la même question, « combien
  * ce mois-ci », et non « combien à cet instant ».
  */
-export function useMemberIncomes(): MemberIncome[] {
+export function useMemberIncomesOf(month: YearMonth): MemberIncome[] {
   const members = useMembers()
   const recurrences = useRecurrences()
-  const month = useCurrentYm()
   const amountOf = useAmountOf(endOfMonth(month))
   const kindOf = useKindOf()
   return useMemo(
     () => memberIncomes(members, recurrences, kindOf, amountOf, month),
     [members, recurrences, amountOf, kindOf, month],
   )
+}
+
+/** Les revenus du mois affiché. */
+export function useMemberIncomes(): MemberIncome[] {
+  return useMemberIncomesOf(useCurrentYm())
 }
 
 /**
@@ -467,9 +516,11 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
   const entries = useEntries()
   const current = useCurrentYm()
   const members = useMembers()
-  const incomes = useMemberIncomes()
   const kindOf = useKindOf()
   const month = ym ?? current
+  const previousYm = addMonthsToYm(month, -1)
+  const incomes = useMemberIncomesOf(month)
+  const settlements = usePreviousMonthSettlement(month)
 
   return useMemo(() => {
     const shared = sharedEntries(entries, month, kindOf)
@@ -478,10 +529,47 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
     return {
       total: sum(amounts),
       entries: shared,
-      shares: memberShares(incomes, amounts),
+      shares: memberShares(incomes, amounts, adjustments(settlements)),
       unknown: members.filter((m) => missing.has(m.id)),
+      previousYm,
+      advanced: advancedEntries(entries, previousYm, kindOf),
     }
-  }, [entries, month, kindOf, members, incomes])
+  }, [entries, month, previousYm, kindOf, members, incomes, settlements])
+}
+
+/**
+ * Ce que le mois précédent reporte sur celui qu'on affiche.
+ *
+ * Les revenus lus sont ceux **du mois précédent** : l'écart s'est creusé sous
+ * son prorata à lui, et le rattraper au coefficient d'aujourd'hui rendrait une
+ * somme que personne n'a avancée.
+ *
+ * `null` quand ce mois-là ne se répartissait pas — l'écran n'a alors rien à
+ * dire, et un report à zéro laisserait croire que les comptes étaient justes.
+ */
+export function usePreviousMonthSettlement(ym?: YearMonth): Settlement[] | null {
+  const entries = useEntries()
+  const current = useCurrentYm()
+  const kindOf = useKindOf()
+  const previous = addMonthsToYm(ym ?? current, -1)
+  const incomes = useMemberIncomesOf(previous)
+
+  return useMemo(
+    () => settleMonth(entries, previous, kindOf, incomes),
+    [entries, previous, kindOf, incomes],
+  )
+}
+
+/**
+ * Ce qu'un membre porte du mois, plus le report du mois précédent.
+ *
+ * Le report est à côté de `own` et `common`, jamais dedans : ces deux-là sont
+ * des coûts, et leur somme doit continuer de valoir exactement le total des
+ * charges du mois filtré. Le report, lui, ne change que le virement.
+ */
+export type MemberChargesWithSettlement = MemberCharges & {
+  /** Ce que le mois précédent ajoute au virement. Négatif : il verse moins. */
+  adjustment: Money
 }
 
 /**
@@ -492,18 +580,20 @@ export function useMonthSplit(ym?: YearMonth): MonthSplit {
  * et tant que le prorata ne se calcule pas : l'en-tête du mois dit alors ce qui
  * manque, et une tuile de plus le répéterait sans rien ajouter.
  */
-export function useMemberCharges(): MemberCharges | null {
+export function useMemberCharges(): MemberChargesWithSettlement | null {
   const entries = useEntries()
   const current = useCurrentYm()
   const member = useMemberFilter()
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
+  const settlements = usePreviousMonthSettlement()
 
-  return useMemo(
-    () =>
-      member === undefined ? null : memberCharges(entries, current, member, kindOf, incomes),
-    [entries, current, member, kindOf, incomes],
-  )
+  return useMemo(() => {
+    if (member === undefined) return null
+    const charges = memberCharges(entries, current, member, kindOf, incomes)
+    if (charges === null) return null
+    return { ...charges, adjustment: adjustmentOf(settlements, member) }
+  }, [entries, current, member, kindOf, incomes, settlements])
 }
 
 /* --- Épargne --------------------------------------------------------------*/

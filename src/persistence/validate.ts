@@ -69,7 +69,7 @@ function member(raw: unknown, index: number): Member | null {
   return {
     id: str(raw['id'], `member-${String(index)}`),
     name: str(raw['name'], '—'),
-    color: str(raw['color'], 'var(--cat-1)'),
+    color: str(raw['color'], 'var(--member-1)'),
   }
 }
 

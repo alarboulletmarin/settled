@@ -18,6 +18,13 @@ export type SegmentedProps<T extends string> = {
  * un peu longs frôlent déjà la largeur d'une tuile sur un écran de 320px, et la
  * dernière sortait du cadre. Un débordement horizontal aurait rogné le focus
  * clavier, dont l'`outline-offset` mord de deux pixels hors du bouton.
+ *
+ * La rangée de filtres du mois, elle, défile (`.filter-scroller`) — ce n'est pas
+ * une contradiction. Elle vit à bord perdu dans un bandeau, où une piste peut se
+ * donner les quatre pixels de cadre qui logent l'anneau ; une bascule vit dans
+ * une tuile, dont la largeur est le cadre lui-même. Et son nombre de positions
+ * est connu d'avance, quand la rangée de filtres compte autant de pilules que le
+ * foyer a de membres.
  */
 export function Segmented<T extends string>({
   options,

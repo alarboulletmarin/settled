@@ -104,6 +104,20 @@
   /* Au-delà de six catégories : gris, regroupées sous « Autres ». */
   --cat-rest: var(--ink-400);
 
+  /* Palette membres — les teintes du DS §2.4, moins le vert pomme.
+     Le vert pomme est --accent, donc le signal « actif » de toute l'app, et
+     aussi la couleur du commun (la tuile Répartition est en accent). Une
+     pastille de membre qui le porte se lit comme une sélection, et disparaît
+     purement dans une pilule active, qui passe elle-même en --accent.
+     Turquoise et ambre en tête : un foyer en compte deux le plus souvent, et
+     ce sont les deux teintes les plus éloignées l'une de l'autre. Le violet
+     ferme la marche — il avoisine --accent-2, qui dit les sorties. */
+  --member-1: var(--cat-3);
+  --member-2: var(--cat-4);
+  --member-3: var(--cat-5);
+  --member-4: var(--cat-6);
+  --member-5: var(--cat-2);
+
   /* Sens du flux — DS §2.3 : entrées = lime, sorties = violet.
      Remplissage uniquement, jamais une `color`. */
   --flow-in: var(--accent);
@@ -209,6 +223,11 @@
   --color-cat-5: var(--cat-5);
   --color-cat-6: var(--cat-6);
   --color-cat-rest: var(--cat-rest);
+  --color-member-1: var(--member-1);
+  --color-member-2: var(--member-2);
+  --color-member-3: var(--member-3);
+  --color-member-4: var(--member-4);
+  --color-member-5: var(--member-5);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);

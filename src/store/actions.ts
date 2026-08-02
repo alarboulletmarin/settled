@@ -12,7 +12,7 @@ import type { Money } from '@/domain/money'
 import { type Advance, type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
 import * as updates from '@/domain/updates'
 import { nextCategoryColor, nextMemberColor } from '@/persistence/defaults'
-import { useStore } from './store'
+import { ALL_FILTER, useStore } from './store'
 
 const mutate = (recipe: Parameters<ReturnType<typeof useStore.getState>['mutate']>[0]): void => {
   useStore.getState().mutate(recipe)
@@ -40,7 +40,10 @@ export function renameMember(id: string, name: string): void {
 
 export function removeMember(id: string): void {
   mutate((data) => updates.removeMember(data, id))
-  if (useStore.getState().memberFilter === id) useStore.getState().setMemberFilter(undefined)
+  // Le filtre pointait sur quelqu'un qui n'est plus du foyer : il ne rendrait
+  // plus rien. « Commun » et « Tout », eux, survivent à un départ.
+  const { filter, setFilter } = useStore.getState()
+  if (filter.kind === 'member' && filter.memberId === id) setFilter(ALL_FILTER)
 }
 
 /* --- Catégories -----------------------------------------------------------*/

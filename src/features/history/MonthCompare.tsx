@@ -4,7 +4,7 @@ import { compareMonths } from '@/domain/history'
 import { coveredMonths } from '@/domain/month'
 import { fr } from '@/i18n/fr'
 import { formatDelta, formatYearMonth } from '@/i18n/format'
-import { useCategoryMap, useEntries, useMemberFilter } from '@/store/selectors'
+import { useCategoryMap, useEntries, useMonthScope } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -50,7 +50,11 @@ export function MonthCompare() {
   const entries = useEntries()
   const months = useStore((s) => s.data.months)
   const categories = useCategoryMap()
-  const member = useMemberFilter()
+  /* La portée de lecture, et non l'identifiant du membre : c'est elle qui sait
+     aussi bien découper une charge commune en parts que ne garder que le pot.
+     La courbe des douze mois, juste à côté, l'utilise déjà — les deux graphiques
+     d'un même écran ne peuvent pas répondre à deux règles. */
+  const { entries: scoped } = useMonthScope()
 
   const available = useMemo(() => coveredMonths({ entries, months }), [entries, months])
   const last = available.at(-1) ?? ''
@@ -60,8 +64,8 @@ export function MonthCompare() {
   )
 
   const deltas = useMemo(
-    () => compareMonths(entries, left, right, 'out', member),
-    [entries, left, right, member],
+    () => compareMonths(scoped, left, right, 'out'),
+    [scoped, left, right],
   )
 
   if (available.length < 2) {

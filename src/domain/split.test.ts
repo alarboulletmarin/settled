@@ -16,6 +16,7 @@ import {
   sharedEntries,
   sharedTotal,
   totalDue,
+  totalToPay,
   unassignedIncomes,
 } from './split'
 import { type CategoryKind, type Entry, type EntryStatus, type Recurrence, isSpending } from './types'
@@ -343,6 +344,42 @@ describe('parts au prorata des revenus', () => {
     const amounts = [money(1), money(7), money(99), money(100_001), money(333_333)]
     const shares = memberShares(foyer, amounts)
     expect(shares && totalDue(shares)).toBe(sum(amounts))
+  })
+
+  /* Le report du mois précédent — voir `settle.ts`. Il déplace le versement de
+     chacun sans toucher à sa part : ce qu'un mois coûte est arrêté au mois où
+     la dépense a eu lieu, et seul le virement se rattrape. */
+  it('ne bouge ni les parts ni les versements sans report', () => {
+    const shares = memberShares(foyer, [eur(200_000)]) ?? []
+    expect(shares.map((s) => s.adjustment)).toEqual([money(0), money(0)])
+    expect(shares.map((s) => s.toPay)).toEqual(shares.map((s) => s.due))
+  })
+
+  it('applique le report au versement, jamais à la part', () => {
+    const report = new Map([
+      ['m-1', money(1_500)],
+      ['m-2', money(-1_500)],
+    ])
+    const shares = memberShares(foyer, [eur(200_000)], report) ?? []
+    expect(shares.map((s) => s.due)).toEqual([money(111_111), money(88_889)])
+    expect(shares.map((s) => s.toPay)).toEqual([money(112_611), money(87_389)])
+  })
+
+  it('laisse le total des versements valoir le total réparti', () => {
+    // Les reports se compensent d'un membre à l'autre : c'est ce qui permet à
+    // la ligne de vérification de l'écran Répartition de rester vraie.
+    const report = new Map([
+      ['m-1', money(1_500)],
+      ['m-2', money(-1_500)],
+    ])
+    const shares = memberShares(foyer, [eur(200_000)], report) ?? []
+    expect(totalToPay(shares)).toBe(200_000)
+    expect(totalToPay(shares)).toBe(totalDue(shares))
+  })
+
+  it('ignore un report qui ne nomme personne du foyer', () => {
+    const shares = memberShares(foyer, [eur(200_000)], new Map([['parti', money(900)]])) ?? []
+    expect(shares.map((s) => s.toPay)).toEqual(shares.map((s) => s.due))
   })
 })
 

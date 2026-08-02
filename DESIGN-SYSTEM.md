@@ -101,6 +101,21 @@ Six teintes, dans cet ordre, pour les donuts et les barres empilées. Au-delà d
 --cat-4: #F5B575;  --cat-5: #F09BB5;  --cat-6: #7FB8E8;
 ```
 
+### 2.5 Palette membres
+
+Les mêmes teintes, **moins le vert pomme**, et dans un autre ordre. Cinq suffisent à un foyer ; au-delà, la palette recommence.
+
+```css
+--member-1: var(--cat-3);  --member-2: var(--cat-4);  --member-3: var(--cat-5);
+--member-4: var(--cat-6);  --member-5: var(--cat-2);
+```
+
+Le vert pomme est `--accent` : le signal « actif » de toute l'app, et la couleur du commun — la tuile Répartition est en accent. **Un membre ne le porte jamais.** Le premier le portait, et sa pastille se lisait comme une sélection : on croyait ne lire que ses données. Sur une pilule de filtre active, qui passe elle-même en `--accent`, elle disparaissait tout à fait.
+
+Turquoise et ambre en tête : un foyer en compte deux le plus souvent, et ce sont les deux teintes les plus éloignées l'une de l'autre. Le violet ferme la marche, parce qu'il avoisine `--accent-2`, qui dit les sorties.
+
+Une pastille désigne **une personne ou une catégorie**, et rien d'autre : c'est sa couleur. Une lecture qui ne désigne personne — « Tout le monde », « Commun » — n'en porte pas, et n'en emprunte pas une non plus, fût-elle l'accent : une pilule active passe elle-même en accent, et la pastille y disparaîtrait. C'est un filet qui marque la séparation (§6).
+
 ---
 
 ## 3. Typographie
@@ -215,7 +230,20 @@ Un état **pressé** sur toute tuile actionnable, et pas seulement un survol : l
 
 **Disclosure** — section repliable, sur `<details>` natif : il porte déjà l'état pour un lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir ce qui est replié. En-tête de 44px, chevron qui pivote, et une lecture de droite — total ou compte — qui reste visible replié : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait pas gagner de défilement. Une liste longue s'accompagne d'un « tout replier ».
 
-**Chip** — pilule pour catégories, membres et filtres. Pastille de couleur 8px + libellé 13px. État actif : fond `--surface-2` → `--accent`.
+**Chip** — pilule pour catégories, membres et filtres. Pastille de couleur 8px + libellé 13px, sur une ligne — un libellé coupé en deux dans une pilule de 44px la déforme, c'est à la rangée de s'adapter. État actif : fond `--surface-2` → `--accent`.
+
+**Rangée de filtres** — une ligne qui **défile**, jamais qui passe à la ligne. Elle vit dans le bandeau collant du mois, où une seconde ligne coûte 52px de haut d'écran à chaque défilement et fait dépendre la hauteur du bandeau du nombre de membres. À 320px, « Tout le monde » et « Commun » consomment déjà 205 des 288px utiles : aucune mise en page ne les fait tenir avec les prénoms.
+
+| Règle | Pourquoi |
+|---|---|
+| Piste à bord perdu — le cadre de la page est annulé, puis reposé sur la piste | Sans quoi la première et la dernière pilule sont rognées à mi-hauteur, et la rangée s'arrête avant le bord de l'écran |
+| 4px de cadre vertical, repris par une marge négative | L'anneau de focus déborde de 4px hors du bouton (§8), et un `overflow` le rognerait. C'est exactement l'objection qui fait passer `Segmented` à la ligne — mais une bascule vit dans une tuile, dont la largeur *est* le cadre |
+| `scroll-padding-inline: 16px` | Une pilule qui prend le focus au clavier ne se colle pas au bord |
+| Accroche `proximity`, jamais `mandatory` | La pilule coupée en fin de piste **est** l'affordance de défilement ; `mandatory` la supprimerait |
+| Pas de dégradé de bord | Il éteindrait l'anneau de focus de cette même pilule |
+| Pas de `touch-action` | Un défileur natif arbitre seul l'axe dominant : un glissement vertical parti des pilules fait défiler la page, et `MonthNav` garde son balayage horizontal juste au-dessus |
+
+Les pilules qui ne désignent personne n'ont pas de pastille (§2.5), et un filet d'un pixel les sépare des personnes : sans lui, l'absence se lit comme un oubli. Le filet est en `--text-muted` atténué et non en `--border`, calibré pour une bordure sur une surface et invisible sur le fond de page.
 
 **ListRow** — pastille de catégorie, libellé, sous-libellé mono (date ou périodicité), montant à droite. Hauteur 56px. Un `planned` s'affiche à 60% d'opacité avec un contour en pointillés sur la pastille.
 

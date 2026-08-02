@@ -1,11 +1,21 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RECURRENCES_PATH, RECURRENCE_NEW_PATH } from '@/app/routes'
-import { totalDue } from '@/domain/split'
+import type { YearMonth } from '@/domain/date'
+import { sum } from '@/domain/money'
+import { totalToPay } from '@/domain/split'
 import type { MemberShare } from '@/domain/split'
 import type { Entry, Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
-import { formatDayMonthShort, formatMoney, formatPercent, tpl } from '@/i18n/format'
+import {
+  formatDayMonthShort,
+  formatMoney,
+  formatPercent,
+  formatSignedMoney,
+  formatYearMonth,
+  de,
+  tpl,
+} from '@/i18n/format'
 import {
   useCategoryMap,
   useMemberIncomes,
@@ -31,14 +41,6 @@ function enumerate(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} et ${names.at(-1) ?? ''}`
 }
 
-/**
- * « de Camille », mais « d'Alice ». L'élision dépend du prénom : le gabarit de
- * `fr.ts` ne peut pas la décider, elle est donc portée ici. Le h est traité
- * comme muet — « d'Hugo » se dit, « de Hugo » ne se dit pas.
- */
-function de(name: string): string {
-  return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(name) ? `d’${name}` : `de ${name}`
-}
 
 /** Ce qui manque pour répartir : la phrase, le geste, et où il mène. */
 type Missing = { message: string; hint: string; actionLabel: string; path: string }
@@ -81,7 +83,7 @@ function missingIncomes(unknown: readonly Member[], unpriced: number): Missing {
   }
 }
 
-function ShareRow({ share }: { share: MemberShare }) {
+function ShareRow({ share, previousYm }: { share: MemberShare; previousYm: YearMonth }) {
   const members = useMemberMap()
   const currency = useCurrency()
   const member = members.get(share.memberId)
@@ -95,7 +97,26 @@ function ShareRow({ share }: { share: MemberShare }) {
       </div>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border pt-3">
         <span className="t-label">{fr.split.due}</span>
-        <Amount value={share.due} size="tile" direction="out" />
+        <Amount value={share.toPay} size="tile" direction="out" />
+        {/* Sans report, la tuile est celle de toujours : une ligne à zéro ne
+            dirait rien qu'on ne sache déjà, et elle laisserait croire à une
+            régularisation là où les comptes tombaient justes. */}
+        {share.adjustment !== 0 && (
+          <ul className="flex w-full flex-col">
+            <li className="flex items-baseline justify-between gap-3">
+              <span className="t-axis">{fr.split.settlementShare}</span>
+              <span className="t-axis tnum">{formatMoney(share.due, currency, false)}</span>
+            </li>
+            <li className="flex items-baseline justify-between gap-3">
+              <span className="t-axis min-w-0 truncate">
+                {tpl(fr.split.settlement, de(formatYearMonth(previousYm)))}
+              </span>
+              <span className="t-axis tnum shrink-0">
+                {formatSignedMoney(share.adjustment, currency)}
+              </span>
+            </li>
+          </ul>
+        )}
         <span className="t-axis w-full">
           {`${fr.split.income} ${formatMoney(share.income, currency, false)}`}
         </span>
@@ -114,7 +135,7 @@ function ShareRow({ share }: { share: MemberShare }) {
  * de l'affirmer.
  */
 export function SplitPage() {
-  const { total, entries, shares, unknown } = useMonthSplit()
+  const { total, entries, shares, unknown, previousYm, advanced } = useMonthSplit()
   const incomes = useMemberIncomes()
   const unassigned = useUnassignedIncomes()
   const members = useMembers()
@@ -123,6 +144,8 @@ export function SplitPage() {
   const currency = useCurrency()
   const navigate = useNavigate()
   const [detail, setDetail] = useState(false)
+  const [settled, setSettled] = useState(false)
+  const settlement = shares?.some((share) => share.adjustment !== 0) ?? false
 
   /** La date, et le nom de qui a avancé la dépense quand il y en a un. */
   const metaOf = (entry: Entry): string => {
@@ -200,9 +223,56 @@ export function SplitPage() {
           <>
             <div className="flex flex-col gap-3">
               {shares.map((share) => (
-                <ShareRow key={share.memberId} share={share} />
+                <ShareRow key={share.memberId} share={share} previousYm={previousYm} />
               ))}
             </div>
+
+            {/* Le report s'ouvre comme le pot lui-même : une régularisation
+                qu'on ne peut pas vérifier ne se vérifie pas, et c'est celle
+                qu'on discute le plus. */}
+            {settlement && advanced.length > 0 && (
+              <Tile className="p-2! md:p-2!">
+                <Disclosure
+                  open={settled}
+                  onOpenChange={setSettled}
+                  title={
+                    <span className="flex min-w-0 items-baseline gap-2">
+                      <span className="t-body truncate">
+                        {tpl(fr.split.settlementDetail, formatYearMonth(previousYm))}
+                      </span>
+                      <span className="t-axis shrink-0">
+                        {tpl(
+                          advanced.length > 1 ? fr.split.detailCount : fr.split.detailCountOne,
+                          advanced.length,
+                        )}
+                      </span>
+                    </span>
+                  }
+                  trailing={
+                    <Amount
+                      value={sum(advanced.map((e) => e.amount))}
+                      size="body"
+                      direction="out"
+                    />
+                  }
+                >
+                  <ul className="flex flex-col">
+                    {advanced.map((entry) => (
+                      <li key={entry.id}>
+                        <ListRow
+                          color={categories.get(entry.categoryId)?.color ?? 'var(--cat-rest)'}
+                          label={entry.label}
+                          meta={metaOf(entry)}
+                          trailing={<Amount value={entry.amount} direction="out" />}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="t-label mt-2">{fr.split.settlementHint}</p>
+                  <p className="t-label">{fr.split.settlementNotACost}</p>
+                </Disclosure>
+              </Tile>
+            )}
 
             {/* Le chiffre s'ouvre : une dépense qui n'a rien à faire dans le
                 pot commun ne se repère qu'en la voyant. */}
@@ -242,7 +312,10 @@ export function SplitPage() {
             <Tile className="gap-2">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                 <span className="t-body">{fr.split.checkTotal}</span>
-                <Amount value={totalDue(shares)} size="body" direction="out" />
+                {/* Ce que chacun verse, report compris : les régularisations
+                    s'annulent d'un membre à l'autre, et la vérification reste
+                    donc vraie au centime — c'est ce qu'elle sert à montrer. */}
+                <Amount value={totalToPay(shares)} size="body" direction="out" />
               </div>
               <p className="t-label">{fr.split.checkHint}</p>
             </Tile>

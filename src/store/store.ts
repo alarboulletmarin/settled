@@ -17,13 +17,38 @@ import { readStoredPreference, storePreference } from '@/theme/theme'
 
 export type AppStatus = 'loading' | 'onboarding' | 'ready'
 
+/**
+ * Ce qu'on regarde du mois. Trois lectures, et non deux.
+ *
+ * Le foyer se découpe de deux façons, et elles ne se recouvrent pas :
+ *
+ *     foyer = commun + les lignes perso de chacun     (par propriété)
+ *     foyer = la vue de chaque membre, additionnée    (par personne)
+ *
+ * `member` relève du second — ses lignes plus sa part du commun, si bien que la
+ * somme des vues vaut le foyer. `common` relève du premier : le pot seul, à son
+ * montant plein, qui n'appartient à personne. Les confondre était l'ambiguïté
+ * d'une seule pilule « Tout le foyer » qui voulait dire « tout » ici et « le
+ * commun » sur l'écran de saisie.
+ *
+ * Type discriminé plutôt qu'un `string | undefined` avec une valeur convenue :
+ * un membre s'appelle par un identifiant, et rien n'aurait empêché de le
+ * confondre avec le mot qui désigne le pot.
+ */
+export type MonthFilter =
+  | { kind: 'all' }
+  | { kind: 'common' }
+  | { kind: 'member'; memberId: string }
+
+export const ALL_FILTER: MonthFilter = { kind: 'all' }
+
 export type StoreState = {
   status: AppStatus
   data: Data
   /** Mois affiché. Toujours un mois valide, jamais dérivé d'un composant. */
   ym: YearMonth
-  /** Filtre par membre commun à tous les tableaux de bord. undefined = foyer. */
-  memberFilter: string | undefined
+  /** Portée de lecture commune à tous les tableaux de bord. */
+  filter: MonthFilter
   /** Dernière erreur de persistance, à afficher telle quelle. */
   error: string | null
 }
@@ -33,7 +58,7 @@ export type StoreActions = {
   /** Remplace le document. Le seul point d'écriture de `data`. */
   mutate: (recipe: (data: Data) => Data) => void
   setYm: (ym: YearMonth) => void
-  setMemberFilter: (memberId: string | undefined) => void
+  setFilter: (filter: MonthFilter) => void
   setTheme: (theme: ThemeSetting) => void
   finishOnboarding: () => void
   /**
@@ -64,7 +89,7 @@ export const useStore = create<Store>()((set, get) => ({
   status: 'loading',
   data: initialData(),
   ym: currentYm(),
-  memberFilter: undefined,
+  filter: ALL_FILTER,
   error: null,
 
   async hydrate() {
@@ -100,8 +125,8 @@ export const useStore = create<Store>()((set, get) => ({
     get().ensureMonthOpen(ym)
   },
 
-  setMemberFilter(memberId) {
-    set({ memberFilter: memberId })
+  setFilter(filter) {
+    set({ filter })
   },
 
   setTheme(theme) {
@@ -127,7 +152,7 @@ export const useStore = create<Store>()((set, get) => ({
   async replaceData(data) {
     writer.cancel()
     storePreference(data.settings.theme)
-    set({ data, status: 'ready', error: null, ym: currentYm(), memberFilter: undefined })
+    set({ data, status: 'ready', error: null, ym: currentYm(), filter: ALL_FILTER })
     // Le fichier importé peut dater : le mois courant n'y est pas forcément.
     get().ensureMonthOpen()
     await saveDocument(get().data)
@@ -138,7 +163,7 @@ export const useStore = create<Store>()((set, get) => ({
     await clearDocument()
     const fresh = emptyData()
     storePreference(fresh.settings.theme)
-    set({ data: fresh, status: 'onboarding', error: null, ym: currentYm(), memberFilter: undefined })
+    set({ data: fresh, status: 'onboarding', error: null, ym: currentYm(), filter: ALL_FILTER })
   },
 
   setError(message) {

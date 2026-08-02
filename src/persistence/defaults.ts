@@ -204,8 +204,27 @@ export function nextCategoryColor(familyId: string): string {
   return familyColor(familyId)
 }
 
-export const MEMBER_COLORS = CATEGORY_COLORS
+/**
+ * Les teintes des membres — une palette à eux, et non celle des catégories.
+ *
+ * Le vert pomme en est absent : c'est `--accent`, donc le signal « actif » de
+ * l'app et la couleur du commun. Le premier membre le portait, si bien que sa
+ * pastille se lisait comme une sélection — on croyait ne lire que ses données —
+ * et qu'elle disparaissait tout à fait dans une pilule de filtre active, qui
+ * passe elle-même en `--accent`.
+ */
+export const MEMBER_COLORS = [
+  'var(--member-1)',
+  'var(--member-2)',
+  'var(--member-3)',
+  'var(--member-4)',
+  'var(--member-5)',
+] as const
+
+export function memberColorAt(index: number): string {
+  return MEMBER_COLORS[index % MEMBER_COLORS.length] ?? 'var(--member-1)'
+}
 
 export function nextMemberColor(count: number): string {
-  return colorAt(count)
+  return memberColorAt(count)
 }
