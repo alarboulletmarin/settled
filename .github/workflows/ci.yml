@@ -27,13 +27,13 @@ jobs:
 
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # Une seule version de Node, celle que l'hébergeur exécute : ce n'est pas
       # une librairie qu'on publie, c'est une app qu'on déploie. Tester une
       # version que personne ne servira coûte du temps et ne dit rien.
       - name: Installer Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
