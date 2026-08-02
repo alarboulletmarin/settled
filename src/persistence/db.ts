@@ -35,12 +35,56 @@ let connection: Promise<IDBPDatabase<ToutCompteFaitDB>> | null = null
  */
 let ready: IDBPDatabase<ToutCompteFaitDB> | null = null
 
+/**
+ * Les trois façons dont une connexion cesse de tenir. `idb` les expose depuis
+ * toujours ; ne pas les poser revenait à ce qu'aucune ne se voie.
+ */
+export type DbEvent =
+  /** Notre ouverture attend qu'un autre onglet rende la version précédente. */
+  | 'blocked'
+  /** Un autre onglet veut migrer, et c'est nous qui le retenons. */
+  | 'blocking'
+  /** Le navigateur a coupé : pression mémoire, données du site effacées. */
+  | 'terminated'
+
+let notifyDbEvent: (event: DbEvent) => void = () => {}
+
+export function setDbEventHandler(handler: (event: DbEvent) => void): void {
+  notifyDbEvent = handler
+}
+
+/** Ce que l'app fait de chaque incident. Exporté : la décision est ici. */
+export function handleDbEvent(event: DbEvent): void {
+  /* `blocking` : ne pas lâcher la connexion bloquerait l'autre onglet pour
+     toujours. On ferme donc, sans chercher à vider la file d'abord — écrire
+     voudrait ouvrir une transaction sur la connexion qu'on doit justement
+     rendre — et le bandeau qui s'allume derrière dit exactement la vérité :
+     dans cet onglet-ci, plus rien ne s'enregistre.
+     `terminated` : oublier la connexion suffit, la prochaine écriture la
+     rouvrira. Sans cet oubli, toutes les suivantes rejetaient jusqu'au
+     rechargement de la page.
+     `blocked` : c'est nous qui attendons, et la connexion n'existe pas encore.
+     Il n'y a rien à fermer — la fermer perdrait la promesse d'ouverture, qui
+     est précisément ce qui aboutira quand l'autre onglet partira. */
+  if (event !== 'blocked') closeDb()
+  notifyDbEvent(event)
+}
+
 function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
   connection ??= openDB<ToutCompteFaitDB>(DB_NAME, DB_VERSION, {
     upgrade(database) {
       if (!database.objectStoreNames.contains(STORE)) {
         database.createObjectStore(STORE)
       }
+    },
+    blocked() {
+      handleDbEvent('blocked')
+    },
+    blocking() {
+      handleDbEvent('blocking')
+    },
+    terminated() {
+      handleDbEvent('terminated')
     },
   }).then((database) => {
     ready = database

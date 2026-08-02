@@ -203,6 +203,17 @@ export const fr = {
     writeFailedLabel: 'Échec d’enregistrement',
     exportNow: 'Exporter maintenant',
 
+    /* Les trois incidents de connexion. Chacun dit ce qu'il faut faire, et
+       aucun ne dit « rechargez la page » sans expliquer pourquoi. */
+    blocking:
+      'Un autre onglet met la base à jour. Cet onglet-ci n’enregistre plus rien tant qu’il n’est pas rechargé.',
+    blocked:
+      'Un autre onglet utilise une version différente de l’app. Ferme-le, puis recharge cette page.',
+    terminated:
+      'Le navigateur a fermé la base sous l’app. Recharge la page — et exporte d’abord, par précaution.',
+    readTimeout:
+      'La base de données ne répond pas. Un autre onglet la bloque peut-être : ferme-le, puis recharge.',
+
     /* Le chemin de sortie d'un document qu'on ne sait pas ouvrir. Les recours
        sont dans l'ordre de ce qu'ils sauvent : importer récupère, recharger ne
        coûte rien à essayer, effacer ne se défait pas. */
@@ -225,6 +236,19 @@ export const fr = {
       'Ce qui est stocké sur cet appareil sera effacé, sans qu’on ait pu le lire ni te dire ce qu’il contenait.',
     discardConfirm2: 'Il n’y a pas de retour. Tu as téléchargé la copie brute ?',
     discarded: 'Données effacées',
+
+    /* L'écran de secours. Il n'a qu'une chose importante à faire faire, et ce
+       n'est pas de comprendre ce qui s'est passé. */
+    crashTitle: 'L’app s’est arrêtée',
+    crashBody:
+      'Tes données sont toujours là, sur cet appareil. Récupère-les d’abord : c’est le seul geste qui ne se rattrape pas si tu ne le fais pas maintenant.',
+    crashExport: 'Récupérer mes données',
+    crashExportEmpty: 'Il n’y a rien de stocké sur cet appareil.',
+    crashExportFailed: 'La base n’a pas répondu. Recharge, puis réessaie.',
+    crashReload: 'Recharger l’app',
+    crashCaches: 'Réinstaller l’app',
+    crashCachesHint:
+      'Si l’écran revient cassé à chaque rechargement, c’est la version en cache qui est en cause. Ceci la retélécharge. Tes données ne sont pas touchées : elles ne vivent pas dans le cache.',
   },
 
   settings: {

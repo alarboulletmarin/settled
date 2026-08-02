@@ -5,6 +5,7 @@ import { fr } from '@/i18n/fr'
 import type { Data } from '@/domain/types'
 import type * as dbModule from '@/persistence/db'
 import { clearDocument, closeDb, loadRawDocument, saveDocument } from '@/persistence/db'
+import { HYDRATION_TIMEOUT_MS } from './store'
 import type { useStore as UseStore } from './store'
 
 /**
@@ -13,15 +14,19 @@ import type { useStore as UseStore } from './store'
  * ce qui permet de lui glisser une écriture qui échoue — le seul moyen de
  * provoquer un quota plein sans quota.
  */
-async function freshStore(write?: (data: Data) => Promise<void>): Promise<typeof UseStore> {
+async function freshStore(
+  write?: (data: Data) => Promise<void>,
+  read?: () => Promise<Data | null>,
+): Promise<typeof UseStore> {
   vi.resetModules()
-  if (write !== undefined) {
+  if (write === undefined && read === undefined) {
+    vi.doUnmock('@/persistence/db')
+  } else {
     vi.doMock('@/persistence/db', async () => ({
       ...(await vi.importActual<typeof dbModule>('@/persistence/db')),
-      saveDocument: write,
+      ...(write === undefined ? {} : { saveDocument: write }),
+      ...(read === undefined ? {} : { loadDocument: read }),
     }))
-  } else {
-    vi.doUnmock('@/persistence/db')
   }
   return (await import('./store')).useStore
 }
@@ -119,6 +124,36 @@ describe('store — échecs de persistance', () => {
     store.getState().finishOnboarding()
     await store.getState().flush()
     expect(store.getState().status).toBe('ready')
+  })
+
+  it('cesse d’attendre une base qui ne répond pas', async () => {
+    // Une ouverture bloquée par un onglet resté sur la version précédente ne
+    // résout jamais sa promesse : `BootScreen` tournait pour toujours.
+    vi.useFakeTimers()
+    try {
+      let settle = (value: Data | null): void => void value
+      const never = new Promise<Data | null>((resolve) => {
+        settle = resolve
+      })
+      const store = await freshStore(undefined, () => never)
+
+      const hydrating = store.getState().hydrate()
+      await vi.advanceTimersByTimeAsync(HYDRATION_TIMEOUT_MS)
+      await hydrating
+
+      expect(store.getState().status).toBe('onboarding')
+      expect(store.getState().error).toStrictEqual({
+        kind: 'read',
+        message: fr.storage.readTimeout,
+      })
+
+      // Le délai gagne définitivement : une lecture tardive ne bascule rien.
+      settle(makeData({ household: { name: 'Trop tard', members: [] } }))
+      await vi.advanceTimersByTimeAsync(0)
+      expect(store.getState().data.household.name).not.toBe('Trop tard')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('relit sans erreur un document valide', async () => {

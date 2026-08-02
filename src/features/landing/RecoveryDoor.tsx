@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { today } from '@/domain/date'
 import { fr } from '@/i18n/fr'
+import { download } from '@/lib/download'
 import { loadRawDocument } from '@/persistence/db'
-import { downloadRaw } from '@/persistence/transfer'
+import { toRawBlob, unreadableFilename } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -30,7 +31,7 @@ export function RecoveryDoor({ message }: { message: string }) {
       toast(fr.storage.recoverRawEmpty)
       return
     }
-    downloadRaw(raw, today())
+    download(toRawBlob(raw), unreadableFilename(today()))
     toast(fr.storage.recoverRawDone)
   }
 

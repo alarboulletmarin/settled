@@ -12,7 +12,7 @@ import { makeId } from '@/domain/ids'
 import { openMonth } from '@/domain/updates'
 import type { Data, ThemeSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
-import { clearDocument, loadDocument, saveDocument } from '@/persistence/db'
+import { clearDocument, loadDocument, saveDocument, setDbEventHandler } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
 import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
 import { readStoredPreference, storePreference } from '@/theme/theme'
@@ -107,6 +107,28 @@ const writer = createWriter(saveDocument, WRITE_DELAY_MS, {
 })
 
 /**
+ * Un incident de connexion est un échec d'écriture qui n'attend pas la
+ * prochaine écriture pour se savoir : les trois cas laissent la base
+ * inutilisable jusqu'au rechargement. `blocked` est le seul qui touche à la
+ * lecture — il tombe pendant l'ouverture, donc avant qu'il y ait quoi que ce
+ * soit à écrire.
+ */
+setDbEventHandler((event) => {
+  useStore.getState().setError(
+    event === 'blocked'
+      ? { kind: 'read', message: fr.storage.blocked }
+      : { kind: 'write', message: event === 'blocking' ? fr.storage.blocking : fr.storage.terminated },
+  )
+})
+
+/**
+ * Au-delà, on cesse d'attendre. Une ouverture `blocked` — un onglet resté sur
+ * une version antérieure de la base — ne résout jamais sa promesse : sans ce
+ * délai, `BootScreen` tournait pour toujours, sans un mot et sans issue.
+ */
+export const HYDRATION_TIMEOUT_MS = 10_000
+
+/**
  * Document de départ. Le thème reprend le miroir localStorage pour que rien ne
  * clignote entre le premier rendu et la fin de l'hydratation.
  */
@@ -123,8 +145,23 @@ export const useStore = create<Store>()((set, get) => ({
   error: null,
 
   async hydrate() {
+    /* Le délai gagne définitivement : une lecture qui aboutit après coup est
+       jetée. Remplacer tout le document sous quelqu'un qui a commencé à
+       répondre aux deux questions serait pire que lui demander de recharger —
+       et le rechargement, lui, retombe sur une base désormais chaude. */
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const expired = new Promise<'timeout'>((resolve) => {
+      timer = setTimeout(() => {
+        resolve('timeout')
+      }, HYDRATION_TIMEOUT_MS)
+    })
+
     try {
-      const stored = await loadDocument()
+      const stored = await Promise.race([loadDocument(), expired])
+      if (stored === 'timeout') {
+        set({ status: 'onboarding', error: { kind: 'read', message: fr.storage.readTimeout } })
+        return
+      }
       if (stored === null) {
         set({ status: 'onboarding', data: initialData() })
         return
@@ -135,6 +172,8 @@ export const useStore = create<Store>()((set, get) => ({
       get().ensureMonthOpen()
     } catch {
       set({ status: 'onboarding', error: { kind: 'read', message: fr.storage.readFailed } })
+    } finally {
+      if (timer !== null) clearTimeout(timer)
     }
   },
 

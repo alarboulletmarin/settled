@@ -50,13 +50,15 @@ export function downloadExport(data: Data, on: ISODate = today()): void {
 }
 
 /**
- * Enregistre les octets bruts, sans rien en comprendre. `markExported` n'est
- * pas appelé : ce fichier n'est pas une sauvegarde, c'est une pièce à
- * conviction — le compteur des trente jours n'a aucune raison de repartir.
+ * Les octets du disque, sans rien en comprendre — ni migration, ni validation.
+ *
+ * Le nom du fichier est laissé à l'appelant, parce que ce sont deux choses
+ * différentes selon d'où l'on vient : un document qu'on n'a pas su lire est une
+ * pièce à conviction (`unreadableFilename`), celui qu'on sauve d'un écran
+ * blanc est un export ordinaire (`exportFilename`), réimportable tel quel.
  */
-export function downloadRaw(raw: unknown, on: ISODate = today()): void {
-  const text = `${JSON.stringify(raw, null, 2)}\n`
-  download(new Blob([text], { type: EXPORT_MIME }), unreadableFilename(on))
+export function toRawBlob(raw: unknown): Blob {
+  return new Blob([`${JSON.stringify(raw, null, 2)}\n`], { type: EXPORT_MIME })
 }
 
 /**
