@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { LandingPage } from '@/features/landing/LandingPage'
+import { onPageHidden } from '@/persistence/lifecycle'
 import { useStore } from '@/store/store'
 import { StyleguidePage } from '@/styleguide/StyleguidePage'
 import { useApplyTheme } from '@/theme/useTheme'
@@ -27,6 +28,12 @@ export function App() {
   useEffect(() => {
     void hydrate()
   }, [hydrate])
+
+  /* Le writer débounce à 400 ms : sans ce flush, fermer l'onglet dans la
+     seconde qui suit une saisie la perdait, en silence. Le store est lu par
+     `getState` plutôt que par un sélecteur — l'effet ne doit se réabonner à
+     rien, il doit vivre aussi longtemps que la page. */
+  useEffect(() => onPageHidden(() => void useStore.getState().flush()), [])
 
   return (
     <CurrencyContext value={currency}>

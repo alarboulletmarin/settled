@@ -190,6 +190,20 @@ export const fr = {
       'Charges communes non réparties : seules les lignes à son nom sont comptées.',
   },
 
+  /* La frontière avec le navigateur. Tout ce qui s'y passe mal doit se dire :
+     les données ne vivent nulle part ailleurs, et un échec silencieux se
+     découvre au moment où il est trop tard. Chaque message dit ce qui s'est
+     passé et quoi faire — jamais « une erreur est survenue ». */
+  storage: {
+    readFailed:
+      'Les données n’ont pas pu être lues. Tu peux repartir de zéro ou importer un export.',
+    writeFailed: 'Les modifications ne s’enregistrent plus',
+    writeFailedBody:
+      'Ce que tu vois à l’écran est intact, mais plus rien ne s’écrit sur cet appareil. Exporte maintenant : c’est la seule copie qui survivra à la fermeture de l’onglet.',
+    writeFailedLabel: 'Échec d’enregistrement',
+    exportNow: 'Exporter maintenant',
+  },
+
   settings: {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
     aboutLink: 'Le projet, le code et la licence',

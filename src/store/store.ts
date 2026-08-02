@@ -11,8 +11,10 @@ import { type YearMonth, currentYm, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
 import { openMonth } from '@/domain/updates'
 import type { Data, ThemeSetting } from '@/domain/types'
-import { clearDocument, createWriter, loadDocument, saveDocument } from '@/persistence/db'
+import { fr } from '@/i18n/fr'
+import { clearDocument, loadDocument, saveDocument } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
+import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
 import { readStoredPreference, storePreference } from '@/theme/theme'
 
 export type AppStatus = 'loading' | 'onboarding' | 'ready'
@@ -42,6 +44,17 @@ export type MonthFilter =
 
 export const ALL_FILTER: MonthFilter = { kind: 'all' }
 
+/**
+ * Un échec de persistance, et de quel côté il est tombé.
+ *
+ * Le `kind` n'est pas décoratif : c'est lui qui permet à une écriture réussie
+ * d'effacer le bandeau d'échec d'écriture sans effacer un échec de lecture, qui
+ * lui n'est jamais réparé par une écriture — le document illisible l'est resté.
+ * Les deux n'ont d'ailleurs ni la même issue ni le même écran : l'un se règle
+ * par un export depuis la coquille, l'autre par un import depuis l'arrivée.
+ */
+export type StorageError = { kind: 'read' | 'write'; message: string }
+
 export type StoreState = {
   status: AppStatus
   data: Data
@@ -50,7 +63,7 @@ export type StoreState = {
   /** Portée de lecture commune à tous les tableaux de bord. */
   filter: MonthFilter
   /** Dernière erreur de persistance, à afficher telle quelle. */
-  error: string | null
+  error: StorageError | null
 }
 
 export type StoreActions = {
@@ -68,13 +81,28 @@ export type StoreActions = {
   ensureMonthOpen: (ym?: YearMonth) => void
   replaceData: (data: Data) => Promise<void>
   resetAll: () => Promise<void>
-  setError: (message: string | null) => void
+  setError: (error: StorageError | null) => void
   flush: () => Promise<void>
 }
 
 export type Store = StoreState & StoreActions
 
-const writer = createWriter()
+/**
+ * Les hooks référencent `useStore` dans leur corps et non à l'évaluation : le
+ * writer est construit avant que le store existe, mais aucun d'eux ne peut
+ * partir avant la première écriture, donc bien après.
+ */
+const writer = createWriter(saveDocument, WRITE_DELAY_MS, {
+  onWritten() {
+    // Une écriture qui passe efface le bandeau d'échec d'écriture. Pas un échec
+    // de lecture : rien de ce qu'on écrit ne rend lisible ce qui ne l'était pas.
+    const { error, setError } = useStore.getState()
+    if (error?.kind === 'write') setError(null)
+  },
+  onFailed() {
+    useStore.getState().setError({ kind: 'write', message: fr.storage.writeFailed })
+  },
+})
 
 /**
  * Document de départ. Le thème reprend le miroir localStorage pour que rien ne
@@ -104,10 +132,7 @@ export const useStore = create<Store>()((set, get) => ({
       // Cahier §4.3 : l'ouverture est déclenchée au premier lancement du mois.
       get().ensureMonthOpen()
     } catch {
-      set({
-        status: 'onboarding',
-        error: "Les données n'ont pas pu être lues. Tu peux repartir de zéro ou importer un export.",
-      })
+      set({ status: 'onboarding', error: { kind: 'read', message: fr.storage.readFailed } })
     }
   },
 
@@ -164,7 +189,14 @@ export const useStore = create<Store>()((set, get) => ({
     set({ data, status: 'ready', error: null, ym: currentYm(), filter: ALL_FILTER })
     // Le fichier importé peut dater : le mois courant n'y est pas forcément.
     get().ensureMonthOpen()
-    await saveDocument(get().data)
+    // Hors du writer, donc hors de ses hooks : ce `saveDocument`-là a besoin de
+    // son propre filet. Un import qui ne s'enregistre pas et qui ne le dit pas
+    // est la pire des pertes — on vient d'effacer ce qu'il remplace.
+    try {
+      await saveDocument(get().data)
+    } catch {
+      set({ error: { kind: 'write', message: fr.storage.writeFailed } })
+    }
   },
 
   async resetAll() {
@@ -175,8 +207,8 @@ export const useStore = create<Store>()((set, get) => ({
     set({ data: fresh, status: 'onboarding', error: null, ym: currentYm(), filter: ALL_FILTER })
   },
 
-  setError(message) {
-    set({ error: message })
+  setError(error) {
+    set({ error })
   },
 
   async flush() {

@@ -7,6 +7,7 @@
 
 import { type ISODate, diffDays, today } from '@/domain/date'
 import type { Data } from '@/domain/types'
+import { download } from '@/lib/download'
 import { ImportError, type MigrationResult, migrateDocument } from './schema'
 
 export { ImportError }
@@ -26,6 +27,18 @@ export function serializeData(data: Data): string {
 
 export function toExportBlob(data: Data): Blob {
   return new Blob([serializeData(data)], { type: EXPORT_MIME })
+}
+
+/**
+ * Le geste complet : le fichier part sur l'appareil, et la date du jour compte
+ * comme dernier export. Trois écrans le demandent désormais — les réglages, le
+ * bandeau d'échec d'écriture et l'écran de secours — et l'oubli de
+ * `markExported` dans l'un des trois ferait revenir le rappel des trente jours
+ * après un export qui a bien eu lieu.
+ */
+export function downloadExport(data: Data, on: ISODate = today()): void {
+  download(toExportBlob(data), exportFilename(on))
+  markExported(on)
 }
 
 /**

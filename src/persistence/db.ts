@@ -24,6 +24,17 @@ interface ToutCompteFaitDB extends DBSchema {
 
 let connection: Promise<IDBPDatabase<ToutCompteFaitDB>> | null = null
 
+/**
+ * La connexion déjà ouverte, sans promesse.
+ *
+ * `saveDocument` doit pouvoir émettre son `put` dans la tâche même de
+ * `pagehide` : quand la page part, le navigateur n'a plus aucune obligation de
+ * nous rendre la main, et un `await db()` sur une promesse déjà tenue rend
+ * quand même la main. Une fois la base ouverte — c'est-à-dire toujours, passé
+ * l'hydratation — le chemin d'écriture est donc synchrone jusqu'au `put`.
+ */
+let ready: IDBPDatabase<ToutCompteFaitDB> | null = null
+
 function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
   connection ??= openDB<ToutCompteFaitDB>(DB_NAME, DB_VERSION, {
     upgrade(database) {
@@ -31,6 +42,9 @@ function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
         database.createObjectStore(STORE)
       }
     },
+  }).then((database) => {
+    ready = database
+    return database
   })
   return connection
 }
@@ -39,6 +53,7 @@ function db(): Promise<IDBPDatabase<ToutCompteFaitDB>> {
 export function closeDb(): void {
   const pending = connection
   connection = null
+  ready = null
   void pending?.then((database) => {
     database.close()
   })
@@ -54,63 +69,14 @@ export async function loadDocument(): Promise<Data | null> {
   return migrateDocument(stored).data
 }
 
-export async function saveDocument(data: Data): Promise<void> {
-  await (await db()).put(STORE, data, KEY)
+export function saveDocument(data: Data): Promise<void> {
+  if (ready !== null) return ready.put(STORE, data, KEY).then(() => undefined)
+  return db().then(async (database) => {
+    await database.put(STORE, data, KEY)
+  })
 }
 
 export async function clearDocument(): Promise<void> {
   await (await db()).delete(STORE, KEY)
 }
 
-/* --- Écriture en debounce -------------------------------------------------*/
-
-export type Writer = {
-  /** Programme une écriture. Les appels rapprochés sont fusionnés. */
-  schedule: (data: Data) => void
-  /** Écrit immédiatement ce qui est en attente. */
-  flush: () => Promise<void>
-  cancel: () => void
-}
-
-export const WRITE_DELAY_MS = 400
-
-/**
- * Regroupe les écritures. Une saisie au clavier produit une mutation par
- * frappe : sans ce regroupement, chaque frappe déclencherait une transaction.
- */
-export function createWriter(
-  write: (data: Data) => Promise<void> = saveDocument,
-  delay: number = WRITE_DELAY_MS,
-): Writer {
-  let timer: ReturnType<typeof setTimeout> | null = null
-  let pending: Data | null = null
-  let inFlight: Promise<void> = Promise.resolve()
-
-  const run = (): void => {
-    const data = pending
-    pending = null
-    timer = null
-    if (data === null) return
-    inFlight = write(data)
-  }
-
-  return {
-    schedule(data) {
-      pending = data
-      if (timer !== null) clearTimeout(timer)
-      timer = setTimeout(run, delay)
-    },
-    async flush() {
-      if (timer !== null) {
-        clearTimeout(timer)
-        run()
-      }
-      await inFlight
-    },
-    cancel() {
-      if (timer !== null) clearTimeout(timer)
-      timer = null
-      pending = null
-    },
-  }
-}

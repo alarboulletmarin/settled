@@ -4,6 +4,7 @@ import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { useHouseholdName } from '@/store/selectors'
 import { Sidebar, TabBar } from './Nav'
+import { StorageAlert } from './StorageAlert'
 import { isFocusScreen } from './routes'
 
 /** Coquille de l'app : navigation et gabarit. Aucune règle métier ici. */
@@ -27,8 +28,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           key={pathname}
           className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 lg:pb-10"
         >
-          {/* Le rappel d'export ne s'intercale pas au-dessus d'une saisie en
-              cours ni d'une fiche : ces écrans-là n'ont qu'une chose à montrer. */}
+          {/* Celui-ci ne connaît pas `isFocusScreen` : un écran de saisie est
+              précisément l'endroit où l'on est en train de perdre du travail. */}
+          <StorageAlert />
+          {/* Le rappel d'export, lui, ne s'intercale pas au-dessus d'une saisie
+              en cours ni d'une fiche : ces écrans-là n'ont qu'une chose à
+              montrer, et un export peut attendre la fin de la phrase. */}
           {!isFocusScreen(pathname) && <ExportReminder />}
           {children}
         </main>
