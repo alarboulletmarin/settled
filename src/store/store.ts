@@ -114,7 +114,16 @@ export const useStore = create<Store>()((set, get) => ({
   mutate(recipe) {
     const next = recipe(get().data)
     set({ data: next })
-    writer.schedule(next)
+    /* Rien ne s'écrit tant que le foyer n'existe pas. Sans cette garde,
+       répondre à la première question puis fermer l'onglet suffisait à laisser
+       un document enregistré : au lancement suivant `loadDocument` le trouvait,
+       l'app s'ouvrait « prête » sur un foyer sans membre et un mois vide, et
+       les deux questions ne revenaient jamais. C'est `finishOnboarding` qui
+       programme la première écriture — il le faisait déjà explicitement, et cet
+       appel-là n'a de sens que si rien n'a été écrit avant lui.
+       Le thème fait exception sans le savoir : `setTheme` mire déjà sa
+       préférence en `localStorage`, d'où `initialData` la relit. */
+    if (get().status !== 'onboarding') writer.schedule(next)
   },
 
   setYm(ym) {

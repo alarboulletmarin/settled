@@ -3,15 +3,23 @@ import { fr } from '@/i18n/fr'
 import { Button } from '@/ui/Button'
 import { Field, TextInput } from '@/ui/Field'
 
-/** Première étape : le nom du foyer. Elle ne peut pas être sautée (cahier §4.1). */
+/**
+ * Première étape : le nom du foyer. Elle ne peut pas être sautée (cahier §4.1).
+ *
+ * Le nom est porté par la page et non par ce composant : l'aperçu posé à côté
+ * le lit à chaque frappe, et deux états qui décrivent la même saisie auraient
+ * fini par diverger d'un caractère. `touched`, lui, ne regarde que le
+ * formulaire — il reste ici.
+ */
 export function HouseholdStep({
-  initialName,
+  name,
+  onChange,
   onSubmit,
 }: {
-  initialName: string
+  name: string
+  onChange: (name: string) => void
   onSubmit: (name: string) => void
 }) {
-  const [name, setName] = useState(initialName)
   const [touched, setTouched] = useState(false)
   const trimmed = name.trim()
   const invalid = touched && trimmed.length === 0
@@ -45,7 +53,7 @@ export function HouseholdStep({
             autoFocus
             maxLength={40}
             onChange={(event) => {
-              setName(event.target.value)
+              onChange(event.target.value)
             }}
           />
         )}

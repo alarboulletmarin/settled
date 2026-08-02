@@ -36,6 +36,9 @@ npm run dev
 - `src/persistence/schemaDoc.ts` — le modèle de données à donner à un assistant,
   et `src/persistence/example.ts` — le foyer d'exemple. Tous deux dérivés du
   code, tous deux chargés à la demande.
+- `src/app/meta.ts` — le dépôt, la licence et la version. La version est lue sur
+  `package.json` à la construction (`define` dans `vite.config.ts`) : la recopier
+  dans le source en ferait une seconde vérité, fausse au premier `npm version`.
 - `src/ui/Icons.tsx` — le seul module qui connaît la bibliothèque d'icônes. Un
   composant qui importe Phosphor directement est un bug.
 
@@ -55,6 +58,26 @@ tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars.
 
 **Taux.** En points de base entiers — 450 = 4,50 %. Aucun flottant ne touche un
 calcul financier, pas plus un taux qu'un montant.
+
+**La présentation avant la question.** L'écran d'arrivée était « Comment
+s'appelle ton foyer ? » : on demandait de répondre avant d'avoir dit ce que
+l'app suit ni où vont les données. `/bienvenue` passe devant, et elle est
+construite avec les tuiles, l'anneau et les chiffres de l'app plutôt qu'avec des
+visuels — le DS §1 interdit l'illustration, et une grille qui *est* le produit
+démontre mieux qu'une capture. Elle vit au-dessus du gate, donc à une URL stable
+joignable dans les deux états ; ce qu'elle propose, lui, en dépend — les portes
+qui remplacent des données ne s'affichent que devant quelqu'un qui n'en a pas.
+
+Corollaire du même déplacement : `resetAll()` retombe sur elle. Le formulaire
+s'affichait jusqu'ici à l'URL de l'écran d'où l'on venait, `/reglages` comprise.
+
+**Rien ne s'écrit avant que le foyer existe.** `mutate` ne programme d'écriture
+qu'une fois le statut passé à `ready`. Sans cette garde, répondre à la première
+question puis fermer l'onglet laissait un document enregistré : au lancement
+suivant l'app s'ouvrait « prête » sur un foyer sans membre, et les deux
+questions ne revenaient jamais. C'est `finishOnboarding` qui programme la
+première écriture — il le faisait déjà explicitement, et cet appel n'avait de
+sens que si rien n'avait été écrit avant lui.
 
 **Ouverture du mois.** Jamais une tâche pour l'utilisateur : afficher un mois
 non passé l'ouvre. Idempotente — une échéance est reconnue à sa paire récurrence
@@ -224,7 +247,8 @@ sur toutes les routes, dans les deux thèmes : aucun point en suspens.
 Aux cinq destinations de la navigation s'ajoutent les écrans qu'on n'atteint que
 par une action — `/depense`, `/depense/:id`, `/recurrences/nouveau`,
 `/recurrences/:id`, `/recurrences/:id/modifier`, `/credits`, `/credits/nouveau`,
-`/credits/:id`, `/repartition` — et `/styleguide`.
+`/credits/:id`, `/repartition` —, les trois écrans qui parlent de l'app plutôt
+que du foyer — `/bienvenue`, `/demarrer`, `/a-propos` — et `/styleguide`.
 
 `/credits` et `/repartition` ne figurent pas dans la navigation : six onglets ne
 tiennent pas à 320px sans tronquer « Récurrences » en « Récurren… ». On y accède
