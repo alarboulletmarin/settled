@@ -1,0 +1,23 @@
+# https://editorconfig.org
+# Les conventions de mise en forme du dépôt, lues par la plupart des éditeurs
+# sans extension à installer. Il n'y a pas de formateur automatique ici : ce
+# fichier est ce qui tient l'indentation et les fins de ligne d'un contributeur
+# à l'autre.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# En Markdown, deux espaces en fin de ligne sont un retour à la ligne : les
+# rogner réécrirait le texte.
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
