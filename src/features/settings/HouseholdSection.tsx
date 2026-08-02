@@ -127,14 +127,21 @@ export function HouseholdSection() {
                           : ` · ${tpl(fr.settings.memberShareOf, formatPercent(shareBp / 10_000, 1))}`)
                       : read?.gap === 'unpriced'
                         ? fr.settings.memberIncomeUnpriced
-                        : fr.settings.memberNoIncome}
+                        : read?.gap === 'zero'
+                          ? fr.settings.memberIncomeZero
+                          : fr.settings.memberNoIncome}
                   </span>
-                  {read?.gap === 'unpriced' && (
+                  {/* Les deux cas où la récurrence existe déjà mènent au même
+                      écran, sous deux verbes différents : il manque un chiffre,
+                      ou le chiffre qui est là ne dit rien. */}
+                  {(read?.gap === 'unpriced' || read?.gap === 'zero') && (
                     <Link
                       to={RECURRENCES_PATH}
                       className="t-label w-full underline underline-offset-2"
                     >
-                      {fr.settings.memberIncomeUnpricedFix}
+                      {read.gap === 'unpriced'
+                        ? fr.settings.memberIncomeUnpricedFix
+                        : fr.settings.memberIncomeZeroFix}
                     </Link>
                   )}
                 </li>

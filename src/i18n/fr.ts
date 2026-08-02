@@ -317,6 +317,11 @@ export const fr = {
     memberNoIncome: 'aucun revenu enregistré',
     memberIncomeUnpriced: 'revenu à montant variable, pas encore chiffré',
     memberIncomeUnpricedFix: 'Indiquer un montant habituel',
+    /* Un revenu chiffré à zéro n'est pas un revenu de zéro : c'est un chiffre
+       qu'on ne sait pas lire. Sans ce message, la personne se voyait attribuer
+       0 % des charges communes — un résultat, donc introuvable. */
+    memberIncomeZero: 'revenu déclaré à zéro',
+    memberIncomeZeroFix: 'Corriger le montant',
     memberIncomeHint:
       'Le revenu de chacun se lit sur ses récurrences de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
@@ -889,6 +894,13 @@ export const fr = {
     unpricedMany: 'Les revenus %s sont à montant variable et pas encore chiffrés.',
     unpricedHint:
       'Confirme une échéance, ou indique un montant habituel sur la récurrence : la répartition se calcule dès qu’un chiffre existe.',
+    /* Le chiffre existe, et il vaut zéro. Un prorata dont un terme est nul n'a
+       pas plus de sens qu'un prorata sans terme : il donnerait 0 % des charges
+       à quelqu'un, en silence. Le « de » s'élide comme au-dessus. */
+    zeroOne: 'Le revenu %s est déclaré à zéro.',
+    zeroMany: 'Les revenus %s sont déclarés à zéro.',
+    zeroHint:
+      'Corrige le montant de la récurrence, ou celui de son échéance : un revenu nul ne se répartit pas, il ne dit rien.',
     goToIncome: 'Ajouter un revenu',
     goToSubscriptions: 'Voir les récurrences',
     soloTitle: 'La répartition demande au moins deux membres.',

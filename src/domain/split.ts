@@ -177,6 +177,17 @@ export type IncomeGap =
   | 'none'
   /** Il en porte, mais à montant variable et pas encore chiffré. */
   | 'unpriced'
+  /**
+   * Il en porte une qui est chiffrée — et le chiffre est zéro.
+   *
+   * Une échéance confirmée est un fait, y compris confirmée à zéro : c'est la
+   * doctrine de `priceHistory`, et elle est juste. Mais le fait « ce salaire
+   * vaut zéro » ne fabrique pas un revenu de zéro pour autant, il dit qu'on ne
+   * sait pas ce que cette personne gagne. Sans ce troisième cas, elle se voyait
+   * attribuer 0 % des charges communes — un chiffre faux, sans un mot, et le
+   * plus difficile à repérer parce qu'il a l'air d'un résultat.
+   */
+  | 'zero'
 
 /** Ce qu'on sait du revenu mensuel d'un membre. */
 export type MemberIncomeValue = {
@@ -218,7 +229,8 @@ export type MemberIncome = IncomeWeight & MemberIncomeValue
  * partage ne peut pas dépendre du moment où on ouvre l'écran.
  *
  * `null` quand rien ne permet de le dire : un revenu qu'on ne sait pas encore
- * ne vaut pas zéro. Le `gap` dit laquelle des deux raisons c'est.
+ * ne vaut pas zéro — et un revenu déclaré à zéro n'en est pas un non plus. Le
+ * `gap` dit laquelle des trois raisons c'est.
  */
 export function monthlyIncome(
   recurrences: readonly Recurrence[],
@@ -238,6 +250,12 @@ export function monthlyIncome(
     found = true
     const amount = amountOf(recurrence)
     if (amount === null) return { income: null, gap: 'unpriced' }
+    /* Une source à zéro arrête le calcul, comme une source sans chiffre — et
+       pour la même raison : `prorataWeights` ne refuse que si la *somme* est
+       nulle, donc un membre à 0 € au milieu d'un foyer qui gagne sa vie
+       recevait 0 % des charges communes en silence. Le refus est ici, source
+       par source, exactement là où le `null` l'est déjà. */
+    if (amount <= ZERO) return { income: null, gap: 'zero' }
     total = add(total, monthlyEquivalent({ ...recurrence, amount }) ?? ZERO)
   }
 

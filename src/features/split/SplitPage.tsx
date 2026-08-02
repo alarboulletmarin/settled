@@ -52,18 +52,31 @@ type Missing = { message: string; hint: string; actionLabel: string; path: strin
  * ressource, mais toutes à zéro. La phrase le disait alors sans sujet —
  * « Ajoute le revenu de  pour répartir les charges ».
  *
- * Deux impasses, et elles n'appellent pas le même geste. Le revenu qui manque
- * n'existe pas encore, ou bien il existe et n'est pas chiffré — un salaire à
- * montant variable dont aucune échéance ne dit encore le montant. Envoyer alors
- * « ajouter un revenu » fait créer un doublon là où il ne manque qu'un chiffre.
+ * Trois impasses, et elles n'appellent pas le même geste. Le revenu qui manque
+ * n'existe pas encore ; ou bien il existe et n'est pas chiffré — un salaire à
+ * montant variable dont aucune échéance ne dit encore le montant ; ou bien il
+ * est chiffré à zéro, ce qui n'est pas un revenu mais un chiffre qu'on ne sait
+ * pas lire. Envoyer « ajouter un revenu » dans les deux derniers cas fait créer
+ * un doublon là où il ne manque qu'un montant.
  */
-function missingIncomes(unknown: readonly Member[], unpriced: number): Missing {
+function missingIncomes(unknown: readonly Member[], unpriced: number, zero: number): Missing {
   const names = unknown.map((member) => member.name)
   const who = de(enumerate(names))
 
-  // Tous les revenus manquants sont des variables non chiffrés : les
+  // Tous les revenus manquants sont déclarés à zéro : le chiffre est là, c'est
+  // lui qui ne dit rien.
+  if (zero > 0 && zero === names.length) {
+    return {
+      message: tpl(names.length === 1 ? fr.split.zeroOne : fr.split.zeroMany, who),
+      hint: fr.split.zeroHint,
+      actionLabel: fr.split.goToSubscriptions,
+      path: RECURRENCES_PATH,
+    }
+  }
+
+  // Tous les revenus manquants sont des variables non chiffrés, ou à zéro : les
   // récurrences sont là, il n'y a qu'un montant à poser.
-  if (unpriced > 0 && unpriced === names.length) {
+  if (unpriced > 0 && unpriced + zero === names.length) {
     return {
       message: tpl(names.length === 1 ? fr.split.unpricedOne : fr.split.unpricedMany, who),
       hint: fr.split.unpricedHint,
@@ -177,6 +190,7 @@ export function SplitPage() {
     const missing = missingIncomes(
       unknown,
       incomes.filter((income) => income.gap === 'unpriced').length,
+      incomes.filter((income) => income.gap === 'zero').length,
     )
     return (
       <>
