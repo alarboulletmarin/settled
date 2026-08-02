@@ -20,6 +20,14 @@ export function exportFilename(on: ISODate = today()): string {
   return `tout-compte-fait-${on}.json`
 }
 
+/**
+ * Nom du fichier de secours, quand le document ne se lit pas. Il se distingue
+ * d'un export à l'œil nu : personne ne doit croire l'avoir déjà réimporté.
+ */
+export function unreadableFilename(on: ISODate = today()): string {
+  return `tout-compte-fait-illisible-${on}.json`
+}
+
 /** Le document sérialisé, indenté pour rester lisible et diffable. */
 export function serializeData(data: Data): string {
   return `${JSON.stringify(data, null, 2)}\n`
@@ -39,6 +47,16 @@ export function toExportBlob(data: Data): Blob {
 export function downloadExport(data: Data, on: ISODate = today()): void {
   download(toExportBlob(data), exportFilename(on))
   markExported(on)
+}
+
+/**
+ * Enregistre les octets bruts, sans rien en comprendre. `markExported` n'est
+ * pas appelé : ce fichier n'est pas une sauvegarde, c'est une pièce à
+ * conviction — le compteur des trente jours n'a aucune raison de repartir.
+ */
+export function downloadRaw(raw: unknown, on: ISODate = today()): void {
+  const text = `${JSON.stringify(raw, null, 2)}\n`
+  download(new Blob([text], { type: EXPORT_MIME }), unreadableFilename(on))
 }
 
 /**

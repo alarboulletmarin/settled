@@ -69,6 +69,19 @@ export async function loadDocument(): Promise<Data | null> {
   return migrateDocument(stored).data
 }
 
+/**
+ * Le contenu stocké, tel quel : ni migration, ni validation, ni promesse que ce
+ * soit un document.
+ *
+ * C'est ce qui reste quand `loadDocument` a refusé. Un document que cette
+ * version de l'app ne sait pas ouvrir — venu d'une version plus récente, ou
+ * abîmé quelque part — n'est pas forcément un document perdu, et l'effacer sans
+ * en avoir proposé une copie serait la seule perte vraiment irréparable.
+ */
+export async function loadRawDocument(): Promise<unknown> {
+  return (await db()).get(STORE, KEY)
+}
+
 export function saveDocument(data: Data): Promise<void> {
   if (ready !== null) return ready.put(STORE, data, KEY).then(() => undefined)
   return db().then(async (database) => {

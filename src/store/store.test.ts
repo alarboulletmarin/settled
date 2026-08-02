@@ -4,7 +4,7 @@ import { makeData } from '@/domain/fixtures'
 import { fr } from '@/i18n/fr'
 import type { Data } from '@/domain/types'
 import type * as dbModule from '@/persistence/db'
-import { clearDocument, closeDb, saveDocument } from '@/persistence/db'
+import { clearDocument, closeDb, loadRawDocument, saveDocument } from '@/persistence/db'
 import type { useStore as UseStore } from './store'
 
 /**
@@ -90,6 +90,35 @@ describe('store — échecs de persistance', () => {
       kind: 'read',
       message: fr.storage.readFailed,
     })
+  })
+
+  it('n’écrase pas un document illisible en créant un foyer', async () => {
+    // Le scénario de perte le plus complet : la base contient quelque chose,
+    // l'app ne sait pas l'ouvrir, et la première question la réécrivait.
+    await saveDocument({ schemaVersion: 99 } as never)
+    const store = await freshStore()
+    await store.getState().hydrate()
+
+    store.getState().finishOnboarding()
+    await store.getState().flush()
+
+    expect(store.getState().status).toBe('onboarding')
+    await expect(loadRawDocument()).resolves.toStrictEqual({ schemaVersion: 99 })
+  })
+
+  it('libère l’onboarding une fois l’illisible effacé, et pas avant', async () => {
+    await saveDocument({ schemaVersion: 99 } as never)
+    const store = await freshStore()
+    await store.getState().hydrate()
+
+    await store.getState().discardUnreadable()
+
+    expect(store.getState().error).toBeNull()
+    await expect(loadRawDocument()).resolves.toBeUndefined()
+
+    store.getState().finishOnboarding()
+    await store.getState().flush()
+    expect(store.getState().status).toBe('ready')
   })
 
   it('relit sans erreur un document valide', async () => {

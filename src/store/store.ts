@@ -81,6 +81,8 @@ export type StoreActions = {
   ensureMonthOpen: (ym?: YearMonth) => void
   replaceData: (data: Data) => Promise<void>
   resetAll: () => Promise<void>
+  /** Efface un document que l'app n'a pas su lire, et rouvre l'onboarding. */
+  discardUnreadable: () => Promise<void>
   setError: (error: StorageError | null) => void
   flush: () => Promise<void>
 }
@@ -169,6 +171,13 @@ export const useStore = create<Store>()((set, get) => ({
   },
 
   finishOnboarding() {
+    /* Un document illisible n'est pas un document absent. `hydrate` bascule sur
+       l'onboarding dans les deux cas — l'app n'a rien d'utilisable à montrer —
+       mais la première écriture qui suit écraserait ici des données qui, elles,
+       sont peut-être intactes : une `ImportError` levée par un `schemaVersion`
+       plus récent se répare en mettant l'app à jour, pas en effaçant. Tant que
+       l'échec de lecture n'a pas été traité, on n'écrit rien. */
+    if (get().error?.kind === 'read') return
     set({ status: 'ready' })
     get().ensureMonthOpen()
     writer.schedule(get().data)
@@ -205,6 +214,16 @@ export const useStore = create<Store>()((set, get) => ({
     const fresh = emptyData()
     storePreference(fresh.settings.theme)
     set({ data: fresh, status: 'onboarding', error: null, ym: currentYm(), filter: ALL_FILTER })
+  },
+
+  async discardUnreadable() {
+    /* Le seul geste qui lève la garde de `finishOnboarding`, et il efface pour
+       de bon. Il est à part de `resetAll` : celui-là énumère en trois questions
+       ce qui va partir, alors qu'ici on ne sait justement pas ce qu'il y avait
+       — c'est tout le problème. Deux questions, comme un import. */
+    writer.cancel()
+    await clearDocument()
+    set({ data: initialData(), status: 'onboarding', error: null })
   },
 
   setError(error) {

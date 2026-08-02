@@ -202,6 +202,29 @@ export const fr = {
       'Ce que tu vois à l’écran est intact, mais plus rien ne s’écrit sur cet appareil. Exporte maintenant : c’est la seule copie qui survivra à la fermeture de l’onglet.',
     writeFailedLabel: 'Échec d’enregistrement',
     exportNow: 'Exporter maintenant',
+
+    /* Le chemin de sortie d'un document qu'on ne sait pas ouvrir. Les recours
+       sont dans l'ordre de ce qu'ils sauvent : importer récupère, recharger ne
+       coûte rien à essayer, effacer ne se défait pas. */
+    recoverTitle: 'Tes données ne se lisent pas',
+    recoverImport: 'Importer un export',
+    recoverImportHint:
+      'C’est le seul recours qui ne perd rien. Si tu as un fichier d’export, c’est le moment.',
+    recoverRaw: 'Télécharger la copie brute',
+    recoverRawHint:
+      'Le contenu tel qu’il est stocké, avant toute lecture. Un document que cette version de l’app ne sait pas ouvrir n’est pas forcément perdu — garde-le avant d’effacer quoi que ce soit.',
+    recoverRawEmpty: 'Il n’y a rien de stocké à copier.',
+    recoverRawDone: 'Copie brute téléchargée',
+    recoverReload: 'Recharger',
+    recoverReloadHint:
+      'Une base momentanément occupée se relit souvent au deuxième essai. Ça ne coûte rien.',
+    discard: 'Effacer et repartir de zéro',
+    discardHint:
+      'En dernier. Ce qui est stocké part définitivement, et personne ne sait ce qu’il y avait dedans.',
+    discardConfirm1:
+      'Ce qui est stocké sur cet appareil sera effacé, sans qu’on ait pu le lire ni te dire ce qu’il contenait.',
+    discardConfirm2: 'Il n’y a pas de retour. Tu as téléchargé la copie brute ?',
+    discarded: 'Données effacées',
   },
 
   settings: {
