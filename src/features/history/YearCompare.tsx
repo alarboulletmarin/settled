@@ -4,7 +4,7 @@ import { type YearPoint, coveredYears, hasDataInYear, yearSeries } from '@/domai
 import type { Money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
-import { useEntries, useMemberFilter } from '@/store/selectors'
+import { useEntries, useMonthScope } from '@/store/selectors'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { YearsIcon } from '@/ui/Icons'
 import { Field, Select } from '@/ui/Field'
@@ -26,15 +26,16 @@ function cumulative(points: readonly YearPoint[]): (number | null)[] {
 /** Cumul du solde mois après mois, année N contre année N−1. */
 export function YearCompare() {
   const entries = useEntries()
-  const member = useMemberFilter()
+  // Voir `MonthCompare` : la portée, pas le membre.
+  const { entries: scoped } = useMonthScope()
   const currency = useCurrency()
 
   const years = useMemo(() => coveredYears(entries), [entries])
   const [year, setYear] = useState<number>(() => years.at(-1) ?? new Date().getFullYear())
   const previous = year - 1
 
-  const current = useMemo(() => yearSeries(entries, year, member), [entries, year, member])
-  const before = useMemo(() => yearSeries(entries, previous, member), [entries, previous, member])
+  const current = useMemo(() => yearSeries(scoped, year), [scoped, year])
+  const before = useMemo(() => yearSeries(scoped, previous), [scoped, previous])
 
   if (years.length === 0) {
     return (

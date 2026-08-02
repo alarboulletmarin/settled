@@ -97,6 +97,17 @@ export const fr = {
   shell: {
     loading: 'Ouverture de tes données',
     filterByMember: 'Filtrer par membre',
+    /* « Tout le monde » sur le filtre, « Tout le foyer » sur la saisie : ce
+       n'est pas la même chose, et une seule chaîne le disait des deux côtés.
+       Ici c'est tout ce qui a eu lieu, le pot et les lignes de chacun ; là-bas
+       c'est une ligne que personne ne porte, donc commune. Le filtre « Commun »
+       rend la différence visible.
+       Pas « Tout » non plus : la liste du mois porte déjà une pilule de ce nom,
+       et deux « Tout » sur un même écran ne filtrent pas la même chose. */
+    all: 'Tout le monde',
+    common: 'Commun',
+    commonNote:
+      'Le pot commun seul, à son montant plein : les charges et les crédits que personne ne s’est attribués, plus ce qui est coché « à partager ». Aucune part n’est calculée ici — chacun verse la sienne sur l’écran Répartition.',
     everyone: 'Tout le foyer',
     /* Les chiffres d'un membre comprennent sa part des charges communes : sans
        elle, chacun se lirait comme s'il vivait sans loyer. La liste des

@@ -18,7 +18,6 @@ import {
   type Flow,
   type KindOf,
   type KindTotals,
-  type MemberFilter,
   type MonthTotals,
   type RecurrenceTotals,
   type Upcoming,
@@ -47,6 +46,7 @@ import {
   memberCharges,
   memberIncomes,
   memberShares,
+  isCommon,
   scopeToMember,
   sharedEntries,
   unassignedIncomes,
@@ -69,7 +69,7 @@ import {
   type Recurrence,
   isSpending,
 } from '@/domain/types'
-import { useStore } from './store'
+import { type MonthFilter, useStore } from './store'
 
 /* --- Tranches brutes ------------------------------------------------------*/
 
@@ -82,7 +82,20 @@ export const useAdvances = (): Advance[] => useStore((s) => s.data.advances)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
-export const useMemberFilter = (): string | undefined => useStore((s) => s.memberFilter)
+export const useMonthFilter = (): MonthFilter => useStore((s) => s.filter)
+
+/**
+ * Le membre filtré, s'il y en a un.
+ *
+ * `undefined` aussi bien sur « Tout » que sur « Commun » : ces deux lectures
+ * n'ont pas de membre, et tout ce qui demande « qui ? » n'a rien à en tirer.
+ * Ce qui doit distinguer les deux lit `useMonthFilter`.
+ */
+export const useMemberFilter = (): string | undefined =>
+  useStore((s) => (s.filter.kind === 'member' ? s.filter.memberId : undefined))
+
+/** Le pot commun seul — ni les lignes de personne, ni le prorata. */
+export const useIsCommonFilter = (): boolean => useStore((s) => s.filter.kind === 'common')
 export const useCurrencyCode = (): string => useStore((s) => s.data.settings.currency)
 
 /** Les catégories utilisables : les archivées ne sont plus proposées. */
@@ -220,13 +233,13 @@ export type MonthScope = {
  */
 export function useMonthScope(): MonthScope {
   const entries = useEntries()
-  const member = useMemberFilter()
+  const filter = useMonthFilter()
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
 
   return useMemo(
-    () => scopeEntries(entries, member, kindOf, incomes),
-    [entries, member, kindOf, incomes],
+    () => scopeEntries(entries, filter, kindOf, incomes),
+    [entries, filter, kindOf, incomes],
   )
 }
 
@@ -240,15 +253,27 @@ export function useMonthScope(): MonthScope {
  */
 function scopeEntries(
   entries: readonly Entry[],
-  member: MemberFilter,
+  filter: MonthFilter,
   kindOf: (categoryId: string) => CategoryKind,
   incomes: readonly MemberIncome[],
 ): MonthScope {
-  if (member === undefined) return { entries: [...entries], prorated: false, partial: false }
-  const scoped = scopeToMember(entries, member, kindOf, incomes)
+  if (filter.kind === 'all') return { entries: [...entries], prorated: false, partial: false }
+
+  // Le pot seul, à son montant plein : c'est l'exact inverse de `scopeToMember`,
+  // qui découpe ces mêmes lignes en parts. Ici on ne découpe rien — une charge
+  // commune n'appartient à personne, et c'est précisément ce qu'on veut voir.
+  if (filter.kind === 'common') {
+    return {
+      entries: entries.filter((entry) => isCommon(entry, kindOf)),
+      prorated: false,
+      partial: false,
+    }
+  }
+
+  const scoped = scopeToMember(entries, filter.memberId, kindOf, incomes)
   if (scoped !== null) return { entries: scoped, prorated: true, partial: false }
   return {
-    entries: entries.filter((entry) => entry.memberId === member),
+    entries: entries.filter((entry) => entry.memberId === filter.memberId),
     prorated: false,
     partial: true,
   }
@@ -264,9 +289,18 @@ function scopeEntries(
 export function useMonthEntries(ym?: YearMonth): Entry[] {
   const entries = useEntries()
   const current = useCurrentYm()
-  const member = useMemberFilter()
+  const filter = useMonthFilter()
+  const kindOf = useKindOf()
   const month = ym ?? current
-  return useMemo(() => entriesOfMonth(entries, month, member), [entries, month, member])
+  return useMemo(() => {
+    // Sur le commun, la liste garde les lignes entières : c'est le pot qu'on
+    // regarde, et une charge commune y tombe pour son montant, à personne.
+    if (filter.kind === 'common') {
+      return entriesOfMonth(entries, month).filter((entry) => isCommon(entry, kindOf))
+    }
+    const member = filter.kind === 'member' ? filter.memberId : undefined
+    return entriesOfMonth(entries, month, member)
+  }, [entries, month, filter, kindOf])
 }
 
 /** Les entrées du mois affiché, à la portée de lecture courante. */
@@ -311,7 +345,7 @@ export function useUpcoming(limit = 5): Upcoming[] {
   const entries = useEntries()
   const recurrences = useRecurrences()
   const months = useStore((s) => s.data.months)
-  const member = useMemberFilter()
+  const filter = useMonthFilter()
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
 
@@ -321,8 +355,8 @@ export function useUpcoming(limit = 5): Upcoming[] {
     // Large devant `limit` : le filtre par membre peut en écarter, et couper à
     // cinq avant de filtrer rendrait une liste plus courte que demandé.
     const due = upcomingDue(entries, recurrences, opened, on, limit * 4)
-    return withDaysLeft(scopeEntries(due, member, kindOf, incomes).entries, on).slice(0, limit)
-  }, [entries, recurrences, months, member, kindOf, incomes, limit])
+    return withDaysLeft(scopeEntries(due, filter, kindOf, incomes).entries, on).slice(0, limit)
+  }, [entries, recurrences, months, filter, kindOf, incomes, limit])
 }
 
 /* --- Lecture par nature ---------------------------------------------------*/
