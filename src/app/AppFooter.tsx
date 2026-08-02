@@ -3,7 +3,7 @@ import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import { ExternalIcon } from '@/ui/Icons'
-import { ABOUT_PATH, STYLEGUIDE_ROUTE } from './routes'
+import { ABOUT_PATH } from './routes'
 import { REPO_URL, VERSION } from './meta'
 
 /* La classe des liens de texte du repo — soulignés, et hauts de 44px pour la
@@ -20,6 +20,12 @@ export const LINK =
  *
  * La page « à propos » ne le rend pas : sa tuile « Le projet » porte déjà les
  * mêmes liens, et les deux se seraient retrouvés l'un sous l'autre sur mobile.
+ *
+ * **Pas de lien vers le styleguide.** Il y figurait, et il n'avait rien à y
+ * faire : c'est un livrable de conception, pas une destination pour quelqu'un
+ * qui découvre l'app et cherche à savoir ce qu'elle fait. Il vit sur « à
+ * propos », à côté du dépôt et de la licence, où son lecteur est déjà celui qui
+ * vient de lire que le code est ouvert.
  */
 export function AppFooter() {
   return (
@@ -29,9 +35,6 @@ export function AppFooter() {
           {fr.nav.about}
         </Link>
         <ExternalLink href={REPO_URL}>{fr.about.repo}</ExternalLink>
-        <Link to={STYLEGUIDE_ROUTE.path} className={LINK}>
-          {STYLEGUIDE_ROUTE.label}
-        </Link>
       </nav>
       <p className="t-axis text-muted">
         {tpl(fr.about.version, VERSION)} · {fr.about.license}

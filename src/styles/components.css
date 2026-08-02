@@ -72,10 +72,11 @@
      onze pixels en mono espacé, « PRÉVISIONNEL » y consomme déjà toute la
      place. La tuile est déclarée `container-type: inline-size`, ces requêtes
      visent donc sa boîte de contenu — largeur moins le rembourrage.
-     Deux paliers, du moins coûteux au plus coûteux : d'abord l'étiquette
-     resserre ses marges et son interlettrage, ensuite seulement le glyphe
-     s'efface. Le libellé porte le sens, le repère ne fait que l'accélérer :
-     c'est lui qu'on sacrifie en dernier, jamais le texte. */
+     Trois paliers, du moins coûteux au plus coûteux : d'abord l'étiquette
+     resserre ses marges et son interlettrage, ensuite le glyphe s'efface,
+     enfin elle rend ce qui lui reste de marge et d'espacement. Le libellé porte
+     le sens, le repère ne fait que l'accélérer : c'est lui qu'on sacrifie avant
+     le texte, et le texte jamais. */
   @container (max-width: 200px) {
     .eyebrow-pill {
       padding-inline: 6px;
@@ -83,7 +84,20 @@
     }
   }
 
+  /* Le troisième palier existe parce que le deuxième ne suffisait pas :
+     « RESTE À VIVRE » débordait encore de 4px de sa 2×1 à 320px, glyphe déjà
+     masqué. Treize caractères espacés ne tiennent pas dans 104px — et treize
+     caractères, c'est le vocabulaire de l'app, pas une exception.
+     L'interlettrage tombe donc à zéro, et pas à une valeur intermédiaire : à
+     0,02em il restait un pixel de trop, et un palier qui ne règle pas le cas
+     pour lequel il existe n'est qu'une dette. C'est le dernier — après lui il
+     ne reste que le libellé, et un libellé ne se coupe pas. */
   @container (max-width: 124px) {
+    .eyebrow-pill {
+      padding-inline: 4px;
+      letter-spacing: 0;
+    }
+
     .eyebrow-pill > svg {
       display: none;
     }

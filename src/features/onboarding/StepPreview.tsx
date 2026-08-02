@@ -17,7 +17,7 @@ import { Tile } from '@/ui/Tile'
  */
 export function HouseholdPreview({ name }: { name: string }) {
   return (
-    <Tile className="gap-4">
+    <Tile className="gap-3">
       <p className="t-label">{fr.onboarding.previewHousehold}</p>
       {/* Le rendu exact de l'en-tête de `Nav.tsx` — mêmes classes, même ordre.
           `placeholder` tient la ligne tant que rien n'est tapé : un aperçu qui
@@ -34,7 +34,7 @@ export function HouseholdPreview({ name }: { name: string }) {
 
 export function MembersPreview({ members }: { members: readonly Member[] }) {
   return (
-    <Tile className="gap-4">
+    <Tile className="gap-3">
       {members.length === 0 ? (
         <p className="t-label">{fr.onboarding.previewMembersEmpty}</p>
       ) : (

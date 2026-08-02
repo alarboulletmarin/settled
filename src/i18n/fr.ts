@@ -31,11 +31,12 @@ export const fr = {
     monthRing: 'Part du mois déjà confirmée',
     monthRingRead: '68 % du mois est confirmé, soit 1 240 € sur 1 820 €.',
     monthOf: '%s sur %s',
+    incomeHint: 'salaires et allocations du mois',
     splitTitle: 'Chacun sa part',
     privacyTitle: 'Rien ne sort d’ici',
     privacyShort: 'Pas de compte, pas de serveur.',
 
-    /* Les trois idées qui font l'app, en prose et hors de la grille : elles
+    /* Les quatre idées qui font l'app, en prose et hors de la grille : elles
        demandent trois lignes chacune, et une tuile qui en porte trois n'est plus
        une tuile. */
     principles: 'Ce qui distingue cette app',
@@ -46,11 +47,14 @@ export const fr = {
     privacyBody:
       'Pas de compte, pas de serveur, pas de mesure d’audience. Tes données vivent dans ce navigateur, et l’export est la seule porte de sortie — c’est toi qui l’ouvres.',
 
-    /* Pas de lecture secondaire sur cette tuile : une 4×1 fait 88px de haut
-       dont 56 utiles, et l'eyebrow avec la rangée des quatre natures les
-       consomment déjà. Ce qu'elle aurait dit — le sens contre la nature — se lit
-       en entier sur la page « à propos », qui a la place de le poser. */
+    /* Quatrième principe, et non plus une tuile. « QUATRE NATURES, UN SEUL
+       FLUX » fait 28 caractères : sur une 4×1 à 320px, la pilule en demandait
+       244 pour 246 disponibles. Deux pixels de marge, c'est-à-dire le même
+       débordement que « CAPACITÉ D'ÉPARGNE », mais en sursis. En prose, l'idée
+       a de toute façon la place d'être dite en entier. */
     kindsTitle: 'Quatre natures, un seul flux',
+    kindsBody:
+      'Rien n’est rangé en comptes bancaires : tout est une entrée ou une sortie, sous l’une des quatre natures. Le sens dit si l’argent entre ou sort, la nature dit ce qu’il devient — un virement sur un livret sort du compte comme un plein d’essence, mais l’un est déplacé et l’autre consommé.',
 
     /* La seule chose qui empêche la grille de mentir. En texte lisible et non
        en filigrane : un avertissement qu'on ne peut pas lire n'en est pas un. */

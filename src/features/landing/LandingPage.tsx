@@ -51,10 +51,21 @@ export function LandingPage() {
   const empty = status === 'onboarding'
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-10 md:px-8 md:py-14">
+    /* `px-4 md:px-8` — le cadre exact d'`AppShell`. Les tuiles de démonstration
+       font alors très précisément la largeur de celles du vrai mois, ce que la
+       page prétend montrer ; et sur une 2×1 à 320px, ces huit pixels sont huit
+       pour cent de la place disponible. */
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10 md:px-8 md:py-14">
       <header className="flex flex-col gap-5">
-        <span className="t-eyebrow text-muted">{fr.app.name}</span>
-        <h1 className="t-hero-fit max-w-[16ch]">{fr.app.tagline}</h1>
+        {/* L'étiquette colle à ce qu'elle nomme, comme partout ailleurs — la
+            colonne latérale et l'en-tête des deux questions la posent juste
+            au-dessus de leur titre. Laissée dans le `gap-5` du bloc, elle se
+            détachait à la même distance que le paragraphe : cinq éléments à
+            intervalle égal ne font plus une hiérarchie, ils font une liste. */}
+        <div className="flex flex-col gap-2">
+          <span className="t-eyebrow text-muted">{fr.app.name}</span>
+          <h1 className="t-hero-fit max-w-[16ch]">{fr.app.tagline}</h1>
+        </div>
         <p className="t-body max-w-prose">{fr.landing.intro}</p>
 
         {/* Tant que l'hydratation n'a pas répondu, on ne sait pas encore quoi
@@ -124,10 +135,15 @@ function LandingPrinciples() {
   return (
     <section className="flex flex-col gap-5">
       <h2 className="t-section">{fr.landing.principles}</h2>
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* Deux colonnes et non quatre : à `max-w-5xl`, quatre blocs de prose
+          tombent sous 230px de large, où une ligne ne porte plus que cinq mots.
+          `gap-4` comme toute grille de contenu de l'app — une gouttière propre
+          à cette page se serait vue contre celle du bento, juste au-dessus. */}
+      <div className="grid gap-4 lg:grid-cols-2">
         {[
           { title: fr.landing.monthTitle, body: fr.landing.monthBody },
           { title: fr.landing.splitTitle, body: fr.landing.splitBody },
+          { title: fr.landing.kindsTitle, body: fr.landing.kindsBody },
           { title: fr.landing.privacyTitle, body: fr.landing.privacyBody },
         ].map((item) => (
           <div key={item.title} className="flex max-w-prose flex-col gap-2">
@@ -161,9 +177,9 @@ function LandingPrinciples() {
  */
 function LandingDoors() {
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-5">
       <h2 className="t-section">{fr.landing.doors}</h2>
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Tile className="gap-3">
           <Eyebrow icon={DataIcon}>{fr.landing.importTitle}</Eyebrow>
           <p className="t-label">{fr.landing.importHint}</p>

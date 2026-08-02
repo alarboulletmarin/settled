@@ -214,6 +214,21 @@ colonnes, en pleine largeur.
 
 Vérifié sans débordement horizontal de 320 à 1920px sur tous les écrans.
 
+Le débordement qui se glisse le plus facilement n'est pas celui de la page mais
+celui d'une **pilule d'eyebrow dans une tuile plate**. Une `2×1` reste en
+demi-colonne sur mobile, seule de tous les formats, et n'offre que ~104px de
+contenu à 320px : l'eyebrow y tient sur une ligne quoi qu'il arrive, resserre
+son interlettrage, lâche son icône, rend le reste de son interlettrage, puis se
+fait trancher. Le plafond est de **13 caractères** — au-delà, le format est
+`4×1`, comme la tuile Capacité d'épargne (DS §5).
+
+Il se contrôle en mesurant, pas en relisant : sur chaque `.eyebrow-pill`, on
+compare son `scrollWidth` à la boîte de contenu de sa tuile, et le `scrollHeight`
+de chaque `.tile` à son `clientHeight`. À 320px une coupe de quatre pixels se lit
+comme un mot qu'on n'a pas su lire, pas comme un défaut — c'est exactement ce
+qu'une relecture laisse passer. « Reste à vivre » débordait ainsi de 4px sur
+l'écran du mois ; c'est le troisième palier de dégradation qui l'a réglé.
+
 Saisies et fiches sont des écrans pleins avec leur URL, pas des feuilles
 modales : rien à faire glisser, rien à refermer pour revenir. `ui/Sheet.tsx`
 sert à ce pour quoi une feuille est faite — une explication qu'on ouvre et
