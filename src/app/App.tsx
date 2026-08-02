@@ -1,64 +1,20 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AdvanceFormPage } from '@/features/advances/AdvanceFormPage'
-import { CalendarPage } from '@/features/calendar/CalendarPage'
-import { CreditFormPage } from '@/features/credits/CreditFormPage'
-import { CreditsPage } from '@/features/credits/CreditsPage'
-import { HistoryPage } from '@/features/history/HistoryPage'
-import { EntryPage } from '@/features/month/EntryPage'
-import { MonthPage } from '@/features/month/MonthPage'
-import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
-import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPage'
-import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
-import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
-import { SavingsPage } from '@/features/savings/SavingsPage'
-import { SettingsPage } from '@/features/settings/SettingsPage'
-import { SplitPage } from '@/features/split/SplitPage'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { LandingPage } from '@/features/landing/LandingPage'
 import { useStore } from '@/store/store'
 import { StyleguidePage } from '@/styleguide/StyleguidePage'
 import { useApplyTheme } from '@/theme/useTheme'
-import { ADVANCE_NEW_PATH, RECURRENCES_PATH, RECURRENCE_NEW_PATH } from './routes'
 import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
-import { AppShell } from './AppShell'
 import { BootScreen } from './BootScreen'
+import { AppRoutes, OnboardingRoutes } from './Routes'
+import { LANDING_PATH } from './routes'
 import { UpdatePrompt } from './UpdatePrompt'
-
-/** Les routes de l'app, une fois le foyer créé. */
-function AppRoutes() {
-  return (
-    <AppShell>
-      <Routes>
-        <Route path="/" element={<MonthPage />} />
-        <Route path="/depense" element={<EntryPage />} />
-        <Route path="/depense/:id" element={<EntryPage />} />
-        <Route path="/calendrier" element={<CalendarPage />} />
-        <Route path={RECURRENCES_PATH} element={<RecurrencesPage />} />
-        <Route path={RECURRENCE_NEW_PATH} element={<RecurrenceFormPage />} />
-        <Route path={`${RECURRENCES_PATH}/:id`} element={<RecurrenceDetailPage />} />
-        <Route path={`${RECURRENCES_PATH}/:id/modifier`} element={<RecurrenceFormPage />} />
-        {/* L'écran s'appelait « Abonnements », et son URL le disait. Un lien
-            partagé, un signet ou une icône posée sur l'écran d'accueil pointent
-            encore là : ils atterrissent sur la liste plutôt que sur le mois. */}
-        <Route path="/abonnements/*" element={<Navigate to={RECURRENCES_PATH} replace />} />
-        <Route path="/credits" element={<CreditsPage />} />
-        <Route path="/credits/nouveau" element={<CreditFormPage />} />
-        <Route path="/credits/:id" element={<CreditFormPage />} />
-        <Route path="/repartition" element={<SplitPage />} />
-        <Route path="/epargne" element={<SavingsPage />} />
-        <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
-        <Route path="/historique" element={<HistoryPage />} />
-        <Route path="/reglages" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AppShell>
-  )
-}
 
 function Booted() {
   const status = useStore((s) => s.status)
   if (status === 'loading') return <BootScreen />
-  if (status === 'onboarding') return <OnboardingPage />
+  if (status === 'onboarding') return <OnboardingRoutes />
   return <AppRoutes />
 }
 
@@ -79,6 +35,11 @@ export function App() {
           {/* Livrable permanent, joignable à tout moment — y compris avant
               que le foyer ne soit créé. */}
           <Route path="/styleguide" element={<StyleguidePage />} />
+          {/* La présentation ne parle pas d'un foyer, elle parle de l'app :
+              elle répond donc dans les deux états, et surtout avant que
+              l'hydratation ait dit lequel — c'est le premier écran, il n'a pas
+              à attendre une lecture d'IndexedDB pour s'afficher. */}
+          <Route path={LANDING_PATH} element={<LandingPage />} />
           <Route path="*" element={<Booted />} />
         </Routes>
         <Toaster />

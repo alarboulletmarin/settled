@@ -15,6 +15,7 @@
 
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
 import { ArrowsClockwise } from '@phosphor-icons/react/dist/csr/ArrowsClockwise'
+import { ArrowUpRight } from '@phosphor-icons/react/dist/csr/ArrowUpRight'
 import { CalendarBlank } from '@phosphor-icons/react/dist/csr/CalendarBlank'
 import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown'
 import { CaretLeft } from '@phosphor-icons/react/dist/csr/CaretLeft'
@@ -79,6 +80,13 @@ export const Warning = adapt(WarningCircle)
 /* Le repère d'une tuile qui s'explique sur place, par opposition au chevron de
    celle qui mène ailleurs : deux gestes, deux glyphes. */
 export const InfoIcon = adapt(Info)
+/* Le seul lien qui quitte l'app est celui du dépôt, et rien ne le distinguait
+   d'une navigation interne — dans une app installée, où il n'y a pas de bouton
+   retour, partir sans le savoir se paie cher. Une flèche sortante, et non la
+   marque du service : un logo ne dit pas qu'on s'en va, il décore, et le DS §1
+   n'en veut pas. Poser les deux ferait deux marqueurs côte à côte, donc aucun
+   (DS §9.1). */
+export const ExternalIcon = adapt(ArrowUpRight)
 
 /* --- Repère — navigation --------------------------------------------------*/
 

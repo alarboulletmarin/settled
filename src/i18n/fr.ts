@@ -9,6 +9,68 @@ export const fr = {
     tagline: 'Les finances du foyer, sur ton appareil.',
   },
 
+  landing: {
+    /* La promesse est déjà `app.tagline` — la répéter ici en ferait une seconde
+       vérité. Ce qui suit dit le mécanisme, parce que « suivi des finances du
+       foyer » ne distingue cette app d'aucune autre. */
+    intro:
+      'Tu écris une fois ce qui revient chaque mois — loyer, abonnements, salaires. Le mois suivant s’ouvre déjà rempli de ce qui est prévu, et tu confirmes au fil de l’eau ce qui est réellement tombé.',
+    /* Pas « Commencer » : c'est déjà le libellé du dernier bouton des deux
+       questions (`onboarding.start`). Le DS §7 veut qu'une action garde son nom
+       dans le flux — donc que deux actions différentes ne le partagent pas. */
+    start: 'Créer mon foyer',
+    open: 'Ouvrir mon mois',
+    exampleHint: 'Juste voir à quoi ça ressemble ? Un foyer d’exemple, complet, en un clic.',
+    privacy: 'Pas de compte, pas de serveur. Deux questions, et l’app est utilisable.',
+
+    /* Ce que portent les tuiles : une étiquette, un chiffre, une lecture
+       secondaire. Le raisonnement de chacune est plus bas, en `principles`, où
+       rien ne le coupe par le bas (DS §5). */
+    monthTitle: 'Prévu, puis confirmé',
+    monthHint: 'confirmé sur prévu',
+    monthRing: 'Part du mois déjà confirmée',
+    monthRingRead: '68 % du mois est confirmé, soit 1 240 € sur 1 820 €.',
+    monthOf: '%s sur %s',
+    splitTitle: 'Chacun sa part',
+    privacyTitle: 'Rien ne sort d’ici',
+    privacyShort: 'Pas de compte, pas de serveur.',
+
+    /* Les trois idées qui font l'app, en prose et hors de la grille : elles
+       demandent trois lignes chacune, et une tuile qui en porte trois n'est plus
+       une tuile. */
+    principles: 'Ce qui distingue cette app',
+    monthBody:
+      'Le mois s’ouvre seul avec tout ce qui revient. Tu coches ce qui est tombé ; le reste continue de s’afficher comme prévu, sans disparaître de la prévision.',
+    splitBody:
+      'Les charges communes se répartissent entre les membres au prorata de leurs revenus, et la somme des parts vaut exactement le total, au centime près. Ce qu’une seule personne a avancé se régularise le mois suivant.',
+    privacyBody:
+      'Pas de compte, pas de serveur, pas de mesure d’audience. Tes données vivent dans ce navigateur, et l’export est la seule porte de sortie — c’est toi qui l’ouvres.',
+
+    /* Pas de lecture secondaire sur cette tuile : une 4×1 fait 88px de haut
+       dont 56 utiles, et l'eyebrow avec la rangée des quatre natures les
+       consomment déjà. Ce qu'elle aurait dit — le sens contre la nature — se lit
+       en entier sur la page « à propos », qui a la place de le poser. */
+    kindsTitle: 'Quatre natures, un seul flux',
+
+    /* La seule chose qui empêche la grille de mentir. En texte lisible et non
+       en filigrane : un avertissement qu'on ne peut pas lire n'en est pas un. */
+    sample: 'Les chiffres ci-dessus sont ceux d’un foyer d’exemple.',
+
+    /* Deux, et non trois : la troisième — celle qui veut seulement voir — est
+       servie tout en haut, à côté du bouton principal. C'est une porte d'entrée,
+       pas un recours, et le même bouton deux fois sur un même écran ne se lit
+       plus comme deux occasions mais comme une redite. */
+    doors: 'Deux façons de ne pas commencer par une page blanche',
+    /* Déplacées depuis `onboarding` avec les contrôles qu'elles décrivent : une
+       clé qui ment sur son lieu d'emploi se retrouve un jour modifiée pour un
+       écran qu'elle ne sert plus. */
+    importTitle: 'Restaurer un export',
+    importHint: 'Tu as déjà un fichier Tout compte fait ? Restaure-le sans passer par les questions.',
+    schemaTitle: 'Partir de tes notes',
+    schemaHint:
+      'Tes comptes sont déjà écrits quelque part ? Donne ce schéma à un assistant avec tes notes, il t’en fera un fichier à importer.',
+  },
+
   calendarNames: {
     months: [
       'janvier',
@@ -92,6 +154,8 @@ export const fr = {
     history: 'Historique',
     settings: 'Réglages',
     styleguide: 'Styleguide',
+    about: 'À propos',
+    landing: 'La présentation',
   },
 
   shell: {
@@ -124,6 +188,7 @@ export const fr = {
 
   settings: {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
+    aboutLink: 'Le projet, le code et la licence',
 
     household: 'Foyer',
     householdName: 'Nom du foyer',
@@ -895,15 +960,64 @@ export const fr = {
     membersRemoveConfirm: 'Retirer %s du foyer ?',
     solo: 'Je suis seul·e',
     start: 'Commencer',
-    importHint: 'Tu as déjà un fichier Tout compte fait ? Restaure-le sans passer par ici.',
-    /* Les deux personnes qui arrivent ici sans export sont celles qui ont le
-       plus à gagner : l'une a déjà tout écrit ailleurs, l'autre veut seulement
-       voir. Les envoyer d'abord créer un foyer pour trouver de quoi s'en
-       passer serait exactement l'inverse du service rendu. */
-    schemaHint:
-      'Tes comptes sont déjà écrits quelque part ? Donne ce schéma à un assistant avec tes notes, il t’en fera un fichier à importer.',
-    exampleHint: 'Juste voir à quoi ça ressemble ? Un foyer d’exemple, complet, en un clic.',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
+
+    /* En PWA installée il n'y a pas de bouton retour du navigateur : chaque
+       étape porte le sien, sans quoi on n'a plus qu'à répondre ou à fermer. */
+    backToLanding: 'Revenir à la présentation',
+    backToStep: 'Revenir à l’étape 1',
+    progress: 'Progression : étape %s sur 2',
+
+    /* L'aperçu montre la réponse à son emplacement réel plutôt que de la
+       décrire : ce qu'on tape à l'étape 1 est ce qu'on lira en haut de chaque
+       écran, et le montrer là est plus court que de le promettre. */
+    previewHousehold: 'Ce que tu liras en haut de chaque écran',
+    previewMembersEmpty:
+      'Sans personne ici, tout t’est attribué — le foyer fonctionne très bien en solo.',
+    previewMembers:
+      'Une fois leurs revenus posés, les charges communes se partagent entre eux au prorata.',
+  },
+
+  about: {
+    what: 'Ce que c’est',
+    whatBody:
+      'Tout compte fait suit les finances d’un foyer : ce qui rentre, ce qui sort, ce qu’il reste, et qui paie quoi.',
+    whatNotBank:
+      'Ce n’est pas une banque. Aucun compte n’y est relié, aucun relevé n’y est lu : tu écris ce que tu sais, l’app tient les comptes.',
+    whatOffline:
+      'Une fois ouverte, elle fonctionne sans réseau et s’installe sur l’écran d’accueil comme une app.',
+
+    how: 'Comment ça marche',
+    howRecurring:
+      'Ce qui revient chaque mois s’écrit une fois. Loyer, abonnement, salaire : l’app pose leurs échéances dans les mois à venir.',
+    howForecast:
+      'Le mois arrive déjà écrit, en prévision. Tu confirmes chaque échéance quand elle tombe, et le solde suit.',
+    howSplit:
+      'Les charges communes se partagent au prorata des revenus. Ce qu’une seule personne a avancé se rend le mois suivant.',
+    howKinds:
+      'Rien n’est rangé en comptes bancaires : tout est une entrée ou une sortie, sous l’une des quatre natures — ressources, charges, crédits, versements.',
+
+    data: 'Tes données',
+    dataBody:
+      'Tout est enregistré dans ce navigateur, et nulle part ailleurs : ni compte, ni serveur, ni mesure d’audience.',
+    /* La promesse et sa contrepartie dans la même tuile : « rien ne sort d'ici »
+       et « rien ne revient si tu vides le navigateur » sont la même phrase, et
+       n'en garder qu'une moitié se paierait un jour. */
+    dataLimit:
+      'C’est aussi la contrepartie : vider les données du navigateur les efface, et personne ne peut te les rendre. Exporte de temps en temps — l’app te le rappelle au bout de trente jours.',
+
+    project: 'Le projet',
+    projectBody:
+      'Le code est ouvert, sous licence MIT : tu peux le lire, le copier, le faire tourner chez toi.',
+    repo: 'Le code sur GitHub',
+    license: 'La licence MIT',
+    version: 'Version %s',
+    /* Annoncé aux lecteurs d'écran, jamais à l'œil : le soulignement dit déjà
+       que c'est un lien, rien ne dit qu'il quitte l'app — et en mode installé,
+       il n'y a pas de bouton retour pour revenir d'un site ouvert par erreur. */
+    newWindow: '(s’ouvre dans une nouvelle fenêtre)',
+
+    seeLanding: 'Revoir la présentation',
   },
 
   styleguide: {

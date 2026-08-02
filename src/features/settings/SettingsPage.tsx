@@ -1,7 +1,9 @@
+import { Link } from 'react-router-dom'
+import { ABOUT_PATH } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { useStore } from '@/store/store'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { ThemeIcon } from '@/ui/Icons'
+import { InfoIcon, ThemeIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
@@ -33,6 +35,27 @@ function ThemeSection() {
   )
 }
 
+/**
+ * Après la tuile des données, et non avant : sa triple confirmation clôt un
+ * sujet, pas la page, et « à propos » est ce qu'on lit quand on n'a plus rien à
+ * régler. C'est surtout **la seule porte vers `/a-propos` sous 1024px** — la
+ * barre d'onglets ne peut pas en porter une sixième sans tronquer un libellé.
+ */
+function AboutSection() {
+  return (
+    <Tile className="gap-3">
+      <Eyebrow icon={InfoIcon}>{fr.nav.about}</Eyebrow>
+      <p className="t-label">{fr.about.whatBody}</p>
+      <Link
+        to={ABOUT_PATH}
+        className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"
+      >
+        {fr.settings.aboutLink}
+      </Link>
+    </Tile>
+  )
+}
+
 export function SettingsPage() {
   return (
     <>
@@ -42,6 +65,7 @@ export function SettingsPage() {
         <CategoriesSection />
         <ThemeSection />
         <DataSection />
+        <AboutSection />
       </div>
     </>
   )

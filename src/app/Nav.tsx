@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { scrollToTop } from '@/lib/reveal'
-import { NAV_ROUTES, STYLEGUIDE_ROUTE } from './routes'
+import { ABOUT_PATH, NAV_ROUTES, STYLEGUIDE_ROUTE } from './routes'
 
 /* Un onglet ramène en haut de sa section, qu'on y soit déjà ou non — c'est ce
    que fait le logo d'un site. Sans ça, toucher l'onglet actif ne produisait
@@ -49,18 +49,29 @@ export function Sidebar({ householdName }: { householdName: string }) {
         )
       })}
 
-      <NavLink
-        to={STYLEGUIDE_ROUTE.path}
-        className={({ isActive }) =>
-          cn(
-            ITEM,
-            'mt-auto h-11 justify-start text-muted',
-            isActive ? 'bg-surface-2 text-text' : 'hover:bg-surface-2',
-          )
-        }
-      >
-        {STYLEGUIDE_ROUTE.label}
-      </NavLink>
+      {/* Les deux liens secondaires se groupent, et c'est le groupe qui porte
+          le `mt-auto`. « À propos » au-dessus : c'est le seul des deux qui
+          s'adresse à qui utilise l'app. */}
+      <div className="mt-auto flex flex-col gap-1">
+        {[
+          { path: ABOUT_PATH, label: fr.nav.about },
+          STYLEGUIDE_ROUTE,
+        ].map((route) => (
+          <NavLink
+            key={route.path}
+            to={route.path}
+            className={({ isActive }) =>
+              cn(
+                ITEM,
+                'h-11 justify-start text-muted',
+                isActive ? 'bg-surface-2 text-text' : 'hover:bg-surface-2',
+              )
+            }
+          >
+            {route.label}
+          </NavLink>
+        ))}
+      </div>
     </nav>
   )
 }

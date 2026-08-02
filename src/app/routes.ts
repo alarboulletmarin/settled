@@ -34,6 +34,14 @@ export const NAV_ROUTES: RouteDef[] = [
 
 export const STYLEGUIDE_ROUTE = { path: '/styleguide', label: fr.nav.styleguide }
 
+/* La présentation et « à propos » ne parlent pas d'un foyer, elles parlent de
+   l'app : elles répondent donc dans les deux états, avant comme après sa
+   création. Les deux questions, elles, n'ont de sens que tant qu'il n'existe
+   pas — d'où une URL à part, qui disparaît avec l'état qui la justifie. */
+export const LANDING_PATH = '/bienvenue'
+export const ONBOARDING_PATH = '/demarrer'
+export const ABOUT_PATH = '/a-propos'
+
 /* Saisies et fiches sont des écrans pleins, pas des feuilles : elles ont donc
    une URL. Aucune ne figure dans la navigation, on n'y va que par une action. */
 export const ENTRY_NEW_PATH = '/depense'
