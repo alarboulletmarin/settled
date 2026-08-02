@@ -195,6 +195,8 @@ Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une
 
 Ce maximum n'est pas un dû : une tuile d'une seule rangée fait 88px, dont 56 utiles, et l'eyebrow avec un chiffre de 32px en demandent 57 à eux deux. Les formats `2×1` et `4×1` resserrent donc leur cadre à 16px et ramènent leur chiffre à 26px — une demi-tuile porte un demi-chiffre. Un contenu qui déborde quand même se coupe **par le bas** : une liste ancrée au centre remonte sur son eyebrow, ce qui est le seul débordement qui se voie vraiment.
 
+La largeur a son plafond, et c'est lui qui choisit entre `2×1` et `4×1`. La `2×1` reste en demi-colonne sur mobile, seule de tous les formats : elle n'offre que **~104px de contenu à 320px**. L'eyebrow y tient sur une ligne quoi qu'il arrive (§6), donc passé sa dégradation il déborde et se fait trancher. Mesuré : le plafond est de **13 caractères** — « Prévisionnel » (12) et « Reste à vivre » (13) tiennent, « Capacité d'épargne » (18) non, elle déborde de 35px. **Au-delà de 13 caractères, le format est `4×1`.** Un débordement de largeur ne se voit pas « par le bas » : il coupe le libellé au milieu d'un mot, et c'est le pire des deux.
+
 ---
 
 ## 6. Composants
@@ -216,7 +218,7 @@ Une tuile dont le **contenu est une liste à lire** garde un vrai lien plutôt q
 
 Un état **pressé** sur toute tuile actionnable, et pas seulement un survol : la moitié des écrans n'a pas de curseur.
 
-**Eyebrow** — mono 11px majuscules dans une pilule `--surface-2`, ancrée en haut à gauche de la tuile. C'est ce qui donne le rythme de la référence : la tuile n'a pas de titre, elle a une étiquette. Elle accepte un repère (§9) à sa gauche, 13px. L'étiquette tient toujours sur une ligne : sur une tuile trop étroite elle resserre d'abord ses marges et son interlettrage, et n'abandonne le repère qu'ensuite — c'est le libellé qui porte le sens.
+**Eyebrow** — mono 11px majuscules dans une pilule `--surface-2`, ancrée en haut à gauche de la tuile. C'est ce qui donne le rythme de la référence : la tuile n'a pas de titre, elle a une étiquette. Elle accepte un repère (§9) à sa gauche, 13px. L'étiquette tient toujours sur une ligne, et se dégrade en trois paliers : elle resserre d'abord ses marges et son interlettrage, abandonne le repère ensuite, rend enfin ce qui lui reste d'interlettrage — c'est le libellé qui porte le sens, on le sacrifie en dernier et jamais. Puis elle n'a plus rien à lâcher : au bout de ces trois paliers, une `2×1` accepte **13 caractères** et pas un de plus (§5). Ce n'est donc pas à l'eyebrow de s'adapter indéfiniment au format, c'est au format d'être choisi pour le libellé.
 
 **Field** — libellé, contrôle, aide ou erreur. Le libellé porte la mention `· obligatoire` ou `· facultatif`, dans la même graisse atténuée. Elle vit dans le `<label>`, donc dans le nom accessible du contrôle : aucun `aria-required` à poser en plus. On la met sur les formulaires qui créent ou modifient une entité, pas sur les rangées d'ajout à un seul champ — un bouton désactivé tant que le champ est vide y dit déjà tout.
 

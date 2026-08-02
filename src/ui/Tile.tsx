@@ -60,6 +60,19 @@ const PADDING = 'p-5 md:p-6'
  * que 48px, et l'eyebrow avec le chiffre en demandent 57. Elle resserre donc
  * son cadre — sans quoi la lecture secondaire, puis le chiffre lui-même, se
  * coupent au bord. Le chiffre s'y réduit aussi, dans `base.css`.
+ *
+ * **Le pendant en largeur, qui décide d'un `span` autant que la hauteur.** Une
+ * `2x1` reste en demi-colonne sur mobile, seule de tous les formats : elle
+ * n'offre que ~104px de contenu à 320px. L'eyebrow y est en `nowrap` et se
+ * dégrade en trois paliers (`components.css`) — marges et interlettrage, puis
+ * l'icône, puis le reste de l'interlettrage — après quoi il déborde et se fait
+ * trancher par l'`overflow-hidden` ci-dessous.
+ *
+ * Mesuré, pas calculé : le plafond d'une `2x1` est de **13 caractères**.
+ * « Reste à vivre » (13) tient, et ne tenait pas avant le troisième palier ;
+ * « Capacité d'épargne » (18) déborde de 35px, d'où la `4x1` de `SavingTile`.
+ * Passé 13 caractères, le format est `4x1` — c'est au format d'être choisi pour
+ * le libellé, pas au libellé d'être raboté pour le format.
  */
 const PADDING_FLAT = 'p-4'
 const FLAT: readonly TileSpan[] = ['2x1', '4x1']

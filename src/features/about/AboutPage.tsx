@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink, LINK } from '@/app/AppFooter'
 import { LICENSE_URL, REPO_URL, VERSION } from '@/app/meta'
-import { LANDING_PATH } from '@/app/routes'
+import { LANDING_PATH, STYLEGUIDE_ROUTE } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { DataIcon, HouseholdIcon, InfoIcon, RecurrencesIcon } from '@/ui/Icons'
@@ -59,6 +59,13 @@ export function AboutPage() {
           <div className="flex flex-wrap items-center gap-x-5">
             <ExternalLink href={REPO_URL}>{fr.about.repo}</ExternalLink>
             <ExternalLink href={LICENSE_URL}>{fr.about.license}</ExternalLink>
+            {/* Le styleguide est ici et nulle part ailleurs côté utilisateur :
+                c'est un livrable de conception, et son lecteur est celui qui
+                vient de lire que le code est ouvert — pas celui qui arrive sur
+                la présentation pour savoir ce que fait l'app. */}
+            <Link to={STYLEGUIDE_ROUTE.path} className={LINK}>
+              {STYLEGUIDE_ROUTE.label}
+            </Link>
             <Link to={LANDING_PATH} className={LINK}>
               {fr.about.seeLanding}
             </Link>

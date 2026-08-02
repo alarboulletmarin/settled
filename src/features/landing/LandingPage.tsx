@@ -51,7 +51,11 @@ export function LandingPage() {
   const empty = status === 'onboarding'
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-10 md:px-8 md:py-14">
+    /* `px-4 md:px-8` — le cadre exact d'`AppShell`. Les tuiles de démonstration
+       font alors très précisément la largeur de celles du vrai mois, ce que la
+       page prétend montrer ; et sur une 2×1 à 320px, ces huit pixels sont huit
+       pour cent de la place disponible. */
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-4 py-10 md:px-8 md:py-14">
       <header className="flex flex-col gap-5">
         <span className="t-eyebrow text-muted">{fr.app.name}</span>
         <h1 className="t-hero-fit max-w-[16ch]">{fr.app.tagline}</h1>
@@ -124,10 +128,13 @@ function LandingPrinciples() {
   return (
     <section className="flex flex-col gap-5">
       <h2 className="t-section">{fr.landing.principles}</h2>
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* Deux colonnes et non quatre : à `max-w-5xl`, quatre blocs de prose
+          tombent sous 230px de large, où une ligne ne porte plus que cinq mots. */}
+      <div className="grid gap-6 lg:grid-cols-2">
         {[
           { title: fr.landing.monthTitle, body: fr.landing.monthBody },
           { title: fr.landing.splitTitle, body: fr.landing.splitBody },
+          { title: fr.landing.kindsTitle, body: fr.landing.kindsBody },
           { title: fr.landing.privacyTitle, body: fr.landing.privacyBody },
         ].map((item) => (
           <div key={item.title} className="flex max-w-prose flex-col gap-2">
