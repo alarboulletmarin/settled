@@ -6,7 +6,7 @@ import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Debt } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { addDebt, removeDebt, replaceDebt } from '@/store/actions'
+import { addDebt, removeDebt, replaceDebt, undoable } from '@/store/actions'
 import { useDebtStatus, useRecurrenceRows } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
@@ -305,8 +305,9 @@ function RemoveDebt({ debt, onDone }: { debt: Debt; onDone: () => void }) {
         }}
         onConfirm={() => {
           setConfirming(false)
-          removeDebt(debt.id)
-          toast(fr.credits.removed)
+          undoable(fr.credits.removed, () => {
+            removeDebt(debt.id)
+          })
           onDone()
         }}
       />

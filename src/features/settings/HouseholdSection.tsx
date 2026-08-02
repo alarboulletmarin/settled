@@ -8,7 +8,7 @@ import {
 import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { addMember, removeMember, renameMember, setHouseholdName } from '@/store/actions'
+import { addMember, removeMember, renameMember, setHouseholdName, undoable } from '@/store/actions'
 import {
   useAdvances,
   useHouseholdName,
@@ -242,8 +242,18 @@ export function HouseholdSection() {
           setRemoving(null)
         }}
         onConfirm={() => {
-          if (removing !== null) removeMember(removing.id)
+          const member = removing
           setRemoving(null)
+          if (member === null) return
+          /* Le seul des six gestes qui n'annonçait rien. C'est aussi celui qui
+             touche le plus d'endroits à la fois — ses entrées et ses
+             récurrences rendues au foyer, ses avances supprimées, le filtre du
+             mois rabattu sur « tout le monde » — et donc celui où l'instantané
+             rend le plus de service : aucun geste inverse ne les recollerait
+             un par un. */
+          undoable(tpl(fr.settings.memberRemoved, member.name), () => {
+            removeMember(member.id)
+          })
         }}
       />
     </Tile>

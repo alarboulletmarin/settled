@@ -4,7 +4,7 @@ import { ADVANCE_NEW_PATH, CREDITS_PATH, RECURRENCE_NEW_PATH, recurrencePath } f
 import { NO_MEMBER, type RecurrenceGroupBy, groupRecurrences } from '@/domain/grouping'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
-import { removeAdvance } from '@/store/actions'
+import { removeAdvance, undoable } from '@/store/actions'
 import {
   useAdvanceStatuses,
   useCategoryMap,
@@ -25,7 +25,6 @@ import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
-import { toast } from '@/ui/toast'
 import { RecurrenceRow } from './RecurrenceRow'
 
 const AXES = [
@@ -321,9 +320,12 @@ function AdvancesSection({ onCreate }: { onCreate: () => void }) {
           setConfirming(null)
         }}
         onConfirm={() => {
-          if (confirming !== null) removeAdvance(confirming)
+          const id = confirming
           setConfirming(null)
-          toast(fr.advances.deleted)
+          if (id === null) return
+          undoable(fr.advances.deleted, () => {
+            removeAdvance(id)
+          })
         }}
       />
     </section>

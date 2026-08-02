@@ -132,6 +132,12 @@ export const fr = {
     more: 'Voir plus',
     less: 'Voir moins',
     other: 'Autres',
+    /* Le retour arrière d'un message. Pas « Annuler » : c'est déjà le bouton
+       qui ferme une boîte de dialogue, et les deux se seraient répondu dans la
+       même — la raison qui fait dire « remettre à confirmer » plutôt
+       qu'« annuler la confirmation ». « Rétablir » dit d'ailleurs ce qui se
+       passe : l'état d'avant revient tel quel. */
+    undo: 'Rétablir',
   },
 
   direction: {
@@ -297,6 +303,7 @@ export const fr = {
        membre, et « Prénom » seul les annoncerait tous pareil. */
     memberRename: 'Prénom de %s',
     memberRemove: 'Retirer %s',
+    memberRemoved: '%s a été retiré du foyer',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     memberRemoveConfirm:
       'Ses entrées et ses récurrences repassent au foyer : rien n’est effacé. Retirer %s ?',

@@ -11,6 +11,7 @@ import {
   removeEntry,
   replaceEntry,
   unconfirmEntry,
+  undoable,
 } from '@/store/actions'
 import { memberRequired } from '@/domain/split'
 import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
@@ -484,8 +485,9 @@ function EntryForm({
             }}
             onConfirm={() => {
               setConfirmingRemoval(false)
-              removeEntry(entry.id)
-              toast(TOAST.removed[toastKey(draft.nature, entry.direction)])
+              undoable(TOAST.removed[toastKey(draft.nature, entry.direction)], () => {
+                removeEntry(entry.id)
+              })
               onDone()
             }}
           />

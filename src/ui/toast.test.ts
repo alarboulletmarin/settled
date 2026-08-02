@@ -56,6 +56,51 @@ describe('pile de messages', () => {
     expect(messages()).toEqual([])
   })
 
+  it('laisse plus de temps au message qui propose un retour arrière', () => {
+    toast('Dépense supprimée', 'default', { label: 'Rétablir', onAction: () => undefined })
+    vi.advanceTimersByTime(4001)
+    // Quatre secondes suffisent à lire, pas à s'apercevoir qu'on s'est trompé
+    // et à atteindre le bouton.
+    expect(messages()).toEqual(['Dépense supprimée'])
+    vi.advanceTimersByTime(4001)
+    expect(messages()).toEqual([])
+  })
+
+  it('retire les retours arrière sans toucher aux messages', () => {
+    toast('Dépense supprimée', 'default', { label: 'Rétablir', onAction: () => undefined })
+    toast('Échéance confirmée')
+
+    useToasts.getState().clearActions()
+
+    expect(messages()).toEqual(['Dépense supprimée', 'Échéance confirmée'])
+    expect(useToasts.getState().toasts.every((t) => t.action === undefined)).toBe(true)
+  })
+
+  it('ne rend pas une pile neuve quand il n’y a aucun retour arrière à retirer', () => {
+    toast('Échéance confirmée')
+    const before = useToasts.getState().toasts
+
+    useToasts.getState().clearActions()
+
+    /* Une mutation du document par échéance confirmée : sans ce garde, chacune
+       rendrait à nouveau toute la pile alors qu'aucun message n'a changé. */
+    expect(useToasts.getState().toasts).toBe(before)
+  })
+
+  it('remplace le retour arrière d’un message répété plutôt que de garder l’ancien', () => {
+    const first = vi.fn()
+    const second = vi.fn()
+    toast('Dépense supprimée', 'default', { label: 'Rétablir', onAction: first })
+    toast('Dépense supprimée', 'default', { label: 'Rétablir', onAction: second })
+
+    expect(counts()).toEqual([2])
+    useToasts.getState().toasts[0]?.action?.onAction()
+
+    // C'est le dernier geste qu'on défait, jamais l'avant-dernier.
+    expect(first).not.toHaveBeenCalled()
+    expect(second).toHaveBeenCalledOnce()
+  })
+
   it('se ferme à la main sans laisser son minuteur derrière', () => {
     toast('Échéance confirmée')
     const id = useToasts.getState().toasts[0]?.id ?? 0
