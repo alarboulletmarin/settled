@@ -33,7 +33,11 @@ export function OnboardingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col justify-center gap-8 px-5 py-10">
+    /* Le cadre d'`AppShell`, comme la présentation et la coquille d'« à propos ».
+       Le `px-5` d'origine datait de la carte `max-w-md` centrée : l'écran est
+       devenu une page à deux colonnes, et trois écrans voisins à trois marges
+       différentes se voient dès qu'on passe de l'un à l'autre. */
+    <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col justify-center gap-8 px-4 py-10 md:px-8">
       <StepProgress
         step={step}
         {...(step === 2

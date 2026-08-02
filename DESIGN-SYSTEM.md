@@ -169,6 +169,10 @@ Base 4px. Échelle : `4 8 12 16 20 24 32 40 56 72`.
 
 Padding intérieur d'une tuile : 20px en mobile, 24px au-delà. Gouttière de grille : 12px en mobile, 16px au-delà.
 
+Trois autres valeurs sont tenues partout et méritent d'être écrites, faute de quoi chaque nouvel écran les redécide : une **grille de contenu hors bento** écarte ses colonnes de **16px** ; un **titre de section** est à **20px** de son contenu, comme le titre d'écran ; l'**intérieur d'une tuile** respire à **12px**. Le cadre de page est `px-4`, `px-8` au-delà de 768px.
+
+Ce ne sont pas des préférences mais des relations : la même relation visuelle garde la même valeur d'un écran à l'autre. Trois gouttières différentes sur une même page se voient bien avant qu'on sache les nommer.
+
 **Mouvement** — 160ms `cubic-bezier(0.2, 0, 0, 1)` par défaut, 240ms pour l'entrée d'une vue. Les nombres s'animent en comptant uniquement au premier affichage d'un écran, jamais sur mise à jour. Tout est neutralisé sous `prefers-reduced-motion`.
 
 ---

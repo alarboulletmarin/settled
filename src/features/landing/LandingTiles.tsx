@@ -59,7 +59,7 @@ export function LandingTiles() {
       {/* Prévu, puis confirmé — l'anneau signature en jauge, comme sur le mois. */}
       <Tile span="4x2" label={fr.landing.monthTitle}>
         <Eyebrow icon={ForecastIcon}>{fr.landing.monthTitle}</Eyebrow>
-        <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6">
+        <div className="flex min-w-0 flex-1 items-center gap-4">
           <Ring
             size={96}
             value={SAMPLE.monthRatio}
