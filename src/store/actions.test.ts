@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeData, makeEntry } from '@/domain/fixtures'
 import { useToasts } from '@/ui/toast'
 import { removeEntry, undoable } from './actions'
@@ -15,6 +15,15 @@ beforeEach(() => {
   /* En `onboarding`, `mutate` ne programme aucune écriture : ce qui se teste
      ici est le retour arrière, pas la persistance, qui a ses propres tests. */
   useStore.setState({ status: 'onboarding', data: makeData({ entries: [LOYER, COURSES] }) })
+})
+
+/* Un message qui propose un retour arrière vit huit secondes, et son minuteur
+   survivrait au fichier de test : il se réveillerait dans un environnement
+   démonté, où `window` n'existe plus. `dismiss` est le seul geste qui l'oublie
+   vraiment — remettre la pile à vide laisserait le minuteur courir. */
+afterEach(() => {
+  const { toasts, dismiss } = useToasts.getState()
+  for (const item of toasts) dismiss(item.id)
 })
 
 describe('undoable', () => {

@@ -182,11 +182,16 @@ Le catalogue par défaut suit le vocabulaire d'un budget familial : Ressources (
 
 Tout est modifiable : renommer une famille, en créer une avec sa nature, ajouter ou archiver une catégorie. La teinte et le sens ne se saisissent jamais — ils découlent de la famille, et les laisser diverger d'elle n'aurait aucun sens lisible.
 
+Un renommage n'est enregistré qu'à la sortie du champ, jamais à chaque frappe : c'est déjà la règle de tous les formulaires, qui n'écrivent qu'à l'enregistrement.
+
+Le catalogue se **filtre par libellé**. Quarante-six catégories sous onze familles repliées : retrouver « Carburant » demandait de deviner qu'elle est rangée sous Transport, puis d'ouvrir les familles une par une. Une famille dont le nom correspond garde toutes ses catégories ; les autres se réduisent à ce qui correspond, et un résultat s'affiche déplié. L'état de repli n'est pas touché : effacer la recherche retrouve les sections telles qu'on les avait laissées.
+
 ### 4.2 Récurrences
 
 - Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable », membre selon la même règle que la saisie ponctuelle (§4.7 ter). Une récurrence pose une échéance par période : sans propriétaire ni partage, elle creuserait le trou à chaque fois.
 - Périodicités : hebdomadaire, mensuelle, trimestrielle, annuelle, ou tous les *n* mois.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
+- Ordre au choix à l'intérieur d'un groupe : **prochaine échéance** par défaut, ou **montant**. Le premier répond à « qu'est-ce qui tombe bientôt », le second à « qu'est-ce qui me coûte le plus » — c'est l'écran de cette question-là, et son chiffre est déjà sur chaque ligne. Le montant se lit en valeur absolue, la liste mêlant les deux sens ; une récurrence variable non chiffrable passe en fin de liste plutôt que d'être rangée comme un zéro.
 - Liste regroupée sur un axe au choix : **sens**, **catégorie** ou **personne**, chaque groupe portant son nombre de récurrences et son solde mensuel. Par sens, les deux groupes s'ouvrent — le « + » que le DS accorde aux entrées ne suffit pas à distinguer un salaire d’une charge dans une liste qui les mêle, d'autant que la pastille prend la teinte de la catégorie et pas du sens. Sur les deux autres axes ils se replient. Le total en tête de page, lui, ne compte que les sorties.
 - Un groupe dont tout est à montant variable affiche « montant variable » plutôt qu'un zéro, et un groupe qui n'en contient qu'une partie ne compte que ce qu'il sait chiffrer.
 - Les périodicités non mensuelles sont amorties au mois dans toutes les statistiques.
@@ -272,6 +277,7 @@ Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, cal
 ### 4.7 Historique et comparatifs
 
 - Navigation mois par mois sur toute la période couverte par les données.
+- **Recherche par libellé**, tous mois confondus, entrées et récurrences. Retrouver « ce prélèvement de mars » imposait sinon de naviguer mois par mois. Elle vit ici parce que c'est l'écran du regard en arrière, et parce que la barre d'onglets en porte cinq et n'en tient pas six. Casse et accents mis de côté, appariement en sous-chaîne, muette en dessous de deux lettres. Chaque résultat mène à sa fiche, et ce qu'une limite d'affichage laisse de côté est compté et annoncé.
 - Courbe entrées / sorties / solde sur les 12 derniers mois.
 - Comparaison de deux mois au choix, écart par catégorie en valeur et en pourcentage.
 - Comparaison d'années : cumul par mois, année N contre année N−1.
@@ -339,6 +345,9 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 - Le schéma et l'exemple sont aussi accessibles **au premier lancement**, à côté de l'import : les deux personnes qu'ils servent — celle qui a déjà tout écrit, celle qui veut seulement voir — sont précisément celles qui n'ont pas encore de foyer, et les envoyer en créer un pour trouver de quoi s'en passer serait l'inverse du service rendu.
 - **Réinitialisation** : efface tout, **triple** confirmation. Trois questions différentes — ce qui part, le fait qu'il n'y a pas de retour, la dernière chance d'exporter : trois fois la même phrase ne se lit plus, elle se clique.
 - **Toute suppression demande confirmation**, et par la même boîte : supprimer une entrée, une récurrence, un crédit, une avance, retirer un membre, arrêter une récurrence, remettre le mois à confirmer. Le nombre de questions fait la gravité — une pour une ligne, deux pour un import, trois pour l'effacement. Chacune dit ce qui est perdu, jamais « êtes-vous sûr ». Archiver une catégorie n'en demande pas : rien n'y est supprimé, et l'archivage se défait.
+- **Et toute suppression se défait**, le temps que son message reste à l'écran. Le retour arrière ne remplace pas la question : celle-ci se pose avant, celui-là rattrape le oui donné trop vite. Il ne survit à aucune modification faite depuis — il remettrait l'état d'avant par-dessus, et l'emporterait avec lui — si bien qu'un seul geste est défaisable à la fois, le dernier.
+- **Une saisie en cours ne se jette pas sans un mot.** Quitter un formulaire modifié, par « Annuler » comme par le retour, demande confirmation en une question. Un formulaire ouvert puis quitté sans rien changer n'en demande aucune : ponctuer ce geste-là d'une question apprendrait à cliquer sans lire.
+- **Aucun indicateur de sauvegarde permanent.** L'écriture est débouncée et regroupée : un témoin qui suivrait son état clignoterait pour annoncer ce qui n'a jamais échoué. Ce qu'il faut savoir est l'anomalie, et elle a son bandeau.
 - **Sauvegardes locales** : cinq instantanés tournants, un par jour de saisie, listés avec leur date et ce qu'ils contiennent, restaurables après **double** confirmation — c'est un remplacement, exactement comme un import, et la sauvegarde est relue et validée avant qu'on demande quoi que ce soit. Elles vivent dans ce navigateur et disparaîtraient avec lui : elles ne remplacent pas un export, elles rattrapent l'accident du jour. « Tout effacer » les emporte, sans quoi la triple confirmation mentirait.
 - **Récupération** : si le document stocké ne se lit pas, l'écran d'arrivée propose l'import, le téléchargement de la copie brute — un document que l'app ne sait pas ouvrir n'est pas forcément un document perdu —, le rechargement, puis l'effacement après **double** confirmation. Tant que rien n'est tranché, la création d'un foyer est barrée : elle écraserait ce qu'on n'a pas su lire.
 - Une bannière rappelle l'export si le dernier date de plus de 30 jours, ou n'a jamais eu lieu — le texte dit alors ce qu'il en est plutôt que d'invoquer un export inexistant.
@@ -366,6 +375,8 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 **Migrations** — chaque changement de forme du document incrémente `schemaVersion` et fournit une fonction de migration. À écrire dès la v1, y compris pour la version 1 → 1.
 
 **Accessibilité** — contraste AA sur tout texte, focus clavier visible, `prefers-reduced-motion` respecté, graphiques doublés d'une lecture textuelle.
+
+**Raccourcis clavier** — ils doublent les gestes les plus fréquents, ils n'en ouvrent aucun qui n'existe ailleurs : `←` et `→` changent de mois aux bornes des chevrons, `n` ouvre une dépense, `Échap` referme le panneau du jour au calendrier. Ils se taisent pendant qu'on tape, sous un modificateur — ces combinaisons appartiennent au navigateur —, et tant qu'une feuille est ouverte. `n` se tait en plus sur un écran de saisie, où il contournerait la garde de brouillon. Chacun se dit en infobulle sur le geste qu'il double : un raccourci que personne ne découvre ne sert personne.
 
 **Langue** — français uniquement en v1, mais aucune chaîne en dur dans les composants.
 

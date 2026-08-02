@@ -111,6 +111,50 @@ format du document : `schemaVersion` reste à 6.
 - **Les identifiants repartaient de zéro à chaque rechargement** hors contexte
   sécurisé, par exemple en testant l'app sur son téléphone en `http://`.
 
+### Ajouté — les gestes qui manquaient
+
+Issus du même audit, côté usage cette fois. Aucun ne change le format du
+document : `schemaVersion` reste à 6.
+
+- **Défaire une suppression.** Onze gestes passaient par une confirmation et
+  aucun n'offrait de retour arrière : une entrée supprimée était irrécupérable.
+  Le message qui l'annonce porte désormais « Rétablir », huit secondes durant.
+  Il remet l'état d'avant tel quel, y compris pour un retrait de membre, qui
+  touche à dix endroits à la fois. La confirmation reste : elle se pose avant,
+  le retour arrière rattrape le oui donné trop vite.
+- **Garde de brouillon** sur les quatre écrans de saisie — entrée, récurrence,
+  crédit, avance. « Annuler » et le retour jetaient la saisie sans prévenir. Un
+  formulaire ouvert puis quitté sans rien changer ne demande toujours rien.
+- **Recherche par libellé sur l'historique**, tous mois confondus, entrées et
+  récurrences : retrouver « ce prélèvement de mars » imposait de naviguer mois
+  par mois. Accents et casse mis de côté, chaque résultat mène à sa fiche.
+- **Filtre du catalogue de catégories** dans les réglages : quarante-six
+  catégories sous onze familles repliées, et il fallait deviner que
+  « Carburant » est rangée sous Transport.
+- **Tri des récurrences par montant**, à côté du tri par prochaine échéance.
+  C'est l'écran de « qu'est-ce qui me coûte le plus », et il ne savait pas y
+  répondre.
+- **Raccourcis clavier** — `←` / `→` changent de mois, `n` ouvre une dépense,
+  `Échap` referme le panneau du jour au calendrier. L'app n'en avait aucun.
+  Chacun se dit en infobulle sur le geste qu'il double.
+- **Navigation entre mois sur l'écran Répartition**, qui lisait le mois affiché
+  sans offrir d'en changer : vérifier la répartition de juillet imposait de
+  repasser par l'écran du mois.
+
+### Modifié
+
+- **« Reste à vivre » ne s'affiche plus hors du mois courant.** Le chiffre
+  arrête le prévisionnel à la prochaine rentrée d'argent à partir
+  d'aujourd'hui : sur un mois passé ou à venir, il se calculait quand même et ne
+  voulait rien dire.
+- **Le mois se balaie aussi à la souris et au stylet**, comme le rappel
+  d'export : le geste était en TouchEvents, donc réservé au doigt.
+- **Les renommages n'écrivent plus à chaque frappe** — catégorie, famille, nom
+  du foyer, prénom d'un membre —, mais à la sortie du champ, comme tous les
+  formulaires de l'app.
+- **L'historique d'un foyer neuf** montre une seule invitation au lieu de trois
+  phrases d'excuse empilées.
+
 ## [1.0.0] — 2026-08-02
 
 Première version publique. Le périmètre est celui de la v1 du
