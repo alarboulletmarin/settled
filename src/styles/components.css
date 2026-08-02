@@ -89,6 +89,41 @@
     }
   }
 
+  /* --- Rangée de filtres défilante — DS §6 ------------------------------ */
+
+  /* Une rangée de pilules qui tient sur une ligne et défile, plutôt que de
+     passer à la ligne.
+     Elle vit dans un bandeau collant : une seconde ligne lui coûte 52px de haut
+     d'écran à chaque défilement, et la hauteur du bandeau se mettrait à dépendre
+     du nombre de membres. À 320px, « Tout le monde » et « Commun » consomment à
+     eux deux 205 des 288px utiles — il n'y a pas de mise en page qui les fasse
+     tenir avec les prénoms, seulement un défilement.
+     `Segmented` refuse ce débordement (voir son en-tête) parce qu'il vit dans
+     une tuile de largeur contrainte, où l'anneau de focus se ferait rogner. Ici
+     la piste est à bord perdu et se donne la marge verticale de l'accueillir. */
+  .filter-scroller {
+    overflow-x: auto;
+    /* L'anneau de focus fait 2px et déborde de 2px : 4px hors de la boîte du
+       bouton, qu'un `overflow` rognerait. La piste porte donc 4px de cadre
+       vertical, annulés par une marge négative pour ne pas grandir. */
+    overflow-y: visible;
+    scroll-snap-type: x proximity;
+    /* Une pilule qui prend le focus au clavier ne se colle pas au bord. */
+    scroll-padding-inline: 16px;
+    /* Pas de barre : c'est la pilule coupée en fin de piste qui dit qu'il y en
+       a d'autres. Un dégradé de bord le dirait aussi, mais il éteindrait
+       l'anneau de focus de cette même pilule. */
+    scrollbar-width: none;
+  }
+
+  .filter-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .filter-scroller > * {
+    scroll-snap-align: start;
+  }
+
   /* --- Grille bento — DS §5 --------------------------------------------- */
 
   .bento {

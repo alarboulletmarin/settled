@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { SPLIT_PATH } from '@/app/routes'
 import { type Money, add } from '@/domain/money'
 import { fr } from '@/i18n/fr'
-import { formatMoney, formatPercent, formatSignedMoney, tpl } from '@/i18n/format'
+import { formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { useMemberCharges, useMemberFilter, useMemberMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -101,7 +101,12 @@ export function MemberShareTile() {
       className="gap-3"
       onClick={open}
       label={spoken}
-      affordance={{ kind: 'navigate', destination: fr.split.title }}
+      /* Le repère nu, sans nommer sa destination : « À VERSER SUR LE COMMUN »
+         est l'eyebrow le plus long de la grille (~195px en mono 11px, sans
+         césure possible) et « Répartition › » en demande 95 de plus, quand la
+         tuile n'en offre que 288 sur un écran de 360. Les deux se croisaient.
+         `SplitTile` passe déjà son repère nu, pour la même raison. */
+      affordance={{ kind: 'navigate' }}
     >
       {/* L'eyebrow nomme le chiffre, au lieu qu'un libellé le refasse juste
           au-dessus : la tuile portait cinq éléments là où le DS §5 en autorise
@@ -137,19 +142,6 @@ export function MemberShareTile() {
           {/* Le montant du virement, en corps de tuile : c'est la réponse, et
               on vient la recopier dans une application bancaire. */}
           <Amount value={toPay} size="tile-fit" direction="out" />
-          {/* Le report en seconde lecture, et non en quatrième ligne : le DS §5
-              plafonne la tuile à quatre éléments, et elle y est déjà. Il dit
-              d'où vient l'écart entre la part et le virement — sans quoi le
-              chiffre de tête ne correspondrait plus au pourcentage à côté. */}
-          {charges.adjustment !== 0 && (
-            <span className="t-axis tnum">
-              {tpl(
-                fr.dashboard.memberShareSettled,
-                formatMoney(charges.common, currency, false),
-                formatSignedMoney(charges.adjustment, currency),
-              )}
-            </span>
-          )}
           <ul className="flex flex-col gap-1 border-t border-border pt-2">
             {/* Ce qu'il paie pour lui, puis la somme des deux : la tuile
                 Charges voisine mêle déjà les deux sans les séparer, et le coût

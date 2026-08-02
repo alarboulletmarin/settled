@@ -18,6 +18,10 @@ export type ChipProps = {
 export function Chip({ children, color, active = false, onClick, className }: ChipProps) {
   const classes = cn(
     'inline-flex min-h-11 items-center gap-2 rounded-chip px-3.5 text-[13px]',
+    // Une pilule tient sur une ligne, comme l'eyebrow : un libellé coupé en
+    // deux dans une pilule de 44px la déforme, et c'est la rangée qui doit
+    // s'adapter — en passant à la ligne, ou en défilant.
+    'whitespace-nowrap',
     'transition-colors duration-[var(--dur)] ease-ds',
     active ? 'bg-accent text-accent-fg' : 'bg-surface-2 text-text',
     className,

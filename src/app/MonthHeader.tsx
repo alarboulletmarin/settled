@@ -33,10 +33,21 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
   const filter = useMonthFilter()
   const setFilter = useStore((s) => s.setFilter)
   if (members.length === 0) return null
+  const common = withCommon && members.length > 1
 
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label={fr.shell.filterByMember}>
+    /* Une ligne qui défile, à bord perdu : le cadre de l'en-tête est annulé puis
+       reposé sur la piste, pour que la première et la dernière pilule ne soient
+       pas rognées et que la rangée file jusqu'au bord de l'écran. Les 4px de
+       cadre vertical logent l'anneau de focus, et la marge négative les reprend
+       pour que la hauteur du bandeau ne bouge pas. */
+    <div
+      className="filter-scroller -mx-4 -my-1 flex gap-2 px-4 py-1 md:-mx-8 md:px-8"
+      role="group"
+      aria-label={fr.shell.filterByMember}
+    >
       <Chip
+        className="shrink-0"
         active={filter.kind === 'all'}
         onClick={() => {
           setFilter({ kind: 'all' })
@@ -46,8 +57,9 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
       </Chip>
       {/* Sans deux membres, il n'y a rien à partager : le commun se confond
           alors avec tout, et une pilule de plus ne dirait que ça. */}
-      {withCommon && members.length > 1 && (
+      {common && (
         <Chip
+          className="shrink-0"
           active={filter.kind === 'common'}
           onClick={() => {
             setFilter({ kind: 'common' })
@@ -56,9 +68,20 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
           {fr.shell.common}
         </Chip>
       )}
+      {/* Les deux premières pilules n'ont pas de pastille parce qu'elles ne
+          désignent personne — une pastille est la couleur de quelqu'un. Sans
+          rien pour le dire, cette absence se lit comme un oubli ; le filet la
+          rend voulue, et sépare les lectures des personnes.
+
+          En `--text-muted` atténué, et non en `--border` : ce dernier vaut 8 %
+          d'encre, calibré pour une bordure posée sur une surface. Le bandeau,
+          lui, est sur le fond de page, où un trait d'un pixel à 8 % ne se voit
+          pas — un séparateur qu'on ne distingue pas ne sépare rien. */}
+      <span aria-hidden="true" className="my-auto h-5 w-px shrink-0 bg-muted opacity-40" />
       {members.map((member) => (
         <Chip
           key={member.id}
+          className="shrink-0"
           color={member.color}
           active={filter.kind === 'member' && filter.memberId === member.id}
           onClick={() => {

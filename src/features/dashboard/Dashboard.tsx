@@ -8,6 +8,7 @@ import { ChargesTile, IncomeTile, type ShowFlow } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
 import { SavingTile } from './SavingTile'
+import { SettlementTile } from './SettlementTile'
 import { SplitTile } from './SplitTile'
 import { UpcomingTile } from './UpcomingTile'
 
@@ -71,6 +72,7 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
         {!common && <IncomeTile {...flow('in')} />}
         <ChargesTile {...flow('out')} />
         <MemberShareTile />
+        <SettlementTile />
         <BreakdownTile />
         {!common && <ForecastTile onExplain={setMetric} />}
         {!common && <RemainingTile onExplain={setMetric} />}

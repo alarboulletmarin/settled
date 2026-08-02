@@ -13,6 +13,7 @@ import {
   formatPercent,
   formatSignedMoney,
   formatYearMonth,
+  de,
   tpl,
 } from '@/i18n/format'
 import {
@@ -40,17 +41,6 @@ function enumerate(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} et ${names.at(-1) ?? ''}`
 }
 
-/**
- * « de Camille », mais « d'Alice ». L'élision dépend du mot qui suit : le
- * gabarit de `fr.ts` ne peut pas la décider, elle est donc portée ici. Le h est
- * traité comme muet — « d'Hugo » se dit, « de Hugo » ne se dit pas.
- *
- * Vaut pour les prénoms comme pour les mois : « la régularisation d'octobre »,
- * « d'avril », « d'août », mais « de septembre ».
- */
-function de(name: string): string {
-  return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(name) ? `d’${name}` : `de ${name}`
-}
 
 /** Ce qui manque pour répartir : la phrase, le geste, et où il mène. */
 type Missing = { message: string; hint: string; actionLabel: string; path: string }

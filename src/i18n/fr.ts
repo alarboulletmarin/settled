@@ -316,13 +316,19 @@ export const fr = {
     memberShare: 'À verser sur le commun',
     memberShareOwn: 'Charges perso',
     memberShareTotal: 'Total à payer',
-    /* Le report se dit en seconde lecture sous le montant à verser : il
-       explique pourquoi le virement diffère de la part, et le DS §5 ne laisse
-       pas la place d'une quatrième ligne dans la liste. Le mois d'où il vient
-       n'y tient pas sans passer à la ligne — il se lit sur Répartition, à un
-       doigt d'ici, et « la régularisation » d'un mois ne peut venir que du
-       précédent. */
-    memberShareSettled: 'part %s · régularisation %s',
+    /* Le report a sa tuile, et non une cinquième ligne dans celle-ci : le DS §5
+       plafonne une tuile à un eyebrow, un chiffre, une lecture secondaire et une
+       visualisation, puis tranche — « si elle en demande un cinquième, c'est
+       deux tuiles ». La ligne qu'il portait ici passait à la ligne sur mobile,
+       dans une colonne de 222px, et se faisait couper par le bas. */
+    settlement: 'Régularisation',
+    /* Le mois sans son année, et la direction en deux mots : une 4×1 fait 88px
+       de haut dont 56 utiles, et sur un écran de 320 elle n'offre que 143px à
+       droite du montant. « de juillet 2026 · à verser en moins » y passait à la
+       ligne, et la seconde ligne se faisait couper par le bas. */
+    settlementLess: '%s · en moins',
+    settlementMore: '%s · en plus',
+    srSettlement: 'Régularisation %s : %s sur ce que %s verse au commun ce mois-ci.',
     srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun

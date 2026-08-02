@@ -118,6 +118,17 @@ export function formatYearMonth(value: YearMonth): string {
   return `${monthName(m)} ${String(y)}`
 }
 
+/**
+ * « juillet » — le mois seul.
+ *
+ * Pour les endroits où l'année ne tient pas et où elle n'apprend rien : un
+ * report vient toujours du mois précédent, donc « de décembre » lu en janvier
+ * ne peut désigner qu'un seul décembre.
+ */
+export function formatMonthName(value: YearMonth): string {
+  return monthName(parseYm(value).m)
+}
+
 /** « 12 juillet 2026 » */
 export function formatDate(iso: ISODate): string {
   const { y, m, d } = parseISO(iso)
@@ -150,4 +161,15 @@ export function formatRelativeDays(days: number): string {
   if (days === -1) return 'hier'
   if (days > 0) return `dans ${String(days)} jours`
   return `il y a ${String(-days)} jours`
+}
+
+/**
+ * « de Camille », mais « d'Alice ». « de septembre », mais « d'octobre ».
+ *
+ * L'élision dépend du mot qui suit, et un gabarit de `fr.ts` ne peut pas la
+ * décider : elle vit donc ici, avec les autres règles de la langue. Le h est
+ * traité comme muet — « d'Hugo » se dit, « de Hugo » ne se dit pas.
+ */
+export function de(word: string): string {
+  return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(word) ? `d’${word}` : `de ${word}`
 }
