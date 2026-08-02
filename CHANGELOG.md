@@ -65,6 +65,52 @@ tourner indéfiniment sur son écran de démarrage.
 - Une exception au rendu donnait un **écran blanc**, reproduit à l'identique à
   chaque rechargement puisque le service worker resservait la même version.
 
+### Corrigé — domaine et import
+
+Issus d'un audit complet du code, revérifiés point par point. Aucun ne change le
+format du document : `schemaVersion` reste à 6.
+
+- **Retirer un membre laissait ses avances derrière**, avec l'identifiant d'un
+  porteur disparu — `Advance.memberId` n'est pas facultatif, donc elles ne
+  pouvaient pas repasser au foyer comme le reste. Elles sont supprimées, la
+  confirmation l'annonce, et la récurrence qui reconstitue le livret reste.
+- **Un revenu chiffré à zéro donnait 0 % des charges communes** au membre qui le
+  portait, en silence : la répartition ne refusait de répondre que si la *somme*
+  des revenus était nulle. Elle refuse désormais dès qu'une source vaut zéro, et
+  les écrans disent laquelle des trois raisons c'est.
+- **Une ressource déclarée pour dans cinq ans pesait dès aujourd'hui** dans le
+  prorata. L'horizon est borné à un trimestre.
+- **Le montant saisi sur une échéance prévue** était écrasé par la règle dès
+  qu'on éditait la récurrence.
+- **La tuile des prochaines échéances pouvait en compter une deux fois**, quand
+  un document importé portait une échéance prévue dans un mois jamais ouvert.
+- **Un montant au-delà de 2^53 centimes s'enregistrait faux** sans que rien ne
+  puisse l'attraper. La saisie est plafonnée.
+- **Une avance pouvait se terminer avant de commencer** — rien ne revenait alors
+  jamais sur le livret. Refusé à la saisie comme à l'import.
+- **Un mois « 2026-13 » passait la validation** et s'affichait sans nom.
+- **L'import était muet sur ce qu'il écartait** : une entrée illisible
+  disparaissait sans un mot, au seul moment où l'on pouvait encore le voir. La
+  confirmation affiche désormais le détail, ligne par ligne.
+- **Aucune vérification référentielle à l'import** : une catégorie inconnue
+  rendait une dépense commune et partagée, un membre inconnu la faisait
+  disparaître des vues filtrées, et deux lignes pouvaient porter le même
+  identifiant. Les liens sont recollés, coupés ou redirigés vers « À ranger »,
+  et le rapport le dit.
+- **Effacer ses données laissait la date du dernier export** derrière elle :
+  l'app repartait de zéro en annonçant la sauvegarde d'un document disparu.
+- **Quatre chemins asynchrones sans filet** : l'import et l'effacement
+  annonçaient une réussite qui n'avait pas eu lieu, le jeu d'exemple et le
+  schéma laissaient un clic sans effet hors ligne.
+- **Les toasts d'erreur étaient annoncés poliment** aux lecteurs d'écran, donc
+  après tout le reste — y compris « les modifications ne s'enregistrent plus ».
+- **Replier une liste laissait des sections ouvertes** : les événements émis
+  dans le même tour se recouvraient.
+- **L'export n'était fiable que sur Chrome** — ancre jamais posée dans le
+  document, URL révoquée trop tôt.
+- **Les identifiants repartaient de zéro à chaque rechargement** hors contexte
+  sécurisé, par exemple en testant l'app sur son téléphone en `http://`.
+
 ## [1.0.0] — 2026-08-02
 
 Première version publique. Le périmètre est celui de la v1 du

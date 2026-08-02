@@ -161,9 +161,18 @@ diverger. La distinction règle / fait tient quand même, et sans doublon : c'es
 la **récurrence** qui est la règle, l'`Entry` qui est le fait. Une prime est une
 entrée ponctuelle, donc elle ne déplace pas la part du loyer ; une augmentation
 se saisit dans la récurrence, donc elle la déplace. Le calcul refuse de répondre
-— `null`, pas zéro — tant qu'un membre n'a aucune ressource à son nom, ou qu'un
-montant variable n'a pas d'échéance confirmée d'où se lire : un prorata au
-dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+— `null`, pas zéro — tant qu'un membre n'a aucune ressource à son nom, qu'un
+montant variable n'a pas d'échéance confirmée d'où se lire, ou qu'une de ses
+ressources vaut zéro : un prorata au dénominateur incomplet ne vaut pas zéro, il
+ne veut rien dire. Le troisième cas se refusait de lui-même quand *tous* les
+revenus étaient nuls, jamais quand un seul l'était — le membre à 0 € recevait
+alors 0 % des charges communes, un chiffre faux qui a l'air d'un résultat.
+
+L'asymétrie de `isRunningIn` — une règle arrêtée sort du mois, une règle à venir
+y compte déjà — est bornée à un trimestre. Sans borne, un salaire déclaré pour
+2030 déplaçait la part de chacun dès aujourd'hui ; avec elle, « à venir » veut
+dire bientôt, ce qui est le seul sens dans lequel une déclaration parle encore
+du mois qu'on regarde.
 
 **Plus forts restes.** Répartir 2 000 € entre trois tiers en arrondissant chaque
 part donnerait trois fois 666,67 € et un centime de trop. `split.ts` pose les
@@ -186,6 +195,34 @@ gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
 personne, les récurrences de 1 518 px à 708 px, et les réglages de 4 779 px à
 1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
 seule fois pour les trois écrans.
+
+**La réparation des liens est une normalisation, pas une migration.** Rien ne
+vérifiait qu'une `categoryId`, une `memberId` ou une `recurrenceId` désignait
+quelque chose, et chaque lien mort avait sa façon d'être faux en silence : une
+catégorie inconnue retombait sur `charge` par le double repli de
+`kindOfCategory`, donc la dépense devenait commune et partagée ; un membre
+inconnu faisait disparaître une entrée de toutes les vues filtrées tout en la
+laissant peser sur le foyer. Le contrôle vit dans `validate.ts` et non dans une
+étape de `MIGRATIONS`, parce que la normalisation est ce que **tout** document
+traverse — y compris un fichier déjà à la version courante et écrit à la main,
+qu'une migration ne verrait jamais. Elle ne change pas la forme du document, et
+n'a donc rien à incrémenter.
+
+Trois gestes, et le plus doux qui règle chaque cas. Un lien facultatif se
+**coupe** : la ligne rend son membre ou sa règle au foyer et reste modifiable.
+La catégorie, qui n'est pas facultative, se **redirige** vers une catégorie de
+réparation visible — même famille d'accueil qu'avant, donc même nature : ce qui
+change n'est pas le calcul, c'est qu'on la voit. Ce qui ne peut être ni coupé ni
+redirigé — une avance dont le porteur n'existe pas — est **écarté**. Un
+identifiant en double est renommé et jamais supprimé : rien ne dit laquelle des
+deux lignes est la bonne, et le suffixe est déterministe pour que deux lectures
+du même fichier donnent le même document.
+
+**Une lecture qui écarte le dit.** Le rapport remonte jusqu'à la confirmation
+d'import, ligne par ligne — la collection, le nom ou le rang, la raison. Un
+import remplace tout le document : c'est le dernier instant où l'on peut encore
+comparer avec ce qu'il y avait avant, et une dépense jetée en silence à ce
+moment-là ne se retrouve plus jamais.
 
 **Le schéma se lit sur le code.** Le document qu'on donne à un assistant pour
 faire transcrire ses notes embarque le source de `domain/types.ts` — par
