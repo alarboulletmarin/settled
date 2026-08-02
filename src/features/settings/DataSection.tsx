@@ -88,10 +88,19 @@ export function DataSection() {
             setConfirming(false)
           }}
           onConfirm={() => {
-            void resetAll().then(() => {
-              setConfirming(false)
-              toast(fr.settings.resetDone)
-            })
+            void resetAll()
+              .then(() => {
+                setConfirming(false)
+                setLastExport(null)
+                toast(fr.settings.resetDone)
+              })
+              // « Données effacées » sur un effacement qui n'a pas eu lieu est
+              // le pire des messages : on croit reparti de zéro, et tout est
+              // encore là.
+              .catch(() => {
+                setConfirming(false)
+                toast(fr.settings.resetFailed, 'danger')
+              })
           }}
         />
       </div>

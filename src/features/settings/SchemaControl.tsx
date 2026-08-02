@@ -44,9 +44,16 @@ export function SchemaControl({
 
   useEffect(() => {
     let alive = true
-    void import('@/persistence/schemaDoc').then((module) => {
-      if (alive) setSchema({ text: module.schemaDocument(), filename: module.SCHEMA_FILENAME })
-    })
+    void import('@/persistence/schemaDoc')
+      .then((module) => {
+        if (alive) setSchema({ text: module.schemaDocument(), filename: module.SCHEMA_FILENAME })
+      })
+      /* Hors ligne, le chunk ne vient pas. Sans ce filet, les deux boutons
+         restaient désactivés pour toujours, sans que rien ne dise pourquoi ni
+         que recharger une fois revenu en ligne suffit. */
+      .catch(() => {
+        if (alive) toast(fr.settings.schemaUnavailable, 'danger')
+      })
     return () => {
       alive = false
     }

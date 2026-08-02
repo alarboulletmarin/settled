@@ -394,7 +394,15 @@ export function upcomingDue(
   const fromMonth = ymOf(from)
   const horizon = addDays(from, UPCOMING_HORIZON_DAYS)
 
-  const posed = entries.filter((e) => e.status === 'planned' && ymOf(e.date) >= fromMonth)
+  /* La frontière vaut des deux côtés, et c'est tout l'intérêt de la poser une
+     fois : `projected` saute déjà les mois ouverts, `posed` ne regardait que la
+     date. Une `planned` qui vit dans un mois jamais ouvert — un document
+     importé peut en porter, rien ne l'interdit — se retrouvait donc comptée à
+     la fois telle quelle et projetée par sa règle, et la même échéance
+     s'affichait deux fois. */
+  const posed = entries.filter(
+    (e) => e.status === 'planned' && ymOf(e.date) >= fromMonth && openedMonths.has(ymOf(e.date)),
+  )
 
   const projected: Entry[] = []
   for (const recurrence of recurrences) {

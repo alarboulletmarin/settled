@@ -43,6 +43,13 @@ export function ExampleControl({
         setAsking(false)
         toast(fr.settings.exampleLoaded)
       })
+      /* Le module est chargé à la demande : hors ligne, ou le temps d'un
+         déploiement, la requête échoue. Sans ce filet, le clic ne faisait
+         rien — pas d'exemple, pas de message, et la boîte restait ouverte. */
+      .catch(() => {
+        setAsking(false)
+        toast(fr.settings.exampleFailed, 'danger')
+      })
   }
 
   return (

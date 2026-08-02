@@ -184,6 +184,33 @@ export function fallbackFamilyId(direction: 'in' | 'out'): string {
   return direction === 'in' ? 'fam-resources' : 'fam-leisure'
 }
 
+/**
+ * La catégorie d'accueil d'une ligne qui en désignait une inexistante.
+ *
+ * `Entry.categoryId` n'est pas facultatif : à la différence du membre ou de la
+ * récurrence, on ne peut pas couper le lien, il faut le rediriger. Sans elle,
+ * la ligne gardait un identifiant mort, et `kindOfCategory` retombait sur
+ * « charge » par un double repli — la dépense devenait donc commune et partagée
+ * entre les membres, en silence. Elle atterrit dans la même famille d'accueil,
+ * donc avec la même nature qu'avant : ce qui change n'est pas le calcul, c'est
+ * qu'on la voit, et qu'un clic la range où elle doit aller.
+ *
+ * Une par sens, parce qu'une catégorie porte un sens et qu'une seule
+ * obligerait une recette à emprunter la catégorie d'une dépense.
+ */
+export function repairedCategory(direction: 'in' | 'out'): Category {
+  const familyId = fallbackFamilyId(direction)
+  return {
+    id: direction === 'in' ? 'repaired-in' : 'repaired-out',
+    label: fr.defaults.repairedCategory,
+    familyId,
+    icon: '',
+    color: familyColor(familyId),
+    direction,
+    archived: false,
+  }
+}
+
 export function emptyData(): Data {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,

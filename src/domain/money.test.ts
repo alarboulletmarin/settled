@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  MAX_INPUT,
   ZERO,
   abs,
   add,
@@ -135,6 +136,28 @@ describe('money — saisie utilisateur', () => {
     expect(parseAmount('12,345')).toBeNull()
     expect(parseAmount('-')).toBeNull()
     expect(parseAmount('1,2,3')).toBeNull()
+  })
+
+  /* Au-delà de 2^53 centimes, `Number(whole) * 100` perd la précision sans le
+     dire : le montant enregistré n'est plus celui qui a été tapé, et `money()`
+     ne l'attrape pas — un flottant de cette taille reste « entier » au sens de
+     `Number.isInteger`. */
+  it('refuse ce qu’il ne saurait pas relire tel qu’il a été écrit', () => {
+    expect(parseAmount('99999999999999999999')).toBeNull()
+    expect(parseAmount('-99999999999999999999')).toBeNull()
+    expect(parseAmount(String(MAX_INPUT / 100 + 1))).toBeNull()
+  })
+
+  it('accepte le plafond lui-même', () => {
+    expect(parseAmount(String(MAX_INPUT / 100))).toBe(MAX_INPUT)
+  })
+
+  it('ne rend que des entiers, plafond compris', () => {
+    for (const input of ['0,01', '9999999999,99', String(MAX_INPUT / 100)]) {
+      const parsed = parseAmount(input)
+      expect(parsed).not.toBeNull()
+      expect(Number.isSafeInteger(parsed)).toBe(true)
+    }
   })
 
   it('fait l’aller-retour avec le champ de saisie', () => {

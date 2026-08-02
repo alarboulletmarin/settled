@@ -5,6 +5,7 @@ import { useStore } from '@/store/store'
 import { Button, type ButtonVariant } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { toast } from '@/ui/toast'
+import { ImportReport } from './ImportReport'
 
 /**
  * Choisir un fichier, le relire, puis confirmer — le geste du cahier §4.8.
@@ -61,7 +62,11 @@ export function ImportControl({
 
       {/* Deux pas : un import est un effacement déguisé — le fichier arrive,
           tout le reste part —, sans aller jusqu'aux trois de la
-          réinitialisation, puisqu'il reste quelque chose après. */}
+          réinitialisation, puisqu'il reste quelque chose après.
+
+          Le rapport est là, sous la question, parce que c'est le dernier
+          moment où il sert à quelque chose : après, il n'y a plus rien à quoi
+          comparer ce qui manque. */}
       <ConfirmDialog
         open={pending !== null}
         title={fr.settings.import}
@@ -69,15 +74,24 @@ export function ImportControl({
           { question: fr.settings.importConfirm, action: fr.common.confirm },
           { question: fr.settings.importConfirm2, action: fr.settings.import },
         ]}
+        details={pending === null ? undefined : <ImportReport notices={pending.notices} />}
         onCancel={() => {
           setPending(null)
         }}
         onConfirm={() => {
           if (pending === null) return
-          void replaceData(pending.data).then(() => {
-            setPending(null)
-            toast(pending.migrated ? fr.settings.importMigrated : fr.settings.imported)
-          })
+          void replaceData(pending.data)
+            .then(() => {
+              setPending(null)
+              toast(pending.migrated ? fr.settings.importMigrated : fr.settings.imported)
+            })
+            // Sans ce filet, un échec d'écriture laissait le toast de réussite
+            // s'afficher quand même : on annonçait comme rangé ce qui n'était
+            // nulle part.
+            .catch(() => {
+              setPending(null)
+              toast(fr.settings.importFailed, 'danger')
+            })
         }}
       />
     </>

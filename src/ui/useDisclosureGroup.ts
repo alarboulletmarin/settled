@@ -22,22 +22,29 @@ export function useDisclosureGroup(
   defaultOpen: boolean,
 ): DisclosureGroup {
   const [opened, setOpened] = useState<ReadonlySet<string> | null>(null)
-  const effective = useMemo(
-    () => opened ?? new Set(defaultOpen ? keys : []),
-    [opened, defaultOpen, keys],
-  )
+  const byDefault = useMemo(() => new Set(defaultOpen ? keys : []), [defaultOpen, keys])
+  const effective = opened ?? byDefault
   const anyOpen = keys.some((key) => effective.has(key))
 
   return {
     isOpen: (key) => effective.has(key),
     setOpen: (key, open) => {
-      // `<details>` émet aussi un `toggle` quand c'est nous qui l'avons piloté :
-      // sans ce garde, chaque rendu produirait un Set neuf, donc un autre rendu.
-      if (open === effective.has(key)) return
-      const next = new Set(effective)
-      if (open) next.add(key)
-      else next.delete(key)
-      setOpened(next)
+      /* La forme fonctionnelle, et non le Set capturé au rendu : replier une
+         liste ferme toutes ses sections d'un coup, donc autant de `toggle`
+         dans le même tour. Partis du même état, ils se recouvraient l'un
+         l'autre et seul le dernier survivait — une section sur trois restait
+         ouverte, sans qu'aucun clic ne l'explique. */
+      setOpened((previous) => {
+        const current = previous ?? byDefault
+        // `<details>` émet aussi un `toggle` quand c'est nous qui l'avons
+        // piloté : sans ce garde, chaque rendu produirait un Set neuf, donc un
+        // autre rendu.
+        if (open === current.has(key)) return previous
+        const next = new Set(current)
+        if (open) next.add(key)
+        else next.delete(key)
+        return next
+      })
     },
     anyOpen,
     toggleAll: () => {

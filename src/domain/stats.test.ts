@@ -217,6 +217,30 @@ describe('prochaines échéances', () => {
     expect(dates.filter((d) => d === '2026-07-20')).toHaveLength(1)
   })
 
+  /* Le code supposait qu'une `planned` n'existe que dans un mois ouvert. Un
+     document importé peut violer la supposition : l'échéance était alors prise
+     telle quelle *et* refabriquée par sa règle, et s'affichait deux fois. */
+  it('ne compte pas deux fois une prévue posée dans un mois jamais ouvert', () => {
+    const loyer = makeRecurrence({
+      id: 'r-loyer',
+      label: 'Loyer',
+      startedOn: '2026-01-05',
+      period: { unit: 'month', every: 1, anchorDay: 5 },
+    })
+    const importé = [
+      ...july,
+      makeEntry({
+        id: 'e-aout',
+        recurrenceId: 'r-loyer',
+        date: '2026-08-05',
+        label: 'Loyer',
+        status: 'planned',
+      }),
+    ]
+    const dates = upcomingDue(importé, [loyer], OPENED, '2026-07-25', 5).map((e) => e.date)
+    expect(dates.filter((d) => d === '2026-08-05')).toHaveLength(1)
+  })
+
   it('n’exhume pas un retard antérieur au mois courant', () => {
     const vieux = [makeEntry({ date: '2026-05-03', status: 'planned' }), ...july]
     expect(

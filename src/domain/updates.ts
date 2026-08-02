@@ -8,6 +8,7 @@
 
 import { monthlyInstalment } from './advance'
 import { type ISODate, type YearMonth, endOfMonth, parseISO, startOfMonth, today, ymOf } from './date'
+import { type Money, ZERO } from './money'
 import { buildPlannedEntry, planMonth } from './month'
 import type {
   Advance,
@@ -41,7 +42,22 @@ export function renameMember(data: Data, id: string, name: string): Data {
   }
 }
 
-/** Retirer un membre libère ses entrées et récurrences plutôt que de les perdre. */
+/**
+ * Retirer un membre libère ses entrées et récurrences plutôt que de les perdre.
+ *
+ * Ses **avances**, elles, partent avec lui, et c'est la seule exception :
+ * `Advance.memberId` n'est pas facultatif — une épargne est toujours à
+ * quelqu'un, et une avance que personne ne porte ne se reconstitue sur le
+ * livret de personne. Faute de pouvoir la détacher, on la retirait de fait sans
+ * le faire : l'avance gardait l'identifiant d'un membre disparu, et l'écran
+ * d'épargne cherchait un porteur qu'il ne trouvait plus.
+ *
+ * Sa récurrence reste, comme après `removeAdvance` : les mensualités déjà
+ * revenues sur le livret y sont revenues, et cesser de suivre ce qu'on se doit
+ * ne réécrit pas ce qui est sorti du compte. Elle est simplement rendue au
+ * foyer, comme toutes les autres. La confirmation le dit avant, parce que c'est
+ * la seule chose que ce geste efface.
+ */
 export function removeMember(data: Data, id: string): Data {
   const strip = <T extends { memberId?: string }>(item: T): T => {
     if (item.memberId !== id) return item
@@ -53,6 +69,7 @@ export function removeMember(data: Data, id: string): Data {
     household: { ...data.household, members: data.household.members.filter((m) => m.id !== id) },
     recurrences: data.recurrences.map(strip),
     entries: data.entries.map(strip),
+    advances: data.advances.filter((a) => a.memberId !== id),
   }
 }
 
@@ -162,6 +179,13 @@ export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId'> & {
  * La règle vit ici, dans le domaine, et non dans l'action qui l'appelait :
  * l'écran de saisie n'est plus le seul à poser des avances, et deux copies de
  * cette composition finiraient par ne plus se répondre.
+ *
+ * Et c'est bien pour ça que la période se contrôle ici : le formulaire le
+ * faisait déjà, mais il n'est plus le seul appelant. Une période à l'envers
+ * pose une récurrence qui se termine avant sa première mensualité — l'avance
+ * ne se reconstitue alors jamais, et son reste dû ne bouge plus d'un centime
+ * sans que rien à l'écran n'explique pourquoi. On lève plutôt qu'on corrige :
+ * il n'existe aucune façon de deviner laquelle des deux bornes est la bonne.
  */
 export function createAdvance(
   data: Data,
@@ -170,6 +194,11 @@ export function createAdvance(
   on: ISODate = today(),
 ): { data: Data; advance: Advance } {
   const { savingCategoryId, shared, ...rest } = input
+  if (rest.to < rest.from) {
+    throw new RangeError(
+      `Une avance ne peut pas se terminer avant de commencer : ${rest.from} → ${rest.to}`,
+    )
+  }
   const recurrence: Recurrence = {
     id: makeId(),
     label: rest.label,
@@ -277,6 +306,16 @@ function requalify(entry: Entry, recurrence: Recurrence): Entry {
  * le montant, la date ou le statut d'une confirmée — ceux-là ont pu être saisis
  * à la main, et les réécrire perdrait la saisie.
  *
+ * **Le montant d'une prévue déjà datée survit à la régénération**, et c'est la
+ * même règle vue d'un autre côté. Une prévue peut porter un montant saisi à la
+ * main : `/depense/:id` conserve le statut de l'échéance qu'on y ouvre, donc
+ * corriger le montant d'une prévue l'enregistre sans la confirmer. Le tour
+ * jette-puis-refait ne pouvait pas le relire — l'entrée venait d'être retirée,
+ * et `amountOn` n'avait plus rien à lire —, si bien que modifier la règle
+ * remettait à l'écran le montant de la règle, silencieusement. Les prévues
+ * **à venir**, elles, se refont entièrement : là, c'est bien la règle qui dit
+ * ce qui va tomber.
+ *
  * Rejouer l'opération ne duplique rien : `planMonth` reconnaît une échéance
  * déjà posée à sa paire récurrence + date.
  */
@@ -289,14 +328,23 @@ export function syncRecurrenceEntries(
   const fromMonth = ymOf(from)
   const recurrence = data.recurrences.find((r) => r.id === recurrenceId)
 
-  const kept = data.entries.filter(
+  const dropped = data.entries.filter(
     (entry) =>
-      !(
-        entry.recurrenceId === recurrenceId &&
-        entry.status === 'planned' &&
-        ymOf(entry.date) >= fromMonth
-      ),
+      entry.recurrenceId === recurrenceId &&
+      entry.status === 'planned' &&
+      ymOf(entry.date) >= fromMonth,
   )
+  const kept = data.entries.filter((entry) => !dropped.includes(entry))
+
+  /* Ce qu'on retient des prévues qu'on vient de jeter : leur montant, à leur
+     date, tant qu'elles ne sont pas à venir. Un zéro ne compte pas — c'est
+     l'emplacement vide que l'ouverture du mois pose sur un montant variable,
+     pas un montant saisi (même lecture que `knownAmount`). */
+  const savedAmounts = new Map<ISODate, Money>()
+  for (const entry of dropped) {
+    if (entry.date > from || entry.amount === ZERO) continue
+    savedAmounts.set(entry.date, entry.amount)
+  }
 
   let next: Data = {
     ...data,
@@ -317,7 +365,17 @@ export function syncRecurrenceEntries(
     next = { ...next, entries: [...next.entries, ...planMonth(next, state.ym, makeId).created] }
   }
 
-  return next
+  // Le montant rendu à l'échéance qui le portait, une fois refaite. Après la
+  // régénération, parce qu'il n'y avait rien à qui le rendre avant elle.
+  if (savedAmounts.size === 0) return next
+  return {
+    ...next,
+    entries: next.entries.map((entry) =>
+      entry.recurrenceId === recurrenceId && entry.status === 'planned'
+        ? { ...entry, amount: savedAmounts.get(entry.date) ?? entry.amount }
+        : entry,
+    ),
+  }
 }
 
 /**
@@ -479,11 +537,13 @@ export function confirmEntries(data: Data, ids: readonly string[]): Data {
  * peut-être celui d'une échéance variable, saisi à la main, et le rendre à la
  * règle perdrait la saisie ; reconfirmer le retrouve tel quel.
  *
- * À savoir : redevenue prévue dans le mois courant ou un mois à venir, une
- * échéance repasse sous la coupe de `syncRecurrenceEntries`, qui jette et refait
- * les prévues dès qu'on touche à la règle. C'est cohérent — elle est de nouveau
- * gouvernée par la règle — mais ça veut dire qu'un montant corrigé puis
- * déconfirmé ne survit pas à une modification de la récurrence.
+ * À savoir : redevenue prévue, une échéance repasse sous la coupe de
+ * `syncRecurrenceEntries`, qui jette et refait les prévues dès qu'on touche à
+ * la règle. Le montant d'une prévue **déjà datée** y survit désormais — c'est
+ * la même raison qui le protège ici et là, il a pu être saisi à la main. Celui
+ * d'une prévue **à venir**, non : là, c'est bien la règle qui dit ce qui va
+ * tomber, et une échéance qu'on déconfirme pour le mois prochain se remet à en
+ * dépendre.
  */
 export function unconfirmEntries(data: Data, ids: readonly string[]): Data {
   const set = new Set(ids)

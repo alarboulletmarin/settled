@@ -228,6 +228,36 @@ describe('le revenu d’un membre, lu sur ses récurrences', () => {
     expect(income([{ ...salaire, startedOn: '2026-09-01' }])).toBe(250_000)
   })
 
+  /* « À venir » veut dire bientôt, pas un jour : sans borne, une ressource
+     déclarée pour dans quatre ans déplaçait la part de chacun dès aujourd'hui,
+     et rien à l'écran ne pouvait l'expliquer. */
+  it('ignore un salaire déclaré au-delà de l’horizon', () => {
+    expect(income([{ ...salaire, startedOn: '2030-01-01' }])).toBeNull()
+    expect(gap([{ ...salaire, startedOn: '2030-01-01' }])).toBe('none')
+  })
+
+  it('compte encore un salaire au bord de l’horizon, pas un mois plus loin', () => {
+    expect(income([{ ...salaire, startedOn: '2026-10-01' }])).toBe(250_000)
+    expect(income([{ ...salaire, startedOn: '2026-11-01' }])).toBeNull()
+  })
+
+  /* Une échéance confirmée est un fait, y compris confirmée à zéro. Mais le
+     fait « ce salaire vaut zéro » ne fabrique pas un revenu de zéro : il dit
+     qu'on ne sait pas ce que cette personne gagne. */
+  it('ne prend pas un revenu déclaré à zéro pour un revenu', () => {
+    expect(income([{ ...salaire, amount: eur(0) }])).toBeNull()
+    expect(income([{ ...salaire, amount: null }], () => eur(0))).toBeNull()
+  })
+
+  it('dit lequel des trois manques c’est', () => {
+    // Sans la distinction, l'écran envoie créer une récurrence qui existe déjà,
+    // ou n'envoie nulle part sur un chiffre qu'il suffit de corriger.
+    expect(gap([])).toBe('none')
+    expect(gap([{ ...salaire, amount: null }])).toBe('unpriced')
+    expect(gap([{ ...salaire, amount: eur(0) }])).toBe('zero')
+    expect(gap([salaire])).toBeNull()
+  })
+
   it('ne sait rien dire sans aucune ressource', () => {
     expect(income([])).toBeNull()
   })
@@ -239,13 +269,6 @@ describe('le revenu d’un membre, lu sur ses récurrences', () => {
 
   it('un revenu variable qu’on ne sait pas encore ne vaut pas zéro', () => {
     expect(income([{ ...salaire, amount: null }])).toBeNull()
-  })
-
-  it('dit lequel des deux manques c’est', () => {
-    // Sans la distinction, l'écran envoie créer une récurrence qui existe déjà.
-    expect(gap([])).toBe('none')
-    expect(gap([{ ...salaire, amount: null }])).toBe('unpriced')
-    expect(gap([salaire])).toBeNull()
   })
 
   it('rend un revenu par membre, dans l’ordre du foyer', () => {
@@ -330,9 +353,34 @@ describe('parts au prorata des revenus', () => {
     expect(shares).toBeNull()
   })
 
-  it('donne tout à celui qui gagne, si l’autre est à zéro', () => {
+  /* Le contrat de la répartition pure, et lui seul : des poids, un total. Un
+     tel poids ne vient plus d'un membre — `monthlyIncome` refuse désormais de
+     répondre sur une ressource à zéro, précisément parce que ce partage-là
+     donnait 0 % des charges à quelqu'un sans un mot. */
+  it('donne tout à celui qui gagne, si l’autre poids est à zéro', () => {
     const shares = memberShares([foyer[0]!, { memberId: 'm-2', income: eur(0) }], [eur(200_000)])
     expect(shares?.map((s) => s.due)).toEqual([money(200_000), money(0)])
+  })
+
+  /* Le chemin complet, celui que le foyer emprunte : une ressource à zéro
+     remonte `income: null`, et le prorata refuse de répondre plutôt que
+     d'attribuer 0 % en silence. */
+  it('ne répartit rien quand la ressource d’un membre vaut zéro', () => {
+    const MONTHLY = { unit: 'month' as const, every: 1, anchorDay: 28 }
+    const resource = (id: string, memberId: string, amount: number) =>
+      makeRecurrence({
+        id, categoryId: 'salaire', memberId, direction: 'in',
+        amount: eur(amount), startedOn: '2025-01-28', period: MONTHLY,
+      })
+    const incomes = memberIncomes(
+      [makeMember({ id: 'm-1' }), makeMember({ id: 'm-2' })],
+      [resource('r-1', 'm-1', 250_000), resource('r-2', 'm-2', 0)],
+      kindOf,
+      (r) => r.amount,
+      '2026-07',
+    )
+    expect(incomes[1]).toEqual({ memberId: 'm-2', income: null, gap: 'zero' })
+    expect(memberShares(incomes, [eur(200_000)])).toBeNull()
   })
 
   it('garde l’ordre du foyer', () => {

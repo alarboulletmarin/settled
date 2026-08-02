@@ -73,7 +73,7 @@ function richData(): Data {
         amount: eur(240000),
         status: 'planned',
       }),
-      makeEntry({ id: 'e3', date: '2026-07-12', amount: eur(-1250) }),
+      makeEntry({ id: 'e3', categoryId: 'logement', date: '2026-07-12', amount: eur(-1250) }),
     ],
     months: [
       { ym: '2026-07', openedAt: '2026-07-01', closed: false },
@@ -391,11 +391,16 @@ describe('montant habituel d’une récurrence variable (v4)', () => {
 })
 
 describe('avances (v5)', () => {
+  /* Les liens de l'avance mènent quelque part : la lecture répare ceux qui ne
+     mènent nulle part, et ce n'est pas ce qui se teste ici. */
   const doc = (advances: unknown) =>
     JSON.stringify({
       schemaVersion: 5,
       household: { name: 'Maison', members: [{ id: 'm1', name: 'Alix', color: 'var(--cat-1)' }] },
-      categories: [],
+      categories: [makeCategory({ id: 'car-insurance' })],
+      recurrences: [
+        makeRecurrence({ id: 'r1', period: { unit: 'month', every: 1, anchorDay: 15 } }),
+      ],
       advances,
     })
 
@@ -435,11 +440,47 @@ describe('avances (v5)', () => {
     expect(advance?.to).toBe('2026-01')
   })
 
+  /* Une période à l'envers pose une récurrence qui s'arrête avant sa première
+     mensualité : rien ne revient sur le livret, et le reste dû ne bouge plus
+     d'un centime sans que rien ne dise pourquoi. Le formulaire l'interdit
+     déjà ; un document venu d'ailleurs, non. */
+  it('écarte une avance qui se termine avant de commencer', () => {
+    const inversée = { ...complete, from: '2026-12', to: '2026-01' }
+    expect(parseImport(doc([inversée])).data.advances).toEqual([])
+  })
+
+  it('accepte une avance d’un seul mois, bornes confondues', () => {
+    const unMois = { ...complete, from: '2026-03', to: '2026-03' }
+    expect(parseImport(doc([unMois])).data.advances[0]?.to).toBe('2026-03')
+  })
+
   it('un document v4 reste lisible, simplement sans avance', () => {
     const v4 = doc([complete]).replace('"schemaVersion":5', '"schemaVersion":4')
     const result = parseImport(v4)
     expect(result.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
     expect(result.data.advances).toEqual([])
+  })
+})
+
+describe('mois ouverts', () => {
+  const doc = (months: unknown) =>
+    JSON.stringify({ schemaVersion: CURRENT_SCHEMA_VERSION, months })
+
+  /* La forme seule laissait passer un treizième mois, que `startOfMonth` puis
+     `parseISO` traversent ensuite sans bruit : le mois s'affichait sans nom. */
+  it('écarte un mois hors des douze', () => {
+    expect(parseImport(doc([{ ym: '2026-13', openedAt: '2026-01-01' }])).data.months).toEqual([])
+    expect(parseImport(doc([{ ym: '2026-00', openedAt: '2026-01-01' }])).data.months).toEqual([])
+  })
+
+  it('garde les mois lisibles', () => {
+    const months = parseImport(
+      doc([
+        { ym: '2026-12', openedAt: '2026-12-01', closed: true },
+        { ym: '2026-01', openedAt: '2026-01-01' },
+      ]),
+    ).data.months
+    expect(months.map((m) => m.ym)).toEqual(['2026-12', '2026-01'])
   })
 })
 

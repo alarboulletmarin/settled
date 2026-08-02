@@ -17,6 +17,7 @@ import { backupDaily, clearBackups } from '@/persistence/backups'
 import { clearDocument, loadDocument, saveDocument, setDbEventHandler } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
 import { type TabChannel, type TabMessage, openTabChannel } from '@/persistence/tabs'
+import { forgetExportMarks } from '@/persistence/transfer'
 import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
 import { readStoredPreference, storePreference } from '@/theme/theme'
 import { toast } from '@/ui/toast'
@@ -315,8 +316,11 @@ export const useStore = create<Store>()((set, get) => ({
     writer.cancel()
     await clearDocument()
     // La triple confirmation annonce qu'il ne reste rien : laisser cinq
-    // instantanés derrière en ferait un mensonge.
+    // instantanés derrière en ferait un mensonge. La date du dernier export
+    // aussi — elle vit hors du document, donc elle survivait à l'effacement, et
+    // l'app repartait de zéro en annonçant la sauvegarde d'un document disparu.
     await clearBackups()
+    forgetExportMarks()
     bootSnapshot = null
     const fresh = emptyData()
     storePreference(fresh.settings.theme)

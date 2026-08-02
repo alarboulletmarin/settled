@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   eur,
+  makeAdvance,
   makeCategory,
   makeData,
   makeDebt,
@@ -16,6 +17,7 @@ import {
   confirmEntries,
   confirmEntry,
   confirmOccurrence,
+  createAdvance,
   openMonth,
   removeMember,
   removeRecurrence,
@@ -67,6 +69,42 @@ describe('foyer et membres', () => {
     expect(after.recurrences[0]).not.toHaveProperty('memberId')
   })
 
+  /* `Advance.memberId` n'est pas facultatif : faute de pouvoir la détacher, on
+     la retirait de fait sans le faire — l'avance gardait l'identifiant d'un
+     membre disparu, et l'écran d'épargne cherchait un porteur introuvable. */
+  it('emporte les avances du membre retiré, qui ne peuvent être à personne', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [makeMember({ id: 'm1' }), makeMember({ id: 'm2' })] },
+      advances: [
+        makeAdvance({ id: 'av1', memberId: 'm1' }),
+        makeAdvance({ id: 'av2', memberId: 'm2' }),
+      ],
+    })
+    const after = removeMember(before, 'm1')
+    expect(after.advances.map((a) => a.id)).toEqual(['av2'])
+  })
+
+  /* La récurrence qui reconstitue le livret reste, comme après `removeAdvance` :
+     ce qui est déjà revenu y est revenu. Elle repasse simplement au foyer. */
+  it('garde la récurrence de l’avance, rendue au foyer', () => {
+    const before = makeData({
+      household: { name: 'Maison', members: [makeMember({ id: 'm1' })] },
+      advances: [makeAdvance({ id: 'av1', memberId: 'm1', recurrenceId: 'r1' })],
+      recurrences: [
+        makeRecurrence({
+          id: 'r1',
+          memberId: 'm1',
+          period: { unit: 'month', every: 1, anchorDay: 15 },
+        }),
+      ],
+      entries: [makeEntry({ id: 'e1', recurrenceId: 'r1', date: '2026-02-15', memberId: 'm1' })],
+    })
+    const after = removeMember(before, 'm1')
+    expect(after.recurrences).toHaveLength(1)
+    expect(after.recurrences[0]).not.toHaveProperty('memberId')
+    expect(after.entries).toHaveLength(1)
+  })
+
   it('renomme un membre sans toucher aux autres', () => {
     const before = makeData({
       household: { name: 'Maison', members: [makeMember({ id: 'm1' }), makeMember({ id: 'm2' })] },
@@ -116,6 +154,47 @@ describe('échéance payée d’avance', () => {
   it('ne fabrique rien pour une récurrence inconnue', () => {
     const before = makeData({ recurrences: [monthly] })
     expect(confirmOccurrence(before, 'inconnue', '2026-07-31', sequentialIds())).toBe(before)
+  })
+})
+
+describe('poser une avance', () => {
+  const input = {
+    label: 'Assurance auto',
+    categoryId: 'car-insurance',
+    savingCategoryId: 'livret',
+    memberId: 'm1',
+    amount: eur(60000),
+    paidOn: '2026-01-15',
+    from: '2026-01',
+    to: '2026-12',
+  }
+
+  it('pose la reprise, la récurrence qui la rend, et l’avance', () => {
+    const { data, advance } = createAdvance(makeData(), input, sequentialIds(), '2026-01-15')
+    expect(data.advances).toEqual([advance])
+    expect(data.recurrences).toHaveLength(1)
+    // La reprise part confirmée : l'argent est déjà sorti du livret.
+    expect(data.entries.some((e) => e.direction === 'in' && e.status === 'confirmed')).toBe(true)
+  })
+
+  /* Une période à l'envers pose une récurrence qui s'arrête avant sa première
+     mensualité : rien ne revient jamais sur le livret, et le reste dû ne bouge
+     plus d'un centime sans que rien ne dise pourquoi. Le formulaire le
+     refusait déjà, mais il n'est plus le seul appelant. */
+  it('refuse une période qui se termine avant de commencer', () => {
+    expect(() =>
+      createAdvance(makeData(), { ...input, from: '2026-12', to: '2026-01' }, sequentialIds()),
+    ).toThrow(RangeError)
+  })
+
+  it('accepte une avance d’un seul mois, bornes confondues', () => {
+    const { advance } = createAdvance(
+      makeData(),
+      { ...input, from: '2026-03', to: '2026-03' },
+      sequentialIds(),
+      '2026-03-15',
+    )
+    expect(advance.to).toBe('2026-03')
   })
 })
 
@@ -455,6 +534,115 @@ describe('synchronisation d’une récurrence', () => {
       expect(aout?.amount).toBe(eur(1500))
       expect(aout?.date).toBe('2026-08-10')
       expect(aout?.status).toBe('confirmed')
+    })
+  })
+
+  /* Une prévue peut porter un montant saisi à la main : `/depense/:id` conserve
+     le statut de l'échéance qu'on y ouvre, donc corriger le montant d'une
+     prévue l'enregistre sans la confirmer. Le tour jette-puis-refait ne pouvait
+     pas le relire — l'entrée venait d'être retirée. */
+  describe('montant saisi sur une prévue', () => {
+    const variable = () =>
+      makeData({
+        ...twoOpenMonths(),
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            amount: null,
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+        entries: [
+          makeEntry({
+            id: 'juillet',
+            recurrenceId: 'r1',
+            date: '2026-07-10',
+            status: 'planned',
+            amount: eur(8742),
+          }),
+        ],
+      })
+
+    it('survit à une modification de la règle, tant que l’échéance est datée', () => {
+      const relabelled = updateRecurrence(variable(), 'r1', { label: 'Électricité' })
+      const after = syncRecurrenceEntries(relabelled, 'r1', sequentialIds('b'), '2026-07-15')
+      const juillet = after.entries.find((e) => e.date === '2026-07-10')
+
+      expect(juillet?.amount).toBe(eur(8742))
+      expect(juillet?.label).toBe('Électricité')
+      expect(juillet?.status).toBe('planned')
+    })
+
+    it('survit aussi sur une récurrence à montant fixe', () => {
+      const fixe = makeData({
+        ...variable(),
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            amount: eur(5000),
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+      })
+      const raised = updateRecurrence(fixe, 'r1', { amount: eur(6000) })
+      const after = syncRecurrenceEntries(raised, 'r1', sequentialIds('b'), '2026-07-15')
+
+      // Le passé ne bouge pas ; c'est le mois d'après qui prend le nouveau prix.
+      expect(after.entries.find((e) => e.date === '2026-07-10')?.amount).toBe(eur(8742))
+      expect(after.entries.find((e) => e.date === '2026-08-10')?.amount).toBe(eur(6000))
+    })
+
+    /* À venir, c'est bien la règle qui dit ce qui va tomber : rien à préserver,
+       et préserver serait ici rendre la règle sans effet. */
+    it('ne s’applique pas à une prévue encore à venir', () => {
+      const data = makeData({
+        ...variable(),
+        entries: [
+          makeEntry({
+            id: 'aout',
+            recurrenceId: 'r1',
+            date: '2026-08-10',
+            status: 'planned',
+            amount: eur(8742),
+          }),
+        ],
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            amount: eur(5000),
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+      })
+      const after = syncRecurrenceEntries(data, 'r1', sequentialIds('b'), '2026-07-15')
+      expect(after.entries.find((e) => e.date === '2026-08-10')?.amount).toBe(eur(5000))
+    })
+
+    /* Zéro est l'emplacement vide que l'ouverture du mois pose sur un montant
+       variable, pas un montant saisi : le préserver figerait la case vide. */
+    it('ne préserve pas une case laissée à zéro', () => {
+      const vide = makeData({
+        ...variable(),
+        entries: [
+          makeEntry({
+            id: 'juillet',
+            recurrenceId: 'r1',
+            date: '2026-07-10',
+            status: 'planned',
+            amount: eur(0),
+          }),
+          makeEntry({
+            id: 'juin',
+            recurrenceId: 'r1',
+            date: '2026-06-10',
+            status: 'confirmed',
+            amount: eur(7000),
+          }),
+        ],
+      })
+      const after = syncRecurrenceEntries(vide, 'r1', sequentialIds('b'), '2026-07-15')
+      // La règle reprend la main : le dernier montant connu est celui de juin.
+      expect(after.entries.find((e) => e.date === '2026-07-10')?.amount).toBe(eur(7000))
     })
   })
 

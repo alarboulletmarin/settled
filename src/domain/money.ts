@@ -117,8 +117,24 @@ export function ratio(a: Money, total: Money): number {
 /* --- Saisie utilisateur ---------------------------------------------------*/
 
 /**
+ * Le plafond d'une saisie : mille milliards de centimes, soit dix milliards
+ * d'euros.
+ *
+ * Il ne protège pas d'une faute de frappe — un budget de foyer n'approche
+ * jamais ce chiffre —, il protège du silence. Au-delà de 2^53 centimes,
+ * `Number(whole) * 100` perd de la précision sans rien dire, et le montant
+ * enregistré n'est plus celui qui a été tapé. `money()` ne le rattrape pas :
+ * un flottant de cette taille reste « entier » au sens de `Number.isInteger`.
+ * Le plafond est donc posé loin sous 2^53, de sorte que même la somme de
+ * milliers de montants au plafond reste exacte.
+ */
+export const MAX_INPUT: Money = 1_000_000_000_000 as Money
+
+/**
  * Parse une saisie libre en Money. Accepte « 12,50 », « 12.5 », « 1 234,56 »,
- * « 1234 ». Tronque au-delà de deux décimales. Renvoie null si illisible.
+ * « 1234 ». Renvoie null si illisible — plus de deux décimales, ou au-delà du
+ * plafond : un montant qu'on ne saurait pas relire tel qu'il a été écrit vaut
+ * mieux refusé qu'enregistré faux.
  */
 export function parseAmount(input: string): Money | null {
   const cleaned = input.replace(/[\s\u00A0\u202F]/g, '').replace(',', '.')
@@ -133,8 +149,11 @@ export function parseAmount(input: string): Money | null {
   if (frac.length > 2) return null
 
   const cents = Number(whole || '0') * 100 + Number((frac + '00').slice(0, 2))
-  if (!Number.isFinite(cents)) return null
-  return ((negative ? -cents : cents) as Money)
+  if (!Number.isFinite(cents) || cents > MAX_INPUT) return null
+  // `money()` plutôt qu'un cast : le seul constructeur de montants de l'app est
+  // celui qui refuse ce qui n'est pas un entier, et rien ne justifie que la
+  // saisie — la seule source qui vienne du dehors — y échappe.
+  return money(negative ? -cents : cents)
 }
 
 /** Rend un Money dans la forme attendue par un champ de saisie : « 12,50 ». */

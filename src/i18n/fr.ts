@@ -300,6 +300,14 @@ export const fr = {
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     memberRemoveConfirm:
       'Ses entrées et ses récurrences repassent au foyer : rien n’est effacé. Retirer %s ?',
+    /* Une avance est toujours à quelqu'un : elle ne peut pas repasser au foyer
+       comme le reste, donc elle part. C'est la seule chose que ce geste efface,
+       et la question ne peut pas la taire — les mensualités déjà revenues sur
+       le livret, elles, restent. */
+    memberRemoveConfirmAdvanceOne:
+      'Ses entrées et ses récurrences repassent au foyer. Son avance, elle, ne peut appartenir à personne : elle est supprimée, ses mensualités déjà versées restent. Retirer %s ?',
+    memberRemoveConfirmAdvances:
+      'Ses entrées et ses récurrences repassent au foyer. Ses %s avances, elles, ne peuvent appartenir à personne : elles sont supprimées, leurs mensualités déjà versées restent. Retirer %s ?',
     membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
     /* Le revenu ne se saisit pas ici : il se lit sur les récurrences de
        ressources du membre. Le stocker à côté en ferait une seconde vérité.
@@ -309,6 +317,11 @@ export const fr = {
     memberNoIncome: 'aucun revenu enregistré',
     memberIncomeUnpriced: 'revenu à montant variable, pas encore chiffré',
     memberIncomeUnpricedFix: 'Indiquer un montant habituel',
+    /* Un revenu chiffré à zéro n'est pas un revenu de zéro : c'est un chiffre
+       qu'on ne sait pas lire. Sans ce message, la personne se voyait attribuer
+       0 % des charges communes — un résultat, donc introuvable. */
+    memberIncomeZero: 'revenu déclaré à zéro',
+    memberIncomeZeroFix: 'Corriger le montant',
     memberIncomeHint:
       'Le revenu de chacun se lit sur ses récurrences de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
@@ -361,6 +374,48 @@ export const fr = {
     importConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
+    /* Un import qui n'aboutit pas et qui ne le dit pas est la pire des pertes :
+       on vient d'accepter d'effacer ce qu'il remplace. */
+    importFailed: 'L’import n’a pas abouti. Recharge la page avant de réessayer.',
+
+    /* Ce que la lecture a écarté et réparé, dit avant qu'on confirme.
+       Jusqu'ici une dépense illisible disparaissait en silence dans un geste
+       qui remplace tout le document : le meilleur moyen de ne jamais s'en
+       apercevoir, puisque le fichier, lui, a l'air d'être passé. */
+    reportDiscardedOne: '1 ligne ne sera pas importée :',
+    reportDiscarded: '%s lignes ne seront pas importées :',
+    reportRepairedOne: '1 lien ne menait nulle part et a été rattaché :',
+    reportRepaired: '%s liens ne menaient nulle part et ont été rattachés :',
+    reportMore: '… et %s de plus.',
+    /* « Entrée « Loyer » — montant illisible », ou son rang à défaut de nom. */
+    reportLine: '%s — %s',
+    reportNamed: '%s « %s »',
+    reportRanked: '%s n° %s',
+
+    reportCollection: {
+      members: 'Membre',
+      families: 'Famille',
+      categories: 'Catégorie',
+      recurrences: 'Récurrence',
+      entries: 'Entrée',
+      debts: 'Crédit',
+      advances: 'Avance',
+      months: 'Mois',
+    },
+    reportReason: {
+      shape: 'ligne illisible',
+      amount: 'montant illisible',
+      principal: 'capital illisible',
+      date: 'date inexistante',
+      month: 'mois inexistant',
+      noMember: 'sans personne à qui elle est',
+      period: 'période à l’envers',
+      duplicateId: 'identifiant en double',
+      unknownCategory: 'catégorie introuvable, rangée dans « À ranger »',
+      unknownFamily: 'famille introuvable',
+      unknownMember: 'membre introuvable, rendue au foyer',
+      unknownRecurrence: 'récurrence introuvable, lien retiré',
+    },
 
     /* Le pendant de l'import : le seul moyen d'obtenir un fichier importable
        était jusqu'ici d'avoir déjà saisi ce qu'on cherche à saisir. */
@@ -371,6 +426,9 @@ export const fr = {
     schemaDownload: 'Télécharger le schéma',
     schemaCopied: 'Schéma copié',
     schemaCopyFailed: 'La copie a échoué. Télécharge le fichier à la place.',
+    /* Les deux modules chargés à la demande. Hors ligne, la requête échoue et
+       les boutons restaient désactivés pour toujours, sans un mot. */
+    schemaUnavailable: 'Le schéma n’a pas pu être chargé. Vérifie ta connexion, puis recharge.',
 
     example: 'Jeu d’exemple',
     exampleHint:
@@ -383,6 +441,7 @@ export const fr = {
     exampleConfirm: 'Remplacer toutes les données par le jeu d’exemple ?',
     exampleConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
     exampleLoaded: 'Jeu d’exemple chargé',
+    exampleFailed: 'Le jeu d’exemple n’a pas pu être chargé. Vérifie ta connexion, puis réessaie.',
 
     reset: 'Tout effacer',
     resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
@@ -394,6 +453,7 @@ export const fr = {
       'Le foyer, les membres, les récurrences, les crédits et toutes les entrées partent. Il n’y a pas de retour.',
     resetConfirm3: 'Dernière question. Exporte d’abord si tu veux garder une trace.',
     resetDone: 'Données effacées',
+    resetFailed: 'L’effacement n’a pas abouti. Recharge la page et réessaie.',
 
     reminderTitle: 'Ton dernier export date de plus de 30 jours.',
     reminderTitleNever: 'Tes données ne sont enregistrées que dans ce navigateur.',
@@ -873,6 +933,13 @@ export const fr = {
     unpricedMany: 'Les revenus %s sont à montant variable et pas encore chiffrés.',
     unpricedHint:
       'Confirme une échéance, ou indique un montant habituel sur la récurrence : la répartition se calcule dès qu’un chiffre existe.',
+    /* Le chiffre existe, et il vaut zéro. Un prorata dont un terme est nul n'a
+       pas plus de sens qu'un prorata sans terme : il donnerait 0 % des charges
+       à quelqu'un, en silence. Le « de » s'élide comme au-dessus. */
+    zeroOne: 'Le revenu %s est déclaré à zéro.',
+    zeroMany: 'Les revenus %s sont déclarés à zéro.',
+    zeroHint:
+      'Corrige le montant de la récurrence, ou celui de son échéance : un revenu nul ne se répartit pas, il ne dit rien.',
     goToIncome: 'Ajouter un revenu',
     goToSubscriptions: 'Voir les récurrences',
     soloTitle: 'La répartition demande au moins deux membres.',
@@ -1265,6 +1332,10 @@ export const fr = {
 
   defaults: {
     householdName: 'Maison',
+    /* Où atterrit une ligne dont la catégorie n'existait pas. Le nom dit ce
+       qu'il reste à faire, plutôt que ce qui s'est passé : « à ranger » est un
+       geste, « catégorie introuvable » est un constat. */
+    repairedCategory: 'À ranger',
   },
 
   a11y: {

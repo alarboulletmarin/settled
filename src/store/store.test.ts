@@ -9,6 +9,12 @@ import type * as tabsModule from '@/persistence/tabs'
 import type { TabMessage } from '@/persistence/tabs'
 import { backupDaily, clearBackups, listBackups, readBackup } from '@/persistence/backups'
 import { clearDocument, closeDb, loadDocument, loadRawDocument, saveDocument } from '@/persistence/db'
+import {
+  dismissReminder,
+  markExported,
+  readLastExport,
+  readReminderDismissed,
+} from '@/persistence/transfer'
 import { HYDRATION_TIMEOUT_MS } from './store'
 import type { useStore as UseStore } from './store'
 
@@ -288,6 +294,20 @@ describe('store — échecs de persistance', () => {
     await store.getState().resetAll()
 
     await expect(listBackups()).resolves.toStrictEqual([])
+  })
+
+  /* Les deux dates vivent hors du document, donc elles survivaient à
+     l'effacement : l'app repartait de zéro en annonçant « dernier export le
+     … » d'un document qui n'existe plus. */
+  it('oublie la date du dernier export et le refus du rappel', async () => {
+    markExported('2026-08-01')
+    dismissReminder('2026-08-01')
+    const { store } = await freshStore()
+
+    await store.getState().resetAll()
+
+    expect(readLastExport()).toBeNull()
+    expect(readReminderDismissed()).toBeNull()
   })
 
   it('relit sans erreur un document valide', async () => {

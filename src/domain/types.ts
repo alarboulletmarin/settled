@@ -6,7 +6,7 @@
  * chiffre directement, elle produit des `Entry`.
  * ==========================================================================*/
 
-import { type ISODate, type YearMonth, startOfMonth } from './date'
+import { type ISODate, type YearMonth, addMonthsToYm, startOfMonth, ymOf } from './date'
 import type { Money } from './money'
 
 export type Direction = 'in' | 'out'
@@ -245,6 +245,18 @@ export function isActiveOn(recurrence: Recurrence, date: ISODate): boolean {
 }
 
 /**
+ * Jusqu'où une récurrence encore à venir décrit le mois qu'on regarde.
+ *
+ * L'asymétrie ci-dessous — une règle arrêtée sort, une règle à venir compte —
+ * est voulue, mais elle était sans limite : un salaire déclaré pour janvier
+ * 2030 pesait dans le prorata d'aujourd'hui, et le déplacer d'autant. Un
+ * trimestre est le plus loin qu'une déclaration puisse porter sans cesser de
+ * parler du mois en cours : c'est l'ordre de grandeur d'une embauche annoncée
+ * ou d'une augmentation datée, au-delà duquel on décrit une autre année.
+ */
+export const RUNNING_HORIZON_MONTHS = 3
+
+/**
  * La récurrence décrit-elle la situation du foyer sur ce mois-là ?
  *
  * Une récurrence arrêtée avant le mois ne la décrit plus. Une récurrence dont la
@@ -254,11 +266,17 @@ export function isActiveOn(recurrence: Recurrence, date: ISODate): boolean {
  * pose ses salaires au 1er du mois prochain n'a pas à attendre ce 1er pour
  * savoir dans quelle proportion il partage ses charges.
  *
+ * Elle est bornée, en revanche, et c'est le seul ajout : « à venir » veut dire
+ * bientôt, pas un jour. Sans borne, une ressource déclarée pour dans cinq ans
+ * pesait dès aujourd'hui dans la part de chacun — un chiffre juste au centime
+ * et faux sur le fond, que rien à l'écran ne pouvait expliquer.
+ *
  * La question se pose sur un mois, jamais sur un jour : la répartition d'août
  * se lit avec les revenus d'août, y compris quand on la consulte en juillet.
  * Répondre « aujourd'hui » ferait dépendre le chiffre du moment où on regarde.
  */
 export function isRunningIn(recurrence: Recurrence, month: YearMonth): boolean {
+  if (ymOf(recurrence.startedOn) > addMonthsToYm(month, RUNNING_HORIZON_MONTHS)) return false
   return recurrence.endedOn === undefined || recurrence.endedOn >= startOfMonth(month)
 }
 
