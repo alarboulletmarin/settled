@@ -12,7 +12,58 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
-Rien pour l'instant.
+Le chantier de la fiabilité du stockage. La promesse de l'app est que tout vit
+sur l'appareil ; rien n'instrumentait la frontière avec le navigateur, et
+quatre façons de tout perdre en silence coexistaient.
+
+**Aucune migration de document** : `schemaVersion` reste à 6, et un export
+d'aujourd'hui se rouvre à l'identique. La base IndexedDB, elle, passe de la
+version 1 à la version 2 pour accueillir les sauvegardes locales — sans perte,
+et sans rien transformer. Un onglet resté ouvert sur la version précédente doit
+être fermé pour que le passage se fasse ; l'app le dit désormais au lieu de
+tourner indéfiniment sur son écran de démarrage.
+
+### Ajouté
+
+- **Flush à la fermeture** : la file d'écriture est vidée sur `pagehide` et
+  quand la page passe en arrière-plan — les deux seuls événements sur lesquels
+  un téléphone rende la main.
+- **Bandeau d'échec d'écriture**, persistant et non écartable, avec un export
+  immédiat. Il s'affiche partout, y compris sur un écran de saisie : c'est
+  précisément là qu'on est en train de perdre du travail.
+- **Écran de récupération** sur la page d'arrivée quand le document stocké ne
+  se lit pas : import, téléchargement de la copie brute, rechargement, puis
+  effacement derrière deux confirmations.
+- **Coordination entre onglets** par `BroadcastChannel` : l'onglet en retard
+  annule son écriture en attente, relit, et le dit.
+- **Persistance demandée au navigateur** (`navigator.storage.persist()`) à la
+  création du foyer et après un import.
+- **Réglages › Sur cet appareil** : l'engagement du navigateur, la place
+  occupée, et les sauvegardes locales avec leur restauration.
+- **Cinq sauvegardes locales tournantes**, une par jour de saisie, chacune
+  portant l'état d'avant les modifications du jour.
+- **Écran de secours** en cas d'exception au rendu, qui propose d'abord de
+  récupérer les données, puis de réinstaller l'app.
+
+### Corrigé
+
+- Les écritures pouvaient **se recouvrir** : deux transactions ouvertes en
+  parallèle sur la même clé commettent dans l'ordre du moteur, si bien que la
+  dernière saisie pouvait être écrasée par l'avant-dernière.
+- Un **échec d'écriture était avalé** : quota plein, navigation privée ou base
+  évincée, on saisissait sans que rien ne s'enregistre ni ne le dise.
+- Une **saisie faite dans les 400 ms** précédant la fermeture de l'onglet était
+  perdue.
+- Le message d'échec de lecture était **rédigé et jamais affiché**, et créer un
+  foyer **écrasait alors le document illisible** — qu'une simple mise à jour de
+  l'app aurait parfois suffi à rouvrir.
+- Deux onglets ouverts **s'écrasaient mutuellement**, au dernier qui écrit.
+- Une connexion coupée par le navigateur faisait **rejeter toutes les écritures
+  suivantes** jusqu'au rechargement, sans un mot.
+- Une ouverture de base bloquée laissait **l'écran de démarrage tourner sans
+  fin**.
+- Une exception au rendu donnait un **écran blanc**, reproduit à l'identique à
+  chaque rechargement puisque le service worker resservait la même version.
 
 ## [1.0.0] — 2026-08-02
 

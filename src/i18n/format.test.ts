@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { money } from '@/domain/money'
-import { formatMoney, moneyParts } from './format'
+import { formatBytes, formatMoney, moneyParts } from './format'
 
 /* Les espaces de la mise en forme française sont insécables : les tests les
    normalisent plutôt que de les recopier, sans quoi ils passent ou échouent
@@ -37,5 +37,21 @@ describe('mise en forme d’un montant', () => {
 
   it('n’arrondit pas l’unité tant que les centimes s’affichent', () => {
     expect(plain(formatMoney(money(5_669), 'EUR'))).toBe('56,69 €')
+  })
+})
+
+describe('taille sur l’appareil', () => {
+  it('compte en unités décimales, comme le navigateur les rapporte', () => {
+    // Ce sont celles de l'explorateur de fichiers : un chiffre affiché ici doit
+    // se retrouver à l'identique à côté du fichier exporté.
+    expect(plain(formatBytes(0))).toBe('0 o')
+    expect(plain(formatBytes(512))).toBe('512 o')
+    expect(plain(formatBytes(1000))).toBe('1 ko')
+    expect(plain(formatBytes(1_500_000))).toBe('1,5 Mo')
+    expect(plain(formatBytes(50_000_000_000))).toBe('50 Go')
+  })
+
+  it('n’affiche jamais de taille négative', () => {
+    expect(plain(formatBytes(-1))).toBe('0 o')
   })
 })

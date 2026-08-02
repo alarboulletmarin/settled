@@ -15,6 +15,7 @@
 
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
 import { ArrowsClockwise } from '@phosphor-icons/react/dist/csr/ArrowsClockwise'
+import { Archive } from '@phosphor-icons/react/dist/csr/Archive'
 import { ArrowUpRight } from '@phosphor-icons/react/dist/csr/ArrowUpRight'
 import { CalendarBlank } from '@phosphor-icons/react/dist/csr/CalendarBlank'
 import { CaretDown } from '@phosphor-icons/react/dist/csr/CaretDown'
@@ -118,6 +119,9 @@ export const HouseholdIcon = adapt(House)
 export const CategoriesIcon = adapt(Tag)
 export const ThemeIcon = adapt(Palette)
 export const DataIcon = adapt(Database)
+/* Le coffre, et non une seconde base : « Données » parle des fichiers qui
+   sortent, « Sur cet appareil » de ce qui y reste rangé. */
+export const DeviceIcon = adapt(Archive)
 export const TrailingIcon = adapt(ChartLine)
 export const CompareIcon = adapt(ChartBar)
 export const YearsIcon = adapt(ChartLineUp)

@@ -1,7 +1,16 @@
 import 'fake-indexeddb/auto'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { eur, makeData, makeEntry } from '@/domain/fixtures'
-import { clearDocument, closeDb, createWriter, loadDocument, saveDocument } from './db'
+import {
+  type DbEvent,
+  clearDocument,
+  closeDb,
+  handleDbEvent,
+  loadDocument,
+  loadRawDocument,
+  saveDocument,
+  setDbEventHandler,
+} from './db'
 import { emptyData } from './defaults'
 import { CURRENT_SCHEMA_VERSION } from './schema'
 
@@ -23,84 +32,79 @@ describe('document IndexedDB', () => {
       household: { name: 'Chez nous', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
       entries: [makeEntry({ date: '2026-07-05', amount: eur(95000) })],
     })
-    await saveDocument(data)
-    await expect(loadDocument()).resolves.toStrictEqual(data)
+    await saveDocument(data, 1)
+    await expect(loadDocument()).resolves.toStrictEqual({ data, rev: 1 })
   })
 
   it('remplace le document au lieu d’en accumuler', async () => {
-    await saveDocument(emptyData())
-    await saveDocument(makeData({ household: { name: 'Deuxième', members: [] } }))
+    await saveDocument(emptyData(), 1)
+    await saveDocument(makeData({ household: { name: 'Deuxième', members: [] } }), 2)
     const loaded = await loadDocument()
-    expect(loaded?.household.name).toBe('Deuxième')
+    expect(loaded?.data.household.name).toBe('Deuxième')
   })
 
   it('fait passer le document stocké par les migrations à la relecture', async () => {
     // Un document écrit par une version antérieure, sans schemaVersion.
-    await saveDocument({ household: { name: 'Ancien' } } as never)
+    await saveDocument({ household: { name: 'Ancien' } } as never, 1)
     const loaded = await loadDocument()
-    expect(loaded?.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
-    expect(loaded?.household.name).toBe('Ancien')
+    expect(loaded?.data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+    expect(loaded?.data.household.name).toBe('Ancien')
   })
 
   it('efface tout', async () => {
-    await saveDocument(emptyData())
+    await saveDocument(emptyData(), 1)
     await clearDocument()
     await expect(loadDocument()).resolves.toBeNull()
   })
+
+  it('rend les octets stockés sans les faire passer par les migrations', async () => {
+    // `loadDocument` refuserait ce document ; c'est justement le cas où il faut
+    // pouvoir en proposer une copie plutôt que de l'effacer.
+    await saveDocument({ schemaVersion: 99 } as never, 1)
+    await expect(loadRawDocument()).resolves.toStrictEqual({ schemaVersion: 99 })
+    await expect(loadDocument()).rejects.toThrow()
+  })
 })
 
-describe('écriture en debounce', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-  })
-
+describe('incidents de connexion', () => {
   afterEach(() => {
-    vi.useRealTimers()
+    setDbEventHandler(() => {})
+    closeDb()
   })
 
-  it('fusionne les mutations rapprochées en une seule écriture', async () => {
-    const write = vi.fn().mockResolvedValue(undefined)
-    const writer = createWriter(write, 400)
+  it('lâche la connexion quand un autre onglet veut migrer', async () => {
+    const seen: DbEvent[] = []
+    setDbEventHandler((event) => seen.push(event))
+    await saveDocument(emptyData(), 1)
 
-    writer.schedule(makeData({ household: { name: 'a', members: [] } }))
-    writer.schedule(makeData({ household: { name: 'b', members: [] } }))
-    writer.schedule(makeData({ household: { name: 'c', members: [] } }))
-    expect(write).not.toHaveBeenCalled()
+    handleDbEvent('blocking')
 
-    await vi.advanceTimersByTimeAsync(400)
-    expect(write).toHaveBeenCalledTimes(1)
-    expect(write.mock.calls[0]?.[0]).toMatchObject({ household: { name: 'c' } })
+    expect(seen).toStrictEqual(['blocking'])
+    // La connexion rouverte relit le même document : rien n'est perdu à fermer.
+    await expect(loadDocument()).resolves.not.toBeNull()
   })
 
-  it('écrit immédiatement quand on vide la file', async () => {
-    const write = vi.fn().mockResolvedValue(undefined)
-    const writer = createWriter(write, 400)
-    writer.schedule(emptyData())
-    await writer.flush()
-    expect(write).toHaveBeenCalledTimes(1)
+  it('oublie une connexion coupée pour que la suivante rouvre', async () => {
+    const seen: DbEvent[] = []
+    setDbEventHandler((event) => seen.push(event))
+    await saveDocument(emptyData(), 1)
+
+    handleDbEvent('terminated')
+
+    expect(seen).toStrictEqual(['terminated'])
+    await expect(loadDocument()).resolves.not.toBeNull()
   })
 
-  it('ne réécrit pas une seconde fois après un flush', async () => {
-    const write = vi.fn().mockResolvedValue(undefined)
-    const writer = createWriter(write, 400)
-    writer.schedule(emptyData())
-    await writer.flush()
-    await vi.advanceTimersByTimeAsync(1000)
-    expect(write).toHaveBeenCalledTimes(1)
-  })
+  it('ne ferme rien quand c’est nous qui attendons', async () => {
+    // `blocked` tombe pendant l'ouverture : fermer perdrait la promesse qui
+    // aboutira quand l'autre onglet partira.
+    const seen: DbEvent[] = []
+    setDbEventHandler((event) => seen.push(event))
+    await saveDocument(emptyData(), 1)
 
-  it('abandonne une écriture en attente', async () => {
-    const write = vi.fn().mockResolvedValue(undefined)
-    const writer = createWriter(write, 400)
-    writer.schedule(emptyData())
-    writer.cancel()
-    await vi.advanceTimersByTimeAsync(1000)
-    expect(write).not.toHaveBeenCalled()
-  })
+    handleDbEvent('blocked')
 
-  it('ne fait rien quand il n’y a rien à vider', async () => {
-    const write = vi.fn().mockResolvedValue(undefined)
-    await createWriter(write, 400).flush()
-    expect(write).not.toHaveBeenCalled()
+    expect(seen).toStrictEqual(['blocked'])
+    await expect(loadDocument()).resolves.not.toBeNull()
   })
 })

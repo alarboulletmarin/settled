@@ -14,6 +14,7 @@ import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
 import { SavingsPage } from '@/features/savings/SavingsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { SplitPage } from '@/features/split/SplitPage'
+import { useStore } from '@/store/store'
 import { AppShell } from './AppShell'
 import { PlainShell } from './PlainShell'
 import {
@@ -72,9 +73,19 @@ export function AppRoutes() {
  * sur un formulaire nu.
  */
 export function OnboardingRoutes() {
+  /* Un document illisible n'ouvre pas les deux questions. La garde ne peut pas
+     vivre seulement dans le bouton de l'arrivée : cette URL est un signet, et
+     `finishOnboarding` écraserait là ce qu'on n'a pas su lire. Elle refuse deux
+     fois — ici pour ne pas montrer le formulaire, dans le store pour ne pas
+     écrire — parce qu'un seul des deux verrous se contourne. */
+  const unreadable = useStore((s) => s.error?.kind === 'read')
+
   return (
     <Routes>
-      <Route path={ONBOARDING_PATH} element={<OnboardingPage />} />
+      <Route
+        path={ONBOARDING_PATH}
+        element={unreadable ? <Navigate to={LANDING_PATH} replace /> : <OnboardingPage />}
+      />
       {/* Sans coquille : la colonne latérale nommerait un foyer sans nom et
           mènerait à cinq écrans qui n'existent pas encore. */}
       <Route

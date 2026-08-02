@@ -14,6 +14,10 @@ doit faire, et le [design system](DESIGN-SYSTEM.md) de quoi elle a l'air.
 - `src/domain/` — logique métier pure, sans UI, entièrement testée.
 - `src/store/` — état zustand. Un composant lit un sélecteur et appelle une
   action, rien de plus.
+- `src/persistence/writer.ts` — le regroupement des écritures. Il ne connaît pas
+  IndexedDB : on lui donne une fonction d'écriture, il décide quand l'appeler et
+  rapporte ce qu'elle a fait.
+- `src/persistence/tabs.ts` — ce que les onglets se disent, et rien d'autre.
 - `src/i18n/fr.ts` — toutes les chaînes. Aucun texte en dur dans un composant.
 - `src/persistence/schemaDoc.ts` — le modèle de données à donner à un assistant,
   et `src/persistence/example.ts` — le foyer d'exemple. Tous deux dérivés du
@@ -60,6 +64,71 @@ suivant l'app s'ouvrait « prête » sur un foyer sans membre, et les deux
 questions ne revenaient jamais. C'est `finishOnboarding` qui programme la
 première écriture — il le faisait déjà explicitement, et cet appel n'avait de
 sens que si rien n'avait été écrit avant lui.
+
+**Les écritures sont sérialisées.** Le writer chaîne sa file au lieu de
+l'écraser. Deux `put` partis de deux transactions ouvertes en parallèle sur la
+même clé commettent dans l'ordre que le moteur décide, pas dans celui où on les
+a émis : la dernière saisie pouvait donc se faire recouvrir par l'avant-dernière.
+Le chaînage rend l'ordre d'écriture égal à l'ordre de frappe, et c'est aussi ce
+qui permet à `flush()` d'attendre la file entière plutôt que sa dernière entrée.
+
+**Une écriture ratée se voit, et `flush()` ne rejette jamais.** Le writer
+rapporte par un hook au lieu de lever. Une chaîne rejetée empoisonnerait tous
+les `.then` suivants — une panne passagère deviendrait définitive — et ferait
+rejeter `flush()` dans un gestionnaire `pagehide`, où personne n'est là pour
+rattraper. Le store route l'échec vers un bandeau persistant qui ne s'écarte
+pas : la condition est en cours, et un bandeau qu'on chasse laisserait quelqu'un
+continuer à saisir dans une app qui n'enregistre plus.
+
+L'erreur porte un `kind`, `read` ou `write`, et c'est lui qui permet à une
+écriture réussie d'effacer le bandeau d'écriture sans effacer un échec de
+lecture : rien de ce qu'on écrit ne rend lisible ce qui ne l'était pas. Les deux
+n'ont d'ailleurs ni la même issue ni le même écran — l'un se règle par un export
+depuis la coquille, l'autre par un import depuis l'arrivée.
+
+**Un document illisible n'est pas un document absent.** `hydrate` bascule sur
+l'onboarding dans les deux cas, mais la première écriture qui suit écraserait
+des données peut-être intactes : une `ImportError` levée par un `schemaVersion`
+plus récent se répare en mettant l'app à jour, pas en effaçant. `finishOnboarding`
+refuse donc d'écrire tant qu'un échec de lecture n'a pas été traité, et
+`/demarrer` renvoie à l'arrivée — le verrou est aux deux endroits parce qu'un
+seul des deux se contourne, l'URL étant un signet.
+
+**La révision vit hors du document.** Même argument que la date de dernier
+export : ce qui décrit le rangement de cet appareil ne voyage pas dans un
+fichier exporté. Dans `Data`, elle serait dans chaque export, où elle ne veut
+rien dire, et un import à la révision 900 dans une base à la révision 3 ferait
+croire à l'onglet qu'il est en avance sur ses voisins. Elle est écrite dans la
+même transaction que le document — sinon elle n'est la révision de rien — et
+fournie par l'appelant plutôt que relue, parce que l'écriture de `pagehide` ne
+peut plus se permettre d'aller-retour.
+
+**Un onglet en retard recharge, il n'écrase pas.** À réception d'une révision
+supérieure, il annule d'abord son écriture en attente : elle porte son document
+périmé, et la laisser partir écraserait celui d'en face — c'est exactement le
+bug qu'on retire. On jette plutôt qu'on fusionne, parce qu'il n'existe pas de
+fusion pour un document unique ; le prix est au pire les 400 ms de frappe en
+cours, contre le document entier de l'autre onglet. Et il le dit par un toast :
+un montant qui change tout seul sous les yeux sans un mot est sa propre forme
+d'inquiétude.
+
+**L'anneau garde l'état d'avant la session.** L'instantané du jour porte le
+document tel qu'il était au démarrage, pas celui qu'on vient d'écrire : un point
+de retour sert à revenir avant ce qui a cassé, et ce qui casse est la session en
+cours. Après un onboarding il n'y a rien à archiver, et c'est juste — il
+n'existait aucun état antérieur. La clé est une date ISO, donc l'ordre
+lexicographique *est* l'ordre chronologique et le rognage à cinq tient en une
+ligne. Une sauvegarde ratée n'est pas une écriture ratée : elle n'allume pas le
+bandeau.
+
+**L'écran de secours rend les octets, le bandeau rend la mémoire.** Les deux
+boutons portent presque le même nom et n'exportent pas la même chose, pour des
+raisons exactement inverses. Le bandeau tombe quand l'écriture a échoué : c'est
+le disque qui est en retard, l'écran est intact. L'`ErrorBoundary` tombe quand
+le rendu a levé : le document en mémoire est le suspect, et on ne fait pas
+passer un sauvetage par `migrateDocument`, qui peut lever. `CrashScreen`
+n'importe donc ni le routeur ni le store — n'importe lequel peut être ce qui
+vient de casser, et un écran de secours qui plante n'en est pas un.
 
 **Ouverture du mois.** Jamais une tâche pour l'utilisateur : afficher un mois
 non passé l'ouvre. Idempotente — une échéance est reconnue à sa paire récurrence

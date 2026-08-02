@@ -2,13 +2,7 @@ import { useState } from 'react'
 import { today } from '@/domain/date'
 import { fr } from '@/i18n/fr'
 import { formatDate, tpl } from '@/i18n/format'
-import { download } from '@/lib/download'
-import {
-  exportFilename,
-  markExported,
-  readLastExport,
-  toExportBlob,
-} from '@/persistence/transfer'
+import { downloadExport, readLastExport } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -28,8 +22,7 @@ export function DataSection() {
 
   const doExport = (): void => {
     const on = today()
-    download(toExportBlob(data), exportFilename(on))
-    markExported(on)
+    downloadExport(data, on)
     setLastExport(on)
     toast(fr.settings.exported)
   }

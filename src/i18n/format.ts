@@ -92,6 +92,23 @@ export function formatDelta(value: number | null, digits = 0): string {
   return `${sign}${(Math.abs(value) * 100).toFixed(digits).replace('.', ',')}${NBSP_NARROW}%`
 }
 
+/**
+ * Une taille de fichier, en unités décimales — c'est ce que le navigateur
+ * rapporte, et c'est ce que l'explorateur de fichiers affichera à côté.
+ * Une décimale au-delà du kilo, aucune en dessous : « 512 o », « 4,7 Mo ».
+ */
+export function formatBytes(bytes: number): string {
+  const units = ['o', 'ko', 'Mo', 'Go', 'To']
+  let value = Math.max(0, bytes)
+  let unit = 0
+  while (value >= 1000 && unit < units.length - 1) {
+    value /= 1000
+    unit += 1
+  }
+  const rounded = unit === 0 ? Math.round(value) : Math.round(value * 10) / 10
+  return `${String(rounded).replace('.', ',')}${NBSP_NARROW}${units[unit] ?? 'o'}`
+}
+
 /** Remplit les « %s » d'un gabarit de `fr.ts`, dans l'ordre. */
 export function tpl(template: string, ...values: (string | number)[]): string {
   let index = 0

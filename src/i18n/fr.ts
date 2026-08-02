@@ -190,6 +190,97 @@ export const fr = {
       'Charges communes non réparties : seules les lignes à son nom sont comptées.',
   },
 
+  /* La frontière avec le navigateur. Tout ce qui s'y passe mal doit se dire :
+     les données ne vivent nulle part ailleurs, et un échec silencieux se
+     découvre au moment où il est trop tard. Chaque message dit ce qui s'est
+     passé et quoi faire — jamais « une erreur est survenue ». */
+  storage: {
+    readFailed:
+      'Les données n’ont pas pu être lues. Tu peux repartir de zéro ou importer un export.',
+    writeFailed: 'Les modifications ne s’enregistrent plus',
+    writeFailedBody:
+      'Ce que tu vois à l’écran est intact, mais plus rien ne s’écrit sur cet appareil. Exporte maintenant : c’est la seule copie qui survivra à la fermeture de l’onglet.',
+    writeFailedLabel: 'Échec d’enregistrement',
+    exportNow: 'Exporter maintenant',
+
+    /* Les trois incidents de connexion. Chacun dit ce qu'il faut faire, et
+       aucun ne dit « rechargez la page » sans expliquer pourquoi. */
+    blocking:
+      'Un autre onglet met la base à jour. Cet onglet-ci n’enregistre plus rien tant qu’il n’est pas rechargé.',
+    blocked:
+      'Un autre onglet utilise une version différente de l’app. Ferme-le, puis recharge cette page.',
+    terminated:
+      'Le navigateur a fermé la base sous l’app. Recharge la page — et exporte d’abord, par précaution.',
+    readTimeout:
+      'La base de données ne répond pas. Un autre onglet la bloque peut-être : ferme-le, puis recharge.',
+
+    /* Ce que dit l'onglet qui n'était plus à jour. En passant, jamais en
+       modale : il n'a rien perdu au-delà de ce qu'il tapait à l'instant, et
+       l'arrêter pour le lui dire serait pire que le lui dire au vol. */
+    otherTab: 'Mis à jour depuis un autre onglet.',
+    otherTabCleared: 'Les données ont été effacées depuis un autre onglet.',
+
+    /* Le chemin de sortie d'un document qu'on ne sait pas ouvrir. Les recours
+       sont dans l'ordre de ce qu'ils sauvent : importer récupère, recharger ne
+       coûte rien à essayer, effacer ne se défait pas. */
+    recoverTitle: 'Tes données ne se lisent pas',
+    recoverImport: 'Importer un export',
+    recoverImportHint:
+      'C’est le seul recours qui ne perd rien. Si tu as un fichier d’export, c’est le moment.',
+    recoverRaw: 'Télécharger la copie brute',
+    recoverRawHint:
+      'Le contenu tel qu’il est stocké, avant toute lecture. Un document que cette version de l’app ne sait pas ouvrir n’est pas forcément perdu — garde-le avant d’effacer quoi que ce soit.',
+    recoverRawEmpty: 'Il n’y a rien de stocké à copier.',
+    recoverRawDone: 'Copie brute téléchargée',
+    recoverReload: 'Recharger',
+    recoverReloadHint:
+      'Une base momentanément occupée se relit souvent au deuxième essai. Ça ne coûte rien.',
+    discard: 'Effacer et repartir de zéro',
+    discardHint:
+      'En dernier. Ce qui est stocké part définitivement, et personne ne sait ce qu’il y avait dedans.',
+    discardConfirm1:
+      'Ce qui est stocké sur cet appareil sera effacé, sans qu’on ait pu le lire ni te dire ce qu’il contenait.',
+    discardConfirm2: 'Il n’y a pas de retour. Tu as téléchargé la copie brute ?',
+    discarded: 'Données effacées',
+
+    /* L'écran de secours. Il n'a qu'une chose importante à faire faire, et ce
+       n'est pas de comprendre ce qui s'est passé. */
+    crashTitle: 'L’app s’est arrêtée',
+    crashBody:
+      'Tes données sont toujours là, sur cet appareil. Récupère-les d’abord : c’est le seul geste qui ne se rattrape pas si tu ne le fais pas maintenant.',
+    crashExport: 'Récupérer mes données',
+    crashExportEmpty: 'Il n’y a rien de stocké sur cet appareil.',
+    crashExportFailed: 'La base n’a pas répondu. Recharge, puis réessaie.',
+    crashReload: 'Recharger l’app',
+    crashCaches: 'Réinstaller l’app',
+    crashCachesHint:
+      'Si l’écran revient cassé à chaque rechargement, c’est la version en cache qui est en cause. Ceci la retélécharge. Tes données ne sont pas touchées : elles ne vivent pas dans le cache.',
+
+    /* La section des réglages. Elle parle de **ce navigateur** — la place qu'il
+       prête, ce qu'il promet de garder — là où « Données » parle des fichiers
+       qui en sortent. */
+    title: 'Sur cet appareil',
+    persisted: 'Le navigateur s’est engagé à garder tes données.',
+    notPersisted:
+      'Le navigateur n’a rien promis : il peut effacer tes données s’il manque de place. Un export régulier reste la vraie protection.',
+    persistAsk: 'Demander à les garder',
+    persistGranted: 'C’est accordé.',
+    persistRefused: 'Le navigateur a refusé. Rien n’est perdu — exporte plus souvent.',
+    usage: '%s occupés sur %s disponibles.',
+    usageUnknown: 'Ce navigateur ne dit pas la place qu’il te laisse.',
+
+    backups: 'Sauvegardes locales',
+    backupsHint:
+      'Une sauvegarde par jour de saisie, les cinq dernières. Chacune porte l’état d’avant les modifications du jour. Elles vivent dans ce navigateur : elles ne remplacent pas un export.',
+    backupsEmpty: 'Aucune sauvegarde pour l’instant. La première arrive à la prochaine journée de saisie.',
+    backupContents: '%s entrées, %s récurrences',
+    backupRestore: 'Restaurer',
+    backupConfirm1:
+      'Cette sauvegarde remplacera intégralement les données actuelles — %s, du %s.',
+    backupConfirm2: 'Tout ce qui a été saisi depuis sera perdu.',
+    backupRestored: 'Sauvegarde restaurée',
+  },
+
   settings: {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
     aboutLink: 'Le projet, le code et la licence',

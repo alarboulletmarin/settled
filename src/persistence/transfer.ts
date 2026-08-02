@@ -7,6 +7,7 @@
 
 import { type ISODate, diffDays, today } from '@/domain/date'
 import type { Data } from '@/domain/types'
+import { download } from '@/lib/download'
 import { ImportError, type MigrationResult, migrateDocument } from './schema'
 
 export { ImportError }
@@ -19,6 +20,14 @@ export function exportFilename(on: ISODate = today()): string {
   return `tout-compte-fait-${on}.json`
 }
 
+/**
+ * Nom du fichier de secours, quand le document ne se lit pas. Il se distingue
+ * d'un export à l'œil nu : personne ne doit croire l'avoir déjà réimporté.
+ */
+export function unreadableFilename(on: ISODate = today()): string {
+  return `tout-compte-fait-illisible-${on}.json`
+}
+
 /** Le document sérialisé, indenté pour rester lisible et diffable. */
 export function serializeData(data: Data): string {
   return `${JSON.stringify(data, null, 2)}\n`
@@ -26,6 +35,30 @@ export function serializeData(data: Data): string {
 
 export function toExportBlob(data: Data): Blob {
   return new Blob([serializeData(data)], { type: EXPORT_MIME })
+}
+
+/**
+ * Le geste complet : le fichier part sur l'appareil, et la date du jour compte
+ * comme dernier export. Trois écrans le demandent désormais — les réglages, le
+ * bandeau d'échec d'écriture et l'écran de secours — et l'oubli de
+ * `markExported` dans l'un des trois ferait revenir le rappel des trente jours
+ * après un export qui a bien eu lieu.
+ */
+export function downloadExport(data: Data, on: ISODate = today()): void {
+  download(toExportBlob(data), exportFilename(on))
+  markExported(on)
+}
+
+/**
+ * Les octets du disque, sans rien en comprendre — ni migration, ni validation.
+ *
+ * Le nom du fichier est laissé à l'appelant, parce que ce sont deux choses
+ * différentes selon d'où l'on vient : un document qu'on n'a pas su lire est une
+ * pièce à conviction (`unreadableFilename`), celui qu'on sauve d'un écran
+ * blanc est un export ordinaire (`exportFilename`), réimportable tel quel.
+ */
+export function toRawBlob(raw: unknown): Blob {
+  return new Blob([`${JSON.stringify(raw, null, 2)}\n`], { type: EXPORT_MIME })
 }
 
 /**

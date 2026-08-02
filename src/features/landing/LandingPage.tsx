@@ -12,6 +12,7 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { DataIcon, RecurrencesIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { LandingTiles } from './LandingTiles'
+import { RecoveryDoor } from './RecoveryDoor'
 
 /**
  * La première page de l'app, et sa vitrine.
@@ -27,6 +28,7 @@ import { LandingTiles } from './LandingTiles'
  */
 export function LandingPage() {
   const status = useStore((s) => s.status)
+  const error = useStore((s) => s.error)
   const navigate = useNavigate()
 
   /* Ouverte les mains vides, elle s'efface dès qu'il y a quelque chose à
@@ -49,6 +51,10 @@ export function LandingPage() {
   }, [status, navigate])
 
   const empty = status === 'onboarding'
+  /* Un document existe et ne se lit pas. Le statut est le même que celui d'un
+     appareil neuf — l'app n'a rien d'utilisable à montrer — mais ce qu'on
+     propose n'a rien à voir : ici on répare, on ne commence pas. */
+  const unreadable = error?.kind === 'read'
 
   return (
     /* `px-4 md:px-8` — le cadre exact d'`AppShell`. Les tuiles de démonstration
@@ -73,7 +79,10 @@ export function LandingPage() {
             doigt — la lecture de la base se compte en dizaines de
             millisecondes, et un libellé qui se corrige se remarque plus qu'une
             rangée qui apparaît. */}
-        {status !== 'loading' && (
+        {/* Rien non plus quand le document ne se lit pas : « Créer mon foyer »
+            écraserait ce qu'on n'a pas su ouvrir, et le bloc de récupération
+            juste dessous porte déjà les quatre recours, dans leur ordre. */}
+        {status !== 'loading' && !unreadable && (
           <div className="flex flex-wrap items-center gap-3">
             {empty ? (
               <>
@@ -104,6 +113,10 @@ export function LandingPage() {
         <p className="t-label">{fr.landing.privacy}</p>
       </header>
 
+      {/* Avant les tuiles de démonstration : une alerte sous une grille de
+          chiffres inventés n'est pas une alerte, c'est une note de bas de page. */}
+      {unreadable && <RecoveryDoor message={error.message} />}
+
       <div className="flex flex-col gap-3">
         <LandingTiles />
         {/* La seule chose qui empêche la grille de mentir. En texte lisible et
@@ -114,7 +127,9 @@ export function LandingPage() {
 
       <LandingPrinciples />
 
-      {empty && <LandingDoors />}
+      {/* Pas sous le bloc de récupération, qui porte déjà l'import : deux
+          boutons du même nom sur un écran ne font pas deux occasions. */}
+      {empty && !unreadable && <LandingDoors />}
 
       <AppFooter />
     </div>
@@ -169,7 +184,10 @@ function LandingPrinciples() {
  * un foyer qu'elle remplacera dans la foulée — il ne s'affaiblit pas en
  * remontant ici, il s'accomplit : « ici » désignait l'écran d'arrivée, et
  * l'écran d'arrivée est désormais cette page. Le message d'erreur de
- * l'hydratation, qui promet l'import, atterrit lui aussi ici.
+ * l'hydratation, qui promet l'import, atterrit lui aussi sur cette page — mais
+ * dans `RecoveryDoor`, qui remplace ce bloc plutôt que de s'ajouter à lui :
+ * réparer et commencer ne se proposent pas côte à côte, et deux boutons
+ * « Importer un fichier » sur un même écran ne font pas deux occasions.
  *
  * Pas de `BentoGrid` : ce sont des actions, pas des lectures. La grille bento
  * impose des hauteurs de rangée faites pour des chiffres, et un bouton ancré au
