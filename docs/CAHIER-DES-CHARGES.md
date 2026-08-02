@@ -339,6 +339,8 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 - Le schéma et l'exemple sont aussi accessibles **au premier lancement**, à côté de l'import : les deux personnes qu'ils servent — celle qui a déjà tout écrit, celle qui veut seulement voir — sont précisément celles qui n'ont pas encore de foyer, et les envoyer en créer un pour trouver de quoi s'en passer serait l'inverse du service rendu.
 - **Réinitialisation** : efface tout, **triple** confirmation. Trois questions différentes — ce qui part, le fait qu'il n'y a pas de retour, la dernière chance d'exporter : trois fois la même phrase ne se lit plus, elle se clique.
 - **Toute suppression demande confirmation**, et par la même boîte : supprimer une entrée, une récurrence, un crédit, une avance, retirer un membre, arrêter une récurrence, remettre le mois à confirmer. Le nombre de questions fait la gravité — une pour une ligne, deux pour un import, trois pour l'effacement. Chacune dit ce qui est perdu, jamais « êtes-vous sûr ». Archiver une catégorie n'en demande pas : rien n'y est supprimé, et l'archivage se défait.
+- **Sauvegardes locales** : cinq instantanés tournants, un par jour de saisie, listés avec leur date et ce qu'ils contiennent, restaurables après **double** confirmation — c'est un remplacement, exactement comme un import, et la sauvegarde est relue et validée avant qu'on demande quoi que ce soit. Elles vivent dans ce navigateur et disparaîtraient avec lui : elles ne remplacent pas un export, elles rattrapent l'accident du jour. « Tout effacer » les emporte, sans quoi la triple confirmation mentirait.
+- **Récupération** : si le document stocké ne se lit pas, l'écran d'arrivée propose l'import, le téléchargement de la copie brute — un document que l'app ne sait pas ouvrir n'est pas forcément un document perdu —, le rechargement, puis l'effacement après **double** confirmation. Tant que rien n'est tranché, la création d'un foyer est barrée : elle écraserait ce qu'on n'a pas su lire.
 - Une bannière rappelle l'export si le dernier date de plus de 30 jours, ou n'a jamais eu lieu — le texte dit alors ce qu'il en est plutôt que d'invoquer un export inexistant.
 - Elle s'écarte à la croix ou d'un balayage vers le haut. Le refus est enregistré sur l'appareil et vaut pour un cycle de trente jours : une croix ne condamne pas au silence des données qui ne sont sauvegardées nulle part. Un export l'oublie.
 
@@ -348,7 +350,16 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 
 **Stack** — React 19 + Vite + TypeScript, aligné sur Zoned. Déploiement Vercel.
 
-**Stockage** — IndexedDB, un seul enregistrement contenant le document. Hydratation complète en mémoire au démarrage, calculs de statistiques à la volée, persistance en debounce sur mutation. Pas d'index, pas de requêtes.
+**Stockage** — IndexedDB, un seul enregistrement contenant le document. Hydratation complète en mémoire au démarrage, calculs de statistiques à la volée, persistance en debounce sur mutation. Pas d'index, pas de requêtes. Les écritures sont sérialisées, et la file est vidée quand la page part — `pagehide` et le passage en arrière-plan, les deux seuls événements sur lesquels un téléphone rende la main. Une révision est écrite avec le document, dans la même transaction ; elle décrit cet appareil et ne figure pas dans les exports. La durabilité est demandée au navigateur (`navigator.storage.persist()`) à la création du foyer et après un import.
+
+**Fiabilité** — c'est la contrepartie de « tout vit sur ton appareil » : aucune perte ne doit être silencieuse.
+
+- **Rien ne s'écrit** — quota plein, navigation privée, base évincée : un bandeau persistant le dit et propose l'export immédiat, depuis n'importe quel écran, y compris une saisie en cours. Il ne s'écarte pas ; il s'éteint quand une écriture repasse.
+- **Rien ne se lit** — un document présent mais illisible n'ouvre pas les deux questions, qui l'écraseraient. L'écran d'arrivée porte quatre recours dans l'ordre de ce qu'ils sauvent : importer un export, télécharger la copie brute telle qu'elle est stockée, recharger, puis effacer — derrière deux confirmations.
+- **La base ne répond pas** — l'hydratation abandonne au bout de dix secondes plutôt que de laisser tourner l'écran de démarrage, et une lecture qui aboutit après coup est jetée.
+- **Deux onglets** — l'onglet qui reçoit une révision supérieure annule son écriture en attente et relit, plutôt que d'écraser. Il le dit en passant.
+- **Le rendu casse** — un écran de secours remplace l'écran blanc et propose d'abord de récupérer les données, puis de recharger, puis de réinstaller l'app en vidant le cache du service worker — sans quoi la version cassée se ressert à chaque rechargement.
+- **Sauvegardes locales** — cinq instantanés tournants, un par jour de saisie, chacun portant l'état d'avant les modifications du jour, restaurables depuis les réglages. Elles ne remplacent pas un export : elles vivent dans le même navigateur.
 
 **PWA** — installable, manifest complet, service worker de cache applicatif. C'est une exigence, pas un bonus : sur iOS, un site non installé voit son IndexedDB purgé après environ 7 jours sans visite.
 
@@ -365,7 +376,8 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 La v1 est livrable quand :
 
 - un utilisateur peut installer l'app, créer son foyer, saisir ses récurrences et boucler un mois complet sans documentation ;
-- les données survivent à la fermeture du navigateur et à un redémarrage de l'appareil ;
+- les données survivent à la fermeture du navigateur et à un redémarrage de l'appareil — y compris quand l'onglet se ferme dans la seconde qui suit une saisie ;
+- aucune perte n'est silencieuse : une écriture qui échoue, une base illisible, un onglet en retard et un rendu qui casse ont chacun un signal et une issue, et l'issue propose l'export ;
 - un export réimporté restitue un état strictement identique ;
 - les comparatifs se comportent correctement avec un seul mois de données ;
 - les deux thèmes sont complets, aucun écran n'est cassé dans l'un ou l'autre.
