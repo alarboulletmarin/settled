@@ -12,6 +12,7 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, Select, TextInput } from '@/ui/Field'
 import { CategoriesIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
+import { useDraftField } from '@/ui/useDraftField'
 
 const KINDS: { value: CategoryKind; label: string }[] = [
   { value: 'charge', label: fr.kinds.charge },
@@ -21,16 +22,17 @@ const KINDS: { value: CategoryKind; label: string }[] = [
 ]
 
 function Row({ category }: { category: Category }) {
+  const draft = useDraftField(category.label, (next) => {
+    updateCategory(category.id, { label: next })
+  })
+
   return (
     <li className="flex h-14 items-center gap-3 rounded-inner bg-surface-2 px-3">
       <Dot color={category.color} outlined={category.archived} />
       <input
         aria-label={fr.settings.categoryName}
-        value={category.label}
         maxLength={40}
-        onChange={(event) => {
-          updateCategory(category.id, { label: event.target.value })
-        }}
+        {...draft}
         className="t-body h-full min-w-0 flex-1 bg-transparent outline-none"
       />
       <Button
@@ -76,6 +78,10 @@ function FamilyBlock({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const draft = useDraftField(label, (next) => {
+    renameFamily(id, next)
+  })
+
   return (
     <Disclosure
       open={open}
@@ -95,16 +101,7 @@ function FamilyBlock({
     >
       <div className="flex flex-col gap-2 pt-2 pl-6">
         <Field label={fr.settings.familyName}>
-          {(fieldId) => (
-            <TextInput
-              id={fieldId}
-              value={label}
-              maxLength={40}
-              onChange={(event) => {
-                renameFamily(id, event.target.value)
-              }}
-            />
-          )}
+          {(fieldId) => <TextInput id={fieldId} maxLength={40} {...draft} />}
         </Field>
         {categories.length > 0 && (
           <ul className="flex flex-col gap-1">
