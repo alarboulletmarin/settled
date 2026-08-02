@@ -537,6 +537,115 @@ describe('synchronisation d’une récurrence', () => {
     })
   })
 
+  /* Une prévue peut porter un montant saisi à la main : `/depense/:id` conserve
+     le statut de l'échéance qu'on y ouvre, donc corriger le montant d'une
+     prévue l'enregistre sans la confirmer. Le tour jette-puis-refait ne pouvait
+     pas le relire — l'entrée venait d'être retirée. */
+  describe('montant saisi sur une prévue', () => {
+    const variable = () =>
+      makeData({
+        ...twoOpenMonths(),
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            amount: null,
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+        entries: [
+          makeEntry({
+            id: 'juillet',
+            recurrenceId: 'r1',
+            date: '2026-07-10',
+            status: 'planned',
+            amount: eur(8742),
+          }),
+        ],
+      })
+
+    it('survit à une modification de la règle, tant que l’échéance est datée', () => {
+      const relabelled = updateRecurrence(variable(), 'r1', { label: 'Électricité' })
+      const after = syncRecurrenceEntries(relabelled, 'r1', sequentialIds('b'), '2026-07-15')
+      const juillet = after.entries.find((e) => e.date === '2026-07-10')
+
+      expect(juillet?.amount).toBe(eur(8742))
+      expect(juillet?.label).toBe('Électricité')
+      expect(juillet?.status).toBe('planned')
+    })
+
+    it('survit aussi sur une récurrence à montant fixe', () => {
+      const fixe = makeData({
+        ...variable(),
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            amount: eur(5000),
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+      })
+      const raised = updateRecurrence(fixe, 'r1', { amount: eur(6000) })
+      const after = syncRecurrenceEntries(raised, 'r1', sequentialIds('b'), '2026-07-15')
+
+      // Le passé ne bouge pas ; c'est le mois d'après qui prend le nouveau prix.
+      expect(after.entries.find((e) => e.date === '2026-07-10')?.amount).toBe(eur(8742))
+      expect(after.entries.find((e) => e.date === '2026-08-10')?.amount).toBe(eur(6000))
+    })
+
+    /* À venir, c'est bien la règle qui dit ce qui va tomber : rien à préserver,
+       et préserver serait ici rendre la règle sans effet. */
+    it('ne s’applique pas à une prévue encore à venir', () => {
+      const data = makeData({
+        ...variable(),
+        entries: [
+          makeEntry({
+            id: 'aout',
+            recurrenceId: 'r1',
+            date: '2026-08-10',
+            status: 'planned',
+            amount: eur(8742),
+          }),
+        ],
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            amount: eur(5000),
+            period: { unit: 'month', every: 1, anchorDay: 10 },
+          }),
+        ],
+      })
+      const after = syncRecurrenceEntries(data, 'r1', sequentialIds('b'), '2026-07-15')
+      expect(after.entries.find((e) => e.date === '2026-08-10')?.amount).toBe(eur(5000))
+    })
+
+    /* Zéro est l'emplacement vide que l'ouverture du mois pose sur un montant
+       variable, pas un montant saisi : le préserver figerait la case vide. */
+    it('ne préserve pas une case laissée à zéro', () => {
+      const vide = makeData({
+        ...variable(),
+        entries: [
+          makeEntry({
+            id: 'juillet',
+            recurrenceId: 'r1',
+            date: '2026-07-10',
+            status: 'planned',
+            amount: eur(0),
+          }),
+          makeEntry({
+            id: 'juin',
+            recurrenceId: 'r1',
+            date: '2026-06-10',
+            status: 'confirmed',
+            amount: eur(7000),
+          }),
+        ],
+      })
+      const after = syncRecurrenceEntries(vide, 'r1', sequentialIds('b'), '2026-07-15')
+      // La règle reprend la main : le dernier montant connu est celui de juin.
+      expect(after.entries.find((e) => e.date === '2026-07-10')?.amount).toBe(eur(7000))
+    })
+  })
+
   it('est rejouable sans rien dupliquer', () => {
     const once = syncRecurrenceEntries(twoOpenMonths(), 'r1', sequentialIds(), '2026-07-15')
     const twice = syncRecurrenceEntries(once, 'r1', sequentialIds('b'), '2026-07-15')
