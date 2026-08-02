@@ -14,8 +14,10 @@ import type { Data, ThemeSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { clearDocument, loadDocument, saveDocument, setDbEventHandler } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
+import { type TabChannel, type TabMessage, openTabChannel } from '@/persistence/tabs'
 import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
 import { readStoredPreference, storePreference } from '@/theme/theme'
+import { toast } from '@/ui/toast'
 
 export type AppStatus = 'loading' | 'onboarding' | 'ready'
 
@@ -64,6 +66,12 @@ export type StoreState = {
   filter: MonthFilter
   /** Dernière erreur de persistance, à afficher telle quelle. */
   error: StorageError | null
+  /**
+   * Révision de la base connue de cet onglet. Ce n'est pas un compteur de
+   * mutations : c'est ce qu'on croit être écrit sur le disque, et c'est à ça
+   * qu'on compare ce qu'un autre onglet annonce.
+   */
+  rev: number
 }
 
 export type StoreActions = {
@@ -85,16 +93,37 @@ export type StoreActions = {
   discardUnreadable: () => Promise<void>
   setError: (error: StorageError | null) => void
   flush: () => Promise<void>
+  /** Ce qu'un autre onglet vient d'annoncer. Public pour être testable seul. */
+  onTabMessage: (message: TabMessage) => Promise<void>
 }
 
 export type Store = StoreState & StoreActions
+
+/**
+ * Le canal des onglets, ouvert une fois pour toutes à la première hydratation.
+ * Pas au chargement du module : un test qui n'hydrate pas n'a aucune raison
+ * d'ouvrir un canal, et `hydrate` part deux fois sous `StrictMode`.
+ */
+let channel: TabChannel | null = null
+
+/**
+ * L'écriture, révision comprise. Le compteur est tenu en mémoire plutôt que
+ * relu avant chaque écriture : le relire imposerait un aller-retour avec la
+ * base au moment précis — `pagehide` — où il ne faut plus rien attendre.
+ */
+async function persist(data: Data): Promise<void> {
+  const rev = useStore.getState().rev + 1
+  await saveDocument(data, rev)
+  useStore.setState({ rev })
+  channel?.post({ type: 'saved', rev })
+}
 
 /**
  * Les hooks référencent `useStore` dans leur corps et non à l'évaluation : le
  * writer est construit avant que le store existe, mais aucun d'eux ne peut
  * partir avant la première écriture, donc bien après.
  */
-const writer = createWriter(saveDocument, WRITE_DELAY_MS, {
+const writer = createWriter(persist, WRITE_DELAY_MS, {
   onWritten() {
     // Une écriture qui passe efface le bandeau d'échec d'écriture. Pas un échec
     // de lecture : rien de ce qu'on écrit ne rend lisible ce qui ne l'était pas.
@@ -143,8 +172,12 @@ export const useStore = create<Store>()((set, get) => ({
   ym: currentYm(),
   filter: ALL_FILTER,
   error: null,
+  rev: 0,
 
   async hydrate() {
+    // Idempotent : `StrictMode` fait partir l'effet deux fois en développement.
+    channel ??= openTabChannel((message) => void get().onTabMessage(message))
+
     /* Le délai gagne définitivement : une lecture qui aboutit après coup est
        jetée. Remplacer tout le document sous quelqu'un qui a commencé à
        répondre aux deux questions serait pire que lui demander de recharger —
@@ -166,8 +199,8 @@ export const useStore = create<Store>()((set, get) => ({
         set({ status: 'onboarding', data: initialData() })
         return
       }
-      storePreference(stored.settings.theme)
-      set({ status: 'ready', data: stored })
+      storePreference(stored.data.settings.theme)
+      set({ status: 'ready', data: stored.data, rev: stored.rev })
       // Cahier §4.3 : l'ouverture est déclenchée au premier lancement du mois.
       get().ensureMonthOpen()
     } catch {
@@ -237,11 +270,11 @@ export const useStore = create<Store>()((set, get) => ({
     set({ data, status: 'ready', error: null, ym: currentYm(), filter: ALL_FILTER })
     // Le fichier importé peut dater : le mois courant n'y est pas forcément.
     get().ensureMonthOpen()
-    // Hors du writer, donc hors de ses hooks : ce `saveDocument`-là a besoin de
-    // son propre filet. Un import qui ne s'enregistre pas et qui ne le dit pas
-    // est la pire des pertes — on vient d'effacer ce qu'il remplace.
+    // Hors du writer, donc hors de ses hooks : cette écriture-là a besoin de son
+    // propre filet. Un import qui ne s'enregistre pas et qui ne le dit pas est
+    // la pire des pertes — on vient d'effacer ce qu'il remplace.
     try {
-      await saveDocument(get().data)
+      await persist(get().data)
     } catch {
       set({ error: { kind: 'write', message: fr.storage.writeFailed } })
     }
@@ -252,7 +285,15 @@ export const useStore = create<Store>()((set, get) => ({
     await clearDocument()
     const fresh = emptyData()
     storePreference(fresh.settings.theme)
-    set({ data: fresh, status: 'onboarding', error: null, ym: currentYm(), filter: ALL_FILTER })
+    set({
+      data: fresh,
+      status: 'onboarding',
+      error: null,
+      rev: 0,
+      ym: currentYm(),
+      filter: ALL_FILTER,
+    })
+    channel?.post({ type: 'cleared' })
   },
 
   async discardUnreadable() {
@@ -262,7 +303,8 @@ export const useStore = create<Store>()((set, get) => ({
        — c'est tout le problème. Deux questions, comme un import. */
     writer.cancel()
     await clearDocument()
-    set({ data: initialData(), status: 'onboarding', error: null })
+    set({ data: initialData(), status: 'onboarding', error: null, rev: 0 })
+    channel?.post({ type: 'cleared' })
   },
 
   setError(error) {
@@ -271,5 +313,40 @@ export const useStore = create<Store>()((set, get) => ({
 
   async flush() {
     await writer.flush()
+  },
+
+  async onTabMessage(message) {
+    if (message.type === 'cleared') {
+      writer.cancel()
+      set({
+        data: initialData(),
+        status: 'onboarding',
+        error: null,
+        rev: 0,
+        ym: currentYm(),
+        filter: ALL_FILTER,
+      })
+      toast(fr.storage.otherTabCleared)
+      return
+    }
+
+    // Une révision qu'on connaît déjà : c'est notre propre écho, ou un message
+    // en retard. Cet onglet est à jour, ou en avance — son écriture va tomber.
+    if (message.rev <= get().rev) return
+
+    /* L'annulation d'abord, et c'est tout le point. L'écriture en attente porte
+       notre document périmé : la laisser partir écraserait celui de l'autre
+       onglet, ce qui est exactement le bug qu'on retire. On jette plutôt qu'on
+       fusionne — il n'existe pas de fusion pour un document unique — et le prix
+       est au pire les 400 ms de frappe en cours, contre le document entier
+       d'en face. */
+    writer.cancel()
+    const loaded = await loadDocument()
+    if (loaded === null) return
+    storePreference(loaded.data.settings.theme)
+    set({ data: loaded.data, rev: loaded.rev, status: 'ready', error: null })
+    // Un toast, pas une modale : arrêter quelqu'un pour lui dire qu'il n'a rien
+    // perdu serait pire que le lui dire en passant.
+    toast(fr.storage.otherTab)
   },
 }))

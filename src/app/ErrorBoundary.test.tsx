@@ -45,7 +45,7 @@ describe('ErrorBoundary', () => {
   it('récupère les octets du disque, sans passer par le store', async () => {
     const download = vi.spyOn(downloadModule, 'download').mockImplementation(() => {})
     const stored = { schemaVersion: 6, household: { name: 'Chez nous' } }
-    await saveDocument(stored as never)
+    await saveDocument(stored as never, 1)
     // Le document en mémoire est différent de celui du disque : c'est bien
     // celui du disque qu'on doit retrouver dans le fichier.
     const memory = useStore.getState().data

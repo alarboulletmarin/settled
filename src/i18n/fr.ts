@@ -214,6 +214,12 @@ export const fr = {
     readTimeout:
       'La base de données ne répond pas. Un autre onglet la bloque peut-être : ferme-le, puis recharge.',
 
+    /* Ce que dit l'onglet qui n'était plus à jour. En passant, jamais en
+       modale : il n'a rien perdu au-delà de ce qu'il tapait à l'instant, et
+       l'arrêter pour le lui dire serait pire que le lui dire au vol. */
+    otherTab: 'Mis à jour depuis un autre onglet.',
+    otherTabCleared: 'Les données ont été effacées depuis un autre onglet.',
+
     /* Le chemin de sortie d'un document qu'on ne sait pas ouvrir. Les recours
        sont dans l'ordre de ce qu'ils sauvent : importer récupère, recharger ne
        coûte rien à essayer, effacer ne se défait pas. */

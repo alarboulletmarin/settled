@@ -38,7 +38,7 @@ describe('RecoveryDoor', () => {
   it('télécharge les octets bruts, sans les faire passer par les migrations', async () => {
     const download = vi.spyOn(downloadModule, 'download').mockImplementation(() => {})
     // Un document qu'aucune version de l'app ne sait ouvrir.
-    await saveDocument({ schemaVersion: 99 } as never)
+    await saveDocument({ schemaVersion: 99 } as never, 1)
 
     show()
     await userEvent.click(screen.getByRole('button', { name: fr.storage.recoverRaw }))
@@ -48,7 +48,7 @@ describe('RecoveryDoor', () => {
   })
 
   it('n’efface qu’après deux questions, et libère alors l’onboarding', async () => {
-    await saveDocument({ schemaVersion: 99 } as never)
+    await saveDocument({ schemaVersion: 99 } as never, 1)
     show()
 
     await userEvent.click(screen.getByRole('button', { name: fr.storage.discard }))

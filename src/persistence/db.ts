@@ -15,6 +15,19 @@ const DB_VERSION = 1
 const STORE = 'document'
 const KEY = 'current'
 
+/**
+ * Le compteur de révision, dans le même store que le document et écrit dans la
+ * même transaction — sinon il n'est la révision de rien.
+ *
+ * Hors du document, et non dedans : il décrit l'état de cet appareil, pas les
+ * finances du foyer. C'est l'argument déjà retenu pour la date de dernier
+ * export. Le mettre dans `Data` le ferait voyager dans chaque fichier exporté,
+ * où il ne veut rien dire, et casserait le protocole : importer un export à la
+ * révision 900 dans une base à la révision 3 ferait croire à l'onglet qu'il est
+ * en avance sur ses voisins.
+ */
+const REV_KEY = 'rev'
+
 interface ToutCompteFaitDB extends DBSchema {
   document: {
     key: string
@@ -103,14 +116,30 @@ export function closeDb(): void {
   })
 }
 
+/** Le document et la révision à laquelle il a été écrit. */
+export type LoadedDocument = { data: Data; rev: number }
+
 /**
  * Lit le document et le fait passer par les migrations.
  * Renvoie null s'il n'y a rien de stocké — c'est le cas du premier lancement.
+ *
+ * Les deux clés se lisent dans une seule transaction : entre deux lectures
+ * séparées, un autre onglet pourrait écrire, et on repartirait avec un document
+ * d'une révision et un numéro d'une autre.
  */
-export async function loadDocument(): Promise<Data | null> {
-  const stored: unknown = await (await db()).get(STORE, KEY)
+export async function loadDocument(): Promise<LoadedDocument | null> {
+  const tx = (await db()).transaction(STORE, 'readonly')
+  const stored: unknown = await tx.store.get(KEY)
+  const rev: unknown = await tx.store.get(REV_KEY)
+  await tx.done
   if (stored === undefined || stored === null) return null
-  return migrateDocument(stored).data
+  return { data: migrateDocument(stored).data, rev: typeof rev === 'number' ? rev : 0 }
+}
+
+/** La révision seule. Zéro si la base est d'avant le compteur. */
+export async function readRev(): Promise<number> {
+  const rev: unknown = await (await db()).get(STORE, REV_KEY)
+  return typeof rev === 'number' ? rev : 0
 }
 
 /**
@@ -126,14 +155,29 @@ export async function loadRawDocument(): Promise<unknown> {
   return (await db()).get(STORE, KEY)
 }
 
-export function saveDocument(data: Data): Promise<void> {
-  if (ready !== null) return ready.put(STORE, data, KEY).then(() => undefined)
-  return db().then(async (database) => {
-    await database.put(STORE, data, KEY)
-  })
+/**
+ * Écrit le document et sa révision, en une transaction.
+ *
+ * La révision est fournie par l'appelant plutôt que relue ici : la relire
+ * imposerait un aller-retour avant d'écrire, et cette écriture-là doit pouvoir
+ * partir depuis un gestionnaire `pagehide`, où chaque tour de boucle
+ * supplémentaire est un tour que le navigateur peut refuser de nous rendre.
+ * Les deux `put` sont émis d'affilée, sans rien attendre entre eux.
+ */
+export function saveDocument(data: Data, rev: number): Promise<void> {
+  const write = (database: IDBPDatabase<ToutCompteFaitDB>): Promise<void> => {
+    const tx = database.transaction(STORE, 'readwrite')
+    void tx.store.put(data, KEY)
+    void tx.store.put(rev, REV_KEY)
+    return tx.done
+  }
+  return ready !== null ? write(ready) : db().then(write)
 }
 
 export async function clearDocument(): Promise<void> {
-  await (await db()).delete(STORE, KEY)
+  const tx = (await db()).transaction(STORE, 'readwrite')
+  void tx.store.delete(KEY)
+  void tx.store.delete(REV_KEY)
+  await tx.done
 }
 
