@@ -41,9 +41,12 @@ function enumerate(names: readonly string[]): string {
 }
 
 /**
- * « de Camille », mais « d'Alice ». L'élision dépend du prénom : le gabarit de
- * `fr.ts` ne peut pas la décider, elle est donc portée ici. Le h est traité
- * comme muet — « d'Hugo » se dit, « de Hugo » ne se dit pas.
+ * « de Camille », mais « d'Alice ». L'élision dépend du mot qui suit : le
+ * gabarit de `fr.ts` ne peut pas la décider, elle est donc portée ici. Le h est
+ * traité comme muet — « d'Hugo » se dit, « de Hugo » ne se dit pas.
+ *
+ * Vaut pour les prénoms comme pour les mois : « la régularisation d'octobre »,
+ * « d'avril », « d'août », mais « de septembre ».
  */
 function de(name: string): string {
   return /^[aeiouyàâäéèêëîïôöùûüh]/i.test(name) ? `d’${name}` : `de ${name}`
@@ -116,7 +119,7 @@ function ShareRow({ share, previousYm }: { share: MemberShare; previousYm: YearM
             </li>
             <li className="flex items-baseline justify-between gap-3">
               <span className="t-axis min-w-0 truncate">
-                {tpl(fr.split.settlement, formatYearMonth(previousYm))}
+                {tpl(fr.split.settlement, de(formatYearMonth(previousYm)))}
               </span>
               <span className="t-axis tnum shrink-0">
                 {formatSignedMoney(share.adjustment, currency)}

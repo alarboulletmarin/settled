@@ -628,7 +628,10 @@ export const fr = {
     /* Le report du mois précédent. Une charge commune réglée par une seule
        personne lui fait porter plus que sa part : le mois suivant le rattrape,
        l'un verse un peu plus, l'autre un peu moins. */
-    settlement: 'Régularisation de %s',
+    /* Le « de » vit dans le mois, pas dans le gabarit : « d'octobre » et
+       « de septembre » ne s'écrivent pas pareil — c'est `SplitPage` qui l'élide,
+       comme il le fait déjà pour les prénoms. */
+    settlement: 'Régularisation %s',
     settlementShare: 'Sa part du mois',
     settlementDetail: 'Ce qui a été avancé en %s',
     settlementHint:
