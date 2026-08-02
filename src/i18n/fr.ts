@@ -140,6 +140,17 @@ export const fr = {
     undo: 'Rétablir',
   },
 
+  /* La garde de brouillon des quatre formulaires. La question dit ce qui se
+     passe si l'on continue, jamais « êtes-vous sûr » (cahier §4.8), et le verbe
+     qui reste n'est pas « Annuler » : on arrive dans cette boîte en cliquant
+     « Annuler » sur le formulaire, et le même mot y voudrait dire l'inverse. */
+  unsaved: {
+    title: 'Saisie non enregistrée',
+    question: 'Ce que tu viens de saisir sera perdu.',
+    leave: 'Abandonner',
+    stay: 'Continuer la saisie',
+  },
+
   direction: {
     in: 'Entrée',
     out: 'Sortie',

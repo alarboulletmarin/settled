@@ -24,6 +24,7 @@ import { ChevronLeft } from '@/ui/Icons'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
+import { useLeaveGuard } from '@/ui/useLeaveGuard'
 import { PeriodFields } from '@/features/recurrences/RecurrenceFormFields'
 import {
   type PeriodDraft,
@@ -173,6 +174,7 @@ function EntryForm({
   )
   const [showErrors, setShowErrors] = useState(false)
   const [confirmingRemoval, setConfirmingRemoval] = useState(false)
+  const guard = useLeaveGuard(draft, onDone)
 
   /* Ce qui peut redevenir « prévu » : une échéance de récurrence déjà
      confirmée, et rien d'autre. */
@@ -259,7 +261,7 @@ function EntryForm({
   return (
     <div className="flex max-w-xl flex-col gap-5">
       <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={onDone}>
+        <IconButton label={fr.common.back} onClick={guard.request}>
           <ChevronLeft />
         </IconButton>
         <h1 className="t-section min-w-0 truncate">
@@ -444,7 +446,7 @@ function EntryForm({
         <Button type="submit" form="entry-form">
           {fr.common.save}
         </Button>
-        <Button variant="secondary" onClick={onDone}>
+        <Button variant="secondary" onClick={guard.request}>
           {fr.common.cancel}
         </Button>
         {/* Confirmer n'est pas un aller simple, et seule une échéance peut
@@ -493,6 +495,8 @@ function EntryForm({
           />
         </div>
       )}
+
+      <ConfirmDialog {...guard.dialog} />
     </div>
   )
 }

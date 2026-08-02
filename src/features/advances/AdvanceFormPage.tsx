@@ -11,11 +11,13 @@ import { useCategoriesByFamily, useMembers } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { AmountInput, Checkbox, Field, Select, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 import { toast } from '@/ui/toast'
+import { useLeaveGuard } from '@/ui/useLeaveGuard'
 
 type Draft = {
   label: string
@@ -115,6 +117,8 @@ export function AdvanceFormPage() {
     else void navigate(-1)
   }
 
+  const guard = useLeaveGuard(draft, back)
+
   const months = monthsCovered(draft)
   const monthly = amount === null ? null : monthlyInstalment({ ...draft, amount })
 
@@ -141,7 +145,7 @@ export function AdvanceFormPage() {
   return (
     <div className="flex max-w-xl flex-col gap-5">
       <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={back}>
+        <IconButton label={fr.common.back} onClick={guard.request}>
           <ChevronLeft />
         </IconButton>
         <h1 className="t-section min-w-0 truncate">{fr.advances.add}</h1>
@@ -356,6 +360,8 @@ export function AdvanceFormPage() {
         <p className="t-label">{fr.advances.methodInstalments}</p>
         <p className="t-label">{fr.advances.methodExpense}</p>
       </Tile>
+
+      <ConfirmDialog {...guard.dialog} />
     </div>
   )
 }
