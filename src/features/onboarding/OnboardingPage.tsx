@@ -4,7 +4,9 @@ import { fr } from '@/i18n/fr'
 import { addMember, removeMember, renameMember, setHouseholdName } from '@/store/actions'
 import { useHouseholdName, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
+import { ExampleControl } from '@/features/settings/ExampleControl'
 import { ImportControl } from '@/features/settings/ImportControl'
+import { SchemaControl } from '@/features/settings/SchemaControl'
 import { Tile } from '@/ui/Tile'
 import { HouseholdStep } from './HouseholdStep'
 import { MembersStep } from './MembersStep'
@@ -48,12 +50,30 @@ export function OnboardingPage() {
         )}
       </Tile>
 
-      {/* Restaurer une sauvegarde ne doit pas passer par la création d'un foyer
-          qu'on remplacera dans la foulée. C'est aussi ce que le message d'erreur
-          de l'hydratation promet déjà quand les données sont illisibles. */}
-      <div className="flex flex-col items-start gap-2 border-t border-border pt-5">
-        <p className="t-label">{fr.onboarding.importHint}</p>
-        <ImportControl />
+      {/* Trois façons de ne pas commencer par une page blanche, pour les trois
+          personnes qui arrivent ici : celle qui restaure une sauvegarde, celle
+          qui a déjà tout écrit ailleurs, et celle qui veut seulement voir.
+          Aucune n'a de raison de créer d'abord un foyer qu'elle remplacera dans
+          la foulée — c'est déjà ce que l'import promet, et le message d'erreur
+          de l'hydratation avec lui. */}
+      <div className="flex flex-col items-start gap-5 border-t border-border pt-5">
+        <div className="flex flex-col items-start gap-2">
+          <p className="t-label">{fr.onboarding.importHint}</p>
+          <ImportControl />
+        </div>
+
+        <div className="flex flex-col items-start gap-2">
+          <p className="t-label">{fr.onboarding.schemaHint}</p>
+          <SchemaControl />
+        </div>
+
+        {/* Aucune confirmation : rien n'a encore été enregistré, et faire
+            confirmer la perte de rien n'apprend qu'une chose — que les
+            questions de cette app ne veulent rien dire. */}
+        <div className="flex flex-col items-start gap-2">
+          <p className="t-label">{fr.onboarding.exampleHint}</p>
+          <ExampleControl confirm={false} />
+        </div>
       </div>
 
       <p className="t-label">{fr.onboarding.privacy}</p>

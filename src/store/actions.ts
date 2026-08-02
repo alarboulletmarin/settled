@@ -5,8 +5,7 @@
  * métier ne vit ici, et encore moins dans un composant.
  * ==========================================================================*/
 
-import { type ISODate, endOfMonth, parseISO, startOfMonth, today } from '@/domain/date'
-import { monthlyInstalment } from '@/domain/advance'
+import { type ISODate, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
 import type { Money } from '@/domain/money'
 import { type Advance, type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
@@ -96,70 +95,18 @@ export function removeDebt(id: string): void {
 
 /* --- Avances --------------------------------------------------------------*/
 
-/** Ce qu'un écran a à dire pour poser une avance. Le reste s'en déduit. */
-export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId'> & {
-  /** Le support d'épargne repris, puis reconstitué. */
-  savingCategoryId: string
-  /** La charge avancée entre-t-elle dans le pot commun du foyer ? */
-  shared?: boolean
-}
+/* La composition d'une avance — la récurrence qui reconstitue le livret, la
+   reprise confirmée du jour du paiement, l'avance elle-même — est une règle, et
+   elle vit donc dans le domaine. L'écran de saisie n'est plus seul à poser des
+   avances : le jeu d'exemple en pose aussi, et deux copies de cette composition
+   finiraient par ne plus se répondre. */
+export type { AdvanceInput } from '@/domain/updates'
 
-/**
- * Traduit une avance en ce qu'elle est vraiment : une reprise sur le livret, et
- * la récurrence qui l'y remet mois après mois.
- *
- * Les trois écritures tiennent dans une seule mutation — donc un seul rendu,
- * une seule sauvegarde — et surtout la reprise ne peut pas rester seule si la
- * récurrence échouait : une épargne qu'on a prise sans jamais la rendre est
- * exactement le trou que cet écran existe pour éviter.
- *
- * La reprise part **confirmée** : elle a eu lieu, c'est même tout le propos —
- * l'argent est déjà sorti du livret. Elle entre en sens `in` parce que c'est ce
- * qu'elle est du point de vue du foyer, de l'argent qui revient de l'épargne
- * vers ce qu'on peut dépenser. La dépense qu'elle a financée, elle, se saisit
- * comme n'importe quelle autre — l'app ne l'invente pas à la place de qui l'a
- * faite.
- */
-export function addAdvance(input: AdvanceInput): Advance {
-  const { savingCategoryId, shared, ...rest } = input
-  const recurrence: Recurrence = {
-    id: makeId(),
-    label: rest.label,
-    categoryId: savingCategoryId,
-    memberId: rest.memberId,
-    direction: 'out',
-    amount: monthlyInstalment(rest),
-    period: { unit: 'month', every: 1, anchorDay: parseISO(rest.paidOn).d },
-    startedOn: startOfMonth(rest.from),
-    endedOn: endOfMonth(rest.to),
-    ...(shared === undefined ? {} : { shared }),
-  }
-  const advance: Advance = { ...rest, id: makeId(), recurrenceId: recurrence.id }
-  const drawdown: Entry = {
-    id: makeId(),
-    label: rest.label,
-    categoryId: savingCategoryId,
-    memberId: rest.memberId,
-    direction: 'in',
-    amount: rest.amount,
-    date: rest.paidOn,
-    status: 'confirmed',
-  }
-
-  mutate((data) =>
-    updates.addAdvance(
-      updates.addEntry(
-        updates.syncRecurrenceEntries(
-          updates.addRecurrence(data, recurrence),
-          recurrence.id,
-          makeId,
-        ),
-        drawdown,
-      ),
-      advance,
-    ),
-  )
-  return advance
+/** Pose une avance et rend ce qui a été créé, pour que l'écran sache où aller. */
+export function addAdvance(input: updates.AdvanceInput): Advance {
+  const created = updates.createAdvance(useStore.getState().data, input, makeId)
+  mutate(() => created.data)
+  return created.advance
 }
 
 /**

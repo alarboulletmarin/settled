@@ -33,6 +33,9 @@ npm run dev
 - `src/store/` — état zustand. Un composant lit un sélecteur et appelle une
   action, rien de plus.
 - `src/i18n/fr.ts` — toutes les chaînes. Aucun texte en dur dans un composant.
+- `src/persistence/schemaDoc.ts` — le modèle de données à donner à un assistant,
+  et `src/persistence/example.ts` — le foyer d'exemple. Tous deux dérivés du
+  code, tous deux chargés à la demande.
 - `src/ui/Icons.tsx` — le seul module qui connaît la bibliothèque d'icônes. Un
   composant qui importe Phosphor directement est un bug.
 
@@ -109,6 +112,29 @@ gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
 personne, les récurrences de 1 518 px à 708 px, et les réglages de 4 779 px à
 1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
 seule fois pour les trois écrans.
+
+**Le schéma se lit sur le code.** Le document qu'on donne à un assistant pour
+faire transcrire ses notes embarque le source de `domain/types.ts` — par
+`?raw`, donc les types décrits *sont* les types, commentaires de rationale
+compris — et son catalogue de catégories est lu sur `persistence/defaults.ts`.
+Le recopier eût été une seconde description du modèle, qui aurait divergé de lui
+et enseigné un document que l'app refuse : exactement l'erreur qu'il existe pour
+éviter chez son lecteur.
+
+**L'exemple est construit, pas commité.** `exampleData(on)` bâtit un foyer de
+quinze mois à partir d'une date, en posant des récurrences puis en *ouvrant*
+chaque mois par `openMonth` — jamais en écrivant une `Entry` à la main. Deux
+conséquences : le jeu est toujours à l'heure, là où un `.json` figé serait vide
+du mois courant dès le mois suivant, c'est-à-dire l'écran vide qu'il existe pour
+éviter ; et il est produit par les mêmes règles que l'usage réel, donc une règle
+qui change le change avec elle. Les salaires y tombent en tête de mois, ce qui
+n'est pas cosmétique : chargé le 2, le jeu s'ouvrait sinon sur un solde à zéro.
+
+Les deux modules valent une trentaine de kilo-octets pour des gestes qu'on fait
+une fois dans sa vie : ils sont chargés en `import()` dynamique, et le schéma
+est préparé à l'affichage de son contrôle — écrire dans le presse-papiers exige
+de rester dans la tâche du clic, qu'un `await` au milieu du gestionnaire perdrait
+sur Safari.
 
 **Graphiques.** Aucune librairie. L'anneau, les barres empilées et les courbes
 sont des composants SVG maison, dans `src/ui/Ring.tsx` et `src/charts/`.

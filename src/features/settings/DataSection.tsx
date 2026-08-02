@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { today } from '@/domain/date'
 import { fr } from '@/i18n/fr'
 import { formatDate, tpl } from '@/i18n/format'
+import { download } from '@/lib/download'
 import {
   exportFilename,
   markExported,
   readLastExport,
-  serializeData,
+  toExportBlob,
 } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
@@ -15,17 +16,9 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { DataIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
+import { ExampleControl } from './ExampleControl'
 import { ImportControl } from './ImportControl'
-
-/** Déclenche le téléchargement du document, sans passer par un serveur. */
-function download(content: string, filename: string): void {
-  const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
-}
+import { SchemaControl } from './SchemaControl'
 
 export function DataSection() {
   const data = useStore((s) => s.data)
@@ -35,7 +28,7 @@ export function DataSection() {
 
   const doExport = (): void => {
     const on = today()
-    download(serializeData(data), exportFilename(on))
+    download(toExportBlob(data), exportFilename(on))
     markExported(on)
     setLastExport(on)
     toast(fr.settings.exported)
@@ -60,6 +53,21 @@ export function DataSection() {
       <div className="flex flex-col gap-2 border-t border-border pt-4">
         <p className="t-label">{fr.settings.importHint}</p>
         <ImportControl className="w-fit" />
+      </div>
+
+      {/* Le schéma se lit juste sous l'import, parce que c'est l'import qu'il
+          sert : il n'a d'autre usage que de faire exister le fichier qu'on
+          déposera à la ligne du dessus. */}
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <p className="t-label">{fr.settings.schema}</p>
+        <p className="t-label">{fr.settings.schemaHint}</p>
+        <SchemaControl />
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <p className="t-label">{fr.settings.example}</p>
+        <p className="t-label">{fr.settings.exampleHint}</p>
+        <ExampleControl className="w-fit" />
       </div>
 
       {/* Triple confirmation : c'est le seul geste de l'app qui n'épargne rien,
