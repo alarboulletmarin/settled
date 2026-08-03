@@ -65,6 +65,14 @@ tourner indéfiniment sur son écran de démarrage.
 - Une exception au rendu donnait un **écran blanc**, reproduit à l'identique à
   chaque rechargement puisque le service worker resservait la même version.
 
+### Ajouté — revenir au mois courant
+
+- **« Ce mois-ci »** dans le bandeau du mois, à droite de la navigation. Parti
+  en février 2025 depuis un mois d'août, il fallait douze chevrons pour rentrer,
+  ou recharger la page. Le bouton n'apparaît que lorsqu'on n'est pas sur le mois
+  courant, et il vaut pour tous les écrans rattachés à un mois — le mois, le
+  calendrier, la répartition.
+
 ### Tenu — les promesses du design system
 
 Le README fait du design system une source de vérité : « le code lui obéit, et

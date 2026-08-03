@@ -205,6 +205,16 @@ export const fr = {
       'Charges communes non réparties, faute de connaître les revenus de %s : seules les lignes à son nom sont comptées.',
     prorataOnlyOwn:
       'Charges communes non réparties : seules les lignes à son nom sont comptées.',
+    /* « Ce mois-ci » et non « Aujourd'hui » : on revient à un mois, pas à un
+       jour, et le DS §7 veut que les libellés nomment ce qu'on manipule. Sur
+       l'écran du calendrier, « Aujourd'hui » aurait de surcroît promis de
+       ramener au jour, ce que ce bouton ne fait pas. */
+    thisMonth: 'Ce mois-ci',
+    /* En infobulle et non dans le libellé : le nom accessible d'un bouton doit
+       contenir son texte visible, et « Revenir à août 2026 » ne contient pas
+       « Ce mois-ci ». Le mois de destination reste utile à savoir avant de
+       cliquer, il se dit donc en description. */
+    thisMonthTitle: 'Revenir à %s',
   },
 
   /* La frontière avec le navigateur. Tout ce qui s'y passe mal doit se dire :

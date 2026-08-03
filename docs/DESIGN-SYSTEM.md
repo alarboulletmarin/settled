@@ -255,6 +255,8 @@ Les pilules qui ne désignent personne n'ont pas de pastille (§2.5), et un file
 
 **MonthNav** — chevrons de part et d'autre du mois courant, mois en sans 20px, année en mono 11px dessous. Balayage horizontal sur mobile.
 
+Un **retour au mois courant** l'accompagne dans le bandeau, à sa droite, et n'apparaît que lorsqu'on n'y est pas — c'est la règle des repères d'action appliquée à un bouton : celui qui ne bouge rien apprend à ignorer ceux qui bougent quelque chose. Douze chevrons pour revenir de février à août n'est pas une navigation, c'est une pénalité. Il dit « ce mois-ci » et non « aujourd'hui » : on revient à un mois, pas à un jour, et sur le calendrier le second aurait promis de ramener au jour. Le mois d'arrivée se nomme en infobulle, jamais dans le libellé — le nom accessible d'un bouton contient son texte visible.
+
 **Ring** — l'anneau. Épaisseur 12px, extrémités arrondies, départ à midi, sens horaire, fond de piste en `--surface-2`. Sert de progression du mois, de jauge et de donut de répartition. Le contenu central est un `Amount`.
 
 **Toast** — trois au plus à l'écran, et un message qui se répète porte son compte (« Échéance confirmée · 10 ») au lieu de se dupliquer. Une pile qui recouvre l'écran ne dit plus rien de ce qui vient de se passer, et cache ce sur quoi on est en train d'agir. Le compte à rebours repart à chaque répétition.
