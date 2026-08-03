@@ -4,10 +4,10 @@ import type { Recurrence } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { addRecurrence, replaceRecurrence } from '@/store/actions'
 import { useMembers, useRecurrenceRow } from '@/store/selectors'
-import { Button, IconButton } from '@/ui/Button'
+import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Field, TextInput } from '@/ui/Field'
-import { ChevronLeft } from '@/ui/Icons'
+import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 import { useLeaveGuard } from '@/ui/useLeaveGuard'
@@ -44,14 +44,10 @@ function Form({ recurrence, onDone }: { recurrence: Recurrence | null; onDone: (
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
-      <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={guard.request}>
-          <ChevronLeft />
-        </IconButton>
-        <h1 className="t-section min-w-0 truncate">
-          {recurrence === null ? fr.recurrences.add : fr.recurrences.edit}
-        </h1>
-      </div>
+      <PageTitle
+        title={recurrence === null ? fr.recurrences.add : fr.recurrences.edit}
+        onBack={guard.request}
+      />
 
       <form
         id="recurrence-form"

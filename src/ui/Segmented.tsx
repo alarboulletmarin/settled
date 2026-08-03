@@ -1,3 +1,4 @@
+import { type KeyboardEvent, useRef } from 'react'
 import { cn } from '@/lib/cn'
 
 export type SegmentedOption<T extends string> = { value: T; label: string }
@@ -25,6 +26,21 @@ export type SegmentedProps<T extends string> = {
  * une tuile, dont la largeur est le cadre lui-même. Et son nombre de positions
  * est connu d'avance, quand la rangée de filtres compte autant de pilules que le
  * foyer a de membres.
+ *
+ * **Elle annonce un groupe de boutons radio, et se comporte comme tel.** Elle
+ * n'en portait que les rôles : chaque position était un arrêt de tabulation, et
+ * les flèches ne faisaient rien — l'écran de saisie en aligne trois, soit neuf
+ * arrêts pour trois choix. Un lecteur d'écran promettait pourtant « 2 sur 3 »
+ * et le geste qui va avec.
+ *
+ * La règle des radios (APG) : une seule tabulation pour tout le groupe, sur la
+ * position cochée ; les flèches déplacent le choix et le focus ensemble, en
+ * boucle ; Origine et Fin vont aux extrémités. Le choix suit le focus, comme
+ * sur des radios natifs — une bascule change une lecture, jamais un fait.
+ *
+ * `preventDefault` sur les touches prises : c'est ce qui empêche les flèches de
+ * changer aussi de mois (voir `useHotkeys`), et le motif que suit déjà le
+ * curseur des graphiques.
  */
 export function Segmented<T extends string>({
   options,
@@ -33,20 +49,68 @@ export function Segmented<T extends string>({
   label,
   className,
 }: SegmentedProps<T>) {
+  const buttons = useRef<(HTMLButtonElement | null)[]>([])
+  const checked = options.findIndex((option) => option.value === value)
+  /* Aucune position cochée — une valeur qui n'est plus dans la liste : c'est la
+     première qui prend la tabulation. Sans elle, `tabIndex` vaudrait -1 partout
+     et le groupe entier sortirait du parcours clavier. */
+  const stop = checked === -1 ? 0 : checked
+
+  const move = (next: number): void => {
+    const option = options[next]
+    if (option === undefined) return
+    onChange(option.value)
+    buttons.current[next]?.focus()
+  }
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const count = options.length
+    if (count === 0) return
+
+    switch (event.key) {
+      /* Les deux axes, sur une bascule qui passe à la ligne : elle est une
+         rangée jusqu'à ce que la largeur en fasse deux, et la flèche du bas
+         doit alors continuer de mener à la position suivante. */
+      case 'ArrowRight':
+      case 'ArrowDown':
+        move((stop + 1) % count)
+        break
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        move((stop - 1 + count) % count)
+        break
+      case 'Home':
+        move(0)
+        break
+      case 'End':
+        move(count - 1)
+        break
+      default:
+        return
+    }
+
+    event.preventDefault()
+  }
+
   return (
     <div
       role="radiogroup"
       aria-label={label}
+      onKeyDown={onKeyDown}
       className={cn('inline-flex max-w-full flex-wrap gap-1 rounded-chip bg-surface-2 p-1', className)}
     >
-      {options.map((option) => {
+      {options.map((option, index) => {
         const active = option.value === value
         return (
           <button
             key={option.value}
+            ref={(node) => {
+              buttons.current[index] = node
+            }}
             type="button"
             role="radio"
             aria-checked={active}
+            tabIndex={index === stop ? 0 : -1}
             onClick={() => {
               onChange(option.value)
             }}

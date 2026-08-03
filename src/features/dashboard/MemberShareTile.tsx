@@ -1,15 +1,13 @@
-import { useNavigate } from 'react-router-dom'
 import { SPLIT_PATH } from '@/app/routes'
 import { type Money, add } from '@/domain/money'
 import { fr } from '@/i18n/fr'
-import { formatMoney, formatPercent, tpl } from '@/i18n/format'
+import { formatPercent, tpl } from '@/i18n/format'
 import { useMemberCharges, useMemberFilter, useMemberMap } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { SplitIcon } from '@/ui/Icons'
 import { Ring } from '@/ui/Ring'
 import { Tile } from '@/ui/Tile'
-import { useCurrency } from '@/ui/currency'
 import { DONUT_SIZE, DONUT_THICKNESS } from './donut'
 
 function Line({ label, value }: { label: string; value: Money }) {
@@ -54,17 +52,16 @@ export function MemberShareTile() {
   const charges = useMemberCharges()
   const filter = useMemberFilter()
   const members = useMemberMap()
-  const currency = useCurrency()
-  const navigate = useNavigate()
-
-  const open = (): void => {
-    void navigate(SPLIT_PATH)
-  }
 
   if (filter === undefined || charges === null || charges.commonTotal <= 0) return null
 
   const member = members.get(filter)
   const percent = formatPercent(charges.shareBp / 10_000, 1)
+  /* La lecture de la jauge redescend dans l'anneau, d'où elle était partie : la
+     tuile n'est plus un bouton, son contenu se lit donc ligne à ligne, et les
+     trois montants que cette phrase récitait sont désormais entendus là où ils
+     s'affichent. Reste ce que la jauge seule montre — la part, et de qui. */
+  const spoken = tpl(fr.dashboard.srMemberShare, member?.name ?? '', percent)
   /* Le coût du mois, et lui seul : le report n'en fait pas partie. Ce qu'une
      dépense a coûté à quelqu'un est arrêté au mois où elle a eu lieu, et ces
      deux lignes doivent continuer de recomposer la tuile Charges voisine. */
@@ -72,17 +69,6 @@ export function MemberShareTile() {
   /* Le virement, lui, se rattrape : celui qui a trop avancé le mois passé verse
      moins ce mois-ci, et l'autre un peu plus. */
   const toPay = add(charges.common, charges.adjustment)
-  /* La lecture du DS §8 vit sur la tuile, et non en `srText` dans l'anneau : un
-     bouton porte son nom accessible, et rien de ce qu'il contient n'est lu à
-     côté — le texte caché de l'anneau y serait écrit sans jamais être entendu. */
-  const spoken = tpl(
-    fr.dashboard.srMemberShare,
-    member?.name ?? '',
-    percent,
-    formatMoney(toPay, currency),
-    formatMoney(charges.own, currency),
-    formatMoney(total, currency),
-  )
 
   return (
     /* 4×2 et non 2×2 comme la Répartition, alors qu'elles portent le même
@@ -93,20 +79,22 @@ export function MemberShareTile() {
        Sur téléphone les deux formats sont le même : pleine largeur, deux
        rangées.
 
-       La tuile entière est la cible, comme la Répartition : le détail du calcul
-       est à un doigt, et un lien de 44px à l'intérieur ferait déborder les
-       148px de contenu. */
+       Le geste est au coin et la tuile n'est plus un bouton, comme la
+       Répartition : son contenu porte une liste, et le nom unique d'un bouton
+       effaçait les deux montants qu'elle sépare exprès. Le repère du coin est
+       hors du flux — c'est ce qui permet au lien de ne rien coûter aux 148px de
+       contenu, qui sont comptés. */
     <Tile
       span="4x2"
       className="gap-3"
-      onClick={open}
-      label={spoken}
+      label={fr.dashboard.memberShare}
       /* Le repère nu, sans nommer sa destination : « À VERSER SUR LE COMMUN »
          est l'eyebrow le plus long de la grille (~195px en mono 11px, sans
          césure possible) et « Répartition › » en demande 95 de plus, quand la
          tuile n'en offre que 288 sur un écran de 360. Les deux se croisaient.
-         `SplitTile` passe déjà son repère nu, pour la même raison. */
-      affordance={{ kind: 'navigate' }}
+         `SplitTile` passe déjà son repère nu, pour la même raison. Le nom du
+         lien, lui, est entier : il ne coûte aucun pixel. */
+      link={{ to: SPLIT_PATH, label: fr.dashboard.showMemberShare }}
     >
       {/* L'eyebrow nomme le chiffre, au lieu qu'un libellé le refasse juste
           au-dessus : la tuile portait cinq éléments là où le DS §5 en autorise
@@ -131,6 +119,7 @@ export function MemberShareTile() {
           value={charges.shareBp / 10_000}
           color={member?.color ?? 'var(--cat-rest)'}
           label={fr.dashboard.memberShare}
+          srText={spoken}
           className="shrink-0"
         >
           <span className="t-num-body tnum">{percent}</span>

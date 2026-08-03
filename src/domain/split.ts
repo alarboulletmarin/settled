@@ -433,6 +433,46 @@ export function scopeToMember(
   return scoped
 }
 
+/**
+ * La même réécriture, pour tout le foyer en un seul balayage.
+ *
+ * `scopeToMember` appelée une fois par membre relit tout le document autant de
+ * fois qu'il y a de personnes, et redemande à `allocate` de découper chaque
+ * charge commune à chaque tour — alors qu'`allocate` rend déjà toutes les parts
+ * d'un coup, et qu'on en jetait toutes sauf une. C'est le cas de l'écran
+ * Épargne, qui lit les colonnes de chacun côte à côte.
+ *
+ * Le résultat est rigoureusement celui de `scopeToMember` membre par membre,
+ * ordre des entrées compris : un membre absent de `incomes` n'a pas de clé,
+ * comme il obtenait `null`, et `null` continue de dire « le prorata ne se
+ * calcule pas ».
+ */
+export function scopeToMembers(
+  entries: readonly Entry[],
+  kindOf: KindOf,
+  incomes: readonly IncomeWeight[],
+): Map<string, Entry[]> | null {
+  const weights = prorataWeights(incomes)
+  if (weights === null) return null
+
+  const scoped = new Map<string, Entry[]>(incomes.map((income) => [income.memberId, []]))
+  for (const entry of entries) {
+    if (isCommon(entry, kindOf)) {
+      const parts = allocate(entry.amount, weights)
+      for (const [index, income] of incomes.entries()) {
+        const part = parts[index] ?? ZERO
+        // Une part nulle n'est pas une ligne — voir `scopeToMember`.
+        if (part > 0) {
+          scoped.get(income.memberId)?.push({ ...entry, amount: part, memberId: income.memberId })
+        }
+      }
+      continue
+    }
+    if (entry.memberId !== undefined) scoped.get(entry.memberId)?.push(entry)
+  }
+  return scoped
+}
+
 /** Somme des parts. Vaut le total réparti — c'est ce que `allocate` garantit. */
 export function totalDue(shares: readonly MemberShare[]): Money {
   return shares.reduce((acc, share) => add(acc, share.due), ZERO)

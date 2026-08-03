@@ -9,6 +9,7 @@
 import { create } from 'zustand'
 import { type YearMonth, currentYm, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
+import { monthHorizon } from '@/domain/month'
 import { openMonth } from '@/domain/updates'
 import type { Data, ThemeSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
@@ -294,6 +295,17 @@ export const useStore = create<Store>()((set, get) => ({
     // Un mois passé ne s'ouvre pas tout seul : y faire apparaître des
     // échéances qui n'ont jamais été confirmées inventerait un historique.
     if (ym < currentYm()) return
+    /* Et un mois trop lointain non plus. Ouvrir écrit toutes les échéances de
+       toutes les récurrences, définitivement : sans cette borne, la navigation
+       se repoussait elle-même — chaque « mois suivant » ouvrait le mois, ce qui
+       reculait la borne d'un cran, ce qui laissait aller plus loin. Cent clics
+       valaient cent mois de prévisionnel écrits pour de bon.
+
+       `navigationBounds` s'arrête au même horizon : un mois au-delà ne se
+       propose pas. La garde est ici quand même — le mois vient aussi d'une URL
+       ou d'un document importé, et c'est l'écriture qu'on borne, pas seulement
+       le chevron qui y mène. Le mois s'affiche alors avec ce qu'il a. */
+    if (ym > monthHorizon()) return
     if (get().status !== 'ready') return
     if (get().data.months.some((m) => m.ym === ym)) return
     get().mutate((data) => openMonth(data, ym, makeId, today()).data)

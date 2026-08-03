@@ -15,13 +15,13 @@ import {
 } from '@/store/actions'
 import { memberRequired } from '@/domain/split'
 import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
-import { Button, IconButton } from '@/ui/Button'
+import { Button } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
-import { ChevronLeft } from '@/ui/Icons'
 import { Segmented } from '@/ui/Segmented'
+import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 import { useLeaveGuard } from '@/ui/useLeaveGuard'
@@ -260,14 +260,7 @@ function EntryForm({
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
-      <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={guard.request}>
-          <ChevronLeft />
-        </IconButton>
-        <h1 className="t-section min-w-0 truncate">
-          {titleFor(entry, draft.nature, draft.recurring)}
-        </h1>
-      </div>
+      <PageTitle title={titleFor(entry, draft.nature, draft.recurring)} onBack={guard.request} />
 
       <form
         id="entry-form"

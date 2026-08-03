@@ -85,8 +85,24 @@ export function CalendarGrid({
   const now = today()
 
   return (
+    /* Sept colonnes de 44px demandent 308px, et le cadre de la page (16px), celui
+       de la tuile (20px) et les six gouttières (4px) en prennent 96 de plus : en
+       dessous de 404px de fenêtre, la case tombe à 32px de large — la moitié des
+       téléphones en portrait, pour une cible que le DS §8 fixe à 44px partout.
+
+       La grille passe donc à bord perdu sous ce seuil et abandonne ses
+       gouttières : le motif est celui du bandeau du mois, et il rend 312px pour
+       sept cases, soit 44,5px. Le jour choisi se distingue à son fond arrondi,
+       jamais à la gouttière — c'est elle qu'on sacrifie, pas la cible.
+
+       Le bord perdu est posé sur la tuile et non ici : c'est son cadre qu'il
+       faut reprendre autant que celui de la page, et une grille qui sortirait
+       seule de la tuile laisserait ses cases hors de la surface.
+
+       Les deux rangées portent la même gouttière : sans quoi le nom du jour
+       cesse de tomber au-dessus de sa colonne dès que la grille en a une. */
     <div>
-      <div className="mb-1 grid grid-cols-7">
+      <div className="mb-1 grid grid-cols-7 gap-1 max-[404px]:gap-0">
         {fr.calendarNames.weekdaysNarrow.map((label, index) => (
           <span
             key={`${label}-${String(index)}`}
@@ -97,7 +113,7 @@ export function CalendarGrid({
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1 max-[404px]:gap-0">
         {Array.from({ length: month.leading }, (_, i) => (
           <span key={`vide-${String(i)}`} aria-hidden="true" />
         ))}

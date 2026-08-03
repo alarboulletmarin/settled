@@ -278,6 +278,66 @@ document : `schemaVersion` reste à 6.
 - **Les captures vivent dans `public/captures/`** — le `README`, le manifest et
   le partage les servent tous les trois, et il n'y en a qu'un exemplaire.
 
+### Corrigé — ce que les lecteurs d'écran et le clavier ne trouvaient pas
+
+Le socle était déjà bon — lien d'évitement, lecture accessible de chaque
+graphique, contrastes calculés, `prefers-reduced-motion` traité à trois
+niveaux. Restaient sept écarts, tous vérifiés sur le code. Aucun ne touche au
+document : `schemaVersion` reste à 6.
+
+- **Un montant pouvait être annoncé vide.** `Amount` — qui porte *tous* les
+  montants de l'app — posait son nom accessible dans un `aria-label` sur un
+  `span` sans rôle, ce qu'ARIA 1.2 interdit ; les lecteurs qui appliquent la
+  règle l'ignoraient, et tout le rendu visuel étant masqué, il ne restait rien
+  à dire. Le montant est désormais un texte caché à l'œil.
+- **Trois tuiles enfermaient une liste dans un `<button>`** — les parts de
+  chacun, les deux montants d'une part de foyer, les quatre chiffres d'un
+  crédit. Du contenu de flux dans un élément qui n'admet que des phrases, et un
+  nom unique derrière lequel toutes les lignes disparaissaient. Elles suivent
+  le motif du DS §6 : tuile non cliquable, vrai lien au coin — le repère du
+  coin lui-même, qui ne coûte rien au budget vertical d'une 2×2.
+- **La bascule `Segmented` annonçait des boutons radio sans en tenir la
+  promesse** : chaque position était un arrêt de tabulation — neuf pour trois
+  choix sur l'écran de saisie — et les flèches ne faisaient rien. Elle suit
+  l'APG sur les cinq écrans qui l'emploient.
+- **Changer d'écran ne se disait pas.** Le focus restait sur le lien de
+  navigation activé, et rien n'annonçait où l'on venait d'arriver. Le titre se
+  dit dans une région live de la coquille, le focus part au contenu — sauf là
+  où l'écran a posé le sien, comme le premier champ d'une saisie.
+- **Une case du calendrier faisait 32px de large** sous 404px de fenêtre, pour
+  une cible que le DS §8 fixe à 44px. La grille passe à bord perdu sous ce
+  seuil, et c'est la gouttière qu'on sacrifie.
+- **`EmptyState` se déclarait région live** en permanence, sur un texte qui ne
+  change jamais.
+- **Le `<h1>` s'écrivait de trois façons**, et le calendrier n'en avait aucun :
+  rien ne le nommait à un lecteur d'écran. `PageTitle` porte les trois formes,
+  et c'est de là que vient l'annonce d'écran.
+
+### Modifié — ce qui deviendra visible sur des années de saisie
+
+Rien d'urgent à l'échelle d'un document d'exemple. Trois points qui grandissent
+avec l'usage, et une mesure pour que les choix tiennent.
+
+- **Le mois se balaie une fois par rendu, et non dix.** Une dizaine de hooks
+  lisent la même portée du mois, et le tableau de bord les appelle presque
+  tous ; chacun refaisait le parcours complet du document pour son compte. Il a
+  fallu remonter aux revenus du mois et à la nature d'une catégorie, eux-mêmes
+  recalculés par chaque consommateur. La lecture par membre de l'épargne, qui
+  balayait tout le document une fois par personne, le fait désormais une fois
+  pour tout le foyer.
+- **Quatre écrans ne voyagent plus avec l'app** : le nuancier — neuf cents
+  lignes de route de développement que chaque visiteur téléchargeait —,
+  l'historique et ses graphiques, les réglages, la présentation. Le premier
+  chargement passe de 202 à 192 Kio compressés.
+- **Le prévisionnel s'arrête à douze mois.** Chaque « mois suivant » ouvrait le
+  mois, y écrivait toutes les échéances, et repoussait la borne d'un cran :
+  cent clics valaient cent mois de prévisionnel définitivement écrits. La
+  navigation cesse de proposer au-delà, et le store cesse d'écrire.
+- **`npm run size` mesure le premier chargement** et le tient sous un budget.
+  Un découpage par route ne se maintient pas tout seul — il suffit d'un import
+  statique au mauvais endroit pour tout ramener, ce qui était arrivé au
+  nuancier. La commande entre dans `npm run verify`, que la CI rejoue.
+
 ## [1.0.0] — 2026-08-02
 
 Première version publique. Le périmètre est celui de la v1 du

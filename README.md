@@ -76,7 +76,8 @@ npm run dev
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest |
-| `npm run verify` | les quatre d'un coup — c'est la porte de sortie |
+| `npm run size` | ce que pèse le premier chargement, et son budget |
+| `npm run verify` | les cinq d'un coup — c'est la porte de sortie |
 
 Rien à configurer : aucune variable d'environnement, aucune clé d'API. Pour voir
 l'app pleine plutôt que vide, **Réglages → Jeu d'exemple → Charger l'exemple**

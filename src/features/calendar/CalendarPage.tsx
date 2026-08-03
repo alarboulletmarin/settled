@@ -12,6 +12,7 @@ import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Close, Plus } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
+import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useHotkeys } from '@/ui/useHotkeys'
 import { CalendarGrid } from './CalendarGrid'
@@ -131,9 +132,16 @@ export function CalendarPage() {
 
   return (
     <>
+      {/* Cet écran n'avait aucun titre : rien ne le nommait à un lecteur
+          d'écran, et son bandeau ne dit que le mois. Comme celui du mois, il ne
+          s'affiche pas — le nom de l'écran est déjà dans la navigation. */}
+      <PageTitle title={fr.nav.calendar} hidden />
       <MonthHeader />
       <div className="flex max-w-2xl flex-col gap-4">
-        <Tile>
+        {/* Pleine largeur sous 404px, cadre annulé : c'est la seule façon de
+            tenir la case de 44px du DS §8 sur un téléphone — le calcul est dans
+            `CalendarGrid`. Au-dessus du seuil, la tuile est une tuile. */}
+        <Tile className="max-[404px]:-mx-4 max-[404px]:rounded-none max-[404px]:border-x-0 max-[404px]:p-1">
           <CalendarGrid month={month} selected={day?.date ?? null} onSelect={toggle} />
         </Tile>
 

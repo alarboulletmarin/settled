@@ -54,8 +54,9 @@ Une bonne proposition dit le **problème** avant la solution : « je n'arrive pa
 
 Elle doit tenir sur quatre points.
 
-1. **`npm run verify` passe.** Typecheck, lint, tests, build. C'est la porte de
-   sortie, et l'intégration continue la rejoue à l'identique.
+1. **`npm run verify` passe.** Typecheck, lint, tests, build, et le budget de
+   taille du premier chargement. C'est la porte de sortie, et l'intégration
+   continue la rejoue à l'identique.
 2. **Elle respecte les deux documents.** Le cahier des charges pour le
    comportement, le design system pour l'apparence. Aucun `var(--pine-500)` dans
    un composant, aucun texte en dur hors de `src/i18n/fr.ts`, aucun import direct

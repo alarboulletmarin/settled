@@ -134,8 +134,14 @@ export function Amount({
   return (
     <span
       className={cn('tnum inline-flex items-start', SIZE_CLASS[size], TONE_CLASS[tone], className)}
-      aria-label={label}
     >
+      {/* Le montant en toutes lettres, en texte et non en `aria-label` : cet
+          attribut ne vaut que sur un élément qui porte un rôle, et un `span` nu
+          n'en a aucun (ARIA 1.2). Les lecteurs d'écran qui appliquent la règle
+          l'ignoraient donc — et comme tout le rendu visuel ci-dessous est en
+          `aria-hidden`, il ne restait rien à annoncer : le montant passait
+          muet. Un texte caché à l'œil se lit partout, sans rôle à inventer. */}
+      <span className="sr-only-text">{label}</span>
       <span aria-hidden="true">
         {sign}
         {parts.integer}

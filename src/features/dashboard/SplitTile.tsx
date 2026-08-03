@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { SPLIT_PATH } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
@@ -27,11 +26,6 @@ export function SplitTile() {
   const members = useMemberMap()
   const filter = useMemberFilter()
   const currency = useCurrency()
-  const navigate = useNavigate()
-
-  const open = (): void => {
-    void navigate(SPLIT_PATH)
-  }
 
   if (filter !== undefined || shares === null || total <= 0) return null
 
@@ -50,19 +44,25 @@ export function SplitTile() {
     .join(', ')
 
   return (
-    /* La tuile entière est la cible : un lien de 44px à l'intérieur ferait
-       déborder les 148px de contenu d'une 2×2, et l'anneau remonterait sur
-       l'eyebrow. La cible tactile y gagne, en prime.
+    /* Le geste est au coin, et la tuile n'est plus un bouton : son contenu est
+       une liste de parts, ce qu'un `<button>` n'admet pas — et qu'un lecteur
+       d'écran aplatissait derrière un nom unique, quand c'est justement ligne à
+       ligne qu'on veut l'entendre. C'est le motif du DS §6, celui qu'écrit déjà
+       `UpcomingTile`.
 
-       Le repère n'a pas de nom de destination : l'eyebrow dit déjà
+       Le lien reste le repère du coin plutôt qu'un lien posé dans le flux : les
+       148px de contenu d'une 2×2 sont comptés au pixel (`donut.ts`), et une
+       rangée de 44px de plus ferait remonter l'anneau sur l'eyebrow.
+
+       Le repère n'a pas de nom de destination à l'écran : l'eyebrow dit déjà
        « Répartition », et l'écrire une seconde fois au coin n'apprendrait rien
-       de plus que le chevron seul. */
+       de plus que le chevron seul. Le lien, lui, porte son nom entier — il se
+       lit aussi hors de la tuile. */
     <Tile
       span="2x2"
       className="gap-3"
-      onClick={open}
       label={fr.dashboard.split}
-      affordance={{ kind: 'navigate' }}
+      link={{ to: SPLIT_PATH, label: fr.dashboard.showSplit }}
     >
       <Eyebrow icon={SplitIcon}>{fr.dashboard.split}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">

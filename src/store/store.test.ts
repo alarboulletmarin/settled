@@ -1,6 +1,8 @@
 import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { addMonthsToYm, currentYm } from '@/domain/date'
 import { makeData } from '@/domain/fixtures'
+import { HORIZON_MONTHS } from '@/domain/month'
 import { fr } from '@/i18n/fr'
 import type { Data } from '@/domain/types'
 import type * as dbModule from '@/persistence/db'
@@ -319,5 +321,58 @@ describe('store — échecs de persistance', () => {
     expect(store.getState().status).toBe('ready')
     expect(store.getState().error).toBeNull()
     expect(store.getState().data.household.name).toBe('Chez nous')
+  })
+})
+
+/* ============================================================================
+ * L'horizon d'ouverture — jusqu'où la navigation écrit dans le document.
+ * ==========================================================================*/
+
+describe('store — l’horizon des mois', () => {
+  const opened = (store: typeof UseStore): string[] =>
+    store.getState().data.months.map((m) => m.ym)
+
+  it('ouvre le mois qu’on va consulter', async () => {
+    const { store } = await freshStore()
+    store.setState({ status: 'ready', data: makeData() })
+
+    store.getState().setYm(addMonthsToYm(currentYm(), 1))
+
+    expect(opened(store)).toContain(addMonthsToYm(currentYm(), 1))
+  })
+
+  /* Le geste sans fin : chaque « mois suivant » ouvrait le mois, y écrivait
+     toutes les échéances, et reculait la borne d'un cran. Cent clics valaient
+     cent mois de prévisionnel définitivement écrits. */
+  it('n’écrit plus rien au-delà de douze mois', async () => {
+    const { store } = await freshStore()
+    store.setState({ status: 'ready', data: makeData() })
+
+    const tooFar = addMonthsToYm(currentYm(), HORIZON_MONTHS + 1)
+    store.getState().setYm(tooFar)
+
+    expect(opened(store)).not.toContain(tooFar)
+    // Le mois s'affiche quand même : c'est l'écriture qu'on borne.
+    expect(store.getState().ym).toBe(tooFar)
+  })
+
+  it('ouvre encore le dernier mois de l’horizon', async () => {
+    const { store } = await freshStore()
+    store.setState({ status: 'ready', data: makeData() })
+
+    const last = addMonthsToYm(currentYm(), HORIZON_MONTHS)
+    store.getState().setYm(last)
+
+    expect(opened(store)).toContain(last)
+  })
+
+  it('n’ouvre pas un mois passé, qui inventerait un historique', async () => {
+    const { store } = await freshStore()
+    store.setState({ status: 'ready', data: makeData() })
+
+    const before = addMonthsToYm(currentYm(), -1)
+    store.getState().setYm(before)
+
+    expect(opened(store)).not.toContain(before)
   })
 })

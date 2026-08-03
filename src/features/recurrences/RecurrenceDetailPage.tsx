@@ -8,10 +8,11 @@ import { cn } from '@/lib/cn'
 import { removeRecurrence, resumeRecurrence, stopRecurrence, undoable } from '@/store/actions'
 import { useRecurrenceRow } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
-import { Button, IconButton } from '@/ui/Button'
+import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { ChevronLeft, Warning } from '@/ui/Icons'
+import { Warning } from '@/ui/Icons'
+import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 import { toast } from '@/ui/toast'
@@ -49,18 +50,14 @@ export function RecurrenceDetailPage() {
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
-      <div className="flex items-center gap-1">
-        <IconButton
-          label={fr.common.back}
-          onClick={() => {
-            void navigate(RECURRENCES_PATH)
-          }}
-        >
-          <ChevronLeft />
-        </IconButton>
-        <h1 className="t-section min-w-0 truncate">{recurrence.label}</h1>
+      <PageTitle
+        title={recurrence.label}
+        onBack={() => {
+          void navigate(RECURRENCES_PATH)
+        }}
+      >
         {stopped && <Eyebrow className="shrink-0">{fr.recurrences.stoppedBadge}</Eyebrow>}
-      </div>
+      </PageTitle>
 
       {/* Rouge et panneau seulement quand le changement coûte : une charge qui
           monte, un revenu qui baisse. Le DS §2.3 réserve le rouge aux

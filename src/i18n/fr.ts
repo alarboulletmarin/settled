@@ -634,6 +634,14 @@ export const fr = {
     noCredits: 'Aucun crédit en cours.',
     split: 'Répartition',
     splitHint: 'charges communes du mois',
+    /* Le nom du lien posé au coin de ces deux tuiles-là, et non celui de leur
+       eyebrow : elles ne sont plus cliquables d'un bloc — leur contenu est une
+       liste, qu'un bouton aplatirait — et le repère du coin porte seul le
+       geste. Un lecteur d'écran sait lister les liens d'une page hors de leur
+       contexte : ce nom-ci doit donc tenir tout seul, là où le chevron affiché
+       se suffit du voisinage de l'eyebrow. */
+    showSplit: 'Voir le détail de la répartition',
+    showMemberShare: 'Voir le détail du calcul de la part',
 
     /* La contrepartie de la tuile Répartition, sous un filtre par membre :
        celle-ci montre les parts de tout le monde, celle-là ce que la personne
@@ -664,7 +672,11 @@ export const fr = {
     settlementLess: '%s · en moins',
     settlementMore: '%s · en plus',
     srSettlement: 'Régularisation %s : %s sur ce que %s verse au commun ce mois-ci.',
-    srMemberShare: '%s porte %s des charges communes, soit %s à verser. Avec %s de charges personnelles, le mois lui coûte %s.',
+    /* La lecture de la jauge, et elle seule : les trois montants qu'elle
+       accompagnait se lisent maintenant ligne à ligne dans la tuile, qui n'est
+       plus un bouton derrière lequel tout disparaissait. Le nom du membre y
+       reste, lui : rien dans le contenu ne le porte, il vient du filtre. */
+    srMemberShare: '%s porte %s des charges communes du foyer.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
        dit son calcul, puis ce qui le sépare de son voisin — c'est la question
@@ -1169,6 +1181,10 @@ export const fr = {
     title: 'Crédits et dettes',
     add: 'Ajouter un crédit',
     edit: 'Modifier le crédit',
+    /* Le nom du lien posé au coin de chaque ligne. La ligne n'est plus un
+       bouton — elle empile un anneau et quatre chiffres —, et ce nom-ci se lit
+       hors de la liste : « Ouvrir › » n'y dirait pas lequel. */
+    open: 'Ouvrir le crédit %s',
     added: 'Crédit ajouté',
     updated: 'Crédit modifié',
     removed: 'Crédit retiré du suivi',

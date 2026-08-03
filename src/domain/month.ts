@@ -5,7 +5,15 @@
  * jamais une échéance déjà générée, et ne touche jamais une entrée confirmée.
  * ==========================================================================*/
 
-import { type ISODate, type YearMonth, endOfMonth, startOfMonth, ymOf } from './date'
+import {
+  type ISODate,
+  type YearMonth,
+  addMonthsToYm,
+  endOfMonth,
+  startOfMonth,
+  today,
+  ymOf,
+} from './date'
 import { ZERO } from './money'
 import { amountOn } from './priceHistory'
 import { occurrencesInMonth } from './recurrence'
@@ -110,4 +118,58 @@ export function coveredMonths(data: Pick<Data, 'entries' | 'months'>): YearMonth
   for (const entry of data.entries) set.add(ymOf(entry.date))
   for (const state of data.months) set.add(state.ym)
   return [...set].sort()
+}
+
+/**
+ * Jusqu'où l'on ouvre des mois à venir.
+ *
+ * Ouvrir un mois y écrit toutes les échéances de toutes les récurrences, et
+ * rien ne bornait ce geste : chaque « mois suivant » ouvrait le mois, ce qui
+ * repoussait la borne d'un cran, ce qui permettait d'aller encore plus loin.
+ * Cent clics valaient cent mois d'échéances prévisionnelles écrites pour de
+ * bon dans le document, inélaguables autrement qu'entrée par entrée.
+ *
+ * Douze mois : c'est la fenêtre de l'historique, celle d'une assurance annuelle
+ * et celle des avances — au-delà, on ne consulte plus un prévisionnel, on
+ * spécule sur des récurrences qui auront changé.
+ */
+export const HORIZON_MONTHS = 12
+
+/** Le mois le plus lointain qu'on ouvre. */
+export function monthHorizon(on: ISODate = today()): YearMonth {
+  return addMonthsToYm(ymOf(on), HORIZON_MONTHS)
+}
+
+/** Ce qu'on peut atteindre en changeant de mois. */
+export type MonthBounds = { min: YearMonth; max: YearMonth }
+
+/**
+ * Les bornes de la navigation entre mois.
+ *
+ * En arrière, on ne remonte pas avant la première donnée. En avant, un mois
+ * d'avance est toujours accessible — c'est ce qui permet d'ouvrir le mois
+ * suivant et d'y voir tomber les échéances —, mais jamais au-delà de
+ * l'horizon.
+ *
+ * Un document qui porte déjà des données plus loin reste consultable jusqu'à
+ * elles : un fichier importé peut contenir des échéances lointaines, et une
+ * borne qui les rendrait injoignables cacherait des données qu'on possède. Il
+ * n'y gagne pas le mois d'avance pour autant — ce mois-là est une invitation à
+ * ouvrir, et l'horizon dit précisément où l'on cesse d'inviter.
+ */
+export function navigationBounds(
+  data: Pick<Data, 'entries' | 'months'>,
+  on: ISODate = today(),
+): MonthBounds {
+  const covered = coveredMonths(data)
+  const now = ymOf(on)
+  const first = covered[0] ?? now
+  const last = covered.at(-1) ?? now
+  const reach = addMonthsToYm(last > now ? last : now, 1)
+  const horizon = monthHorizon(on)
+
+  return {
+    min: first < now ? first : now,
+    max: reach <= horizon ? reach : last > horizon ? last : horizon,
+  }
 }

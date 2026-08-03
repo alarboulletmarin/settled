@@ -13,6 +13,7 @@ import {
   memberShares,
   monthlyIncome,
   scopeToMember,
+  scopeToMembers,
   sharedEntries,
   sharedTotal,
   totalDue,
@@ -559,6 +560,44 @@ describe('le mois vu par un membre', () => {
     expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!, { memberId: 'm-2', income: null }])).toBeNull()
     expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!])).toBeNull()
     expect(scopeToMember(july, 'm-3', kindOf, foyer)).toBeNull()
+  })
+
+  /* La version en un balayage doit rendre exactement la même chose que la
+     version membre par membre : c'est tout ce qu'on lui demande, et c'est ce
+     qui permet de la substituer là où le coût se multipliait par le nombre de
+     personnes. */
+  describe('tout le foyer d’un seul balayage', () => {
+    it('donne à chacun ce que la lecture membre par membre lui donnait', () => {
+      const all = scopeToMembers(july, kindOf, foyer)
+      for (const { memberId } of foyer) {
+        expect(all?.get(memberId)).toEqual(scopeToMember(july, memberId, kindOf, foyer))
+      }
+    })
+
+    it('garde l’ordre des entrées', () => {
+      const all = scopeToMembers(july, kindOf, foyer)
+      expect(all?.get('m-1')?.map((e) => e.id)).toEqual(
+        scopeToMember(july, 'm-1', kindOf, foyer)?.map((e) => e.id),
+      )
+    })
+
+    it('découpe chaque charge commune sans qu’un centime se perde', () => {
+      const all = scopeToMembers(july, kindOf, foyer)
+      const part = (member: string, id: string): number =>
+        all?.get(member)?.find((e) => e.id === id)?.amount ?? 0
+      expect(part('m-1', 'loyer') + part('m-2', 'loyer')).toBe(95_000)
+      expect(part('m-1', 'pret') + part('m-2', 'pret')).toBe(30_000)
+    })
+
+    it('ne dit rien tant que le prorata ne se calcule pas', () => {
+      expect(scopeToMembers(july, kindOf, [foyer[0]!, { memberId: 'm-2', income: null }])).toBeNull()
+      expect(scopeToMembers(july, kindOf, [foyer[0]!])).toBeNull()
+    })
+
+    it('n’a pas de clé pour qui n’est pas du foyer, comme l’autre rendait null', () => {
+      expect(scopeToMembers(july, kindOf, foyer)?.has('m-3')).toBe(false)
+      expect(scopeToMember(july, 'm-3', kindOf, foyer)).toBeNull()
+    })
   })
 })
 
