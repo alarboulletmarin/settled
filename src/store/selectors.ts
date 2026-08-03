@@ -9,7 +9,7 @@
 import { useMemo } from 'react'
 import { type ISODate, type YearMonth, addMonthsToYm, currentYm, endOfMonth, today } from '@/domain/date'
 import { type MonthPoint, trailingMonths } from '@/domain/history'
-import { coveredMonths } from '@/domain/month'
+import { type MonthBounds, navigationBounds } from '@/domain/month'
 import { type Money, sum } from '@/domain/money'
 import { type PriceChange, amountOn, detectPriceChange } from '@/domain/priceHistory'
 import { annualCost, monthlyEquivalent, nextOccurrence } from '@/domain/recurrence'
@@ -1020,21 +1020,13 @@ export function useRecurrenceRow(id: string | undefined): RecurrenceRow | null {
   )
 }
 
-export function useMonthBounds(): { min: YearMonth; max: YearMonth } {
+export function useMonthBounds(): MonthBounds {
   const entries = useEntries()
   const months = useStore((s) => s.data.months)
-  return useMemo(() => {
-    const covered = coveredMonths({ entries, months })
-    const now = today().slice(0, 7)
-    const first = covered[0] ?? now
-    const last = covered.at(-1) ?? now
-    // Un mois d'avance est toujours accessible : c'est ce qui permet d'ouvrir
-    // le mois suivant et d'y voir tomber les échéances.
-    return {
-      min: first < now ? first : now,
-      max: addMonthsToYm(last > now ? last : now, 1),
-    }
-  }, [entries, months])
+  /* La règle vit dans le domaine : `ensureMonthOpen` s'y tient aussi, et deux
+     bornes qui divergeraient laisseraient la navigation proposer un mois que le
+     store refuse d'ouvrir — c'est-à-dire un mois vide sans explication. */
+  return useMemo(() => navigationBounds({ entries, months }), [entries, months])
 }
 
 export function useHasAnyData(): boolean {

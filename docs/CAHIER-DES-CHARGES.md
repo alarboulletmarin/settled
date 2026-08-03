@@ -212,6 +212,8 @@ L'ouverture est un mécanisme interne, jamais une tâche : aucun écran ne deman
 
 Un mois passé ne s'ouvre jamais tout seul : y faire apparaître des échéances que personne n'a confirmées inventerait un historique.
 
+**Et l'ouverture s'arrête à douze mois.** Ouvrir écrit des échéances pour de bon : sans borne, chaque « mois suivant » ouvrait le mois, ce qui repoussait la navigation d'un cran, ce qui laissait aller plus loin — cent clics valaient cent mois de prévisionnel dans le document, inélaguables autrement qu'entrée par entrée. Douze mois, c'est la fenêtre de l'historique et celle d'une assurance annuelle ; au-delà, on ne consulte plus un prévisionnel, on spécule sur des récurrences qui auront changé. La navigation ne propose donc pas de mois plus lointain, sauf pour rejoindre des données qu'un document importé porterait déjà là-bas — mais elle n'y ouvre plus rien.
+
 L'opération est idempotente — une échéance est reconnue à sa paire récurrence + date — donc naviguer d'un mois à l'autre ne duplique rien.
 
 Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
