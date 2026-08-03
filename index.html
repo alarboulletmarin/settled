@@ -9,6 +9,29 @@
     <meta name="theme-color" content="#F0F5F2" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#2F5D4C" media="(prefers-color-scheme: dark)" />
     <title>Tout compte fait</title>
+
+    <!--
+      Ce que voit un lien partagé. Sans ces balises, une adresse collée dans une
+      conversation ne montre que son domaine : pour une app dont l'argument est
+      un écran, c'est l'écran qu'il faut donner à voir. L'image est la capture du
+      README, servie depuis `public/captures` — un seul exemplaire, celui-là
+      (voir `docs/CAPTURES.md`).
+      Les URL sont absolues, et elles doivent l'être : les réseaux sociaux ne
+      résolvent pas un chemin relatif.
+    -->
+    <link rel="canonical" href="https://toutcomptefait.xyz/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tout compte fait" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:url" content="https://toutcomptefait.xyz/" />
+    <meta property="og:title" content="Tout compte fait — les finances du foyer, sur ton appareil" />
+    <meta
+      property="og:description"
+      content="Récurrences, prévision du mois, répartition des charges au prorata des revenus. Pas de compte, pas de serveur : les données vivent dans le navigateur."
+    />
+    <meta property="og:image" content="https://toutcomptefait.xyz/captures/mois-clair.png" />
+    <meta property="og:image:alt" content="L’écran du mois : la grille des tuiles, en thème clair." />
+    <meta name="twitter:card" content="summary_large_image" />
     <script>
       // Applique le thème avant le premier rendu. Le document de données vit en
       // IndexedDB (asynchrone) : sans ce miroir localStorage, l'app s'afficherait
@@ -28,6 +51,41 @@
   </head>
   <body>
     <div id="root"></div>
+    <!--
+      Sans JavaScript, `#root` reste vide et la page est blanche — y compris
+      pour un robot d'indexation qui n'en exécute pas. Le style est en ligne :
+      la feuille est chargée par le module ci-dessous, c'est-à-dire par ce qui
+      justement ne tourne pas ici.
+      Aucune promesse de repli : l'app est un calcul local sur une base
+      IndexedDB, il n'y a pas de version dégradée à proposer. Elle dit ce qu'elle
+      est, ce qu'il manque, et où lire le reste.
+    -->
+    <noscript>
+      <div
+        style="
+          max-width: 34rem;
+          margin: 0 auto;
+          padding: 3rem 1.5rem;
+          font-family: system-ui, sans-serif;
+          line-height: 1.6;
+          color: #11201a;
+        "
+      >
+        <h1 style="font-size: 1.5rem; margin: 0 0 1rem">Tout compte fait</h1>
+        <p style="margin: 0 0 1rem">
+          Suivi des finances du foyer, sans compte ni serveur : récurrences, prévision du mois,
+          répartition des charges au prorata des revenus. Les données vivent dans le navigateur et
+          rien ne sort de l’appareil.
+        </p>
+        <p style="margin: 0">
+          L’app est entièrement calculée sur ton appareil : elle a besoin de JavaScript pour
+          s’afficher. Le code est lisible sur
+          <a href="https://github.com/alarboulletmarin/tout-compte-fait"
+            >github.com/alarboulletmarin/tout-compte-fait</a
+          >.
+        </p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

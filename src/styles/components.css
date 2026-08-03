@@ -103,6 +103,122 @@
     }
   }
 
+  /* --- Lecture secondaire d'une tuile plate — DS §5 --------------------- */
+
+  /* « reste 102 € à payer », posé à côté du chiffre qu'il complète.
+     Elle s'affiche quand elle tient, et c'est une requête de conteneur qui le
+     décide — pas la largeur de l'écran. La règle était `max-lg:sr-only`, donc
+     un seuil de viewport pour une question de largeur de tuile : elle répondait
+     juste tant qu'un format donné gardait la même largeur à un écran donné, et
+     faux dès qu'un format en changeait. C'est exactement le trou trouvé sur les
+     deux tuiles de flux — passées en pleine largeur sur téléphone, elles
+     gardaient leur seconde lecture masquée, et l'information n'était lisible
+     nulle part sous 1024px.
+     La tuile est déjà un conteneur de requête (voir plus haut), le seuil se
+     pose donc sur elle.
+
+     **Il y en a deux, et la hauteur de rangée dit lequel.** Une tuile plate
+     n'offre que sa largeur moins 32px de cadre, et sa hauteur moins 32 : à
+     88px de rangée, il reste 54px utiles, dont l'eyebrow en prend 25 et une
+     ligne de chiffre 27. Il n'y a pas de seconde ligne — mesuré. La lecture
+     secondaire ne peut donc s'afficher, sous 1024px, que si elle tient *à côté*
+     du chiffre : mesuré sur le jeu d'exemple, « +5 341,00 € » et « dont 141 €
+     encore à venir » demandent 300px ensemble. Au-delà de 1024px la rangée
+     passe à 108px, une seconde ligne y entre, et 180px suffisent — c'est ce
+     que la règle en `max-lg:` faisait déjà, à ceci près qu'elle le disait sur
+     la largeur de l'écran.
+
+     Ce que ça donne sur la boîte de contenu, aux largeurs qui existent :
+
+       320px   2×1 : 104   flux pleine largeur : 254   → masquée, masquée
+       390px   2×1 : 139   flux pleine largeur : 324   → masquée, AFFICHÉE
+       768px   2×1 : 132   flux demi-largeur   : 311   → masquée, AFFICHÉE
+       1024px  2×1 : 201                                → affichée
+       1280px  2×1 : 286                                → affichée
+
+     À 320px la lecture reste donc masquée, comme avant : ni la largeur ni la
+     hauteur ne la portent, et une ligne tranchée en deux vaut moins qu'une
+     ligne absente. C'est le seul écran où le trou de l'audit subsiste.
+
+     Les `4x1` gardent leur `max-lg:sr-only` et ne passent pas ici : leur seconde
+     lecture est une phrase (« placé 300 €, reste 1 200 € à placer »), plus
+     longue que celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à
+     voir avec celui-là. */
+  .tile-hint {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Le repère d'action suit la même bascule, et pas une autre : sur une tuile
+     plate il vit au coin bas tant que la lecture secondaire est masquée, au
+     coin haut dès qu'elle s'affiche (DS §6). Deux seuils différents laisseraient
+     une bande de largeurs où les deux se disputent la même ligne. */
+  .tile-affordance-flat {
+    top: auto;
+    bottom: 16px;
+  }
+
+  .tile-affordance-name {
+    display: none;
+  }
+
+  /* La rangée ne tient qu'une ligne : la lecture doit tenir à côté du chiffre. */
+  @media (max-width: 1023.98px) {
+    @container (min-width: 300px) {
+      .tile-hint {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+      }
+
+      .tile-affordance-flat {
+        top: 16px;
+        bottom: auto;
+      }
+
+      .tile-affordance-name {
+        display: inline;
+      }
+    }
+  }
+
+  /* Rangée de 108px : une seconde ligne y entre, le seuil redescend à ce qu'il
+     faut pour que la ligne ait un sens plutôt que pour qu'elle tienne d'un
+     trait. */
+  @media (min-width: 1024px) {
+    @container (min-width: 180px) {
+      .tile-hint {
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        overflow: visible;
+        clip-path: none;
+        white-space: normal;
+      }
+
+      .tile-affordance-flat {
+        top: 16px;
+        bottom: auto;
+      }
+
+      .tile-affordance-name {
+        display: inline;
+      }
+    }
+  }
+
   /* --- Rangée de filtres défilante — DS §6 ------------------------------ */
 
   /* Une rangée de pilules qui tient sur une ligne et défile, plutôt que de
@@ -150,9 +266,25 @@
     grid-auto-flow: row dense;
   }
 
-  /* 1024px et non 768 : la colonne latérale prend 224px, et six colonnes dans
-     ce qu'il reste d'une tablette portrait écrasent chaque tuile sous 80px.
-     En dessous, on garde la grille à deux colonnes du DS, en pleine largeur. */
+  /* Palier tablette. Six colonnes n'arrivent qu'à 1024px — la colonne latérale
+     prend 224px, et six colonnes dans ce qu'il reste d'une tablette portrait
+     écrasent chaque tuile sous 80px. Mais deux colonnes étirées sur 704px de
+     large ne sont pas une grille non plus : c'est la même mise en page que sur
+     un téléphone, à trois fois la largeur, donc trois fois le vide.
+     Quatre colonnes entre les deux. La correspondance format → colonnes change,
+     les formats du DS §5 ne changent pas : une 2×1 prend le quart, une 6×2 la
+     pleine largeur. La 2×2 est la seule à ne pas se diviser par deux — elle
+     porte le chiffre héros et son anneau, et un quart de 704px ne lui laisse
+     que 133px de contenu, où le chiffre passe sous son plancher. */
+  @media (min-width: 768px) {
+    .bento {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      grid-auto-rows: 96px;
+    }
+  }
+
+  /* 1024px et non 768 : voir ci-dessus. */
   @media (min-width: 1024px) {
     .bento {
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -181,6 +313,19 @@
   .span-4x2,
   .span-6x2 {
     grid-row: span 2;
+  }
+
+  /* Sur les quatre colonnes du palier tablette : un quart, une moitié, le tout.
+     `.span-2x1` garde le `span 1` de la grille mobile et n'a rien à redire. */
+  @media (min-width: 768px) {
+    .span-2x2,
+    .span-4x1,
+    .span-4x2 {
+      grid-column: span 2;
+    }
+    .span-6x2 {
+      grid-column: span 4;
+    }
   }
 
   @media (min-width: 1024px) {

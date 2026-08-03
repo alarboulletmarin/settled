@@ -20,6 +20,16 @@ export type ShowFlow = (direction: 'in' | 'out') => void
  * répondrait « presque rien » en début de mois. Ce qui reste à tomber se lit
  * en seconde lecture, là où les autres tuiles plates mettent la leur.
  *
+ * **Ces deux-là prennent deux colonnes sous 1024px**, seules de toutes les
+ * `2x1` : la pleine largeur sur la grille mobile, la moitié sur le palier
+ * tablette. C'est ce qui rend leur seconde lecture visible — et sans elle,
+ * elle ne l'était nulle part. Les quatre soldes voisins s'en passent parce
+ * qu'une feuille la porte sur téléphone (`MetricInfo`) ; ces deux tuiles-ci
+ * n'en ont pas, et ne doivent pas en avoir : devant « Charges : 1 166 € », la
+ * question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
+ * Le coût est de deux rangées de plus à faire défiler sur un téléphone, pour
+ * les deux chiffres qu'on vient chercher en premier.
+ *
  * Le clic filtre la liste du mois sur ce sens-là et l'amène sous les yeux. Il
  * ouvrait une feuille qui définissait le chiffre : devant « Charges : 1 166 € »,
  * la question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
@@ -47,7 +57,7 @@ function FlowTile({
   return (
     <Tile
       span="2x1"
-      className="justify-between"
+      className="justify-between max-lg:col-span-2"
       {...(onShow === undefined
         ? {}
         : {
@@ -65,10 +75,10 @@ function FlowTile({
         {/* Un flux, pas un solde : la valeur est absolue, et le « + » du DS §3
             distingue l'une de l'autre les deux tuiles voisines. */}
         <Amount value={flow.total} size="tile-fit" direction={direction} />
-        {/* Une tuile d'une rangée fait 88px : la seconde lecture ne s'affiche
-            qu'au-delà de 1024px, et la feuille d'explication la porte partout
-            ailleurs. */}
-        <span className="t-label max-lg:sr-only">{hint}</span>
+        {/* Lue par un lecteur d'écran quoi qu'il arrive, affichée dès que la
+            tuile est assez large pour la porter — c'est la tuile qui décide,
+            pas l'écran (voir `.tile-hint`). */}
+        <span className="t-label tile-hint">{hint}</span>
       </div>
     </Tile>
   )

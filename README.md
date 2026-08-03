@@ -11,7 +11,7 @@ Les données vivent dans le navigateur. Rien ne sort de l'appareil.
 
 [**Ouvrir l'app**](https://toutcomptefait.xyz) · [Documentation](docs/) · [Contribuer](CONTRIBUTING.md)
 
-![L'écran du mois, en thème sombre](docs/captures/mois-sombre.png)
+![L'écran du mois, en thème sombre](public/captures/mois-sombre.png)
 
 </div>
 
@@ -37,8 +37,8 @@ au prorata des revenus.
 
 <table>
 <tr>
-<td width="62%"><img src="docs/captures/mois-clair.png" alt="L'écran du mois en thème clair"></td>
-<td width="38%"><img src="docs/captures/mois-mobile.png" alt="L'écran du mois sur téléphone"></td>
+<td width="62%"><img src="public/captures/mois-clair.png" alt="L'écran du mois en thème clair"></td>
+<td width="38%"><img src="public/captures/mois-mobile.png" alt="L'écran du mois sur téléphone"></td>
 </tr>
 <tr>
 <td align="center"><em>Le même écran en thème clair</em></td>
@@ -86,8 +86,14 @@ les captures ci-dessus.
 ### Installation sur le téléphone
 
 C'est une PWA : ouvrir [toutcomptefait.xyz](https://toutcomptefait.xyz), puis
-« Ajouter à l'écran d'accueil ». Elle s'ouvre ensuite en plein écran et
-fonctionne hors ligne.
+« Ajouter à l'écran d'accueil » — sur Chrome et Edge, la page de présentation le
+propose d'elle-même. Elle s'ouvre ensuite en plein écran et fonctionne hors
+ligne.
+
+**Sur iPhone, ce n'est pas un confort.** Safari efface les données d'un site non
+installé après environ sept jours sans visite, et les données de cette app-ci
+sont dans le navigateur. Installée, elle les garde. Le geste est
+« Partager → Sur l'écran d'accueil ».
 
 ## Pile technique
 

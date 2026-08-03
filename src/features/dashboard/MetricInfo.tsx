@@ -39,12 +39,14 @@ const CONTENT: Record<MetricKey, Explanation> = {
  *
  * Quatre soldes portent un chiffre qui se ressemble à l'œil sans dire la même
  * chose. Leur lecture secondaire l'explique — mais une tuile d'une rangée fait
- * 88px, et cette ligne n'y tient qu'au-delà de 1024px : sur un téléphone,
- * l'explication existait sans jamais s'afficher.
+ * 88px, et cette ligne n'y tient pas dans une demi-colonne mobile : sur un
+ * téléphone, l'explication existait sans jamais s'afficher.
  *
  * Les deux tuiles de flux ne sont pas de la partie : ce qui rentre et ce qui se
  * paie n'ont pas besoin d'être définis, ils ont besoin d'être détaillés. Elles
- * mènent donc à leurs lignes plutôt qu'à une feuille.
+ * mènent donc à leurs lignes plutôt qu'à une feuille — et leur seconde lecture
+ * se lit sur la tuile même, qui prend deux colonnes sous 1024px pour ça. Une
+ * feuille aurait été le second recours ; c'est celui-ci qui a été pris.
  *
  * La feuille reprend donc le chiffre et cette lecture, et pas seulement les
  * phrases : sur téléphone, c'est le seul endroit où « reste 102 € à payer » se

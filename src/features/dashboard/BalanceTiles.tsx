@@ -115,9 +115,12 @@ export function ForecastTile({ onExplain }: { onExplain: (metric: Metric) => voi
       <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={totals.forecastBalance} size="tile-fit" />
-        {/* Tant que la rangée fait une demi-hauteur, la lecture secondaire
-            reste lue par un lecteur d'écran mais ne s'affiche pas. */}
-        <span className="t-label max-lg:sr-only">{fr.dashboard.forecastHint}</span>
+        {/* Tant que la tuile est trop étroite pour la porter, la lecture
+            secondaire reste lue par un lecteur d'écran mais ne s'affiche pas —
+            et la feuille d'explication la porte alors, elle. Le seuil est celui
+            de la tuile et non celui de l'écran (voir `.tile-hint`) : aux
+            largeurs où cette tuile-ci vit, les deux disent la même chose. */}
+        <span className="t-label tile-hint">{fr.dashboard.forecastHint}</span>
       </div>
     </Tile>
   )
@@ -143,7 +146,7 @@ export function RemainingTile({ onExplain }: { onExplain: (metric: Metric) => vo
       <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={remaining} size="tile-fit" tone={remaining < 0 ? 'danger' : 'default'} />
-        <span className="t-label max-lg:sr-only">{hint}</span>
+        <span className="t-label tile-hint">{hint}</span>
       </div>
     </Tile>
   )

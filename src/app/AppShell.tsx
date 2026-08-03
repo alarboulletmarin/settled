@@ -6,6 +6,7 @@ import { useHouseholdName } from '@/store/selectors'
 import { ScreenEntryProvider } from '@/ui/ScreenEntryProvider'
 import { useHotkeys } from '@/ui/useHotkeys'
 import { Sidebar, TabBar } from './Nav'
+import { QuickEntry } from './QuickEntry'
 import { StorageAlert } from './StorageAlert'
 import { entryNewPath, isFocusScreen } from './routes'
 
@@ -60,6 +61,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <TabBar />
+      {/* Après la barre d'onglets, qu'il surplombe : c'est le même geste au
+          doigt que le raccourci « n » au clavier, et il porte la même garde. */}
+      <QuickEntry />
     </>
   )
 }

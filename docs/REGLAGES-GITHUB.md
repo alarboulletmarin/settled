@@ -208,7 +208,7 @@ sapin `#2F5D4C`, « Tout compte fait » en Archivo, la baseline « Le suivi des
 finances du foyer, sans compte ni serveur », et l'anneau du mois.
 
 Le raccourci qui marche tout de suite : recadrer
-[`docs/captures/mois-sombre.png`](captures/mois-sombre.png) au format demandé —
+[`public/captures/mois-sombre.png`](../public/captures/mois-sombre.png) au format demandé —
 c'est déjà l'écran du mois en thème sombre, sur le jeu d'exemple. C'est le seul
 endroit où montrer le produit plutôt que le dire.
 

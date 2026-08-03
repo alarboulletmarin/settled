@@ -104,18 +104,21 @@ function Affordance({ affordance, span }: { affordance: TileAffordance; span?: T
       className={cn(
         'pointer-events-none absolute flex max-w-[60%] items-center gap-1 text-text-muted',
         flat ? 'right-4' : 'right-5 md:right-6',
-        /* Une 2×1 de la grille mobile n'offre qu'une centaine de pixels utiles,
-           et « PRÉVISIONNEL » les consomme déjà à lui seul — le repère posé en
+        /* Une 2×1 étroite n'offre qu'une centaine de pixels utiles, et
+           « PRÉVISIONNEL » les consomme déjà à lui seul — le repère posé en
            haut lui passait dessus. Il descend donc au coin bas, libre tant que
-           la lecture secondaire est masquée à cette largeur (`max-lg:sr-only`
-           sur les tuiles concernées). Au-delà de 1024px, c'est l'inverse : la
-           rangée du bas se remplit, celle du haut se dégage, et le repère
-           remonte. Deux coins, jamais deux en même temps. */
-        span === '2x1' ? 'bottom-4 lg:top-4 lg:bottom-auto' : flat ? 'top-4' : 'top-5 md:top-6',
+           la lecture secondaire est masquée à cette largeur ; dès qu'elle
+           s'affiche, la rangée du bas se remplit, celle du haut se dégage, et
+           le repère remonte. Deux coins, jamais deux en même temps.
+           C'est la largeur de la tuile qui arbitre, pas celle de l'écran :
+           `.tile-affordance-flat` porte exactement le seuil de `.tile-hint`,
+           sans quoi une tuile large sur un petit écran verrait les deux se
+           disputer la ligne du bas. */
+        span === '2x1' ? 'tile-affordance-flat' : flat ? 'top-4' : 'top-5 md:top-6',
       )}
     >
       {affordance.kind !== 'explain' && affordance.destination !== undefined && (
-        <span className={cn('t-axis truncate', span === '2x1' && 'max-lg:hidden')}>
+        <span className={cn('t-axis truncate', span === '2x1' && 'tile-affordance-name')}>
           {affordance.destination}
         </span>
       )}
