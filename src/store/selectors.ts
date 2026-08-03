@@ -48,6 +48,7 @@ import {
   memberShares,
   isCommon,
   scopeToMember,
+  scopeToMembers,
   sharedEntries,
   unassignedIncomes,
 } from '@/domain/split'
@@ -70,6 +71,34 @@ import {
   isSpending,
 } from '@/domain/types'
 import { type MonthFilter, useStore } from './store'
+
+/**
+ * Le dernier résultat d'un calcul, tant qu'on le redemande à l'identique.
+ *
+ * Le `useMemo` d'un hook ne mémorise que pour l'instance qui l'appelle : dix
+ * composants qui lisent la même statistique la calculent dix fois, sur les
+ * mêmes tranches du même document. Ce cache-ci vit au-dessus des instances, et
+ * une seule entrée suffit — dans une même passe de rendu, ces tranches sont les
+ * mêmes références pour tout le monde, puisqu'elles viennent du store ou d'un
+ * `useMemo` en amont. Retenir la statistique d'un document qu'on ne lit plus ne
+ * servirait à rien, et le retiendrait en mémoire pour rien.
+ *
+ * Comparaison par référence, comme React : ces calculs ne prennent que des
+ * valeurs déjà stables, et une comparaison en profondeur coûterait le balayage
+ * qu'on cherche à éviter.
+ */
+function memoLast<A extends readonly unknown[], R>(compute: (...args: A) => R): (...args: A) => R {
+  let last: { args: A; result: R } | null = null
+
+  return (...args: A): R => {
+    if (last !== null && last.args.every((arg, index) => arg === args[index])) {
+      return last.result
+    }
+    const result = compute(...args)
+    last = { args, result }
+    return result
+  }
+}
 
 /* --- Tranches brutes ------------------------------------------------------*/
 
@@ -137,15 +166,22 @@ export function useFamilyMap(): Map<string, Family> {
 export function useKindOf(): KindOf {
   const families = useFamilies()
   const categories = useCategories()
-  return useMemo(() => {
-    const familyOf = new Map(categories.map((c) => [c.id, c.familyId]))
-    const kindOf = new Map(families.map((f) => [f.id, f.kind]))
-    return (categoryId: string): CategoryKind => {
-      const family = familyOf.get(categoryId)
-      return (family === undefined ? undefined : kindOf.get(family)) ?? 'charge'
-    }
-  }, [families, categories])
+  return useMemo(() => sharedKindOf(families, categories), [families, categories])
 }
+
+/* Mutualisé, et pas seulement pour s'épargner deux tables de correspondance :
+   cette fonction est passée en dépendance à presque tous les calculs du mois,
+   et un `useMemo` par instance en rendait une nouvelle à chaque consommateur.
+   Les caches en aval ne pouvaient alors jamais reconnaître deux lectures
+   identiques — celui de la portée du mois y perdait tout son intérêt. */
+const sharedKindOf = memoLast((families: readonly Family[], categories: readonly Category[]) => {
+  const familyOf = new Map(categories.map((c) => [c.id, c.familyId]))
+  const kindOf = new Map(families.map((f) => [f.id, f.kind]))
+  return (categoryId: string): CategoryKind => {
+    const family = familyOf.get(categoryId)
+    return (family === undefined ? undefined : kindOf.get(family)) ?? 'charge'
+  }
+})
 
 /**
  * Combien vaut une récurrence à une date — montant fixe, échéance chiffrée ou
@@ -250,10 +286,27 @@ export function useMonthScope(): MonthScope {
   const incomes = useMemberIncomes()
 
   return useMemo(
-    () => scopeEntries(entries, filter, kindOf, incomes),
+    () => sharedScope(entries, filter, kindOf, incomes),
     [entries, filter, kindOf, incomes],
   )
 }
+
+/**
+ * Le balayage, fait une fois pour tous ceux qui le demandent.
+ *
+ * Une dizaine de hooks lisent la portée du mois — les totaux, les deux lectures
+ * par nature, le reste à vivre, la répartition par poste, par famille,
+ * l'épargne, les douze derniers mois, la liste elle-même — et le tableau de
+ * bord les appelle presque tous. Chacun avait son `useMemo`, donc chacun
+ * refaisait le même parcours complet du document, avec un découpage par charge
+ * commune : dix fois le même travail à chaque rendu, pour dix fois le même
+ * résultat.
+ *
+ * Le `useMemo` de chaque hook reste — c'est lui qui garde la référence stable
+ * d'un rendu à l'autre — mais tous retombent ici, et le premier de la passe est
+ * le seul à calculer.
+ */
+const sharedScope = memoLast(scopeEntries)
 
 /**
  * La même règle, sur un jeu d'entrées quelconque.
@@ -469,12 +522,54 @@ export type MonthSplit = {
 export function useMemberIncomesOf(month: YearMonth): MemberIncome[] {
   const members = useMembers()
   const recurrences = useRecurrences()
-  const amountOf = useAmountOf(endOfMonth(month))
+  const entries = useEntries()
   const kindOf = useKindOf()
   return useMemo(
-    () => memberIncomes(members, recurrences, kindOf, amountOf, month),
-    [members, recurrences, amountOf, kindOf, month],
+    () => sharedIncomes(members, recurrences, entries, kindOf, month),
+    [members, recurrences, entries, kindOf, month],
   )
+}
+
+/* Les revenus par mois, retenus tant que le document ne bouge pas.
+
+   Ils sont la clef de voûte : `useMonthScope` en dépend, donc tout le tableau
+   de bord, et le prorata les redemande pour le mois précédent. Chaque
+   consommateur en refaisait le calcul — un parcours des récurrences par
+   membre —, et pire : le résolveur de montants sortait d'un `useMemo` propre à
+   l'instance, si bien que chaque appel rendait un tableau neuf. Aucun cache en
+   aval ne pouvait alors reconnaître deux lectures identiques.
+
+   Une entrée par mois lu, et la table entière est jetée dès que le document
+   change : trois mois se lisent dans une même passe — celui qu'on regarde, le
+   précédent pour la régularisation, celui d'une répartition ouverte ailleurs. */
+const incomesByMonth = memoLast(
+  (
+    _members: readonly Member[],
+    _recurrences: readonly Recurrence[],
+    _entries: readonly Entry[],
+    _kindOf: KindOf,
+  ) => new Map<YearMonth, MemberIncome[]>(),
+)
+
+function sharedIncomes(
+  members: readonly Member[],
+  recurrences: readonly Recurrence[],
+  entries: readonly Entry[],
+  kindOf: KindOf,
+  month: YearMonth,
+): MemberIncome[] {
+  const cached = incomesByMonth(members, recurrences, entries, kindOf)
+  const hit = cached.get(month)
+  if (hit !== undefined) return hit
+
+  /* Le même résolveur que `useAmountOf`, construit ici plutôt que reçu : c'est
+     lui qui portait l'instabilité, et il ne sert qu'à ce calcul-ci. La règle ne
+     change pas — le montant d'une récurrence se lit en fin de mois. */
+  const amountOf = (recurrence: Recurrence): Money | null =>
+    amountOn(recurrence, entries, endOfMonth(month))
+  const computed = memberIncomes(members, recurrences, kindOf, amountOf, month)
+  cached.set(month, computed)
+  return computed
 }
 
 /** Les revenus du mois affiché. */
@@ -674,25 +769,30 @@ export function useMemberSavings(): MemberSaving[] {
   const kindOf = useKindOf()
   const incomes = useMemberIncomes()
 
-  return useMemo(
-    () =>
-      members.flatMap((member) => {
-        const scoped = scopeToMember(entries, member.id, kindOf, incomes)
-        // Prorata incalculable : une capacité qui ignorerait le loyer vaudrait
-        // moins qu'une ligne absente. L'écran dit déjà ce qui manque.
-        if (scoped === null) return []
-        const totals = totalsByKind(scoped, month, kindOf, undefined, true)
-        return [
-          {
-            memberId: member.id,
-            capacity: savingCapacity(totals),
-            saved: totals.saving,
-            left: savingLeft(totals),
-          },
-        ]
-      }),
-    [members, entries, month, kindOf, incomes],
-  )
+  return useMemo(() => {
+    /* Un seul balayage pour tout le foyer, là où c'en était un par membre — et
+       un découpage par charge commune au lieu d'un par charge et par membre.
+       C'est le plus lourd des sélecteurs, et le seul qui multipliait son coût
+       par le nombre de personnes. */
+    const scoped = scopeToMembers(entries, kindOf, incomes)
+    // Prorata incalculable : une capacité qui ignorerait le loyer vaudrait
+    // moins qu'une ligne absente. L'écran dit déjà ce qui manque.
+    if (scoped === null) return []
+
+    return members.flatMap((member) => {
+      const own = scoped.get(member.id)
+      if (own === undefined) return []
+      const totals = totalsByKind(own, month, kindOf, undefined, true)
+      return [
+        {
+          memberId: member.id,
+          capacity: savingCapacity(totals),
+          saved: totals.saving,
+          left: savingLeft(totals),
+        },
+      ]
+    })
+  }, [members, entries, month, kindOf, incomes])
 }
 
 /**
