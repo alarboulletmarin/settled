@@ -181,6 +181,13 @@ export const fr = {
 
   shell: {
     loading: 'Ouverture de tes données',
+    /* Le bouton flottant, sous 1024px. Il nomme ce qu'il ouvre — trois portes
+       de saisie — et non « Ajouter », qui promettrait une action alors qu'il
+       en propose trois. La fermeture porte son propre nom : le même bouton
+       change de sens, il doit changer d'étiquette. */
+    quickEntry: 'Saisir une ligne',
+    quickEntryClose: 'Fermer les portes de saisie',
+    quickEntryLabel: 'Portes de saisie',
     filterByMember: 'Filtrer par membre',
     /* « Tout le monde » sur le filtre, « Tout le foyer » sur la saisie : ce
        n'est pas la même chose, et une seule chaîne le disait des deux côtés.

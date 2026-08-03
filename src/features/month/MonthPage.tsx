@@ -49,9 +49,16 @@ export function MonthPage() {
 
       {/* Les deux sens sont deux boutons, jamais un seul. Passer par « Ajouter
           une dépense » pour saisir un salaire obligeait à découvrir, une fois
-          le formulaire ouvert, une bascule dont rien n'annonçait l'existence. */}
+          le formulaire ouvert, une bascule dont rien n'annonçait l'existence.
+
+          À partir de 1024px seulement : sous cette largeur, c'est le bouton
+          flottant de la coquille qui porte ces trois portes, et il les porte
+          partout — y compris une fois la page défilée, et sur un mois vide, où
+          cette rangée-ci n'existe pas. Les garder toutes les deux ferait deux
+          fois les mêmes trois boutons sur le même écran, ce qui ne fait pas
+          deux occasions. */}
       {!isEmpty && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 hidden flex-wrap items-center gap-2 lg:flex">
           <Button
             title={fr.a11y.newEntryKey}
             onClick={() => {
