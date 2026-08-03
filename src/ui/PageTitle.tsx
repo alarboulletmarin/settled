@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { fr } from '@/i18n/fr'
 import { IconButton } from './Button'
 import { ChevronLeft } from './Icons'
+import { useAnnounceScreen } from './screenTitle'
 
 export type PageTitleProps = {
   title: string
@@ -34,6 +35,11 @@ export type PageTitleProps = {
  * a besoin du titre : l'annonce du changement d'écran le prend ici.
  */
 export function PageTitle({ title, hidden = false, onBack, children }: PageTitleProps) {
+  /* Avant tout retour anticipé : c'est un hook, et les trois formes du titre
+     s'annoncent pareil — un écran dont le titre ne s'affiche pas est un écran
+     comme un autre pour qui l'écoute. */
+  useAnnounceScreen(title)
+
   if (hidden) return <h1 className="sr-only">{title}</h1>
 
   /* Pas de marge basse sur cette variante-ci : les écrans qui portent un retour

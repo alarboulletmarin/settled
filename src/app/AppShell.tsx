@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { useHouseholdName } from '@/store/selectors'
 import { ScreenEntryProvider } from '@/ui/ScreenEntryProvider'
+import { ScreenTitleProvider } from '@/ui/ScreenTitleProvider'
 import { useHotkeys } from '@/ui/useHotkeys'
 import { Sidebar, TabBar } from './Nav'
 import { QuickEntry } from './QuickEntry'
@@ -29,8 +30,36 @@ export function AppShell({ children }: { children: ReactNode }) {
         },
   })
 
+  /* Le focus part au contenu à chaque changement d'écran.
+
+     Changer d'URL ici ne recharge rien : le focus restait donc sur le lien de
+     navigation qu'on venait d'activer, à tabuler dans un menu pendant que
+     l'écran, lui, avait changé — et le lecteur d'écran n'avait aucune raison de
+     lire quoi que ce soit. Le titre se dit en parallèle (`ScreenTitleProvider`),
+     et les deux gestes ne se remplacent pas : l'un sert la voix, l'autre le
+     clavier.
+
+     Trois gardes. Le premier affichage n'en est pas un — comparer le chemin
+     précédent le dit, et survit au double montage du `StrictMode`, ce qu'un
+     simple drapeau ne fait pas. Un écran qui a posé son propre focus le garde :
+     le premier champ d'une saisie est exactement là où l'on veut être, et le
+     renvoyer en haut annulerait le geste qu'on vient de faire. Et le focus est
+     programmatique : `:focus-visible` ne s'y applique pas, l'anneau du DS ne se
+     dessine donc pas autour de la page entière. */
+  const main = useRef<HTMLElement>(null)
+  const previous = useRef(pathname)
+
+  useEffect(() => {
+    if (previous.current === pathname) return
+    previous.current = pathname
+
+    const node = main.current
+    if (node === null || node.contains(document.activeElement)) return
+    node.focus()
+  }, [pathname])
+
   return (
-    <>
+    <ScreenTitleProvider>
       <a
         href="#contenu"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-input focus:bg-surface focus:px-4 focus:py-2"
@@ -43,6 +72,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main
           id="contenu"
           key={pathname}
+          ref={main}
+          /* Focalisable au script, jamais à la tabulation : le contenu n'est pas
+             une étape du parcours clavier, c'est là qu'on le dépose. */
+          tabIndex={-1}
           className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 lg:pb-10"
         >
           {/* Celui-ci ne connaît pas `isFocusScreen` : un écran de saisie est
@@ -64,6 +97,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Après la barre d'onglets, qu'il surplombe : c'est le même geste au
           doigt que le raccourci « n » au clavier, et il porte la même garde. */}
       <QuickEntry />
-    </>
+    </ScreenTitleProvider>
   )
 }
