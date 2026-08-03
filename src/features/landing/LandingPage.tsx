@@ -11,6 +11,7 @@ import { Button } from '@/ui/Button'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { DataIcon, RecurrencesIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
+import { InstallBanner } from './InstallBanner'
 import { LandingTiles } from './LandingTiles'
 import { RecoveryDoor } from './RecoveryDoor'
 
@@ -111,6 +112,12 @@ export function LandingPage() {
         )}
 
         <p className="t-label">{fr.landing.privacy}</p>
+
+        {/* Juste sous la phrase qui dit qu'il n'y a ni compte ni serveur : c'est
+            elle qui pose la question à laquelle l'installation répond — s'il n'y
+            a de copie nulle part, qu'est-ce qui garde celle-ci ? Elle ne
+            s'affiche que quand le navigateur a de quoi la tenir. */}
+        <InstallBanner />
       </header>
 
       {/* Avant les tuiles de démonstration : une alerte sous une grille de

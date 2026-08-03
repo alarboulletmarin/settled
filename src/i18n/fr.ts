@@ -23,6 +23,25 @@ export const fr = {
     exampleHint: 'Juste voir à quoi ça ressemble ? Un foyer d’exemple, complet, en un clic.',
     privacy: 'Pas de compte, pas de serveur. Deux questions, et l’app est utilisable.',
 
+    /* L'installation se propose juste sous cette phrase-là, et c'est le seul
+       endroit où elle a un sens : « pas de serveur » vient d'être écrit, donc
+       la question « et si je change de navigateur » vient d'être posée. Le
+       texte dit ce que l'installation apporte — pas qu'elle est possible, ce
+       que le bouton dit déjà.
+       La purge de Safari est nommée en clair. Le cahier §5 la connaît, et une
+       app dont toute la promesse est que les données restent sur l'appareil
+       doit dire ce qui, sur cet appareil, peut les effacer. */
+    installTitle: 'Installe-la sur ton appareil',
+    installBody:
+      'Elle s’ouvre en plein écran, fonctionne hors ligne, et surtout : un site non installé voit ses données effacées par Safari après une semaine sans visite. Installée, elle les garde.',
+    installAction: 'Installer',
+
+    /* L'app est hors-ligne d'abord et ne le disait jamais. Le chip ne s'affiche
+       que hors ligne : en ligne, il n'aurait rien à apprendre. Il dit ce qui
+       continue, pas ce qui manque — c'est une app dont c'est justement
+       l'argument, pas un service en panne. */
+    offline: 'Hors ligne — tout continue de fonctionner',
+
     /* Ce que portent les tuiles : une étiquette, un chiffre, une lecture
        secondaire. Le raisonnement de chacune est plus bas, en `principles`, où
        rien ne le coupe par le bas (DS §5). */
