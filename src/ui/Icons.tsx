@@ -43,6 +43,7 @@ import { MagnifyingGlass } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { Receipt } from '@phosphor-icons/react/dist/csr/Receipt'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
+import { TrendUp } from '@phosphor-icons/react/dist/csr/TrendUp'
 import { UsersThree } from '@phosphor-icons/react/dist/csr/UsersThree'
 import { Wallet } from '@phosphor-icons/react/dist/csr/Wallet'
 import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle'
@@ -92,13 +93,22 @@ export const ExternalIcon = adapt(ArrowUpRight)
 
 /* --- Repère — navigation --------------------------------------------------*/
 
+/* Les destinations qui n'ont pas de tuile à leur nom. Les deux autres —
+   abonnements et historique — sont déclarées plus bas, sous leur concept. */
 export const NavMonth = adapt(SquaresFour)
 export const NavCalendar = adapt(CalendarBlank)
-export const NavRecurrences = adapt(ArrowsClockwise)
-export const NavHistory = adapt(ChartLine)
 export const NavSettings = adapt(GearSix)
 
 /* --- Repère — tuiles et sections ------------------------------------------*/
+
+/* Ces deux-là servent aussi d'onglet, et c'est pour cela qu'ils sont ici :
+   « abonnements » et « historique » sont un concept chacun, pas deux. Le DS
+   §9.2 demande qu'un concept garde le même glyphe partout, et deux exports
+   pour un même glyphe sont exactement ce qui laisse la barre d'onglets et la
+   tuile diverger un jour sans que rien ne l'annonce. Déclarés une fois, sous
+   le concept ; `app/routes.ts` vient les y lire. */
+export const RecurrencesIcon = adapt(ArrowsClockwise)
+export const HistoryIcon = adapt(ChartLine)
 
 export const BalanceIcon = adapt(Wallet)
 export const IncomeIcon = adapt(Coins)
@@ -111,7 +121,6 @@ export const RemainingIcon = adapt(HandCoins)
 export const SavingsIcon = adapt(PiggyBank)
 export const BreakdownIcon = adapt(ChartPieSlice)
 export const UpcomingIcon = adapt(Clock)
-export const RecurrencesIcon = adapt(ArrowsClockwise)
 export const CreditsIcon = adapt(Bank)
 export const SplitIcon = adapt(UsersThree)
 export const ToConfirmIcon = adapt(CheckCircle)
@@ -124,6 +133,10 @@ export const DataIcon = adapt(Database)
 /* Le coffre, et non une seconde base : « Données » parle des fichiers qui
    sortent, « Sur cet appareil » de ce qui y reste rangé. */
 export const DeviceIcon = adapt(Archive)
-export const TrailingIcon = adapt(ChartLine)
 export const CompareIcon = adapt(ChartBar)
-export const YearsIcon = adapt(ChartLineUp)
+/* La courbe nue, et non celle du prévisionnel : les deux montaient dans le même
+   cadre à axes, et le glyphe partagé disait qu'il s'agissait du même chiffre —
+   le solde du mois qu'on projette, et le cumul de deux années qu'on superpose.
+   Ils ne se croisent sur aucun écran, ce qui est justement ce qui rendait la
+   confusion indétectable. */
+export const YearsIcon = adapt(TrendUp)

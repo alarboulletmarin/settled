@@ -12,7 +12,7 @@ import {
 } from '@/store/selectors'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { TrailingIcon } from '@/ui/Icons'
+import { HistoryIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { MonthCompare } from './MonthCompare'
@@ -34,7 +34,7 @@ function Trailing() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow icon={TrailingIcon}>{fr.history.trailing}</Eyebrow>
+      <Eyebrow icon={HistoryIcon}>{fr.history.trailing}</Eyebrow>
       {filled.length === 0 ? (
         <p className="t-label">{fr.history.trailingEmpty}</p>
       ) : (

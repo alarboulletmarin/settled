@@ -1,11 +1,11 @@
 import { fr } from '@/i18n/fr'
 import {
+  HistoryIcon,
   type IconComponent,
   NavCalendar,
-  NavHistory,
   NavMonth,
-  NavRecurrences,
   NavSettings,
+  RecurrencesIcon,
 } from '@/ui/Icons'
 
 export type RouteDef = { path: string; label: string; icon: IconComponent }
@@ -27,8 +27,8 @@ export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/$
 export const NAV_ROUTES: RouteDef[] = [
   { path: '/', label: fr.nav.month, icon: NavMonth },
   { path: '/calendrier', label: fr.nav.calendar, icon: NavCalendar },
-  { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: NavRecurrences },
-  { path: '/historique', label: fr.nav.history, icon: NavHistory },
+  { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: RecurrencesIcon },
+  { path: '/historique', label: fr.nav.history, icon: HistoryIcon },
   { path: '/reglages', label: fr.nav.settings, icon: NavSettings },
 ]
 
