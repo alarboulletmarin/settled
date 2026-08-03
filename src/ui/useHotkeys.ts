@@ -33,6 +33,10 @@ function isTyping(target: EventTarget | null): boolean {
  *   les écouteurs de `window` : sans ce garde, « n » posé pendant une question
  *   de confirmation partirait créer une dépense derrière la boîte, qui resterait
  *   ouverte sur un écran qui a changé.
+ * — **La frappe a déjà été consommée.** Un composant qui répond aux flèches
+ *   pour son compte — le curseur d'un graphique — appelle `preventDefault`, et
+ *   ce raccourci-ci s'efface plutôt que de faire la même touche deux fois, à
+ *   deux étages.
  *
  * L'écouteur est posé une fois pour toutes ; les gestes sont relus dans une
  * référence, sans quoi chaque rendu le retirerait pour le reposer.
@@ -50,6 +54,7 @@ export function useHotkeys(keys: Hotkeys): void {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.defaultPrevented) return
       if (event.altKey || event.ctrlKey || event.metaKey) return
       if (isTyping(event.target)) return
       if (document.querySelector('dialog[open]') !== null) return

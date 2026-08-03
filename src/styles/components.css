@@ -220,4 +220,34 @@
     /* Départ à midi, sens horaire. */
     transform: rotate(-90deg);
   }
+
+  /* --- Graphiques — DS §3 et §8 ----------------------------------------- */
+
+  /* La bande des mois tient sur une ligne quoi qu'il arrive, comme l'eyebrow.
+     Douze libellés courts (« janv. ») demandent près de quatre cents pixels en
+     mono onze, et la tuile n'en offre que 248 sur un téléphone de 320 : la
+     rangée débordait de 71px et se faisait trancher par la tuile — mesuré. Ces
+     douze mêmes libellés ne peuvent pas rétrécir, `flex-1` ne descendant pas
+     sous leur contenu minimal.
+     L'initiale suffit à s'orienter tant que la place manque, et c'est déjà le
+     parti que le cumul avait pris de son côté ; le nom revient dès que la tuile
+     peut le porter. Le mois exact, lui, se lit désormais sur le curseur, qui le
+     nomme en toutes lettres — l'initiale n'a plus à porter seule ce que la
+     bande disait autrefois.
+     La requête vise la tuile, seul conteneur du sous-arbre : c'est sa largeur
+     moins son cadre, donc un peu plus que celle du tracé, dont l'axe des
+     ordonnées prend sa part. Le seuil est posé en conséquence. */
+  .chart-months .chart-month-long {
+    display: none;
+  }
+
+  @container (min-width: 460px) {
+    .chart-months .chart-month-long {
+      display: inline;
+    }
+
+    .chart-months .chart-month-short {
+      display: none;
+    }
+  }
 }

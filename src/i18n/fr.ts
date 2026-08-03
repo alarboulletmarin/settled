@@ -511,6 +511,16 @@ export const fr = {
     cumulative: 'Cumul du solde, mois après mois',
     srTrailing: 'Solde mensuel : %s',
     srYears: 'Cumul %s contre %s : %s',
+    /* Le nom accessible d'un mois du graphique. Il porte les trois chiffres :
+       c'est lui la lecture, la ligne visible au-dessus n'en est que le double
+       à l'œil. */
+    srMonthRead: '%s : entrées %s, sorties %s, solde %s',
+    /* Un mois sans donnée n'est pas un mois à zéro (cahier §4.7). Il se dit, il
+       ne se chiffre pas. */
+    srMonthNoData: '%s : aucune donnée',
+    /* Le cumul porte une ou deux années : la partie variable est assemblée par
+       le graphique, comme `srTrailing` l'est par la page. */
+    srCumulativeRead: '%s : %s',
     noData: 'Aucune donnée sur cette période.',
     /* Sur un foyer neuf, les trois tuiles empilaient trois phrases d'excuse —
        pas assez pour une courbe, pas deux mois à comparer, pas d'année
@@ -1392,6 +1402,15 @@ export const fr = {
   a11y: {
     skipToContent: 'Aller au contenu',
     ringLabel: 'Anneau de progression',
+    /* Le nom du curseur d'un graphique, et non celui du graphique : l'image
+       porte déjà le sien. Celui-ci dit ce qu'on peut faire, pas ce qu'on
+       regarde. */
+    chartCursor: 'Choisir le mois à lire',
+    /* Un raccourci que personne ne découvre ne sert personne — la règle qui
+       fait dire les flèches du mois en infobulle. Ici il n'y a aucun bouton à
+       survoler : ça se dit donc au lecteur d'écran, sur le curseur. */
+    chartCursorHint:
+      'Flèches gauche et droite pour changer de mois, Origine et Fin pour les extrémités.',
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
     /* Un raccourci que personne ne découvre ne sert personne. Il se dit en
