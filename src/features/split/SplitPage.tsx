@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { RECURRENCES_PATH, RECURRENCE_NEW_PATH } from '@/app/routes'
@@ -26,6 +26,7 @@ import {
   useUnassignedIncomes,
 } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
+import { Button } from '@/ui/Button'
 import { Disclosure } from '@/ui/Disclosure'
 import { Dot } from '@/ui/Dot'
 import { EmptyState } from '@/ui/EmptyState'
@@ -35,6 +36,13 @@ import { ListRow } from '@/ui/ListRow'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
+import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
+
+/* Les deux sections repliables de l'écran. Nommées, parce qu'elles servent à
+   la fois de clé de groupe et de repère de lecture entre leur déclaration et
+   leur rendu, à deux cents lignes d'écart. */
+const SETTLEMENT_KEY = 'settlement'
+const DETAIL_KEY = 'detail'
 
 /** « Alix », « Alix et Camille », « Alix, Camille et Sacha ». */
 function enumerate(names: readonly string[]): string {
@@ -157,9 +165,19 @@ export function SplitPage() {
   const categories = useCategoryMap()
   const currency = useCurrency()
   const navigate = useNavigate()
-  const [detail, setDetail] = useState(false)
-  const [settled, setSettled] = useState(false)
   const settlement = shares?.some((share) => share.adjustment !== 0) ?? false
+
+  /* Les clés disent ce qui est **rendu**, pas ce que l'écran sait faire : la
+     section du report n'existe que sur un mois qui en porte un. Figées à deux,
+     « tout replier » se serait proposé sur un mois sans report pour refermer
+     une section absente du DOM — un geste sans effet, ce qui est la seule
+     chose qu'un bouton ne doit jamais être. */
+  const showSettlement = settlement && advanced.length > 0
+  const keys = useMemo(
+    () => (showSettlement ? [SETTLEMENT_KEY, DETAIL_KEY] : [DETAIL_KEY]),
+    [showSettlement],
+  )
+  const disclosure = useDisclosureGroup(keys, false)
 
   /** La date, et le nom de qui a avancé la dépense quand il y en a un. */
   const metaOf = (entry: Entry): string => {
@@ -254,14 +272,31 @@ export function SplitPage() {
               ))}
             </div>
 
+            {/* Le geste des trois autres écrans à listes repliables, au même
+                bouton et au même libellé qui bascule (DS §6). Sans lui, chaque
+                section se refermait à la main, et rien ne disait qu'elles
+                allaient ensemble.
+                Pas d'eyebrow à sa gauche, contrairement à l'écran du mois ou
+                aux réglages : là-bas l'en-tête et les sections partagent une
+                tuile, ici les deux `Disclosure` sont deux tuiles distinctes.
+                Inventer un titre de section pour loger un bouton ajouterait à
+                l'écran un élément qu'il n'a pas. */}
+            <div className="flex justify-end">
+              <Button size="sm" variant="ghost" onClick={disclosure.toggleAll}>
+                {disclosure.anyOpen ? fr.split.collapseAll : fr.split.expandAll}
+              </Button>
+            </div>
+
             {/* Le report s'ouvre comme le pot lui-même : une régularisation
                 qu'on ne peut pas vérifier ne se vérifie pas, et c'est celle
                 qu'on discute le plus. */}
-            {settlement && advanced.length > 0 && (
+            {showSettlement && (
               <Tile className="p-2! md:p-2!">
                 <Disclosure
-                  open={settled}
-                  onOpenChange={setSettled}
+                  open={disclosure.isOpen(SETTLEMENT_KEY)}
+                  onOpenChange={(open) => {
+                    disclosure.setOpen(SETTLEMENT_KEY, open)
+                  }}
                   title={
                     <span className="flex min-w-0 items-baseline gap-2">
                       <span className="t-body truncate">
@@ -305,8 +340,10 @@ export function SplitPage() {
                 pot commun ne se repère qu'en la voyant. */}
             <Tile className="p-2! md:p-2!">
               <Disclosure
-                open={detail}
-                onOpenChange={setDetail}
+                open={disclosure.isOpen(DETAIL_KEY)}
+                onOpenChange={(open) => {
+                  disclosure.setOpen(DETAIL_KEY, open)
+                }}
                 title={
                   <span className="flex min-w-0 items-baseline gap-2">
                     <span className="t-body truncate">{fr.split.detail}</span>

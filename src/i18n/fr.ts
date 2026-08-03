@@ -933,6 +933,8 @@ export const fr = {
     detail: 'Ce qui est partagé',
     detailCountOne: '%s ligne',
     detailCount: '%s lignes',
+    collapseAll: 'Tout replier',
+    expandAll: 'Tout déplier',
     advancedBy: 'avancé par %s',
     /* Le report du mois précédent. Une charge commune réglée par une seule
        personne lui fait porter plus que sa part : le mois suivant le rattrape,
