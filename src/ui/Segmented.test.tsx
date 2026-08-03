@@ -13,7 +13,7 @@ const OPTIONS = [
 type Axis = (typeof OPTIONS)[number]['value']
 
 /** La bascule telle qu'elle vit dans un écran : son choix est un état. */
-function Harness({ initial = 'mois' as Axis }: { initial?: Axis }) {
+function Harness({ initial = 'mois' }: { initial?: Axis }) {
   const [axis, setAxis] = useState<Axis>(initial)
   return <Segmented options={OPTIONS} value={axis} onChange={setAxis} label="Regroupement" />
 }

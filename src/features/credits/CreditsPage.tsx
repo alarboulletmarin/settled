@@ -23,14 +23,23 @@ function plural(n: number): string {
  * chiffre porte ce qui reste. C'est ce qui reste qui compte — le total versé
  * inclut les intérêts, et le confondre avec l'amortissement ferait croire un
  * prêt soldé bien avant qu'il ne le soit.
+ *
+ * La ligne n'est pas un bouton, et le geste vit au coin (DS §6). Elle empile
+ * un anneau, trois lectures et un séparateur : un `<button>` n'admet rien de
+ * tout cela, et le nom unique qu'il portait — le libellé du crédit — effaçait
+ * à l'oreille les quatre chiffres qui font l'intérêt de la ligne.
  */
-function DebtRow({ status, onOpen }: { status: DebtStatus; onOpen: () => void }) {
+function DebtRow({ status }: { status: DebtStatus }) {
   const categories = useCategoryMap()
   const { debt, remaining, progress, monthsLeft, monthly, settled } = status
   const category = categories.get(debt.categoryId)
 
   return (
-    <Tile onClick={onOpen} label={debt.label} className="gap-3">
+    <Tile
+      label={debt.label}
+      link={{ to: creditEditPath(debt.id), label: tpl(fr.credits.open, debt.label) }}
+      className="gap-3"
+    >
       <div className="flex items-center gap-4">
         <Ring
           size={72}
@@ -95,13 +104,7 @@ export function CreditsPage() {
 
           <div className="flex flex-col gap-3">
             {statuses.map((status) => (
-              <DebtRow
-                key={status.debt.id}
-                status={status}
-                onOpen={() => {
-                  void navigate(creditEditPath(status.debt.id))
-                }}
-              />
+              <DebtRow key={status.debt.id} status={status} />
             ))}
           </div>
         </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { ChevronDown, ChevronRight, InfoIcon } from './Icons'
 
@@ -34,6 +35,29 @@ export type TileAffordance =
    *  pointe pas de côté : « plus bas », et non « ailleurs ». */
   | { kind: 'scroll'; destination: string }
 
+/**
+ * Le même repère, mais cliquable — et la tuile reste une section.
+ *
+ * Une tuile actionnable est un `<button>`, qui n'admet que du contenu de
+ * phrase : trois d'entre elles y plaçaient une liste, ce qu'aucun navigateur ne
+ * valide et qu'un lecteur d'écran aplatit derrière le nom unique du bouton. Le
+ * DS §6 prescrit alors la tuile non cliquable avec un vrai lien au coin, et
+ * `UpcomingTile` en écrit le rationale.
+ *
+ * Le lien est ce repère-ci et non un lien posé dans le flux : le coin est en
+ * position absolue, il ne coûte donc ni la hauteur ni la largeur qu'une 2×2 n'a
+ * pas — son budget vertical est compté au pixel dans `donut.ts`. La cible de
+ * 44px du DS §8 s'obtient par un cadre qui déborde dans celui de la tuile, où
+ * rien d'autre n'est actionnable.
+ */
+export type TileLink = {
+  to: string
+  /** Ce que le lien dit hors de son contexte : « Le détail de la répartition ». */
+  label: string
+  /** Nomme l'écran d'arrivée à côté du chevron, comme `TileAffordance`. */
+  destination?: string
+}
+
 export type TileProps = {
   children: ReactNode
   variant?: TileVariant
@@ -45,6 +69,8 @@ export type TileProps = {
   label?: string
   /** Sans objet sans `onClick` : on n'annonce pas un geste qui n'existe pas. */
   affordance?: TileAffordance
+  /** Exclusif d'`onClick` : le repère du coin devient le seul geste de la tuile. */
+  link?: TileLink
 }
 
 const VARIANT_CLASS: Record<TileVariant, string> = {
@@ -89,6 +115,48 @@ const FLAT: readonly TileSpan[] = ['2x1', '4x1']
  * `aria-hidden` : le nom accessible de la tuile dit déjà où elle mène (« Voir
  * où placer 2 500 € »), et l'annoncer deux fois ne l'apprendrait pas mieux.
  */
+function cornerClass(span: TileSpan | undefined): string {
+  const flat = span !== undefined && FLAT.includes(span)
+
+  return cn(
+    'absolute flex max-w-[60%] items-center gap-1 text-text-muted',
+    flat ? 'right-4' : 'right-5 md:right-6',
+    /* Une 2×1 étroite n'offre qu'une centaine de pixels utiles, et
+       « PRÉVISIONNEL » les consomme déjà à lui seul — le repère posé en
+       haut lui passait dessus. Il descend donc au coin bas, libre tant que
+       la lecture secondaire est masquée à cette largeur ; dès qu'elle
+       s'affiche, la rangée du bas se remplit, celle du haut se dégage, et
+       le repère remonte. Deux coins, jamais deux en même temps.
+       C'est la largeur de la tuile qui arbitre, pas celle de l'écran :
+       `.tile-affordance-flat` porte exactement le seuil de `.tile-hint`,
+       sans quoi une tuile large sur un petit écran verrait les deux se
+       disputer la ligne du bas. */
+    span === '2x1' ? 'tile-affordance-flat' : flat ? 'top-4' : 'top-5 md:top-6',
+  )
+}
+
+/** Le nom de la destination puis le glyphe — le repère lui-même, sans sa boîte. */
+function Marker({
+  destination,
+  glyph: Glyph,
+  span,
+}: {
+  destination: string | undefined
+  glyph: typeof ChevronRight
+  span: TileSpan | undefined
+}) {
+  return (
+    <>
+      {destination !== undefined && (
+        <span className={cn('t-axis truncate', span === '2x1' && 'tile-affordance-name')}>
+          {destination}
+        </span>
+      )}
+      <Glyph size={14} />
+    </>
+  )
+}
+
 function Affordance({ affordance, span }: { affordance: TileAffordance; span?: TileSpan }) {
   const Glyph =
     affordance.kind === 'explain'
@@ -96,34 +164,44 @@ function Affordance({ affordance, span }: { affordance: TileAffordance; span?: T
       : affordance.kind === 'scroll'
         ? ChevronDown
         : ChevronRight
-  const flat = span !== undefined && FLAT.includes(span)
 
   return (
-    <span
-      aria-hidden="true"
+    <span aria-hidden="true" className={cn('pointer-events-none', cornerClass(span))}>
+      <Marker
+        destination={affordance.kind === 'explain' ? undefined : affordance.destination}
+        glyph={Glyph}
+        span={span}
+      />
+    </span>
+  )
+}
+
+/**
+ * Le repère du coin, en vrai lien.
+ *
+ * Il porte son nom accessible plutôt que de compter sur son entourage : un
+ * lecteur d'écran sait lister les liens d'une page hors de leur contexte, et
+ * « › » n'y dit rien. C'est aussi ce qui autorise le chevron nu à l'écran, là où
+ * l'eyebrow de la tuile nomme déjà la destination.
+ */
+function AffordanceLink({ link, span }: { link: TileLink; span?: TileSpan }) {
+  return (
+    <Link
+      to={link.to}
+      aria-label={link.label}
       className={cn(
-        'pointer-events-none absolute flex max-w-[60%] items-center gap-1 text-text-muted',
-        flat ? 'right-4' : 'right-5 md:right-6',
-        /* Une 2×1 étroite n'offre qu'une centaine de pixels utiles, et
-           « PRÉVISIONNEL » les consomme déjà à lui seul — le repère posé en
-           haut lui passait dessus. Il descend donc au coin bas, libre tant que
-           la lecture secondaire est masquée à cette largeur ; dès qu'elle
-           s'affiche, la rangée du bas se remplit, celle du haut se dégage, et
-           le repère remonte. Deux coins, jamais deux en même temps.
-           C'est la largeur de la tuile qui arbitre, pas celle de l'écran :
-           `.tile-affordance-flat` porte exactement le seuil de `.tile-hint`,
-           sans quoi une tuile large sur un petit écran verrait les deux se
-           disputer la ligne du bas. */
-        span === '2x1' ? 'tile-affordance-flat' : flat ? 'top-4' : 'top-5 md:top-6',
+        cornerClass(span),
+        /* La cible de 44px, prise dans le cadre de la tuile plutôt que dans son
+           contenu : le glyphe fait 14px, le cadre en ajoute 30, et la marge
+           négative rend au repère sa position au pixel — un élément positionné
+           se décale de ses marges. Le contenu, lui, ne bouge pas d'un pixel :
+           c'est ce qui permet à une 2×2 de porter un lien sans que l'anneau
+           remonte sur l'eyebrow (voir `donut.ts`). */
+        '-m-[15px] rounded-input p-[15px]',
       )}
     >
-      {affordance.kind !== 'explain' && affordance.destination !== undefined && (
-        <span className={cn('t-axis truncate', span === '2x1' && 'tile-affordance-name')}>
-          {affordance.destination}
-        </span>
-      )}
-      <Glyph size={14} />
-    </span>
+      <Marker destination={link.destination} glyph={ChevronRight} span={span} />
+    </Link>
   )
 }
 
@@ -135,6 +213,7 @@ export function Tile({
   onClick,
   label,
   affordance,
+  link,
 }: TileProps) {
   const flat = span !== undefined && FLAT.includes(span)
   const classes = cn(
@@ -167,6 +246,7 @@ export function Tile({
 
   return (
     <section className={classes} aria-label={label}>
+      {link && <AffordanceLink link={link} {...(span ? { span } : {})} />}
       {children}
     </section>
   )
