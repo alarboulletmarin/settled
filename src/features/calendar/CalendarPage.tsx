@@ -133,7 +133,10 @@ export function CalendarPage() {
     <>
       <MonthHeader />
       <div className="flex max-w-2xl flex-col gap-4">
-        <Tile>
+        {/* Pleine largeur sous 404px, cadre annulé : c'est la seule façon de
+            tenir la case de 44px du DS §8 sur un téléphone — le calcul est dans
+            `CalendarGrid`. Au-dessus du seuil, la tuile est une tuile. */}
+        <Tile className="max-[404px]:-mx-4 max-[404px]:rounded-none max-[404px]:border-x-0 max-[404px]:p-1">
           <CalendarGrid month={month} selected={day?.date ?? null} onSelect={toggle} />
         </Tile>
 
