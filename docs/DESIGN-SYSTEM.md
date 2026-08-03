@@ -175,6 +175,12 @@ Ce ne sont pas des préférences mais des relations : la même relation visuelle
 
 **Mouvement** — 160ms `cubic-bezier(0.2, 0, 0, 1)` par défaut, 240ms pour l'entrée d'une vue. Les nombres s'animent en comptant uniquement au premier affichage d'un écran, jamais sur mise à jour. Tout est neutralisé sous `prefers-reduced-motion`.
 
+Deux précisions, faute de quoi la règle se lit de deux façons et se voit comme un défaut.
+
+**Quels nombres.** Ceux de la grille bento et le chiffre héros, pas les autres. Une part par membre et une ligne de crédit portent la même taille de chiffre qu'une tuile : quarante montants qui s'égrènent chacun pour son compte ne sont pas une arrivée, c'est un scintillement, et un chiffre qui compte pendant qu'on remplit un formulaire est du bruit posé sur un geste.
+
+**Quel affichage.** Celui de l'**écran**, pas celui du composant. La distinction n'est pas théorique : une tuile apparaît et disparaît pour des raisons qui n'ont rien d'une arrivée — un filtre qui en retire cinq, une lecture qui n'a de sens que sur le mois courant, une tuile qui devient cliquable. Attaché au composant, le comptage repart sur les tuiles remontées pendant que leurs voisines, restées en place, changent de valeur en silence : sur un même geste, le solde s'égrène et les charges sautent. Ce qui apparaît après l'arrivée de l'écran ne compte pas.
+
 ---
 
 ## 5. Grille bento

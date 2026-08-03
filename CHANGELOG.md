@@ -85,10 +85,11 @@ touche au document : `schemaVersion` reste à 6.
   en une phrase. Il se pose sur la tuile Solde, sur la phrase qu'il dessine —
   mesuré, une 2×2 n'offre pas la largeur de le mettre à côté du chiffre héros.
 - **Les grands nombres comptent au premier affichage**, et une seule fois : le
-  DS §4 le promettait sans que rien ne l'implémente. Jamais sur mise à jour,
-  donc jamais en changeant de mois, et rien du tout sous « réduire les
-  animations ». Les montants de liste, eux, restent immobiles — quarante lignes
-  qui s'égrènent ne sont pas une arrivée.
+  DS §4 le promettait sans que rien ne l'implémente. Ceux de la grille bento et
+  le chiffre héros seulement ; jamais sur mise à jour, donc jamais en changeant
+  de mois ni de filtre ; rien du tout sous « réduire les animations ». Le DS dit
+  désormais lesquels et à partir de quand, faute de quoi la règle se lisait de
+  deux façons.
 - **Les graphiques se lisent.** Une période focusable par mois sur les douze
   derniers mois comme sur le comparatif d'années, à la souris et au clavier
   (flèches, `Origine`, `Fin`), avec les valeurs du mois lu au-dessus du tracé et
@@ -102,6 +103,18 @@ touche au document : `schemaVersion` reste à 6.
   la totalité.
 
 ### Corrigé — au passage
+
+- **« Douze derniers mois » n'était pas les douze derniers mois** : la fenêtre
+  s'arrêtait au mois choisi dans le bandeau de l'écran du mois. Or l'historique
+  n'a pas de bandeau — rien n'y montrait cette borne, rien ne permettait de la
+  bouger. Passer voir février 2026 puis ouvrir l'historique donnait douze mois
+  sans le mois courant dedans. Elle s'arrête à aujourd'hui, et le nom accessible
+  du graphique dit ses deux bornes au lieu d'un mois.
+- **Le comptage des nombres était incohérent d'une tuile à l'autre.** Il suivait
+  le premier affichage d'un *composant* et non d'un *écran* : un filtre par
+  membre remonte cinq tuiles de la grille et laisse les autres en place, si bien
+  que sur un même geste le solde et les revenus s'égrenaient et les charges
+  sautaient. Ce qui apparaît après l'arrivée de l'écran ne compte plus.
 
 - Le **cumul du solde décalait ses points** d'une demi-tranche : il les ancrait
   aux bords quand la bande des mois sous lui découpe la largeur en douze parts

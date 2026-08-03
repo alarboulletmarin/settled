@@ -3,6 +3,7 @@ import { formatMoney, moneyParts } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { useCurrency } from './currency'
+import { useIsScreenEntering } from './screenEntry'
 import { useCountUp } from './useCountUp'
 
 export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'tile-fit' | 'body' | 'label'
@@ -23,12 +24,6 @@ export type AmountProps = {
   tone?: AmountTone
   withCents?: boolean
   currency?: string
-  /**
-   * Le comptage du DS §4, au premier affichage. Vrai par défaut sur les quatre
-   * grandes tailles, sans effet sur les deux autres. À mettre à faux là où le
-   * chiffre est une redite plutôt qu'une arrivée.
-   */
-  countUp?: boolean
   className?: string
 }
 
@@ -58,19 +53,27 @@ const TONE_CLASS: Record<AmountTone, string> = {
 }
 
 /**
- * Les tailles qui comptent au premier affichage (DS §4).
+ * Les tailles qui comptent au premier affichage d'un écran (DS §4).
  *
- * Les quatre grandes, et pas les deux autres. Le DS §1 dit pourquoi : « les
- * grands nombres portent la page », et ce sont eux qu'on regarde en arrivant.
- * Une liste de quarante lignes dont chaque montant s'égrène pour son compte
- * n'est pas une arrivée, c'est un scintillement — le bruit que le même §1
- * refuse partout ailleurs.
+ * Les chiffres **dimensionnés par leur tuile**, et le héros — c'est-à-dire la
+ * grille bento et elle seule. Le DS §1 dit pourquoi : « les grands nombres
+ * portent la page », et la page qu'ils portent est le tableau de bord.
+ *
+ * `tile` en est exclue alors qu'elle fait la même taille que `tile-fit`, et
+ * c'est volontaire : c'est la seule des six qui serve à tout, y compris à des
+ * rangées de liste — une part par membre sur la répartition, une ligne par
+ * crédit —, et à des formulaires où le chiffre se recalcule à mesure qu'on
+ * tape. Quarante montants qui s'égrènent chacun pour son compte ne sont pas une
+ * arrivée, c'est un scintillement ; et un chiffre qui compte pendant qu'on
+ * remplit un champ est du bruit posé sur un geste. Aucune propriété du composant
+ * ne distingue ces emplois-là d'un chiffre de tuile : la ligne se trace donc
+ * là où elle est nette.
  */
 const COUNTS_UP: Record<AmountSize, boolean> = {
   hero: true,
   'hero-fit': true,
-  tile: true,
   'tile-fit': true,
+  tile: false,
   body: false,
   label: false,
 }
@@ -100,13 +103,15 @@ export function Amount({
   tone = 'default',
   withCents = true,
   currency,
-  countUp = true,
   className,
 }: AmountProps) {
   const activeCurrency = useCurrency()
+  const entering = useIsScreenEntering()
   const code = currency ?? activeCurrency
   const displayed = (direction ? Math.abs(value) : value) as Money
-  const counted = useCountUp(displayed, countUp && COUNTS_UP[size]) as Money
+  /* `entering` est lu au montage et n'est plus relu : ce qui apparaît après
+     l'arrivée de l'écran ne compte pas, et ce qui comptait déjà va au bout. */
+  const counted = useCountUp(displayed, entering && COUNTS_UP[size]) as Money
 
   // Sans centimes, l'unité s'arrondit plutôt que de se tronquer (DS §3) : c'est
   // `moneyParts` qui le tient, pour le chiffre comme pour le nom accessible.

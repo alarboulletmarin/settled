@@ -3,13 +3,7 @@ import { MonthlyBars } from '@/charts/MonthlyBars'
 import { entryNewPath } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
-import {
-  useCurrencyCode,
-  useCurrentYm,
-  useEntries,
-  useRecurrences,
-  useTrailingMonths,
-} from '@/store/selectors'
+import { useCurrencyCode, useEntries, useRecurrences, useTrailingMonths } from '@/store/selectors'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { HistoryIcon } from '@/ui/Icons'
@@ -23,8 +17,12 @@ import { YearCompare } from './YearCompare'
 function Trailing() {
   const points = useTrailingMonths(12)
   const currency = useCurrencyCode()
-  const ym = useCurrentYm()
   const filled = points.filter((point) => point.hasData)
+  /* La fenêtre se nomme par ses deux bornes, et non plus par le mois choisi
+     ailleurs : elle s'arrête à aujourd'hui, et le titre disait un mois qu'aucune
+     commande de cet écran ne réglait. */
+  const from = points[0]?.ym
+  const to = points.at(-1)?.ym
 
   return (
     <Tile className="gap-4">
@@ -38,7 +36,11 @@ function Trailing() {
            blocs pour un seul sens, c'était le second qui ne servait pas. */
         <MonthlyBars
           points={points}
-          label={tpl('%s — %s', fr.history.trailing, formatYearMonth(ym))}
+          label={tpl(
+            '%s — %s',
+            fr.history.trailing,
+            tpl(fr.history.trailingRange, formatYearMonth(from ?? ''), formatYearMonth(to ?? '')),
+          )}
           srText={tpl(
             fr.history.srTrailing,
             filled

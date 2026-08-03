@@ -501,6 +501,9 @@ export const fr = {
   history: {
     title: 'Historique',
     trailing: 'Douze derniers mois',
+    /* Les deux bornes de la fenêtre, pour le nom accessible du graphique : elle
+       s'arrête au mois courant, quoi qu'on regarde ailleurs dans l'app. */
+    trailingRange: 'de %s à %s',
     trailingEmpty: 'Pas encore assez de données pour tracer une courbe.',
     legendIn: 'Entrées',
     legendOut: 'Sorties',

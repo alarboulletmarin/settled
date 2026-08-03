@@ -33,7 +33,11 @@ const easeOut = (t: number): number => 1 - (1 - t) ** 3
  * terminée à chaque bascule du système.
  */
 export function useCountUp(target: number, enabled = true): number {
-  const animated = enabled && !prefersReducedMotion()
+  /* La décision se prend au montage et ne se reprend pas. Relue à chaque rendu,
+     un `enabled` qui passe à faux en cours de route couperait l'effet sans
+     ramener le compteur à sa cible : le montant resterait figé là où
+     l'animation en était, pour toujours. */
+  const [animated] = useState(() => enabled && !prefersReducedMotion())
   const [progress, setProgress] = useState(animated ? 0 : 1)
 
   useEffect(() => {
