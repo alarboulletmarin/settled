@@ -1,10 +1,10 @@
+import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdvanceFormPage } from '@/features/advances/AdvanceFormPage'
 import { AboutPage } from '@/features/about/AboutPage'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
 import { CreditFormPage } from '@/features/credits/CreditFormPage'
 import { CreditsPage } from '@/features/credits/CreditsPage'
-import { HistoryPage } from '@/features/history/HistoryPage'
 import { EntryPage } from '@/features/month/EntryPage'
 import { MonthPage } from '@/features/month/MonthPage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
@@ -12,8 +12,8 @@ import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPag
 import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
 import { RecurrencesPage } from '@/features/recurrences/RecurrencesPage'
 import { SavingsPage } from '@/features/savings/SavingsPage'
-import { SettingsPage } from '@/features/settings/SettingsPage'
 import { SplitPage } from '@/features/split/SplitPage'
+import { fr } from '@/i18n/fr'
 import { useStore } from '@/store/store'
 import { AppShell } from './AppShell'
 import { PlainShell } from './PlainShell'
@@ -26,38 +26,76 @@ import {
   RECURRENCE_NEW_PATH,
 } from './routes'
 
+/**
+ * Les deux écrans qu'on n'ouvre pas tous les jours, et qui pèsent le plus.
+ *
+ * L'historique emporte avec lui les trois graphiques de `src/charts` — barres,
+ * lignes cumulées, curseur —, dont aucun autre écran ne se sert. Les réglages
+ * emportent l'import, l'export, les sauvegardes et le catalogue de catégories.
+ * Ni l'un ni l'autre n'est sur le chemin du geste quotidien, qui est d'ouvrir
+ * son mois et d'y saisir une ligne.
+ *
+ * Le reste ne se découpe pas : le mois, la saisie, le calendrier et les fiches
+ * s'atteignent en un geste depuis n'importe où, et un aller-retour de réseau à
+ * chaque fois coûterait plus que les quelques kilo-octets gagnés. Le service
+ * worker précache de toute façon tous ces morceaux — un écran chargé à la
+ * demande reste joignable hors ligne dès la seconde visite.
+ */
+const HistoryPage = lazy(async () => ({
+  default: (await import('@/features/history/HistoryPage')).HistoryPage,
+}))
+const SettingsPage = lazy(async () => ({
+  default: (await import('@/features/settings/SettingsPage')).SettingsPage,
+}))
+
+/**
+ * L'attente d'un écran qui arrive par le réseau.
+ *
+ * Discrète, et sans anneau : la coquille est déjà là — navigation, bandeau,
+ * titre —, et seul le contenu manque. Un écran de chargement pleine page à sa
+ * place ferait clignoter tout ce qui n'a pas bougé. La région live de la
+ * coquille, elle, a déjà annoncé le titre de l'écran où l'on arrive.
+ */
+function RouteFallback() {
+  return <p className="t-label">{fr.shell.loading}</p>
+}
+
 /** Les routes de l'app, une fois le foyer créé. */
 export function AppRoutes() {
   return (
     <AppShell>
-      <Routes>
-        <Route path="/" element={<MonthPage />} />
-        <Route path="/depense" element={<EntryPage />} />
-        <Route path="/depense/:id" element={<EntryPage />} />
-        <Route path="/calendrier" element={<CalendarPage />} />
-        <Route path={RECURRENCES_PATH} element={<RecurrencesPage />} />
-        <Route path={RECURRENCE_NEW_PATH} element={<RecurrenceFormPage />} />
-        <Route path={`${RECURRENCES_PATH}/:id`} element={<RecurrenceDetailPage />} />
-        <Route path={`${RECURRENCES_PATH}/:id/modifier`} element={<RecurrenceFormPage />} />
-        {/* L'écran s'appelait « Abonnements », et son URL le disait. Un lien
-            partagé, un signet ou une icône posée sur l'écran d'accueil pointent
-            encore là : ils atterrissent sur la liste plutôt que sur le mois. */}
-        <Route path="/abonnements/*" element={<Navigate to={RECURRENCES_PATH} replace />} />
-        <Route path="/credits" element={<CreditsPage />} />
-        <Route path="/credits/nouveau" element={<CreditFormPage />} />
-        <Route path="/credits/:id" element={<CreditFormPage />} />
-        <Route path="/repartition" element={<SplitPage />} />
-        <Route path="/epargne" element={<SavingsPage />} />
-        <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
-        <Route path="/historique" element={<HistoryPage />} />
-        <Route path="/reglages" element={<SettingsPage />} />
-        {/* Déclarée ici *et* dans les routes d'avant le foyer, pour qu'elle
-            hérite de la navigation quand celle-ci existe. La hisser au niveau de
-            `/styleguide` l'en aurait privée une fois le foyer créé : pas de
-            barre d'onglets sous 1024px, donc plus de sortie. */}
-        <Route path={ABOUT_PATH} element={<AboutPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      {/* Autour des routes et non dans chacune : le repli remplace le contenu
+          de la coquille, qui reste en place. */}
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<MonthPage />} />
+          <Route path="/depense" element={<EntryPage />} />
+          <Route path="/depense/:id" element={<EntryPage />} />
+          <Route path="/calendrier" element={<CalendarPage />} />
+          <Route path={RECURRENCES_PATH} element={<RecurrencesPage />} />
+          <Route path={RECURRENCE_NEW_PATH} element={<RecurrenceFormPage />} />
+          <Route path={`${RECURRENCES_PATH}/:id`} element={<RecurrenceDetailPage />} />
+          <Route path={`${RECURRENCES_PATH}/:id/modifier`} element={<RecurrenceFormPage />} />
+          {/* L'écran s'appelait « Abonnements », et son URL le disait. Un lien
+              partagé, un signet ou une icône posée sur l'écran d'accueil pointent
+              encore là : ils atterrissent sur la liste plutôt que sur le mois. */}
+          <Route path="/abonnements/*" element={<Navigate to={RECURRENCES_PATH} replace />} />
+          <Route path="/credits" element={<CreditsPage />} />
+          <Route path="/credits/nouveau" element={<CreditFormPage />} />
+          <Route path="/credits/:id" element={<CreditFormPage />} />
+          <Route path="/repartition" element={<SplitPage />} />
+          <Route path="/epargne" element={<SavingsPage />} />
+          <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
+          <Route path="/historique" element={<HistoryPage />} />
+          <Route path="/reglages" element={<SettingsPage />} />
+          {/* Déclarée ici *et* dans les routes d'avant le foyer, pour qu'elle
+              hérite de la navigation quand celle-ci existe. La hisser au niveau de
+              `/styleguide` l'en aurait privée une fois le foyer créé : pas de
+              barre d'onglets sous 1024px, donc plus de sortie. */}
+          <Route path={ABOUT_PATH} element={<AboutPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </AppShell>
   )
 }
