@@ -71,7 +71,10 @@ export function MetricInfo({
       {content !== null && metric !== null && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-baseline gap-x-3">
-            <Amount value={metric.value} size="tile" />
+            {/* Pas de comptage ici : la feuille rouvre le chiffre de la tuile
+                qu'on vient de toucher, à deux doigts de là où il s'est déjà
+                égrené. Le DS §4 anime une arrivée, pas un rappel. */}
+            <Amount value={metric.value} size="tile" countUp={false} />
             <span className="t-label">{metric.hint}</span>
           </div>
 

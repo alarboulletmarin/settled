@@ -31,7 +31,16 @@ export function scrollToTop(): void {
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
 }
 
-function prefersReducedMotion(): boolean {
+/**
+ * La préférence de mouvement du système, relue à chaque appel.
+ *
+ * Exportée, parce qu'elle vaut pour tout mouvement piloté en JS et pas
+ * seulement pour le défilement : le `!important` que `base.css` pose sous
+ * `prefers-reduced-motion` neutralise les animations et les transitions CSS, et
+ * rien d'autre. Un compteur qui égrène un montant y échappe exactement comme
+ * l'option `behavior` de `scrollIntoView`, et pour la même raison.
+ */
+export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }

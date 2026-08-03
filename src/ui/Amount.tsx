@@ -3,6 +3,7 @@ import { formatMoney, moneyParts } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { useCurrency } from './currency'
+import { useCountUp } from './useCountUp'
 
 export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'tile-fit' | 'body' | 'label'
 export type AmountTone = 'default' | 'muted' | 'danger'
@@ -22,6 +23,12 @@ export type AmountProps = {
   tone?: AmountTone
   withCents?: boolean
   currency?: string
+  /**
+   * Le comptage du DS §4, au premier affichage. Vrai par défaut sur les quatre
+   * grandes tailles, sans effet sur les deux autres. À mettre à faux là où le
+   * chiffre est une redite plutôt qu'une arrivée.
+   */
+  countUp?: boolean
   className?: string
 }
 
@@ -51,6 +58,24 @@ const TONE_CLASS: Record<AmountTone, string> = {
 }
 
 /**
+ * Les tailles qui comptent au premier affichage (DS §4).
+ *
+ * Les quatre grandes, et pas les deux autres. Le DS §1 dit pourquoi : « les
+ * grands nombres portent la page », et ce sont eux qu'on regarde en arrivant.
+ * Une liste de quarante lignes dont chaque montant s'égrène pour son compte
+ * n'est pas une arrivée, c'est un scintillement — le bruit que le même §1
+ * refuse partout ailleurs.
+ */
+const COUNTS_UP: Record<AmountSize, boolean> = {
+  hero: true,
+  'hero-fit': true,
+  tile: true,
+  'tile-fit': true,
+  body: false,
+  label: false,
+}
+
+/**
  * Le composant unique pour tout montant. Il porte seul le tabular-nums, le
  * symbole, les centimes réduits et le signe : aucun autre composant ne met
  * un montant en forme.
@@ -59,6 +84,13 @@ const TONE_CLASS: Record<AmountTone, string> = {
  * élargie à 112 % — est la même partout, déclarée d'un seul bloc dans
  * `base.css`. Un montant de liste et un solde héros doivent se reconnaître
  * comme deux tailles du même chiffre, pas comme deux polices.
+ *
+ * C'est aussi lui qui porte le comptage du DS §4, et lui seul : il n'y a qu'un
+ * endroit où un montant se met en forme, il n'y en a donc qu'un où il peut
+ * s'animer. Le chiffre qui s'égrène est celui qu'on voit ; le nom accessible,
+ * lui, dit tout de suite le montant du mois — les deux ne divergent que le
+ * temps de l'animation, et jamais dans le sens où un lecteur d'écran
+ * annoncerait un chiffre en route.
  */
 export function Amount({
   value,
@@ -68,16 +100,28 @@ export function Amount({
   tone = 'default',
   withCents = true,
   currency,
+  countUp = true,
   className,
 }: AmountProps) {
   const activeCurrency = useCurrency()
   const code = currency ?? activeCurrency
   const displayed = (direction ? Math.abs(value) : value) as Money
-  // Sans centimes, l'unité s'arrondit : le chiffre affiché et le nom accessible
-  // sortent des mêmes parts, ils ne peuvent pas dire deux montants différents.
-  const parts = moneyParts(displayed, code, !withCents)
-  const sign = direction === 'in' || (signed && displayed > 0) ? '+' : parts.sign
+  const counted = useCountUp(displayed, countUp && COUNTS_UP[size]) as Money
 
+  // Sans centimes, l'unité s'arrondit plutôt que de se tronquer (DS §3) : c'est
+  // `moneyParts` qui le tient, pour le chiffre comme pour le nom accessible.
+  const parts = moneyParts(counted, code, !withCents)
+  /* Le signe se prend sur la valeur, jamais sur le compte en cours : à zéro,
+     `moneyParts` n'en rend aucun, et un solde négatif perdrait son « − » le
+     temps de l'animation pour le retrouver à l'arrivée. */
+  const signParts = moneyParts(displayed, code, !withCents)
+  const sign = direction === 'in' || (signed && displayed > 0) ? '+' : signParts.sign
+
+  /* Le nom accessible sort de la valeur et non du compte. C'est la seule
+     entorse à la règle du dessus, et elle va dans le bon sens : un lecteur
+     d'écran annonce le montant du mois, pas l'image qu'un œil en a pendant six
+     dixièmes de seconde. Lui faire lire une valeur en route serait annoncer un
+     chiffre faux. */
   const spoken = `${sign === '+' ? '+' : ''}${formatMoney(displayed, code, withCents)}`
   const label =
     direction === 'out' ? `${fr.direction.out.toLowerCase()} ${spoken}` : spoken
