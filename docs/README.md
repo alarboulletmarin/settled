@@ -11,10 +11,12 @@ document, mais c'est un bug.
 | [Architecture](ARCHITECTURE.md) | Comment le code est rangé, et pourquoi. Les décisions structurantes et leurs raisons. |
 | [Déploiement](DEPLOIEMENT.md) | Comment la mettre en ligne, chez Vercel ou ailleurs. |
 
-Un cinquième s'adresse au seul mainteneur :
+Deux autres s'adressent au seul mainteneur :
 [**Réglages GitHub**](REGLAGES-GITHUB.md) — la moitié de ce qui rend un projet
 ouvrable ne se commite pas. Description, topics, signalement privé des failles,
-protection de `main`, libellés : la liste, avec les valeurs à copier.
+protection de `main`, libellés : la liste, avec les valeurs à copier. Et
+[**Captures**](CAPTURES.md) — où vivent les images, ce qu'elles servent, et
+comment les refaire.
 
 À la racine du dépôt, quatre autres fichiers répondent aux questions qu'on se
 pose en arrivant : [CONTRIBUTING](../CONTRIBUTING.md) pour proposer quelque

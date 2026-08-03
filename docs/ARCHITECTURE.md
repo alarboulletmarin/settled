@@ -372,15 +372,30 @@ vaille un cycle de trente jours et non l'éternité.
 
 ## Responsive
 
-Mobile d'abord : le style non préfixé vise le téléphone, les variantes `lg:`
-ajoutent le confort au-delà. Deux grilles seulement, celles du DS §5 — deux
-colonnes, puis six.
+Mobile d'abord : le style non préfixé vise le téléphone, les variantes `md:` et
+`lg:` ajoutent le confort au-delà. **Une seule bascule de navigation, à 1024px**
+— la barre d'onglets et le bouton de saisie flottant en dessous, la colonne
+latérale au-dessus. La grille bento du DS §5, elle, a **trois paliers** :
 
-Le point de bascule est à **1024px, et non 768**. La colonne latérale consomme
-224px : déclencher les six colonnes en même temps qu'elle ne laisse que ~480px
-de contenu sur une tablette portrait, et chaque tuile tombe sous 80px de large.
-En dessous de 1024px, l'app garde donc la barre d'onglets et la grille à deux
-colonnes, en pleine largeur.
+| Bande | Colonnes | Rangée | Navigation |
+|---|---|---|---|
+| < 768px | 2 | 88px | barre d'onglets + bouton flottant |
+| 768 – 1024px | 4 | 96px | idem |
+| ≥ 1024px | 6 | 108px | colonne latérale |
+
+Les six colonnes n'arrivent qu'à **1024px, et non 768**. La colonne latérale
+consomme 224px : les déclencher en même temps qu'elle ne laisse que ~480px de
+contenu sur une tablette portrait, et chaque tuile tombe sous 80px de large.
+Mais deux colonnes étirées sur les 704px d'un iPad portrait ne sont pas une
+grille non plus — c'est la mise en page d'un téléphone à trois fois la largeur,
+donc trois fois le vide. D'où le palier intermédiaire à quatre colonnes, qui ne
+touche à aucun format : seule la correspondance format → colonnes y change.
+
+Une conséquence à connaître : **la largeur d'un même format n'est plus déductible
+de celle de l'écran.** Deux tuiles — Revenus et Charges — prennent deux colonnes
+sous 1024px alors qu'elles sont déclarées `2x1`, pour que leur seconde lecture
+tienne. C'est ce qui fait que les règles d'affichage de cette ligne sont des
+requêtes de conteneur et non des `max-lg:` (voir plus bas).
 
 Vérifié sans débordement horizontal de 320 à 1920px sur tous les écrans.
 
@@ -399,13 +414,38 @@ comme un mot qu'on n'a pas su lire, pas comme un défaut — c'est exactement ce
 qu'une relecture laisse passer. « Reste à vivre » débordait ainsi de 4px sur
 l'écran du mois ; c'est le troisième palier de dégradation qui l'a réglé.
 
+**Ce qui se masque faute de place se décide sur la place, pas sur l'écran.** La
+seconde lecture d'une tuile plate — « reste 102 € à payer » — était en
+`max-lg:sr-only` : un seuil de viewport pour une question de largeur de tuile.
+Elle répondait juste tant qu'un format gardait la même largeur à un écran donné,
+et faux dès qu'un format en changeait — c'est exactement ce qui rendait cette
+ligne illisible partout sous 1024px sur les deux tuiles de flux. La tuile est
+déjà un conteneur de requête (`container-type: inline-size`, pour le chiffre
+héros), le seuil se pose donc sur elle : `.tile-hint` s'affiche au-delà de
+**180px de boîte de contenu**, mesurés sur les quatre largeurs où une `2x1`
+existe. Le repère d'action du coin porte le même seuil, et il doit le porter :
+sur une tuile plate les deux se partagent la ligne du bas, et deux seuils
+différents leur donneraient une bande où ils se chevauchent.
+
+L'exception est écrite dans le CSS : les `4x1` gardent `max-lg:sr-only`. Elles
+ont la largeur, mais leur seconde lecture est une phrase qui repasse à la ligne
+et se fait trancher par les 56px utiles d'une rangée — une contrainte de
+hauteur, qu'une requête de largeur ne sait pas dire.
+
 Saisies et fiches sont des écrans pleins avec leur URL, pas des feuilles
 modales : rien à faire glisser, rien à refermer pour revenir. `ui/Sheet.tsx`
 sert à ce pour quoi une feuille est faite — une explication qu'on ouvre et
 qu'on referme sans quitter des yeux ce qu'elle explique. C'est le cas des
 quatre soldes du tableau de bord : leur lecture secondaire ne tient pas dans
-une tuile d'une rangée sous 1024px, et l'explication s'y perdait sur
-téléphone.
+une tuile d'une rangée sur un téléphone, et l'explication s'y perdait.
+
+Le geste le plus fréquent — saisir une ligne — a une porte par largeur, et une
+seule : la rangée de trois boutons en tête de l'écran du mois à partir de
+1024px, le bouton flottant de la coquille en dessous. Il se déplie sur les trois
+mêmes portes plutôt que d'en promettre une : « les deux sens sont deux boutons,
+jamais un seul » vaut aussi pour lui. Il porte la garde du raccourci « n », mot
+pour mot — rien sur un écran de saisie, où il contournerait la garde de
+brouillon.
 
 Le mois se balaie horizontalement au doigt, le rappel d'export se chasse d'un
 balayage vers le haut, et les cibles tactiles font 44px partout. Les deux gestes
@@ -430,3 +470,51 @@ règle qui retire déjà cinq tuiles sous la lecture du commun.
 dérive le capital restant dû des échéances confirmées à la date du jour et ne
 lit jamais `ym`. Un navigateur de mois qui ne change rien à l'écran vaut moins
 que son absence.
+
+## PWA
+
+Tout se configure dans `vite.config.ts`, sauf ce qui s'adresse à quelqu'un.
+
+`registerType: 'prompt'` : une nouvelle version ne remplace jamais l'app en
+cours d'usage sans le dire (`app/UpdatePrompt.tsx`). Les données étant locales,
+un rechargement surprise en pleine saisie serait impardonnable.
+
+**L'installation est une exigence, pas un bonus** (cahier §5) : sur iOS, un site
+non installé voit son IndexedDB purgé après environ sept jours sans visite — et
+l'IndexedDB, ici, *est* les données. Elle se propose donc, mais seulement là où
+l'argument porte : sur la page de présentation, sous la phrase qui vient
+d'expliquer qu'il n'y a ni compte ni serveur, donc aucune copie ailleurs.
+
+`beforeinstallprompt` est un événement qu'on n'a pas le droit de rater : il se
+déclenche une fois, tôt, souvent avant que React ait monté quoi que ce soit, et
+ne se rejoue pas. `lib/install.ts` pose donc son écouteur **à l'évaluation du
+module**, importé par `main.tsx` avant le premier rendu ; l'interface s'y abonne
+par `useSyncExternalStore`. Un `useEffect` arriverait après lui une fois sur
+deux. Le module oublie l'événement dès qu'il est consommé — il ne se rouvre pas,
+et un bandeau qui resterait offrirait un bouton qui ne fait plus rien.
+
+Rien n'est proposé quand l'événement ne s'est pas déclenché : ni détection de
+navigateur, ni marche à suivre écrite d'avance. Un texte qui explique comment
+installer une app déjà installée coûte plus qu'il ne rapporte, et Safari ne dit
+pas laquelle des deux situations est la sienne.
+
+`navigator.onLine` est une réponse pessimiste : vrai veut seulement dire qu'une
+interface réseau est active. Faux, en revanche, est fiable — et c'est le seul
+des deux dont `lib/online.ts` se serve. Le chip vit sur la même page, pour la
+même raison : c'est là que la promesse est faite, donc là qu'elle se vérifie.
+Dans la coquille, il aurait clignoté à chaque tunnel de métro sur une app qui,
+précisément, ne change pas de comportement.
+
+Trois réglages du service worker existent pour que les pannes soient bruyantes :
+`maximumFileSizeToCacheInBytes` (Workbox exclut en silence au-delà de sa borne —
+une app qui reste installable et cesse de fonctionner hors ligne sans rien
+dire), `globIgnores` sur les captures (400 Ko d'images que l'app n'affiche
+jamais), et `navigateFallbackDenylist`, qui évite de servir la coquille HTML
+sous le nom de `robots.txt`.
+
+Le manifest porte un `id` fixe, indépendant de `start_url` : sans lui, changer
+un jour la page d'arrivée ferait de l'app une seconde app, à installer à côté de
+la première — dont les données resteraient là où plus personne ne va les
+chercher. Et il ne verrouille pas l'orientation : la grille passe à quatre
+colonnes dès 768px et à six dès 1024, ce qu'une tablette n'atteint qu'en
+paysage.

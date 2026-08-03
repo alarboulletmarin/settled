@@ -215,6 +215,69 @@ document : `schemaVersion` reste à 6.
 - **L'historique d'un foyer neuf** montre une seule invitation au lieu de trois
   phrases d'excuse empilées.
 
+### Ajouté — ce que le téléphone n'avait pas
+
+- **Bouton de saisie flottant**, sous 1024px, au-dessus de la barre d'onglets.
+  Les trois portes — dépense, revenu, épargne — vivaient en tête de l'écran du
+  mois, dans le flux : elles défilaient avec la page, et disparaissaient tout à
+  fait sur un mois vide. Le geste le plus fréquent de l'app demandait donc de
+  remonter d'abord. Il se déplie sur les trois plutôt que d'en promettre une, se
+  referme sur Échap, sur un appui à côté, et à tout changement d'écran ; rien
+  sur un écran de saisie, où il partirait créer une ligne par-dessus celle qu'on
+  écrit. La rangée en tête de page reste, à partir de 1024px : une porte par
+  largeur, et pas deux.
+- **Palier tablette** dans la grille bento — quatre colonnes entre 768 et
+  1024px. Entre les deux, on avait la mise en page d'un téléphone étirée sur la
+  pleine largeur d'un iPad. Aucun format du design system ne change : seule la
+  correspondance format → colonnes.
+
+### Corrigé — la seconde lecture des flux
+
+- **« Reste 102 € à payer » se lit enfin sur un téléphone.** Sur les tuiles
+  Revenus et Charges, cette ligne n'était affichée qu'au-delà de 1024px et
+  aucune feuille d'explication ne la portait ailleurs : sous cette largeur,
+  l'information n'était lisible nulle part. Les deux tuiles prennent désormais
+  deux colonnes sous 1024px, ce qui lui donne la place.
+- **Ce qui se masque faute de place se décide sur la place**, et non sur la
+  largeur de l'écran : la règle est passée en requête de conteneur, sur la tuile
+  elle-même. C'est ce qui rendait la précédente fausse dès qu'un format ne
+  faisait plus la même largeur sur les trois paliers.
+
+### Ajouté — installation et hors-ligne
+
+- **L'installation se propose**, sur la page de présentation, sous la phrase qui
+  vient de dire qu'il n'y a ni compte ni serveur. Elle ne l'était nulle part,
+  pour l'app qui a le plus de raisons de le faire : un site non installé voit
+  ses données effacées par Safari après environ une semaine sans visite. Rien
+  n'est affiché quand le navigateur ne propose pas son invite — pas de détection,
+  pas de marche à suivre écrite d'avance.
+- **Indicateur hors-ligne** sur cette même page. L'app fonctionne sans réseau
+  depuis toujours et ne l'avait jamais dit. Il annonce ce qui continue, pas ce
+  qui manque.
+- **Raccourcis du manifest** — « Ajouter une dépense » et « Le mois » — au
+  maintien sur l'icône de l'app installée, et **captures d'écran** sur la fiche
+  d'installation d'Android.
+- **`og:image`, `robots.txt` et un repli sans JavaScript** : un lien partagé
+  montrait son domaine, et la page était blanche pour qui n'exécute pas de
+  script.
+
+### Modifié — service worker et manifest
+
+- **L'orientation n'est plus verrouillée en portrait** : la grille passe à
+  quatre colonnes dès 768px et à six dès 1024, ce qu'une tablette n'atteint
+  qu'en paysage.
+- **Le manifest porte un `id` fixe.** Sans lui, changer un jour la page
+  d'arrivée aurait fait de l'app une seconde app, installée à côté de la
+  première — dont les données seraient restées là où plus personne ne va les
+  chercher.
+- **Le precache a une borne déclarée** et exclut les captures. Workbox écarte en
+  silence tout fichier au-delà de sa borne par défaut : l'app serait restée
+  installable et aurait cessé de fonctionner hors ligne sans que rien ne le
+  dise.
+- **Le service worker s'essaie en développement** avec `PWA_DEV=1 npm run dev`.
+- **Les captures vivent dans `public/captures/`** — le `README`, le manifest et
+  le partage les servent tous les trois, et il n'y en a qu'un exemplaire.
+
 ## [1.0.0] — 2026-08-02
 
 Première version publique. Le périmètre est celui de la v1 du

@@ -188,18 +188,32 @@ Deux précisions, faute de quoi la règle se lit de deux façons et se voit comm
 Le dashboard est une grille de tuiles de tailles inégales, pas une pile de cartes identiques.
 
 ```
-mobile (2 col)          desktop (6 col)
-┌───────────┐           ┌───────┬───┬───────┐
-│  solde    │           │ solde │ € │ répart│
-│  2×2      │           │  2×2  ├───┤  2×2  │
-├─────┬─────┤           │       │ % │       │
-│  €  │  %  │           ├───┬───┴───┼───────┤
-├─────┴─────┤           │éch│ jours │ abos  │
-│ répartition│          │2×1│  2×1  │ 2×1   │
-└───────────┘           └───┴───────┴───────┘
+mobile (2 col)      tablette (4 col)         desktop (6 col)
+┌───────────┐       ┌───────┬───┬───┐        ┌───────┬───┬───────┐
+│  solde    │       │ solde │éch│jrs│        │ solde │ € │ répart│
+│  2×2      │       │  2×2  ├───┴───┤        │  2×2  ├───┤  2×2  │
+├─────┬─────┤       │       │ abos  │        │       │ % │       │
+│  €  │  %  │       ├───────┴───────┤        ├───┬───┴───┼───────┤
+├─────┴─────┤       │  répartition  │        │éch│ jours │ abos  │
+│ répartition│      └───────────────┘        │2×1│  2×1  │ 2×1   │
+└───────────┘                                └───┴───────┴───────┘
 ```
 
 Formats autorisés : `2×1`, `2×2`, `4×1`, `4×2`, `6×2`. Rien d'autre, sinon la grille se délite.
+
+Trois paliers, et **un format ne change jamais de nom en changeant de palier** — c'est la correspondance format → colonnes qui change, pas la liste. Le palier tablette existe parce que deux colonnes étirées sur les 704px d'un iPad portrait ne sont pas une grille : c'est la mise en page d'un téléphone à trois fois la largeur, donc trois fois le vide. Et six colonnes n'y tiennent pas encore (§ ci-dessous).
+
+| Format | < 768px (2 col) | 768 – 1024px (4 col) | ≥ 1024px (6 col) |
+|---|---|---|---|
+| `2×1` | demi-colonne | quart | tiers |
+| `2×2` | pleine largeur | moitié | tiers |
+| `4×1`, `4×2` | pleine largeur | moitié | deux tiers |
+| `6×2` | pleine largeur | pleine largeur | pleine largeur |
+| Rangée | 88px | 96px | 108px |
+
+La `2×2` est la seule à ne pas se diviser par deux sur le palier tablette : elle porte le chiffre héros et son anneau, et un quart de 704px ne lui laisse que 133px de contenu, où le chiffre passe sous son plancher.
+
+**Une tuile peut prendre plus large que son format sur une bande donnée**, et c'est une exception qui se justifie tuile par tuile : Revenus et Charges sont des `2×1` qui prennent deux colonnes sous 1024px. C'est le seul moyen que leur seconde lecture — « reste 102 € à payer » — s'affiche sur un téléphone, et elles n'ont pas de feuille d'explication pour la porter (§6). Elle coûte deux rangées de défilement, pour les deux chiffres qu'on vient chercher en premier.
 
 Une tuile porte au maximum : un eyebrow, un chiffre, une lecture secondaire, une visualisation. Si elle en demande un cinquième, c'est deux tuiles.
 
@@ -222,7 +236,9 @@ La largeur a son plafond, et c'est lui qui choisit entre `2×1` et `4×1`. La `2
 | Fait défiler vers une section de la page | nom de la section + flèche vers le bas — `CE MOIS ⌄`. Elle descend, elle ne pointe pas de côté |
 | Rien | **aucun repère.** C'est cette règle-là qui rend les trois autres lisibles |
 
-Le repère vit en haut à droite, hors du flux — les tuiles ne s'accordent pas sur ce qu'elles posent en tête, et un repère dans le flux les décalerait chacune différemment. Sur une **2×1** de la grille mobile il descend au coin bas : « PRÉVISIONNEL » consomme à lui seul les cent pixels utiles, et la lecture secondaire y est masquée, donc c'est le bas qui est libre. Au-delà de 1024px l'inverse est vrai, et il remonte.
+Le repère vit en haut à droite, hors du flux — les tuiles ne s'accordent pas sur ce qu'elles posent en tête, et un repère dans le flux les décalerait chacune différemment. Sur une **2×1 étroite** il descend au coin bas : « PRÉVISIONNEL » consomme à lui seul les cent pixels utiles, et la lecture secondaire y est masquée, donc c'est le bas qui est libre. Dès que la tuile est assez large pour porter cette lecture, l'inverse est vrai et le repère remonte.
+
+**C'est la largeur de la tuile qui arbitre, jamais celle de l'écran.** Le seuil est le même que celui de la lecture secondaire — 180px de boîte de contenu, en requête de conteneur — et il doit l'être : sur une tuile plate, les deux se partagent la ligne du bas, et deux seuils différents leur donneraient une bande de largeurs où ils se chevauchent. Un seuil de viewport ne peut pas le dire depuis qu'un même format ne fait plus la même largeur sur les trois paliers (§5).
 
 Une tuile dont le **contenu est une liste à lire** garde un vrai lien plutôt que de devenir une cible d'un bloc : l'envelopper dans un bouton effacerait ses lignes derrière un nom unique pour un lecteur d'écran. Le lien prend alors la typographie et le glyphe du repère, au même coin.
 
@@ -258,6 +274,12 @@ Un état **pressé** sur toute tuile actionnable, et pas seulement un survol : l
 Les pilules qui ne désignent personne n'ont pas de pastille (§2.5), et un filet d'un pixel les sépare des personnes : sans lui, l'absence se lit comme un oubli. Le filet est en `--text-muted` atténué et non en `--border`, calibré pour une bordure sur une surface et invisible sur le fond de page.
 
 **ListRow** — pastille de catégorie, libellé, sous-libellé mono (date ou périodicité), montant à droite. Hauteur 56px. Un `planned` s'affiche à 60% d'opacité avec un contour en pointillés sur la pastille.
+
+**Bouton de saisie flottant** — un disque de 56px en lime, au coin bas-droit, au-dessus de la barre d'onglets et sous les surcouches. Il n'existe que sous 1024px : au-delà, la rangée de boutons en tête de l'écran du mois est à l'écran et ne défile jamais hors de vue. Une porte par largeur et pas deux — les mêmes trois boutons deux fois sur un écran ne font pas deux occasions.
+
+Il **se déplie** sur les trois portes de saisie, dans l'ordre de l'écran du mois, plutôt que d'en promettre une seule : « les deux sens sont deux boutons, jamais un seul » (§7) vaut aussi pour lui, et un `+` flottant qui ouvrirait toujours une dépense rétablirait exactement ce que cette règle corrige. Le glyphe pivote de 45° au lieu d'être remplacé par une croix — c'est le même bouton ; le nom accessible, lui, change, parce qu'il dit ce que le prochain appui fait. Il se referme sur Échap, sur un appui à côté, et à tout changement d'écran.
+
+Rien sur un écran de saisie : il partirait créer une ligne par-dessus celle qu'on écrit, en contournant la garde de brouillon qui ne surveille que les deux boutons de sortie. C'est mot pour mot la garde du raccourci « n », dont il est la version au doigt.
 
 **MonthNav** — chevrons de part et d'autre du mois courant, mois en sans 20px, année en mono 11px dessous. Balayage horizontal sur mobile.
 
