@@ -39,7 +39,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
+    "size": "node scripts/size.mjs",
+    "//verify": "La porte de sortie, que la CI rejoue à l'identique. La taille vient après la construction, qui produit ce qu'elle mesure.",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build && npm run size"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

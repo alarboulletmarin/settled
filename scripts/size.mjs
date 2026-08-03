@@ -1,0 +1,105 @@
+/* ============================================================================
+ * Ce que pèse le premier chargement, et le budget qui le tient.
+ *
+ * Un découpage par route ne se maintient pas tout seul : il suffit d'un import
+ * statique posé dans le mauvais fichier pour ramener un écran entier dans le
+ * bundle de tout le monde, sans que rien ne le dise. C'est arrivé au nuancier,
+ * neuf cents lignes de route de développement que chaque visiteur téléchargeait.
+ *
+ * Ce que le script mesure est le **graphe initial** — le module d'entrée et
+ * tout ce qu'il importe statiquement, tel que `index.html` le déclare — et non
+ * la somme de `dist/`. Un morceau chargé à la demande ne coûte rien tant que
+ * personne n'ouvre l'écran qui le demande, et l'additionner masquerait
+ * précisément ce qu'on cherche à voir.
+ *
+ * Compressé, parce que c'est ce qui voyage : tout hébergeur sert ces fichiers
+ * en gzip ou mieux, et la taille brute ne dit rien de l'attente réelle.
+ * ==========================================================================*/
+
+import { gzipSync } from 'node:zlib'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+const DIST = 'dist'
+
+/* Le budget, en kibioctets compressés.
+
+   L'app en pèse 192 au moment où ce chiffre est posé : la marge est de huit,
+   c'est-à-dire de quoi ajouter une fonctionnalité mais pas de quoi ramener un
+   écran entier — les quatre qui se chargent à la demande pèsent de 2 à 5 Kio
+   chacun. C'est un garde-fou, pas un objectif à raser.
+
+   Le dépasser n'est pas interdit : c'est une décision, et elle se prend en
+   changeant ce chiffre, dans un commit qui dit pourquoi. */
+const BUDGET_KIB = 200
+
+const kib = (bytes) => bytes / 1024
+const format = (bytes) => `${kib(bytes).toFixed(1)} Kio`
+
+function initialGraph() {
+  const html = readFileSync(join(DIST, 'index.html'), 'utf8')
+  /* Le module d'entrée et ses préchargements : c'est le navigateur qui les
+     réclame avant le premier pixel, et c'est donc la définition de « initial »
+     qui compte. Rolldown les déclare tous les deux ici. */
+  const entry = [...html.matchAll(/<script[^>]+src="\/([^"]+)"/g)].map((m) => m[1])
+  const preloaded = [...html.matchAll(/<link[^>]+modulepreload[^>]+href="\/([^"]+)"/g)].map(
+    (m) => m[1],
+  )
+  const styles = [...html.matchAll(/<link[^>]+stylesheet[^>]+href="\/([^"]+)"/g)].map((m) => m[1])
+  return [...entry, ...preloaded, ...styles]
+}
+
+function measure(files) {
+  return files
+    .map((file) => {
+      const bytes = readFileSync(join(DIST, file))
+      return { file, raw: bytes.length, gzip: gzipSync(bytes).length }
+    })
+    .sort((a, b) => b.gzip - a.gzip)
+}
+
+function onDemand(initial) {
+  const known = new Set(initial)
+  return readdirSync(join(DIST, 'assets'))
+    .filter((name) => name.endsWith('.js') || name.endsWith('.css'))
+    .map((name) => `assets/${name}`)
+    .filter((file) => !known.has(file))
+}
+
+const initial = initialGraph()
+if (initial.length === 0) {
+  console.error('Aucun module d’entrée trouvé dans dist/index.html — le build a-t-il tourné ?')
+  process.exit(1)
+}
+
+const measured = measure(initial)
+const total = measured.reduce((sum, part) => sum + part.gzip, 0)
+const raw = measured.reduce((sum, part) => sum + part.raw, 0)
+
+console.log('Premier chargement — le module d’entrée et ce qu’il importe :\n')
+for (const part of measured) {
+  console.log(`  ${format(part.gzip).padStart(11)} compressé   ${part.file}`)
+}
+console.log(`\n  ${format(total).padStart(11)} compressé au total (${format(raw)} brut)`)
+console.log(`  ${String(BUDGET_KIB).padStart(6)},0 Kio de budget\n`)
+
+const lazy = measure(onDemand(initial))
+if (lazy.length > 0) {
+  console.log('À la demande, et donc hors budget :\n')
+  for (const part of lazy) {
+    console.log(`  ${format(part.gzip).padStart(11)} compressé   ${part.file}`)
+  }
+  console.log('')
+}
+
+if (kib(total) > BUDGET_KIB) {
+  console.error(
+    `Le premier chargement dépasse le budget de ${format(total - BUDGET_KIB * 1024)}.\n` +
+      'Un écran entier est probablement revenu dans le bundle de tout le monde : ' +
+      'chercher un import statique vers une route, et le passer en `lazy` ' +
+      '(voir `src/app/Routes.tsx`). Si le poids est voulu, relever le budget ici.',
+  )
+  process.exit(1)
+}
+
+console.log(`Dans le budget, avec ${format(BUDGET_KIB * 1024 - total)} de marge.`)
