@@ -11,7 +11,7 @@ describe('Amount', () => {
 
   it('affiche le signe + sur une entrée', () => {
     render(<Amount value={money(320000)} direction="in" />)
-    expect(screen.getByLabelText('+3 200,00 €')).toBeInTheDocument()
+    expect(screen.getByText('+3 200,00 €')).toBeInTheDocument()
   })
 
   it("n'affiche aucun signe sur une sortie : elle se lit à son contexte", () => {
@@ -45,7 +45,7 @@ describe('Amount', () => {
   it('arrondit l’unité sans centimes, au lieu de la tronquer', () => {
     const { container } = render(<Amount value={money(5669)} withCents={false} />)
     expect(container.textContent).toContain('57')
-    expect(screen.getByLabelText('57 €')).toBeInTheDocument()
+    expect(screen.getByText('57 €')).toBeInTheDocument()
   })
 
   it('arrondit vers le bas ce qui doit l’être', () => {
@@ -55,6 +55,19 @@ describe('Amount', () => {
 
   it('rend le montant lisible par un lecteur d’écran', () => {
     render(<Amount value={money(-4290)} />)
-    expect(screen.getByLabelText('−42,90 €')).toBeInTheDocument()
+    expect(screen.getByText('−42,90 €')).toBeInTheDocument()
+  })
+
+  /* Le montant se disait par un `aria-label` posé sur un `span` nu, que ARIA 1.2
+     interdit faute de rôle : les lecteurs qui appliquent la règle ne trouvaient
+     plus rien à annoncer, tout le rendu visuel étant masqué. Le texte est donc
+     dans le document, et c'est le rendu visuel — lui seul — qui est masqué. */
+  it('dit le montant en texte, sans attribut posé sur un élément sans rôle', () => {
+    const { container } = render(<Amount value={money(-4290)} />)
+    expect(container.querySelector('[aria-label]')).toBeNull()
+    expect(container.querySelector('.sr-only-text')).toHaveTextContent('−42,90 €')
+    for (const hidden of container.querySelectorAll('[aria-hidden="true"]')) {
+      expect(hidden).not.toHaveClass('sr-only-text')
+    }
   })
 })
