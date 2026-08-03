@@ -65,6 +65,66 @@ tourner indéfiniment sur son écran de démarrage.
 - Une exception au rendu donnait un **écran blanc**, reproduit à l'identique à
   chaque rechargement puisque le service worker resservait la même version.
 
+### Ajouté — revenir au mois courant
+
+- **« Ce mois-ci »** dans le bandeau du mois, à droite de la navigation. Parti
+  en février 2025 depuis un mois d'août, il fallait douze chevrons pour rentrer,
+  ou recharger la page. Le bouton n'apparaît que lorsqu'on n'est pas sur le mois
+  courant, et il vaut pour tous les écrans rattachés à un mois — le mois, le
+  calendrier, la répartition.
+
+### Tenu — les promesses du design system
+
+Le README fait du design system une source de vérité : « le code lui obéit, et
+un écart est un bug ». Cinq de ses promesses n'étaient pas tenues. Aucune ne
+touche au document : `schemaVersion` reste à 6.
+
+- **L'anneau du mois est sur l'écran du mois.** Le DS §1 en fait la signature de
+  l'app, la page de présentation le démontrait aux visiteurs « comme sur le
+  mois », et le vrai tableau de bord n'en avait pas : la progression s'y lisait
+  en une phrase. Il se pose sur la tuile Solde, sur la phrase qu'il dessine —
+  mesuré, une 2×2 n'offre pas la largeur de le mettre à côté du chiffre héros.
+- **Les grands nombres comptent au premier affichage**, et une seule fois : le
+  DS §4 le promettait sans que rien ne l'implémente. Ceux de la grille bento et
+  le chiffre héros seulement ; jamais sur mise à jour, donc jamais en changeant
+  de mois ni de filtre ; rien du tout sous « réduire les animations ». Le DS dit
+  désormais lesquels et à partir de quand, faute de quoi la règle se lisait de
+  deux façons.
+- **Les graphiques se lisent.** Une période focusable par mois sur les douze
+  derniers mois comme sur le comparatif d'années, à la souris et au clavier
+  (flèches, `Origine`, `Fin`), avec les valeurs du mois lu au-dessus du tracé et
+  un axe des ordonnées qui manquait tout à fait. La légende y a été absorbée :
+  elle disait les mêmes mots sans les chiffres.
+- **« Tout replier » sur la répartition**, comme le DS §6 le promet et comme le
+  font déjà le mois, les abonnements et les catégories.
+- **Un glyphe par concept**, déclaré une seule fois (DS §9.2) : trois paires
+  d'icônes se partageaient un même trait, dont deux pour un seul et même
+  concept. Le catalogue du styleguide, qui se disait entier, en montre enfin
+  la totalité.
+
+### Corrigé — au passage
+
+- **« Douze derniers mois » n'était pas les douze derniers mois** : la fenêtre
+  s'arrêtait au mois choisi dans le bandeau de l'écran du mois. Or l'historique
+  n'a pas de bandeau — rien n'y montrait cette borne, rien ne permettait de la
+  bouger. Passer voir février 2026 puis ouvrir l'historique donnait douze mois
+  sans le mois courant dedans. Elle s'arrête à aujourd'hui, et le nom accessible
+  du graphique dit ses deux bornes au lieu d'un mois.
+- **Le comptage des nombres était incohérent d'une tuile à l'autre.** Il suivait
+  le premier affichage d'un *composant* et non d'un *écran* : un filtre par
+  membre remonte cinq tuiles de la grille et laisse les autres en place, si bien
+  que sur un même geste le solde et les revenus s'égrenaient et les charges
+  sautaient. Ce qui apparaît après l'arrivée de l'écran ne compte plus.
+
+- Le **cumul du solde décalait ses points** d'une demi-tranche : il les ancrait
+  aux bords quand la bande des mois sous lui découpe la largeur en douze parts
+  égales, si bien que janvier se lisait à gauche de la lettre qui le nomme.
+- La **bande des mois des douze derniers mois débordait de 71px à 320** et se
+  faisait trancher par sa tuile : douze libellés courts en mono ne rétrécissent
+  pas. L'initiale suffit tant que la place manque.
+- Un **raccourci clavier de l'app se déclenchait par-dessus** un composant qui
+  avait déjà répondu à la même touche.
+
 ### Corrigé — domaine et import
 
 Issus d'un audit complet du code, revérifiés point par point. Aucun ne change le

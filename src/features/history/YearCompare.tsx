@@ -88,6 +88,10 @@ export function YearCompare() {
         )}
       </Field>
 
+      {/* Ni légende ni phrase sous le tracé : la lecture au-dessus du graphique
+          porte les deux années avec leur trait et leur valeur du mois lu, et
+          « Cumul du solde, mois après mois » était déjà le nom accessible du
+          graphique — il s'écrivait donc deux fois pour un seul sens. */}
       <CumulativeLines
         series={series}
         label={fr.history.cumulative}
@@ -98,24 +102,6 @@ export function YearCompare() {
           `${formatMoney(endOf(current), currency, false)} / ${formatMoney(endOf(before), currency, false)}`,
         )}
       />
-
-      <ul className="flex flex-wrap gap-4">
-        {series.map((serie) => (
-          <li key={serie.id} className="flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="h-0.5 w-6 rounded-chip"
-              style={{
-                backgroundColor: serie.color,
-                opacity: serie.dashed === true ? 0.7 : 1,
-              }}
-            />
-            <span className="t-label tnum">{serie.label}</span>
-          </li>
-        ))}
-      </ul>
-
-      <p className="t-label">{fr.history.cumulative}</p>
     </Tile>
   )
 }

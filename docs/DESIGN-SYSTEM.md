@@ -175,6 +175,12 @@ Ce ne sont pas des préférences mais des relations : la même relation visuelle
 
 **Mouvement** — 160ms `cubic-bezier(0.2, 0, 0, 1)` par défaut, 240ms pour l'entrée d'une vue. Les nombres s'animent en comptant uniquement au premier affichage d'un écran, jamais sur mise à jour. Tout est neutralisé sous `prefers-reduced-motion`.
 
+Deux précisions, faute de quoi la règle se lit de deux façons et se voit comme un défaut.
+
+**Quels nombres.** Ceux de la grille bento et le chiffre héros, pas les autres. Une part par membre et une ligne de crédit portent la même taille de chiffre qu'une tuile : quarante montants qui s'égrènent chacun pour son compte ne sont pas une arrivée, c'est un scintillement, et un chiffre qui compte pendant qu'on remplit un formulaire est du bruit posé sur un geste.
+
+**Quel affichage.** Celui de l'**écran**, pas celui du composant. La distinction n'est pas théorique : une tuile apparaît et disparaît pour des raisons qui n'ont rien d'une arrivée — un filtre qui en retire cinq, une lecture qui n'a de sens que sur le mois courant, une tuile qui devient cliquable. Attaché au composant, le comptage repart sur les tuiles remontées pendant que leurs voisines, restées en place, changent de valeur en silence : sur un même geste, le solde s'égrène et les charges sautent. Ce qui apparaît après l'arrivée de l'écran ne compte pas.
+
 ---
 
 ## 5. Grille bento
@@ -254,6 +260,8 @@ Les pilules qui ne désignent personne n'ont pas de pastille (§2.5), et un file
 **ListRow** — pastille de catégorie, libellé, sous-libellé mono (date ou périodicité), montant à droite. Hauteur 56px. Un `planned` s'affiche à 60% d'opacité avec un contour en pointillés sur la pastille.
 
 **MonthNav** — chevrons de part et d'autre du mois courant, mois en sans 20px, année en mono 11px dessous. Balayage horizontal sur mobile.
+
+Un **retour au mois courant** l'accompagne dans le bandeau, à sa droite, et n'apparaît que lorsqu'on n'y est pas — c'est la règle des repères d'action appliquée à un bouton : celui qui ne bouge rien apprend à ignorer ceux qui bougent quelque chose. Douze chevrons pour revenir de février à août n'est pas une navigation, c'est une pénalité. Il dit « ce mois-ci » et non « aujourd'hui » : on revient à un mois, pas à un jour, et sur le calendrier le second aurait promis de ramener au jour. Le mois d'arrivée se nomme en infobulle, jamais dans le libellé — le nom accessible d'un bouton contient son texte visible.
 
 **Ring** — l'anneau. Épaisseur 12px, extrémités arrondies, départ à midi, sens horaire, fond de piste en `--surface-2`. Sert de progression du mois, de jauge et de donut de répartition. Le contenu central est un `Amount`.
 

@@ -345,7 +345,7 @@ appliqué, et reste réversible en une ligne.
 | symbole monétaire | opacité 0.5 | 3,65:1 sur `--surface` | 0.6, et 1 là où la couleur de texte n'a aucune marge |
 | échéance prévue | opacité 60 % | ruine le contraste du libellé | pastille en pointillés + couleur de texte secondaire |
 
-Deux autres points relèvent de la lecture plutôt que du contraste :
+Trois autres points relèvent de la lecture plutôt que du contraste :
 
 - `Category.icon` existe au modèle de données mais reste vide et n'est jamais
   rendu. Le DS §9 n'admet l'icône que pour agir ou se repérer : sur une ligne de
@@ -353,6 +353,16 @@ Deux autres points relèvent de la lecture plutôt que du contraste :
   côte à côte n'en font plus aucun.
 - `settings.monthStartsOn` est stocké et migrable, mais la v1 raisonne en mois
   calendaire — les `ym` du cahier sont de la forme `"2026-07"`.
+- **Les périodes d'un graphique ne font pas 44px de large.** Le DS §8 pose ce
+  plancher pour toute cible tactile ; le curseur de lecture des graphiques
+  (`src/charts/ChartCursor.tsx`) n'en tient que la hauteur. Mesuré à 320px : la
+  page laisse 248px à la tuile, son cadre 40, l'axe des ordonnées une
+  cinquantaine — restent ~190px pour douze mois, soit **16px chacun**. Tenir 44
+  demanderait 528px de tracé, donc un défileur horizontal, qui détruirait la
+  seule chose que ce graphique fait — douze mois d'un coup d'œil. La période
+  fait en revanche toute la hauteur du tracé (160px), et la lecture existe par
+  trois autres chemins : le clavier (flèches, `Origine`, `Fin`), le nom
+  accessible de chaque mois, et la lecture d'ensemble en `sr-only`.
 
 La date du dernier export vit en `localStorage`, hors du document : elle décrit
 l'état de sauvegarde de cet appareil, et l'inclure ferait qu'un fichier importé

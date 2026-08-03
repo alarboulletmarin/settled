@@ -891,10 +891,23 @@ export function useRecurrenceRows(): RecurrenceRow[] {
 
 /* --- Historique -----------------------------------------------------------*/
 
+/**
+ * Les `count` derniers mois **jusqu'à aujourd'hui**, et non jusqu'au mois
+ * choisi ailleurs dans l'app.
+ *
+ * Ils s'arrêtaient au `ym` du store, celui que règle le bandeau de l'écran du
+ * mois. Or l'historique n'a pas de bandeau : rien n'y montrait cette borne, et
+ * rien ne permettait de la bouger. Passer voir février 2026 sur l'écran du mois
+ * puis ouvrir l'historique donnait « Douze derniers mois » sans le mois courant
+ * dedans — un titre qui dit « derniers » sur une fenêtre qui s'arrête où l'on
+ * ne regarde plus.
+ *
+ * Le filtre par membre, lui, reste suivi : c'est une lecture, elle vaut d'un
+ * écran à l'autre, et les deux autres graphiques de la page la suivent déjà.
+ */
 export function useTrailingMonths(count = 12): MonthPoint[] {
   const { entries } = useMonthScope()
-  const month = useCurrentYm()
-  return useMemo(() => trailingMonths(entries, month, count), [entries, month, count])
+  return useMemo(() => trailingMonths(entries, currentYm(), count), [entries, count])
 }
 
 /** Bornes de navigation : on ne remonte pas avant la première donnée. */

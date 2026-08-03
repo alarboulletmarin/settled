@@ -1,6 +1,6 @@
-import { addMonthsToYm } from '@/domain/date'
+import { addMonthsToYm, today, ymOf } from '@/domain/date'
 import { fr } from '@/i18n/fr'
-import { tpl } from '@/i18n/format'
+import { formatYearMonth, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import {
   useMemberFilter,
@@ -12,6 +12,7 @@ import {
   useMonthSplit,
 } from '@/store/selectors'
 import { useStore } from '@/store/store'
+import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
 import { MonthNav } from '@/ui/MonthNav'
 import { useHotkeys } from '@/ui/useHotkeys'
@@ -155,6 +156,11 @@ export function MonthHeader({
   const ym = useStore((s) => s.ym)
   const setYm = useStore((s) => s.setYm)
   const bounds = useMonthBounds()
+  /* Lu au rendu et non mémorisé : un onglet laissé ouvert la nuit du 31 doit
+     ramener au mois qu'on est le lendemain, pas à celui qu'on était en
+     l'ouvrant. C'est déjà la règle des sélecteurs voisins, qui appellent tous
+     `today()` au calcul. */
+  const currentYm = ymOf(today())
 
   /* Les flèches font ce que font les deux chevrons, aux mêmes bornes : le mois
      se balaie au doigt depuis toujours et se cliquait à la souris, il n'avait
@@ -196,13 +202,40 @@ export function MonthHeader({
           'md:-mx-8 md:px-8',
         )}
       >
-        <MonthNav
-          value={ym}
-          onChange={setYm}
-          min={bounds.min}
-          max={bounds.max}
-          className="max-w-sm"
-        />
+        {/* Le retour au mois courant, à côté de la navigation et non dedans :
+            `MonthNav` capture le pointeur pour son balayage, et un bouton posé
+            sous cette capture attraperait le geste au lieu du clic.
+
+            Il n'existe que lorsqu'il fait quelque chose — c'est la règle du DS
+            §6 sur les repères d'action, celle qui rend les autres lisibles : un
+            « ce mois-ci » affiché sur le mois courant serait un bouton qui ne
+            bouge rien. Il apparaît donc au premier pas de côté, et la
+            navigation se resserre d'autant ; mesuré à 320px, elle a la place.
+
+            Aucune borne à vérifier : `useMonthBounds` fait toujours entrer le
+            mois courant entre son minimum et son maximum. */}
+        <div className="flex items-center gap-2">
+          <MonthNav
+            value={ym}
+            onChange={setYm}
+            min={bounds.min}
+            max={bounds.max}
+            className="min-w-0 max-w-sm flex-1"
+          />
+          {ym !== currentYm && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="shrink-0"
+              title={tpl(fr.shell.thisMonthTitle, formatYearMonth(currentYm))}
+              onClick={() => {
+                setYm(currentYm)
+              }}
+            >
+              {fr.shell.thisMonth}
+            </Button>
+          )}
+        </div>
         {withMemberFilter && <MonthFilterChips withCommon={withCommon} />}
       </header>
 

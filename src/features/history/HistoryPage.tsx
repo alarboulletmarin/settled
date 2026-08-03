@@ -3,65 +3,51 @@ import { MonthlyBars } from '@/charts/MonthlyBars'
 import { entryNewPath } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
-import {
-  useCurrencyCode,
-  useCurrentYm,
-  useEntries,
-  useRecurrences,
-  useTrailingMonths,
-} from '@/store/selectors'
+import { useCurrencyCode, useEntries, useRecurrences, useTrailingMonths } from '@/store/selectors'
 import { EmptyState } from '@/ui/EmptyState'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { TrailingIcon } from '@/ui/Icons'
+import { HistoryIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { MonthCompare } from './MonthCompare'
 import { SearchSection } from './SearchSection'
 import { YearCompare } from './YearCompare'
 
-const LEGEND = [
-  { label: fr.history.legendIn, color: 'var(--flow-in)', kind: 'bar' as const },
-  { label: fr.history.legendOut, color: 'var(--flow-out)', kind: 'bar' as const },
-  { label: fr.history.legendBalance, color: 'var(--text)', kind: 'line' as const },
-]
-
 /** Entrées, sorties et solde sur les douze derniers mois. */
 function Trailing() {
   const points = useTrailingMonths(12)
   const currency = useCurrencyCode()
-  const ym = useCurrentYm()
   const filled = points.filter((point) => point.hasData)
+  /* La fenêtre se nomme par ses deux bornes, et non plus par le mois choisi
+     ailleurs : elle s'arrête à aujourd'hui, et le titre disait un mois qu'aucune
+     commande de cet écran ne réglait. */
+  const from = points[0]?.ym
+  const to = points.at(-1)?.ym
 
   return (
     <Tile className="gap-4">
-      <Eyebrow icon={TrailingIcon}>{fr.history.trailing}</Eyebrow>
+      <Eyebrow icon={HistoryIcon}>{fr.history.trailing}</Eyebrow>
       {filled.length === 0 ? (
         <p className="t-label">{fr.history.trailingEmpty}</p>
       ) : (
-        <>
-          <MonthlyBars
-            points={points}
-            label={tpl('%s — %s', fr.history.trailing, formatYearMonth(ym))}
-            srText={tpl(
-              fr.history.srTrailing,
-              filled
-                .map((p) => `${formatYearMonth(p.ym)} ${formatMoney(p.balance, currency, false)}`)
-                .join(', '),
-            )}
-          />
-          <ul className="flex flex-wrap gap-4">
-            {LEGEND.map((item) => (
-              <li key={item.label} className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className={item.kind === 'bar' ? 'h-3 w-3 rounded-[3px]' : 'h-0.5 w-6 rounded-chip'}
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="t-label">{item.label}</span>
-              </li>
-            ))}
-          </ul>
-        </>
+        /* Plus de légende sous le tracé : elle nommait les trois séries sans
+           les chiffrer, et la lecture au-dessus du graphique dit désormais les
+           deux — mêmes pastilles, mêmes mots, plus la valeur du mois lu. Deux
+           blocs pour un seul sens, c'était le second qui ne servait pas. */
+        <MonthlyBars
+          points={points}
+          label={tpl(
+            '%s — %s',
+            fr.history.trailing,
+            tpl(fr.history.trailingRange, formatYearMonth(from ?? ''), formatYearMonth(to ?? '')),
+          )}
+          srText={tpl(
+            fr.history.srTrailing,
+            filled
+              .map((p) => `${formatYearMonth(p.ym)} ${formatMoney(p.balance, currency, false)}`)
+              .join(', '),
+          )}
+        />
       )}
     </Tile>
   )

@@ -3,6 +3,8 @@ import { formatMoney, moneyParts } from '@/i18n/format'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { useCurrency } from './currency'
+import { useIsScreenEntering } from './screenEntry'
+import { useCountUp } from './useCountUp'
 
 export type AmountSize = 'hero' | 'hero-fit' | 'tile' | 'tile-fit' | 'body' | 'label'
 export type AmountTone = 'default' | 'muted' | 'danger'
@@ -51,6 +53,32 @@ const TONE_CLASS: Record<AmountTone, string> = {
 }
 
 /**
+ * Les tailles qui comptent au premier affichage d'un écran (DS §4).
+ *
+ * Les chiffres **dimensionnés par leur tuile**, et le héros — c'est-à-dire la
+ * grille bento et elle seule. Le DS §1 dit pourquoi : « les grands nombres
+ * portent la page », et la page qu'ils portent est le tableau de bord.
+ *
+ * `tile` en est exclue alors qu'elle fait la même taille que `tile-fit`, et
+ * c'est volontaire : c'est la seule des six qui serve à tout, y compris à des
+ * rangées de liste — une part par membre sur la répartition, une ligne par
+ * crédit —, et à des formulaires où le chiffre se recalcule à mesure qu'on
+ * tape. Quarante montants qui s'égrènent chacun pour son compte ne sont pas une
+ * arrivée, c'est un scintillement ; et un chiffre qui compte pendant qu'on
+ * remplit un champ est du bruit posé sur un geste. Aucune propriété du composant
+ * ne distingue ces emplois-là d'un chiffre de tuile : la ligne se trace donc
+ * là où elle est nette.
+ */
+const COUNTS_UP: Record<AmountSize, boolean> = {
+  hero: true,
+  'hero-fit': true,
+  'tile-fit': true,
+  tile: false,
+  body: false,
+  label: false,
+}
+
+/**
  * Le composant unique pour tout montant. Il porte seul le tabular-nums, le
  * symbole, les centimes réduits et le signe : aucun autre composant ne met
  * un montant en forme.
@@ -59,6 +87,13 @@ const TONE_CLASS: Record<AmountTone, string> = {
  * élargie à 112 % — est la même partout, déclarée d'un seul bloc dans
  * `base.css`. Un montant de liste et un solde héros doivent se reconnaître
  * comme deux tailles du même chiffre, pas comme deux polices.
+ *
+ * C'est aussi lui qui porte le comptage du DS §4, et lui seul : il n'y a qu'un
+ * endroit où un montant se met en forme, il n'y en a donc qu'un où il peut
+ * s'animer. Le chiffre qui s'égrène est celui qu'on voit ; le nom accessible,
+ * lui, dit tout de suite le montant du mois — les deux ne divergent que le
+ * temps de l'animation, et jamais dans le sens où un lecteur d'écran
+ * annoncerait un chiffre en route.
  */
 export function Amount({
   value,
@@ -71,13 +106,27 @@ export function Amount({
   className,
 }: AmountProps) {
   const activeCurrency = useCurrency()
+  const entering = useIsScreenEntering()
   const code = currency ?? activeCurrency
   const displayed = (direction ? Math.abs(value) : value) as Money
-  // Sans centimes, l'unité s'arrondit : le chiffre affiché et le nom accessible
-  // sortent des mêmes parts, ils ne peuvent pas dire deux montants différents.
-  const parts = moneyParts(displayed, code, !withCents)
-  const sign = direction === 'in' || (signed && displayed > 0) ? '+' : parts.sign
+  /* `entering` est lu au montage et n'est plus relu : ce qui apparaît après
+     l'arrivée de l'écran ne compte pas, et ce qui comptait déjà va au bout. */
+  const counted = useCountUp(displayed, entering && COUNTS_UP[size]) as Money
 
+  // Sans centimes, l'unité s'arrondit plutôt que de se tronquer (DS §3) : c'est
+  // `moneyParts` qui le tient, pour le chiffre comme pour le nom accessible.
+  const parts = moneyParts(counted, code, !withCents)
+  /* Le signe se prend sur la valeur, jamais sur le compte en cours : à zéro,
+     `moneyParts` n'en rend aucun, et un solde négatif perdrait son « − » le
+     temps de l'animation pour le retrouver à l'arrivée. */
+  const signParts = moneyParts(displayed, code, !withCents)
+  const sign = direction === 'in' || (signed && displayed > 0) ? '+' : signParts.sign
+
+  /* Le nom accessible sort de la valeur et non du compte. C'est la seule
+     entorse à la règle du dessus, et elle va dans le bon sens : un lecteur
+     d'écran annonce le montant du mois, pas l'image qu'un œil en a pendant six
+     dixièmes de seconde. Lui faire lire une valeur en route serait annoncer un
+     chiffre faux. */
   const spoken = `${sign === '+' ? '+' : ''}${formatMoney(displayed, code, withCents)}`
   const label =
     direction === 'out' ? `${fr.direction.out.toLowerCase()} ${spoken}` : spoken

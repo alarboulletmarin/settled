@@ -5,7 +5,14 @@ import { Section, SubTitle } from './Section'
 import { DualTheme } from './ThemePane'
 
 /* Le catalogue entier, rangé par emploi. Ces deux listes sont ce que le DS §9
-   autorise : ajouter un glyphe ailleurs, c'est décorer. */
+   autorise : ajouter un glyphe ailleurs, c'est décorer.
+
+   Entier au sens strict, et c'est ce qui les rend utiles : huit exports y
+   manquaient, dont deux qui doublaient un glyphe déjà présent. Un catalogue
+   incomplet ne montre pas les doublons, il les cache — c'est en posant les
+   vingt-cinq repères côte à côte qu'on voit deux fois le même trait.
+   `Icons.test.tsx` tient l'autre bout : aucun export ne peut rendre le même
+   glyphe qu'un autre. */
 
 const ACTION: [string, IconComponent][] = [
   ['ChevronLeft', Icons.ChevronLeft],
@@ -15,28 +22,34 @@ const ACTION: [string, IconComponent][] = [
   ['Close', Icons.Close],
   ['Check', Icons.Check],
   ['Warning', Icons.Warning],
+  ['InfoIcon', Icons.InfoIcon],
+  ['ExternalIcon', Icons.ExternalIcon],
 ]
 
 const MARKER: [string, IconComponent][] = [
   ['NavMonth', Icons.NavMonth],
   ['NavCalendar', Icons.NavCalendar],
-  ['NavRecurrences', Icons.NavRecurrences],
-  ['NavHistory', Icons.NavHistory],
   ['NavSettings', Icons.NavSettings],
+  ['RecurrencesIcon', Icons.RecurrencesIcon],
+  ['HistoryIcon', Icons.HistoryIcon],
   ['BalanceIcon', Icons.BalanceIcon],
+  ['IncomeIcon', Icons.IncomeIcon],
+  ['ChargesIcon', Icons.ChargesIcon],
   ['ForecastIcon', Icons.ForecastIcon],
   ['RemainingIcon', Icons.RemainingIcon],
   ['BreakdownIcon', Icons.BreakdownIcon],
   ['SavingsIcon', Icons.SavingsIcon],
   ['UpcomingIcon', Icons.UpcomingIcon],
-  ['RecurrencesIcon', Icons.RecurrencesIcon],
+  ['CreditsIcon', Icons.CreditsIcon],
+  ['SplitIcon', Icons.SplitIcon],
   ['ToConfirmIcon', Icons.ToConfirmIcon],
   ['EntriesIcon', Icons.EntriesIcon],
   ['HouseholdIcon', Icons.HouseholdIcon],
   ['CategoriesIcon', Icons.CategoriesIcon],
+  ['SearchIcon', Icons.SearchIcon],
   ['ThemeIcon', Icons.ThemeIcon],
   ['DataIcon', Icons.DataIcon],
-  ['TrailingIcon', Icons.TrailingIcon],
+  ['DeviceIcon', Icons.DeviceIcon],
   ['CompareIcon', Icons.CompareIcon],
   ['YearsIcon', Icons.YearsIcon],
 ]

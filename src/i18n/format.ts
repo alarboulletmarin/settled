@@ -85,9 +85,20 @@ export function formatPercent(value: number, digits = 0): string {
   return `${(value * 100).toFixed(digits).replace('.', ',')}${NBSP_NARROW}%`
 }
 
+/**
+ * Ce qui s'écrit là où il n'y a pas de chiffre à écrire.
+ *
+ * Un cadratin, et surtout pas un zéro : une période sans donnée n'est pas une
+ * période à zéro (cahier §4.7), et c'est la règle que tout le reste applique
+ * déjà — un trait de graphique s'y coupe au lieu de plonger sur la ligne de
+ * base. Nommé ici plutôt que recopié, pour que la même absence se lise partout
+ * du même signe.
+ */
+export const NO_VALUE = '—'
+
 /** Écart relatif signé : « +12 % », « −4 % », « — » si la base est nulle. */
 export function formatDelta(value: number | null, digits = 0): string {
-  if (value === null || !Number.isFinite(value)) return '—'
+  if (value === null || !Number.isFinite(value)) return NO_VALUE
   const sign = value > 0 ? '+' : value < 0 ? '−' : ''
   return `${sign}${(Math.abs(value) * 100).toFixed(digits).replace('.', ',')}${NBSP_NARROW}%`
 }

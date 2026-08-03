@@ -205,6 +205,16 @@ export const fr = {
       'Charges communes non réparties, faute de connaître les revenus de %s : seules les lignes à son nom sont comptées.',
     prorataOnlyOwn:
       'Charges communes non réparties : seules les lignes à son nom sont comptées.',
+    /* « Ce mois-ci » et non « Aujourd'hui » : on revient à un mois, pas à un
+       jour, et le DS §7 veut que les libellés nomment ce qu'on manipule. Sur
+       l'écran du calendrier, « Aujourd'hui » aurait de surcroît promis de
+       ramener au jour, ce que ce bouton ne fait pas. */
+    thisMonth: 'Ce mois-ci',
+    /* En infobulle et non dans le libellé : le nom accessible d'un bouton doit
+       contenir son texte visible, et « Revenir à août 2026 » ne contient pas
+       « Ce mois-ci ». Le mois de destination reste utile à savoir avant de
+       cliquer, il se dit donc en description. */
+    thisMonthTitle: 'Revenir à %s',
   },
 
   /* La frontière avec le navigateur. Tout ce qui s'y passe mal doit se dire :
@@ -491,6 +501,9 @@ export const fr = {
   history: {
     title: 'Historique',
     trailing: 'Douze derniers mois',
+    /* Les deux bornes de la fenêtre, pour le nom accessible du graphique : elle
+       s'arrête au mois courant, quoi qu'on regarde ailleurs dans l'app. */
+    trailingRange: 'de %s à %s',
     trailingEmpty: 'Pas encore assez de données pour tracer une courbe.',
     legendIn: 'Entrées',
     legendOut: 'Sorties',
@@ -511,6 +524,16 @@ export const fr = {
     cumulative: 'Cumul du solde, mois après mois',
     srTrailing: 'Solde mensuel : %s',
     srYears: 'Cumul %s contre %s : %s',
+    /* Le nom accessible d'un mois du graphique. Il porte les trois chiffres :
+       c'est lui la lecture, la ligne visible au-dessus n'en est que le double
+       à l'œil. */
+    srMonthRead: '%s : entrées %s, sorties %s, solde %s',
+    /* Un mois sans donnée n'est pas un mois à zéro (cahier §4.7). Il se dit, il
+       ne se chiffre pas. */
+    srMonthNoData: '%s : aucune donnée',
+    /* Le cumul porte une ou deux années : la partie variable est assemblée par
+       le graphique, comme `srTrailing` l'est par la page. */
+    srCumulativeRead: '%s : %s',
     noData: 'Aucune donnée sur cette période.',
     /* Sur un foyer neuf, les trois tuiles empilaient trois phrases d'excuse —
        pas assez pour une courbe, pas deux mois à comparer, pas d'année
@@ -933,6 +956,8 @@ export const fr = {
     detail: 'Ce qui est partagé',
     detailCountOne: '%s ligne',
     detailCount: '%s lignes',
+    collapseAll: 'Tout replier',
+    expandAll: 'Tout déplier',
     advancedBy: 'avancé par %s',
     /* Le report du mois précédent. Une charge commune réglée par une seule
        personne lui fait porter plus que sa part : le mois suivant le rattrape,
@@ -1390,6 +1415,15 @@ export const fr = {
   a11y: {
     skipToContent: 'Aller au contenu',
     ringLabel: 'Anneau de progression',
+    /* Le nom du curseur d'un graphique, et non celui du graphique : l'image
+       porte déjà le sien. Celui-ci dit ce qu'on peut faire, pas ce qu'on
+       regarde. */
+    chartCursor: 'Choisir le mois à lire',
+    /* Un raccourci que personne ne découvre ne sert personne — la règle qui
+       fait dire les flèches du mois en infobulle. Ici il n'y a aucun bouton à
+       survoler : ça se dit donc au lecteur d'écran, sur le curseur. */
+    chartCursorHint:
+      'Flèches gauche et droite pour changer de mois, Origine et Fin pour les extrémités.',
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
     /* Un raccourci que personne ne découvre ne sert personne. Il se dit en

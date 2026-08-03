@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { useHouseholdName } from '@/store/selectors'
+import { ScreenEntryProvider } from '@/ui/ScreenEntryProvider'
 import { useHotkeys } from '@/ui/useHotkeys'
 import { Sidebar, TabBar } from './Nav'
 import { StorageAlert } from './StorageAlert'
@@ -50,7 +51,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               en cours ni d'une fiche : ces écrans-là n'ont qu'une chose à
               montrer, et un export peut attendre la fin de la phrase. */}
           {!focus && <ExportReminder />}
-          {children}
+          {/* Sous `key={pathname}` : c'est cette clé qui fait d'un changement
+              d'URL une arrivée, et le marqueur d'arrivée doit repartir avec
+              elle. Il n'englobe pas les deux bandeaux ci-dessus, qui ne
+              dépendent pas de l'écran. */}
+          <ScreenEntryProvider>{children}</ScreenEntryProvider>
         </main>
       </div>
 
