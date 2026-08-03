@@ -22,6 +22,12 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
+        /* L'identité de l'app aux yeux du navigateur, indépendante de
+           `start_url` : sans elle, changer un jour la page d'arrivée ferait de
+           l'app une seconde app, à installer à côté de la première — et les
+           données de la première, qui vivent dans son origine, resteraient
+           là où plus personne ne va les chercher. */
+        id: '/',
         name: 'Tout compte fait — finances du foyer',
         short_name: 'Tout compte fait',
         description: 'Suivi des finances du foyer. Tout reste sur ton appareil.',
@@ -30,7 +36,11 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        orientation: 'portrait',
+        /* Pas `portrait` : la grille bento passe à quatre colonnes dès 768px et
+           à six dès 1024, ce qu'une tablette n'atteint qu'en paysage. Verrouiller
+           l'orientation annulait ces deux paliers pour la seule app installée —
+           c'est-à-dire pour celle qui a le plus de raisons de les avoir. */
+        orientation: 'any',
         background_color: '#F0F5F2',
         theme_color: '#2F5D4C',
         categories: ['finance', 'productivity'],
@@ -39,13 +49,74 @@ export default defineConfig({
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        /* Les deux gestes qu'on vient faire sans passer par l'écran d'accueil.
+           Saisir une dépense d'abord : c'est le geste le plus fréquent, celui
+           que le raccourci « n » et le bouton flottant portent déjà à l'intérieur
+           de l'app. Le sens voyage dans l'URL en clair (`src/app/routes.ts`) —
+           le raccourci ne fait que la poser. */
+        shortcuts: [
+          {
+            name: 'Ajouter une dépense',
+            short_name: 'Dépense',
+            url: '/depense?sens=sortie',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'Le mois',
+            short_name: 'Le mois',
+            url: '/',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
+        /* La fiche d'installation d'Android montre l'app avant de la proposer.
+           Sans capture, elle se réduit à une icône et une phrase — pour une app
+           dont l'argument est un écran. Les fichiers sont ceux du `README`, et
+           il n'y en a qu'un exemplaire (voir `docs/CAPTURES.md`) : les `sizes`
+           doivent suivre le jour où on les refait, Chrome écartant en silence
+           une capture dont les dimensions ne correspondent pas. */
+        screenshots: [
+          {
+            src: 'captures/mois-mobile.png',
+            sizes: '780x1688',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'L’écran du mois sur téléphone',
+          },
+          {
+            src: 'captures/mois-clair.png',
+            sizes: '2560x1640',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'L’écran du mois sur ordinateur',
+          },
+        ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'],
+        /* Les captures sont servies pour le manifest et le partage, jamais
+           affichées par l'app : 400 Ko dans le cache hors ligne pour des images
+           que personne n'ouvrira sans réseau. */
+        globIgnores: ['**/captures/*'],
+        /* Workbox exclut en silence tout fichier au-delà de sa borne — 2 Mio par
+           défaut. Un jour où un chunk la dépasserait, l'app resterait
+           installable et cesserait de fonctionner hors ligne sans que rien ne le
+           dise. La borne est relevée à 4 Mio, ce qu'aucun fichier n'atteint
+           aujourd'hui : elle est là pour que la construction crie avant que le
+           hors-ligne ne mente. */
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         navigateFallback: '/index.html',
+        /* Ce qui n'est pas une route de l'app ne doit pas recevoir sa coquille.
+           Une requête vers `/robots.txt` hors ligne vaut mieux en échec franc
+           qu'en page HTML servie sous un nom de fichier texte. */
+        navigateFallbackDenylist: [/^\/captures\//, /^\/robots\.txt$/],
       },
-      devOptions: { enabled: false },
+      /* Le service worker ne s'enregistre pas en développement : il resservirait
+         du code figé à chaque rechargement, ce qui est exactement le contraire
+         de ce qu'on attend d'un serveur de dev. Mais on ne pouvait alors pas
+         l'essayer du tout sans construire. `PWA_DEV=1 npm run dev` l'allume pour
+         la session où c'est lui qu'on regarde. */
+      devOptions: { enabled: process.env.PWA_DEV === '1' },
     }),
   ],
   resolve: {
