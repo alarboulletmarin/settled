@@ -9,11 +9,11 @@ import { formatMoney, tpl } from '@/i18n/format'
 import { addAdvance } from '@/store/actions'
 import { useCategoriesByFamily, useMembers } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
-import { Button, IconButton } from '@/ui/Button'
+import { Button } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { AmountInput, Checkbox, Field, Select, TextInput } from '@/ui/Field'
-import { ChevronLeft } from '@/ui/Icons'
+import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 import { toast } from '@/ui/toast'
@@ -144,12 +144,7 @@ export function AdvanceFormPage() {
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
-      <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={guard.request}>
-          <ChevronLeft />
-        </IconButton>
-        <h1 className="t-section min-w-0 truncate">{fr.advances.add}</h1>
-      </div>
+      <PageTitle title={fr.advances.add} onBack={guard.request} />
 
       {/* Sans membre, rien à enregistrer : une épargne est toujours à
           quelqu'un, et l'écran le dit plutôt que de proposer un champ vide. */}

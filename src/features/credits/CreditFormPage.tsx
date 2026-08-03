@@ -9,11 +9,11 @@ import { formatMoney, formatPercent, tpl } from '@/i18n/format'
 import { addDebt, removeDebt, replaceDebt, undoable } from '@/store/actions'
 import { useDebtStatus, useRecurrenceRows } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
-import { Button, IconButton } from '@/ui/Button'
+import { Button } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
-import { ChevronLeft } from '@/ui/Icons'
+import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useLeaveGuard } from '@/ui/useLeaveGuard'
 import { useCurrency } from '@/ui/currency'
@@ -107,14 +107,7 @@ function Form({ debt, onDone }: { debt: Debt | null; onDone: () => void }) {
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
-      <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={guard.request}>
-          <ChevronLeft />
-        </IconButton>
-        <h1 className="t-section min-w-0 truncate">
-          {debt === null ? fr.credits.add : fr.credits.edit}
-        </h1>
-      </div>
+      <PageTitle title={debt === null ? fr.credits.add : fr.credits.edit} onBack={guard.request} />
 
       {/* Sur un crédit existant, le calcul est montré avant le formulaire :
           c'est la réponse qu'on vient chercher, pas les champs qui l'ont

@@ -8,6 +8,7 @@ import { useScopedMonthEntries } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
+import { PageTitle } from '@/ui/PageTitle'
 import { EntriesSection, type FlowFilter } from './EntriesSection'
 import { PendingSection } from './PendingSection'
 
@@ -44,7 +45,10 @@ export function MonthPage() {
 
   return (
     <>
-      <h1 className="sr-only">{fr.month.title}</h1>
+      {/* Le bandeau dit déjà quel mois on lit : le titre existe pour les
+          lecteurs d'écran et pour l'annonce du changement d'écran, il ne
+          s'affiche pas. */}
+      <PageTitle title={fr.month.title} hidden />
       <MonthHeader prorataNote />
 
       {/* Les deux sens sont deux boutons, jamais un seul. Passer par « Ajouter
