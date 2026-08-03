@@ -6,7 +6,7 @@ import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDateCompact, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
-import { confirmEntries, confirmEntry, unconfirmEntries } from '@/store/actions'
+import { confirmEntries, confirmEntry, unconfirmEntries, undoable } from '@/store/actions'
 import { useCategoryMap, useMonthPending, useMonthUnconfirmable } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
@@ -195,8 +195,9 @@ export function PendingSection() {
       }}
       onConfirm={() => {
         setUndoing(false)
-        unconfirmEntries(unconfirmable.map((e) => e.id))
-        toast(fr.month.unconfirmedAll)
+        undoable(fr.month.unconfirmedAll, () => {
+          unconfirmEntries(unconfirmable.map((e) => e.id))
+        })
       }}
     />
   )

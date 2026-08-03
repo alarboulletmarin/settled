@@ -1,3 +1,4 @@
+import { addMonthsToYm } from '@/domain/date'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
@@ -13,6 +14,7 @@ import {
 import { useStore } from '@/store/store'
 import { Chip } from '@/ui/Chip'
 import { MonthNav } from '@/ui/MonthNav'
+import { useHotkeys } from '@/ui/useHotkeys'
 
 /**
  * Les trois lectures du mois : tout, le commun seul, ou une personne.
@@ -153,6 +155,22 @@ export function MonthHeader({
   const ym = useStore((s) => s.ym)
   const setYm = useStore((s) => s.setYm)
   const bounds = useMonthBounds()
+
+  /* Les flèches font ce que font les deux chevrons, aux mêmes bornes : le mois
+     se balaie au doigt depuis toujours et se cliquait à la souris, il n'avait
+     rien au clavier. Le raccourci vit ici parce que c'est le seul composant qui
+     connaisse à la fois le mois, son remplaçant et ses bornes — et il ne vit
+     que sur les écrans rattachés à un mois, ceux qui le portent. */
+  useHotkeys({
+    ArrowLeft: () => {
+      const previous = addMonthsToYm(ym, -1)
+      if (bounds.min === undefined || previous >= bounds.min) setYm(previous)
+    },
+    ArrowRight: () => {
+      const next = addMonthsToYm(ym, 1)
+      if (bounds.max === undefined || next <= bounds.max) setYm(next)
+    },
+  })
 
   return (
     /* C'est l'en-tête lui-même qui colle, et non un bloc à l'intérieur : un

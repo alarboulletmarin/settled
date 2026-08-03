@@ -20,7 +20,7 @@ import { type TabChannel, type TabMessage, openTabChannel } from '@/persistence/
 import { forgetExportMarks } from '@/persistence/transfer'
 import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
 import { readStoredPreference, storePreference } from '@/theme/theme'
-import { toast } from '@/ui/toast'
+import { toast, useToasts } from '@/ui/toast'
 
 export type AppStatus = 'loading' | 'onboarding' | 'ready'
 
@@ -237,6 +237,12 @@ export const useStore = create<Store>()((set, get) => ({
   mutate(recipe) {
     const next = recipe(get().data)
     set({ data: next })
+    /* Le document change : les retours arrière encore proposés portent un
+       instantané d'avant, et le remettre par-dessus ce qui vient d'être fait
+       l'emporterait. L'offre s'efface donc à chaque mutation — celle de l'undo
+       compris, ce qui empêche de le rejouer —, et c'est aussi ce qui fait
+       qu'un seul geste est défaisable à la fois : le dernier. */
+    useToasts.getState().clearActions()
     /* Rien ne s'écrit tant que le foyer n'existe pas. Sans cette garde,
        répondre à la première question puis fermer l'onglet suffisait à laisser
        un document enregistré : au lancement suivant `loadDocument` le trouvait,
@@ -295,6 +301,12 @@ export const useStore = create<Store>()((set, get) => ({
 
   async replaceData(data) {
     writer.cancel()
+    /* Les trois remplacements de document et la lecture d'un onglet voisin
+       n'appellent pas `mutate` : ils posent le document entier. Le retour
+       arrière encore proposé porte pourtant un instantané de celui qu'on
+       remplace, et le rétablirait par-dessus — c'est-à-dire annulerait
+       l'import qu'on vient de confirmer deux fois. */
+    useToasts.getState().clearActions()
     // Un import ou le jeu d'exemple créent un foyer tout autant : quelqu'un qui
     // restaure un export sur un appareil neuf ne passe jamais par l'onboarding.
     void requestPersistence()
@@ -314,6 +326,7 @@ export const useStore = create<Store>()((set, get) => ({
 
   async resetAll() {
     writer.cancel()
+    useToasts.getState().clearActions()
     await clearDocument()
     // La triple confirmation annonce qu'il ne reste rien : laisser cinq
     // instantanés derrière en ferait un mensonge. La date du dernier export
@@ -341,6 +354,7 @@ export const useStore = create<Store>()((set, get) => ({
        ce qui va partir, alors qu'ici on ne sait justement pas ce qu'il y avait
        — c'est tout le problème. Deux questions, comme un import. */
     writer.cancel()
+    useToasts.getState().clearActions()
     await clearDocument()
     set({ data: initialData(), status: 'onboarding', error: null, rev: 0 })
     channel?.post({ type: 'cleared' })
@@ -357,6 +371,7 @@ export const useStore = create<Store>()((set, get) => ({
   async onTabMessage(message) {
     if (message.type === 'cleared') {
       writer.cancel()
+      useToasts.getState().clearActions()
       set({
         data: initialData(),
         status: 'onboarding',
@@ -380,6 +395,7 @@ export const useStore = create<Store>()((set, get) => ({
        est au pire les 400 ms de frappe en cours, contre le document entier
        d'en face. */
     writer.cancel()
+    useToasts.getState().clearActions()
     const loaded = await loadDocument()
     if (loaded === null) return
     storePreference(loaded.data.settings.theme)

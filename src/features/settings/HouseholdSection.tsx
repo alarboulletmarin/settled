@@ -8,7 +8,7 @@ import {
 import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { addMember, removeMember, renameMember, setHouseholdName } from '@/store/actions'
+import { addMember, removeMember, renameMember, setHouseholdName, undoable } from '@/store/actions'
 import {
   useAdvances,
   useHouseholdName,
@@ -25,6 +25,7 @@ import { Field, TextInput } from '@/ui/Field'
 import { Close, HouseholdIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
+import { useDraftField } from '@/ui/useDraftField'
 import { Link } from 'react-router-dom'
 import { MemberNameInput } from './MemberNameInput'
 
@@ -53,6 +54,10 @@ export function HouseholdSection() {
   const [newMember, setNewMember] = useState('')
   const [removing, setRemoving] = useState<Member | null>(null)
   const trimmed = newMember.trim()
+  /* Le nom du foyer se lit en tête de chaque écran : le vider en cours de
+     frappe l'y effaçait à chaque caractère. Il n'est jamais enregistré vide,
+     comme un prénom, et pour la même raison. */
+  const householdDraft = useDraftField(name, setHouseholdName, { allowEmpty: false })
 
   const removedAdvances =
     removing === null ? 0 : advances.filter((a) => a.memberId === removing.id).length
@@ -67,12 +72,9 @@ export function HouseholdSection() {
         {(id) => (
           <TextInput
             id={id}
-            value={name}
             placeholder={fr.settings.householdPlaceholder}
             maxLength={40}
-            onChange={(event) => {
-              setHouseholdName(event.target.value)
-            }}
+            {...householdDraft}
           />
         )}
       </Field>
@@ -240,8 +242,18 @@ export function HouseholdSection() {
           setRemoving(null)
         }}
         onConfirm={() => {
-          if (removing !== null) removeMember(removing.id)
+          const member = removing
           setRemoving(null)
+          if (member === null) return
+          /* Le seul des six gestes qui n'annonçait rien. C'est aussi celui qui
+             touche le plus d'endroits à la fois — ses entrées et ses
+             récurrences rendues au foyer, ses avances supprimées, le filtre du
+             mois rabattu sur « tout le monde » — et donc celui où l'instantané
+             rend le plus de service : aucun geste inverse ne les recollerait
+             un par un. */
+          undoable(tpl(fr.settings.memberRemoved, member.name), () => {
+            removeMember(member.id)
+          })
         }}
       />
     </Tile>

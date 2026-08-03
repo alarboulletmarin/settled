@@ -196,6 +196,78 @@ personne, les récurrences de 1 518 px à 708 px, et les réglages de 4 779 px �
 1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
 seule fois pour les trois écrans.
 
+**Défaire tient dans un instantané, pas dans une commande.** Toutes les
+mutations du domaine sont pures — `updates.ts` rend un `Data` neuf plutôt que de
+modifier celui qu'on lui donne —, si bien que le document d'avant est encore là,
+intact, à portée de référence. Le reposer *est* l'annulation exacte de
+n'importe quel geste, y compris ceux qui touchent à dix endroits à la fois comme
+le retrait d'un membre. Une pile de commandes inverses aurait demandé une
+fonction par geste, et une de plus à chaque geste nouveau, pour un résultat
+moins fidèle. `undoable` capture, applique, annonce et propose ; le message
+porte l'offre et vit huit secondes, parce que quatre suffisent à lire
+« Dépense supprimée » mais pas à s'apercevoir qu'on s'est trompé et à atteindre
+le bouton au pouce.
+
+L'offre ne survit à aucune mutation du document — `mutate` la retire, et les
+quatre remplacements qui ne passent pas par lui aussi. C'est ce qui empêche un
+instantané d'écraser ce qui a été fait depuis, notamment le document qu'un
+onglet voisin vient de relire ; c'est ce qui empêche de rejouer un undo ; et
+c'est ce qui fait qu'un seul geste est défaisable à la fois, le dernier. Le
+verbe est « Rétablir » : « Annuler » est déjà le bouton qui ferme une boîte de
+dialogue.
+
+Les `ConfirmDialog` restent toutes. Le cahier §4.8 demande une confirmation sur
+toute suppression, et un retour arrière de huit secondes ne dit pas la même
+chose qu'une question posée avant : il rattrape le oui donné trop vite, il ne le
+remplace pas. Les retirer se déciderait dans le cahier, pas dans le code.
+
+**Une saisie ne se jette pas sans un mot, et `beforeunload` n'y pouvait rien.**
+Les quatre écrans de saisie quittent par le routeur, pas par le navigateur : un
+`beforeunload` ne voit pas passer un changement d'URL interne, et n'aurait donc
+protégé que la fermeture d'onglet — le seul cas où l'on ne perd pas la saisie
+par mégarde. `useLeaveGuard` compare le brouillon à ce qu'il était à
+l'ouverture, en surface, et ne pose sa question que s'il a bougé : ouvrir un
+formulaire, le regarder et repartir est un geste courant, et le ponctuer d'une
+question apprendrait surtout à cliquer sans lire — ce qui coûterait précisément
+la fois où la saisie n'était pas vide.
+
+**Aucun indicateur de sauvegarde permanent, et c'est une décision.** L'écriture
+est débouncée à 400 ms et regroupée : une pastille qui suivrait son état
+clignoterait à chaque frappe pour annoncer ce qui n'a jamais échoué. Ce qu'il
+faut savoir, c'est l'anomalie — et elle a déjà son bandeau, persistant, qui ne
+s'écarte pas et propose l'export. Un signal permanent à côté de lui apprendrait
+surtout à ne plus le voir. Le jour où le silence poserait vraiment problème,
+c'est le bandeau qu'il faudrait étendre, pas un second signal qu'il faudrait
+ajouter.
+
+**Les raccourcis clavier ont un seul endroit qui décide quand ils se taisent.**
+Trois touches, et trois conditions qui comptent autant qu'elles : on tape — un
+« n » dans un libellé ne crée pas de dépense ; un modificateur est enfoncé —
+`Ctrl+N` et `⌘←` appartiennent au navigateur ; une feuille est ouverte — un
+`<dialog>` capte le focus mais pas les écouteurs de `window`, et un raccourci
+qui agirait derrière une question de confirmation la laisserait ouverte sur un
+écran qui a changé. `n` se tait en plus sur les écrans de saisie, où il
+contournerait la garde de brouillon : celle-ci ne surveille que les deux boutons
+de sortie, pas les départs qui ne passent pas par eux.
+
+**La recherche est du calcul pur, et elle vit sur l'historique.** L'appariement
+est dans `domain/search.ts`, testé : casse et accents mis de côté — on ne tape
+pas ses accents au pouce —, en sous-chaîne, et muet en dessous de deux lettres,
+où une seule apparie la moitié du foyer et rend plus long que la liste qu'elle
+réduit. La recherche globale n'a pas de sixième onglet : la barre en porte cinq
+et n'en tient pas six à 320px (DS §5). Elle est sur l'historique, qui est de
+toute façon l'écran de la question — « ce prélèvement de mars » est un regard en
+arrière. Ce que la limite de vingt laisse de côté est compté et dit : une coupe
+silencieuse se lirait comme une réponse.
+
+**Un renommage en ligne n'écrit qu'à la sortie du champ.** Taper « Carburant »
+posait neuf mutations du document, neuf rendus de tout ce qui lit le store et
+neuf écritures programmées, dont huit portaient un mot inachevé. C'était déjà la
+règle de tous les formulaires — ils tiennent leur saisie en état local et
+n'écrivent qu'à l'enregistrement : les renommages étaient l'exception, pas le
+modèle, et `useDraftField` les y ramène. Ce qu'on perd en fermant l'onglet au
+milieu d'un mot est donc ce que perd déjà n'importe quel autre champ de l'app.
+
 **La réparation des liens est une normalisation, pas une migration.** Rien ne
 vérifiait qu'une `categoryId`, une `memberId` ou une `recurrenceId` désignait
 quelque chose, et chaque lien mort avait sa façon d'être faux en silence : une
@@ -326,8 +398,25 @@ une tuile d'une rangée sous 1024px, et l'explication s'y perdait sur
 téléphone.
 
 Le mois se balaie horizontalement au doigt, le rappel d'export se chasse d'un
-balayage vers le haut, et les cibles tactiles font 44px partout.
+balayage vers le haut, et les cibles tactiles font 44px partout. Les deux gestes
+sont en Pointer Events : souris et stylet balaient comme un doigt, sans code
+séparé. `MonthNav` a longtemps été en TouchEvents, donc réservé au doigt — deux
+grammaires pour un même mouvement, à un écran d'écart.
 
-Un piège à connaître sur les gestes : `touch-action: pan-x` est ce qui rend le
-balayage vertical possible. Sans lui, le navigateur préempte le mouvement pour
-faire défiler la page et n'envoie plus un seul `pointermove`.
+Un piège à connaître sur les gestes : `touch-action` est ce qui rend le
+balayage possible, sur l'axe qu'on ne prend pas. `pan-x` sur le bandeau
+d'export, qu'on chasse vers le haut ; `pan-y` sur le mois, qu'on balaie sur le
+côté. Sans lui, le navigateur préempte le mouvement pour faire défiler la page
+et n'envoie plus un seul `pointermove`.
+
+Une lecture qui n'a pas de réponse s'efface plutôt que d'afficher un nombre.
+« Reste à vivre » arrête le prévisionnel à la prochaine rentrée d'argent *à
+partir d'aujourd'hui* : hors du mois courant, l'horizon est derrière ou devant,
+le chiffre se calcule quand même et ne répond pas à la question posée. C'est la
+règle qui retire déjà cinq tuiles sous la lecture du commun.
+
+`CreditsPage` n'a volontairement pas de `MonthHeader`, contrairement à
+`SplitPage` : rien sur cet écran ne dépend du mois affiché. `useDebtStatuses`
+dérive le capital restant dû des échéances confirmées à la date du jour et ne
+lit jamais `ym`. Un navigateur de mois qui ne change rien à l'écran vaut moins
+que son absence.

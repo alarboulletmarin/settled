@@ -23,6 +23,14 @@ export type ConfirmDialogProps = {
    * pas ; elle se clique.
    */
   details?: ReactNode
+  /**
+   * Le verbe qui repart en arrière, quand « Annuler » y voudrait dire l'inverse
+   * de ce qu'il vient de dire. C'est le cas de la garde de brouillon : on
+   * arrive dans la boîte en cliquant « Annuler » sur le formulaire, et le même
+   * mot y signifierait « non, garde ma saisie ». Ailleurs, `fr.common.cancel`
+   * est le bon mot et reste le défaut.
+   */
+  cancelLabel?: string
   onCancel: () => void
   onConfirm: () => void
 }
@@ -52,6 +60,7 @@ export function ConfirmDialog({
   title,
   steps,
   details,
+  cancelLabel = fr.common.cancel,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -78,7 +87,7 @@ export function ConfirmDialog({
       footer={
         <>
           <Button variant="secondary" onClick={cancel} full>
-            {fr.common.cancel}
+            {cancelLabel}
           </Button>
           <Button
             variant="danger"

@@ -5,7 +5,7 @@ import { isCostly } from '@/domain/priceHistory'
 import { fr } from '@/i18n/fr'
 import { formatDate, formatMoney, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
-import { removeRecurrence, resumeRecurrence, stopRecurrence } from '@/store/actions'
+import { removeRecurrence, resumeRecurrence, stopRecurrence, undoable } from '@/store/actions'
 import { useRecurrenceRow } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
@@ -175,8 +175,9 @@ export function RecurrenceDetailPage() {
         onCancel={close}
         onConfirm={() => {
           close()
-          stopRecurrence(recurrence.id, today())
-          toast(fr.recurrences.stopped)
+          undoable(fr.recurrences.stopped, () => {
+            stopRecurrence(recurrence.id, today())
+          })
         }}
       />
 
@@ -187,8 +188,9 @@ export function RecurrenceDetailPage() {
         onCancel={close}
         onConfirm={() => {
           close()
-          removeRecurrence(recurrence.id)
-          toast(fr.recurrences.deleted)
+          undoable(fr.recurrences.deleted, () => {
+            removeRecurrence(recurrence.id)
+          })
           void navigate(RECURRENCES_PATH, { replace: true })
         }}
       />

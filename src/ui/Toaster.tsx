@@ -1,6 +1,6 @@
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
-import { IconButton } from './Button'
+import { Button, IconButton } from './Button'
 import { Close } from './Icons'
 import { type Toast, useToasts } from './toast'
 
@@ -56,6 +56,23 @@ function ToastItem({ toast }: { toast: Toast }) {
     >
       <span className="t-body">{toast.message}</span>
       {toast.count > 1 && <span className="t-axis tnum shrink-0">· {toast.count}</span>}
+      {/* Le retour arrière ferme le message en même temps qu'il agit : le
+          laisser ouvert proposerait de défaire une deuxième fois ce qui vient
+          de l'être. Le geste retire de toute façon l'offre — toute mutation du
+          document la retire —, mais le message, lui, resterait à l'écran. */}
+      {toast.action !== undefined && (
+        <Button
+          size="sm"
+          variant="secondary"
+          className="shrink-0"
+          onClick={() => {
+            toast.action?.onAction()
+            dismiss(toast.id)
+          }}
+        >
+          {toast.action.label}
+        </Button>
+      )}
       <IconButton
         label={fr.common.close}
         onClick={() => {

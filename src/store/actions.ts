@@ -10,11 +10,44 @@ import { makeId } from '@/domain/ids'
 import type { Money } from '@/domain/money'
 import { type Advance, type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
 import * as updates from '@/domain/updates'
+import { fr } from '@/i18n/fr'
 import { nextCategoryColor, nextMemberColor } from '@/persistence/defaults'
+import { toast } from '@/ui/toast'
 import { ALL_FILTER, useStore } from './store'
 
 const mutate = (recipe: Parameters<ReturnType<typeof useStore.getState>['mutate']>[0]): void => {
   useStore.getState().mutate(recipe)
+}
+
+/**
+ * Fait le geste, l'annonce, et propose de revenir dessus.
+ *
+ * Aucune structure de commande là-dessous, et il n'en faut aucune : toutes les
+ * mutations du domaine sont pures — `updates.ts` rend un `Data` neuf plutôt que
+ * de modifier celui qu'on lui donne —, si bien que le document d'avant est
+ * encore là, intact, à portée de référence. Le reposer *est* l'annulation
+ * exacte de n'importe quel geste, y compris ceux qui touchent à dix endroits à
+ * la fois comme le retrait d'un membre ou la suppression d'une récurrence.
+ *
+ * L'offre ne survit pas à la mutation suivante — `mutate` la retire. C'est ce
+ * qui empêche l'instantané d'écraser ce qui a été fait depuis, et ce qui fait
+ * qu'un seul geste est défaisable : le dernier. La fenêtre est celle du
+ * message, huit secondes.
+ *
+ * Elle ne remplace pas la confirmation : le cahier §4.8 la demande sur toute
+ * suppression, et un retour arrière qui dure huit secondes ne dit pas la même
+ * chose qu'une question posée avant. Elle rattrape ce que la question ne
+ * rattrape pas — le oui donné trop vite.
+ */
+export function undoable(message: string, apply: () => void): void {
+  const before = useStore.getState().data
+  apply()
+  toast(message, 'default', {
+    label: fr.common.undo,
+    onAction: () => {
+      mutate(() => before)
+    },
+  })
 }
 
 /* --- Foyer ----------------------------------------------------------------*/

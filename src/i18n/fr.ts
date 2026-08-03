@@ -132,6 +132,23 @@ export const fr = {
     more: 'Voir plus',
     less: 'Voir moins',
     other: 'Autres',
+    /* Le retour arrière d'un message. Pas « Annuler » : c'est déjà le bouton
+       qui ferme une boîte de dialogue, et les deux se seraient répondu dans la
+       même — la raison qui fait dire « remettre à confirmer » plutôt
+       qu'« annuler la confirmation ». « Rétablir » dit d'ailleurs ce qui se
+       passe : l'état d'avant revient tel quel. */
+    undo: 'Rétablir',
+  },
+
+  /* La garde de brouillon des quatre formulaires. La question dit ce qui se
+     passe si l'on continue, jamais « êtes-vous sûr » (cahier §4.8), et le verbe
+     qui reste n'est pas « Annuler » : on arrive dans cette boîte en cliquant
+     « Annuler » sur le formulaire, et le même mot y voudrait dire l'inverse. */
+  unsaved: {
+    title: 'Saisie non enregistrée',
+    question: 'Ce que tu viens de saisir sera perdu.',
+    leave: 'Abandonner',
+    stay: 'Continuer la saisie',
   },
 
   direction: {
@@ -297,6 +314,7 @@ export const fr = {
        membre, et « Prénom » seul les annoncerait tous pareil. */
     memberRename: 'Prénom de %s',
     memberRemove: 'Retirer %s',
+    memberRemoved: '%s a été retiré du foyer',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     memberRemoveConfirm:
       'Ses entrées et ses récurrences repassent au foyer : rien n’est effacé. Retirer %s ?',
@@ -358,6 +376,11 @@ export const fr = {
     categoryArchived: 'Archivées',
     categoriesHint:
       'Une catégorie n’est jamais effacée : elle est archivée, et les entrées passées la gardent.',
+    /* Quarante-six catégories sous onze familles repliées : retrouver
+       « Carburant » demandait de deviner qu'elle est rangée sous Transport. */
+    categorySearch: 'Rechercher une catégorie',
+    categorySearchPlaceholder: 'Carburant',
+    categorySearchEmpty: 'Aucune catégorie ne correspond à « %s ».',
 
     data: 'Données',
     export: 'Exporter mes données',
@@ -489,6 +512,26 @@ export const fr = {
     srTrailing: 'Solde mensuel : %s',
     srYears: 'Cumul %s contre %s : %s',
     noData: 'Aucune donnée sur cette période.',
+    /* Sur un foyer neuf, les trois tuiles empilaient trois phrases d'excuse —
+       pas assez pour une courbe, pas deux mois à comparer, pas d'année
+       complète. Trois façons de dire la même chose, et aucune ne disait quoi
+       faire. Un seul état vide les remplace tant que rien n'a été saisi, comme
+       sur les autres écrans. */
+    /* Retrouver une ligne se faisait mois par mois, ou pas du tout. La
+       recherche vit ici et non derrière un sixième onglet — la barre en porte
+       cinq et n'en tient pas six à 320px — et c'est de toute façon l'écran de
+       la question : « ce prélèvement de mars » est un regard en arrière. */
+    search: 'Retrouver une ligne',
+    searchLabel: 'Rechercher par libellé',
+    searchPlaceholder: 'EDF',
+    searchHint: 'Tous mois confondus, récurrences comprises.',
+    searchEntries: 'Entrées',
+    searchRecurrences: 'Récurrences',
+    searchEmpty: 'Aucune ligne ne correspond à « %s ».',
+    searchMore: '… et %s de plus. Précise la recherche pour les voir.',
+    empty: 'L’historique se remplit tout seul, à mesure que les mois passent.',
+    emptyHint:
+      'Il n’y a encore rien à comparer : la courbe, l’écart entre deux mois et le cumul annuel arrivent avec les premières entrées.',
   },
 
   dashboard: {
@@ -791,6 +834,12 @@ export const fr = {
     groupBy: 'Regrouper par',
     byCategory: 'Catégorie',
     byMember: 'Personne',
+    /* L'ordre était toujours imposé par le domaine — par prochaine échéance,
+       qui répond à « qu'est-ce qui tombe bientôt ». C'est cet écran qui porte
+       l'autre question : « qu'est-ce qui me coûte le plus ». */
+    sortBy: 'Trier par',
+    byDue: 'Échéance',
+    byAmount: 'Montant',
     /* Le sens ne regroupe pas, il filtre — la règle qu'applique déjà la liste
        du mois. En axe, il rendait deux blocs dont le total en tête de page
        donne déjà les chiffres ; en filtre, il se combine aux deux axes qui
@@ -1343,6 +1392,14 @@ export const fr = {
     ringLabel: 'Anneau de progression',
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
+    /* Un raccourci que personne ne découvre ne sert personne. Il se dit en
+       infobulle sur le geste qu'il double — c'est-à-dire au survol, donc
+       exactement là où un clavier est branché. Le nom accessible, lui, ne le
+       porte pas : « flèche gauche » annoncé par un lecteur d'écran décrit une
+       touche, pas ce que le bouton fait. */
+    previousMonthKey: 'Mois précédent (←)',
+    nextMonthKey: 'Mois suivant (→)',
+    newEntryKey: 'Ajouter une dépense (n)',
   },
 } as const
 

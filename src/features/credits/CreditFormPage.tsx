@@ -6,7 +6,7 @@ import { parseAmount, toAmountInput } from '@/domain/money'
 import type { Debt } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
-import { addDebt, removeDebt, replaceDebt } from '@/store/actions'
+import { addDebt, removeDebt, replaceDebt, undoable } from '@/store/actions'
 import { useDebtStatus, useRecurrenceRows } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button, IconButton } from '@/ui/Button'
@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { ChevronLeft } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
+import { useLeaveGuard } from '@/ui/useLeaveGuard'
 import { useCurrency } from '@/ui/currency'
 import { toast } from '@/ui/toast'
 
@@ -62,6 +63,7 @@ function Form({ debt, onDone }: { debt: Debt | null; onDone: () => void }) {
   const currency = useCurrency()
   const [draft, setDraft] = useState<Draft>(() => initial(debt))
   const [showErrors, setShowErrors] = useState(false)
+  const guard = useLeaveGuard(draft, onDone)
 
   const principal = parseAmount(draft.principalText)
   const rateBp = parseRateBp(draft.rateText)
@@ -106,7 +108,7 @@ function Form({ debt, onDone }: { debt: Debt | null; onDone: () => void }) {
   return (
     <div className="flex max-w-xl flex-col gap-5">
       <div className="flex items-center gap-1">
-        <IconButton label={fr.common.back} onClick={onDone}>
+        <IconButton label={fr.common.back} onClick={guard.request}>
           <ChevronLeft />
         </IconButton>
         <h1 className="t-section min-w-0 truncate">
@@ -273,12 +275,14 @@ function Form({ debt, onDone }: { debt: Debt | null; onDone: () => void }) {
         <Button type="submit" form="credit-form">
           {fr.common.save}
         </Button>
-        <Button variant="secondary" onClick={onDone}>
+        <Button variant="secondary" onClick={guard.request}>
           {fr.common.cancel}
         </Button>
       </div>
 
       {debt !== null && <RemoveDebt debt={debt} onDone={onDone} />}
+
+      <ConfirmDialog {...guard.dialog} />
     </div>
   )
 }
@@ -305,8 +309,9 @@ function RemoveDebt({ debt, onDone }: { debt: Debt; onDone: () => void }) {
         }}
         onConfirm={() => {
           setConfirming(false)
-          removeDebt(debt.id)
-          toast(fr.credits.removed)
+          undoable(fr.credits.removed, () => {
+            removeDebt(debt.id)
+          })
           onDone()
         }}
       />
