@@ -1,10 +1,18 @@
 import { renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { makeData } from '@/domain/fixtures'
-import { useMonthScope, useMonthTotals, useTrailingMonths } from './selectors'
+import {
+  eur,
+  makeCategory,
+  makeData,
+  makeEntry,
+  makeFamily,
+  makeMember,
+} from '@/domain/fixtures'
+import { useMonthEntries, useMonthScope, useMonthTotals, useTrailingMonths } from './selectors'
 import { useStore } from './store'
 
 const initial = useStore.getState().data
+const initialYm = useStore.getState().ym
 
 describe('la portée du mois, mutualisée', () => {
   afterEach(() => {
@@ -60,5 +68,56 @@ describe('la portée du mois, mutualisée', () => {
     rerender()
 
     expect(result.current).not.toBe(before)
+  })
+})
+
+/* Seul du foyer, la vue filtrée sur le membre doit valoir « tout le monde » au
+   centime : le prorata vaut trivialement 100 %, et les lignes que personne ne
+   porte — le loyer commun, une paie laissée « tout le foyer » — lui
+   reviennent. C'est l'incohérence qui a motivé la règle : solde et capacité
+   d'épargne divergeaient entre les deux pilules d'un même foyer d'une
+   personne. */
+describe('le foyer d’une seule personne, au travers du store', () => {
+  afterEach(() => {
+    useStore.setState({ data: initial, ym: initialYm })
+    useStore.getState().setFilter({ kind: 'all' })
+  })
+
+  const soloData = makeData({
+    household: { name: 'Maison', members: [makeMember({ id: 'm-1' })] },
+    families: [
+      makeFamily({ id: 'fam-charges', kind: 'charge' }),
+      makeFamily({ id: 'fam-res', kind: 'resource' }),
+    ],
+    categories: [
+      makeCategory({ id: 'logement', familyId: 'fam-charges' }),
+      makeCategory({ id: 'courses', familyId: 'fam-charges' }),
+      makeCategory({ id: 'salaire', familyId: 'fam-res', direction: 'in' }),
+    ],
+    entries: [
+      makeEntry({ id: 'loyer', date: '2026-07-05', amount: eur(95_000), categoryId: 'logement' }),
+      makeEntry({ id: 'sien', date: '2026-07-15', amount: eur(4_000), categoryId: 'courses', memberId: 'm-1' }),
+      makeEntry({ id: 'paie', date: '2026-07-01', direction: 'in', amount: eur(250_000), categoryId: 'salaire' }),
+    ],
+  })
+
+  it('filtré sur le membre seul, le mois est celui du foyer', () => {
+    useStore.setState({ data: soloData, ym: '2026-07' })
+
+    useStore.getState().setFilter({ kind: 'all' })
+    const foyer = renderHook(() => useMonthTotals()).result.current
+
+    useStore.getState().setFilter({ kind: 'member', memberId: 'm-1' })
+    const { result } = renderHook(
+      () => [useMonthScope(), useMonthTotals(), useMonthEntries()] as const,
+    )
+    const [scope, totals, listes] = result.current
+
+    // Le prorata se calcule — pas de repli sur ses seules lignes.
+    expect(scope.prorated).toBe(true)
+    expect(scope.partial).toBe(false)
+    expect(totals).toEqual(foyer)
+    // Les listes n'ont rien à retrancher : le loyer et la paie y restent.
+    expect(listes.map((e) => e.id).sort()).toEqual(['loyer', 'paie', 'sien'])
   })
 })

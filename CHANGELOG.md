@@ -65,6 +65,69 @@ tourner indéfiniment sur son écran de démarrage.
 - Une exception au rendu donnait un **écran blanc**, reproduit à l'identique à
   chaque rechargement puisque le service worker resservait la même version.
 
+### Corrigé — le foyer d'une seule personne
+
+Aucune migration : `schemaVersion` reste à 6, rien ne change dans le document.
+
+- **Le mois filtré sur le membre unique vaut désormais le mois du foyer, au
+  centime.** Le prorata refusait de se calculer à moins de deux membres, et la
+  vue filtrée retombait sur les seules lignes à son nom : le loyer, un salaire
+  ou un versement laissés « tout le foyer » en disparaissaient, et le solde
+  comme la capacité d'épargne divergeaient de l'écran d'à côté sans raison
+  lisible. Un prorata à un seul participant n'est pas indéfini : il vaut
+  100 %, sans qu'aucun revenu soit déclaré — il n'y a personne à comparer.
+- **La tuile « Part du foyer » s'affiche aussi seul du foyer** : ses charges
+  perso d'un côté, le pot entier de l'autre — précisément la distinction qui
+  reste quand on est seul. La régularisation, elle, se calcule et rend zéro.
+- **La pilule « Commun » se propose dès le premier membre** : le pot seul, à
+  son montant plein, la seule lecture qui distingue encore les charges du
+  foyer des siennes.
+- **L'écran Répartition rend le pot en solo** — une ligne à 100 %, la liste
+  vérifiable — au lieu d'exiger un second membre.
+
+### Corrigé — l'épargne n'est pas une charge
+
+Aucune migration : `schemaVersion` reste à 6. Les totaux, eux, ont toujours
+été justes — la tuile Charges, la capacité d'épargne et la répartition ont
+toujours exclu l'épargne. C'étaient les filtres des listes qui mentaient.
+
+- **Les pilules des listes filtrent par nature, plus par sens.** Sur la liste
+  du mois et sur les récurrences, « Charges » filtrait ce qui *sort* du
+  compte : un versement d'épargne s'y rangeait — et une reprise se rangeait
+  sous « Revenus ». Le sous-total du filtre contredisait alors la tuile
+  Charges voisine, qui exclut l'épargne. « Charges » compte désormais comme la
+  tuile — charges et crédits — et « Revenus » ne compte que les ressources.
+- **L'épargne a sa pilule**, sur les deux listes : la même position que dans
+  la saisie, et le seul endroit où isoler versements et reprises.
+- **Le total en tête des récurrences suit le filtre** : sous « Charges » il
+  laisse l'épargne dehors, sous « Épargne » il se compte en net — reprises
+  déduites, comme partout — et chaque périmètre se dit sous le chiffre.
+- **Cliquer la tuile Revenus ou Charges** filtre la liste sur la nature que la
+  tuile compte, plus sur un sens qui montrait davantage.
+- **Sous une pilule, les totaux parlent sa langue** : les charges en sortie
+  pleine comme la tuile du même nom, les revenus en entrée, et l'épargne en
+  net — versements moins reprises, comme partout. Le solde, signé par le sens,
+  affichait « −300 € » sous la pilule Épargne d'un mois où l'on en plaçait
+  300, et les groupes des récurrences contredisaient au signe près le total
+  posé juste au-dessus d'eux.
+- **L'alerte de changement de prix se tait sur l'épargne** : verser plus sur
+  un livret n'est pas une facture qui flambe — rouge et panneau ne valent que
+  pour une charge qui monte ou un revenu qui baisse. Le changement se lit
+  quand même, en « montant » plutôt qu'en « prix ».
+- **Le comparatif de deux mois ne peint plus en rouge un mois où l'on épargne
+  davantage** : l'écart d'un livret se lit sans alarme, le rouge reste aux
+  charges et aux crédits qui montent.
+- **« Où part l'argent » dit ce qu'il compte** : son état vide annonce
+  « Aucune charge ni crédit » — il annonçait « Aucune sortie » sur un mois où
+  400 € étaient partis sur un livret — et sa lecture d'écran nomme les charges
+  et les crédits, pas « les sorties ».
+- **La feuille du Solde du mois explique enfin l'épargne** : un versement y
+  compte comme une sortie — l'argent quitte bien le compte — et c'est la
+  capacité d'épargne qui le met à part. C'était la question la plus fréquente
+  devant ce chiffre, et aucune des trois feuilles n'y répondait.
+- **Le calendrier a sa porte Épargne**, comme le mois et le bouton flottant :
+  mettre de côté depuis un jour choisi passait par « Dépense ».
+
 ### Ajouté — revenir au mois courant
 
 - **« Ce mois-ci »** dans le bandeau du mois, à droite de la navigation. Parti

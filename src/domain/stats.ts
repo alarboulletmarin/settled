@@ -20,7 +20,7 @@ import {
 import { type Money, ZERO, add, ratio, sub, sum } from './money'
 import { buildPlannedEntry } from './month'
 import { expandRecurrence, monthlyEquivalent, annualCost } from './recurrence'
-import type { CategoryKind, Direction, Entry, Recurrence } from './types'
+import { type CategoryKind, type Direction, type Entry, type Recurrence, directionOfKind } from './types'
 
 /** Filtre par membre. `undefined` = tout le foyer. */
 export type MemberFilter = string | undefined
@@ -292,6 +292,14 @@ function topSlices(totals: Map<string, Money>, limit: number): CategorySlice[] {
   return [...head, { categoryId: OTHER_CATEGORY, total: rest, share: ratio(rest, total) }]
 }
 
+/**
+ * Répartition par catégorie d'un sens de trésorerie, sans garde de nature :
+ * en `out`, un versement d'épargne y pèse à côté des courses. À ne jamais
+ * brancher tel quel sur un écran étiqueté « Dépenses » ou « Charges » — c'est
+ * exactement le camembert « Épargne 30 % à côté de Courses 12 % » que
+ * `types.ts` interdit. Les écrans passent par `breakdownByFamily` (gardé par
+ * `isSpending`) ou `savingsByCategory`.
+ */
 export function breakdownByCategory(
   entries: readonly Entry[],
   month: YearMonth,
@@ -502,6 +510,52 @@ export function recurrenceTotals(
     const priced: Recurrence = { ...recurrence, amount: resolved }
     monthly = add(monthly, monthlyEquivalent(priced) ?? ZERO)
     annual = add(annual, annualCost(priced) ?? ZERO)
+  }
+
+  return { monthly, annual, unknownCount }
+}
+
+/**
+ * Le même total, borné aux natures d'une lecture — charges et crédits,
+ * ressources, ou épargne.
+ *
+ * C'est le total qui suit le filtre par nature des listes : un versement
+ * d'épargne sort du compte mais n'est pas une charge, et un total « Charges »
+ * qui le compterait contredirait la tuile du même nom, qui l'exclut.
+ *
+ * Compté en net quand le sens d'une récurrence diverge de sa nature : une
+ * reprise récurrente sur un livret se retranche des versements — l'épargne se
+ * compte en net, comme partout — et un remboursement récurrent se
+ * retrancherait des charges de la même façon. Les natures à sens unique n'y
+ * perdent rien.
+ */
+export function recurrenceTotalsOfKinds(
+  recurrences: readonly Recurrence[],
+  amountOf: (recurrence: Recurrence) => Money | null,
+  on: ISODate,
+  kindOf: KindOf,
+  kinds: readonly CategoryKind[],
+): RecurrenceTotals {
+  let monthly = ZERO
+  let annual = ZERO
+  let unknownCount = 0
+
+  for (const recurrence of recurrences) {
+    const kind = kindOf(recurrence.categoryId)
+    if (!kinds.includes(kind)) continue
+    if (recurrence.endedOn !== undefined && recurrence.endedOn < on) continue
+
+    const resolved = amountOf(recurrence)
+    if (resolved === null) {
+      unknownCount += 1
+      continue
+    }
+    const priced: Recurrence = { ...recurrence, amount: resolved }
+    const flip = recurrence.direction !== directionOfKind(kind)
+    const monthlyValue = monthlyEquivalent(priced) ?? ZERO
+    const annualValue = annualCost(priced) ?? ZERO
+    monthly = flip ? sub(monthly, monthlyValue) : add(monthly, monthlyValue)
+    annual = flip ? sub(annual, annualValue) : add(annual, annualValue)
   }
 
   return { monthly, annual, unknownCount }

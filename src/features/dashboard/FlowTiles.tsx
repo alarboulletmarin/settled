@@ -7,8 +7,10 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { ChargesIcon, type IconComponent, IncomeIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
-/** Ce qu'une tuile de flux fait au clic, quand il y a des lignes à montrer. */
-export type ShowFlow = (direction: 'in' | 'out') => void
+/** Ce qu'une tuile de flux fait au clic, quand il y a des lignes à montrer.
+ *  Elle passe une nature, pas un sens : la liste filtre comme la tuile compte
+ *  — charges et crédits d'un côté, ressources de l'autre, épargne à part. */
+export type ShowNature = (nature: 'expense' | 'income') => void
 
 /**
  * Les deux chiffres que les quatre soldes combinent sans jamais les dire :
@@ -30,20 +32,25 @@ export type ShowFlow = (direction: 'in' | 'out') => void
  * Le coût est de deux rangées de plus à faire défiler sur un téléphone, pour
  * les deux chiffres qu'on vient chercher en premier.
  *
- * Le clic filtre la liste du mois sur ce sens-là et l'amène sous les yeux. Il
- * ouvrait une feuille qui définissait le chiffre : devant « Charges : 1 166 € »,
- * la question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
+ * Le clic filtre la liste du mois sur cette nature-là et l'amène sous les
+ * yeux. Sur la nature, pas le sens : la tuile Charges exclut l'épargne, et un
+ * clic qui ouvrirait une liste où les versements d'épargne se mêlent aux
+ * courses montrerait plus que le chiffre qu'on vient de lire. Il ouvrait une
+ * feuille qui définissait le chiffre : devant « Charges : 1 166 € », la
+ * question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
  * Le rangement de la liste n'y touche pas — filtrer n'est pas ranger, et l'axe
  * choisi est celui de l'utilisateur.
  *
- * Sans ligne confirmée de ce sens, la tuile n'est pas cliquable : mieux vaut
- * qu'elle ne réponde pas que de mener à une liste où son chiffre n'est pas.
+ * Sans ligne confirmée de cette nature, la tuile n'est pas cliquable : mieux
+ * vaut qu'elle ne réponde pas que de mener à une liste où son chiffre n'est
+ * pas.
  */
 function FlowTile({
   label,
   icon,
   flow,
   direction,
+  nature,
   hint,
   onShow,
 }: {
@@ -51,8 +58,9 @@ function FlowTile({
   icon: IconComponent
   flow: Flow
   direction: 'in' | 'out'
+  nature: 'expense' | 'income'
   hint: string
-  onShow?: ShowFlow
+  onShow?: ShowNature
 }) {
   return (
     <Tile
@@ -62,7 +70,7 @@ function FlowTile({
         ? {}
         : {
             onClick: () => {
-              onShow(direction)
+              onShow(nature)
             },
             label: tpl(fr.dashboard.showLines, label),
             // Une flèche vers le bas, pas un chevron : la liste est plus bas
@@ -84,7 +92,7 @@ function FlowTile({
   )
 }
 
-export function IncomeTile({ onShow }: { onShow?: ShowFlow }) {
+export function IncomeTile({ onShow }: { onShow?: ShowNature }) {
   const { income } = useMonthFlows()
   const currency = useCurrency()
 
@@ -101,13 +109,14 @@ export function IncomeTile({ onShow }: { onShow?: ShowFlow }) {
       icon={IncomeIcon}
       flow={income}
       direction="in"
+      nature="income"
       hint={hint}
       {...(onShow === undefined ? {} : { onShow })}
     />
   )
 }
 
-export function ChargesTile({ onShow }: { onShow?: ShowFlow }) {
+export function ChargesTile({ onShow }: { onShow?: ShowNature }) {
   const { spending } = useMonthFlows()
   const currency = useCurrency()
 
@@ -124,6 +133,7 @@ export function ChargesTile({ onShow }: { onShow?: ShowFlow }) {
       icon={ChargesIcon}
       flow={spending}
       direction="out"
+      nature="expense"
       hint={hint}
       {...(onShow === undefined ? {} : { onShow })}
     />

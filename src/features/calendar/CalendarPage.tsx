@@ -29,7 +29,7 @@ function DayPanel({
   entries: Entry[]
   date: string
   onOpen: (e: Entry) => void
-  onAdd: (direction: 'in' | 'out') => void
+  onAdd: (nature: 'in' | 'out' | 'saving') => void
   onClose: () => void
 }) {
   const categories = useCategoryMap()
@@ -69,8 +69,10 @@ function DayPanel({
         </ul>
       )}
       {/* Le jour choisi est déjà la réponse à « quelle date ? » : la saisie
-          s'ouvre dessus plutôt que de la redemander. Et le sens se choisit
-          ici, pas dans un formulaire intitulé « dépense ». */}
+          s'ouvre dessus plutôt que de la redemander. Et la nature se choisit
+          ici, pas dans un formulaire intitulé « dépense » — l'épargne a sa
+          porte, comme sur le mois et le bouton flottant : on ne met pas de
+          côté par « Dépense ». */}
       <div className="flex flex-wrap gap-2">
         <Button
           variant="secondary"
@@ -92,6 +94,16 @@ function DayPanel({
           <Plus size={16} />
           {fr.entry.newIn}
         </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => {
+            onAdd('saving')
+          }}
+        >
+          <Plus size={16} />
+          {fr.entry.newSaving}
+        </Button>
       </div>
     </Tile>
   )
@@ -102,8 +114,12 @@ export function CalendarPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState<string | null>(null)
 
-  const create = (direction: 'in' | 'out', date?: string): void => {
-    void navigate(entryNewPath(date === undefined ? { direction } : { direction, date }))
+  const create = (nature: 'in' | 'out' | 'saving', date?: string): void => {
+    // L'épargne part en « je place » : c'est le geste le plus courant, et le
+    // formulaire porte la bascule pour reprendre.
+    const options =
+      nature === 'saving' ? { direction: 'out' as const, saving: true } : { direction: nature }
+    void navigate(entryNewPath(date === undefined ? options : { ...options, date }))
   }
 
   const hasAny = month.days.some((day) => day.entries.length > 0)
@@ -152,8 +168,8 @@ export function CalendarPage() {
             onOpen={(entry) => {
               void navigate(entryPath(entry.id))
             }}
-            onAdd={(direction) => {
-              create(direction, day.date)
+            onAdd={(nature) => {
+              create(nature, day.date)
             }}
             onClose={() => {
               setSelected(null)
@@ -179,6 +195,14 @@ export function CalendarPage() {
                   }}
                 >
                   {fr.entry.addIn}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    create('saving')
+                  }}
+                >
+                  {fr.entry.addSaving}
                 </Button>
               </div>
             </EmptyState>

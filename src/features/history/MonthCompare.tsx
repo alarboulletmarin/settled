@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react'
 import { type YearMonth, addMonthsToYm } from '@/domain/date'
 import { compareMonths } from '@/domain/history'
 import { coveredMonths } from '@/domain/month'
+import { isSpending } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDelta, formatYearMonth } from '@/i18n/format'
-import { useCategoryMap, useEntries, useMonthScope } from '@/store/selectors'
+import { useCategoryMap, useEntries, useKindOf, useMonthScope } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -50,6 +51,7 @@ export function MonthCompare() {
   const entries = useEntries()
   const months = useStore((s) => s.data.months)
   const categories = useCategoryMap()
+  const kindOf = useKindOf()
   /* La portée de lecture, et non l'identifiant du membre : c'est elle qui sait
      aussi bien découper une charge commune en parts que ne garder que le pot.
      La courbe des douze mois, juste à côté, l'utilise déjà — les deux graphiques
@@ -107,11 +109,17 @@ export function MonthCompare() {
                 {categories.get(delta.categoryId)?.label ?? fr.common.other}
               </span>
               <span className="flex shrink-0 flex-col items-end">
+                {/* Le rouge dit « ça coûte plus » : il ne vaut que pour les
+                    charges et les crédits. Un livret où l'on verse 300 € de
+                    plus n'est pas une facture qui flambe — l'écart se lit,
+                    sans alarme. */}
                 <Amount
                   value={delta.delta}
                   size="label"
                   signed
-                  tone={delta.delta > 0 ? 'danger' : 'default'}
+                  tone={
+                    delta.delta > 0 && isSpending(kindOf(delta.categoryId)) ? 'danger' : 'default'
+                  }
                 />
                 <span className="t-axis tnum">{formatDelta(delta.deltaRatio)}</span>
               </span>

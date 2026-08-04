@@ -195,13 +195,13 @@ describe('ce que l’exemple doit contenir pour que rien ne reste vide', () => {
   it('signale une charge qui monte, et se tait sur un salaire qui monte', () => {
     const costly = data.recurrences.filter((recurrence) => {
       const change = detectPriceChange(data.entries, recurrence.id)
-      return change !== null && isCostly(change, recurrence.direction)
+      return change !== null && isCostly(change, recurrence.direction, kindOf(recurrence.categoryId))
     })
     const raise = data.recurrences.find((r) => r.id === 'ex-r-salaire-alix')
     const change = detectPriceChange(data.entries, raise?.id ?? '')
     expect(costly.length).toBeGreaterThan(0)
     expect(change).not.toBeNull()
-    expect(isCostly(change!, 'in')).toBe(false)
+    expect(isCostly(change!, 'in', 'resource')).toBe(false)
   })
 
   it('suit trois crédits, dont un sans taux', () => {

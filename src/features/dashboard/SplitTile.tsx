@@ -15,11 +15,13 @@ import { DONUT_SIZE, DONUT_THICKNESS } from './donut'
  * Ce que chacun verse sur les charges communes du mois, et le chemin vers le
  * détail du calcul.
  *
- * Elle s'efface dans deux cas. Sans les revenus de tout le monde, il n'y a pas
- * de prorata à afficher — et un zéro serait un mensonge plutôt qu'un vide.
+ * Elle s'efface dans trois cas. Sans les revenus de tout le monde, il n'y a
+ * pas de prorata à afficher — et un zéro serait un mensonge plutôt qu'un vide.
  * Sous un filtre par membre, elle n'aurait plus rien à montrer : une charge
  * commune n'appartient à personne, donc aucune ne passe le filtre. La faire
- * disparaître dit ça mieux qu'une tuile à zéro.
+ * disparaître dit ça mieux qu'une tuile à zéro. Et seul du foyer, un anneau à
+ * 100 % n'apprendrait rien : le pot se lit sur la pilule « Commun », la part
+ * sur « Part du foyer ».
  */
 export function SplitTile() {
   const { total, shares } = useMonthSplit()
@@ -27,7 +29,7 @@ export function SplitTile() {
   const filter = useMemberFilter()
   const currency = useCurrency()
 
-  if (filter !== undefined || shares === null || total <= 0) return null
+  if (filter !== undefined || members.size < 2 || shares === null || total <= 0) return null
 
   const segments: RingSegment[] = shares.map((share) => ({
     id: share.memberId,

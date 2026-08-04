@@ -325,14 +325,26 @@ export type MemberShare = {
 /**
  * Les poids du prorata : les revenus, quand ils permettent de répartir.
  *
- * `null` — et non des poids à zéro — dans trois cas : moins de deux membres, un
- * membre dont le revenu n'est pas connu, ou des revenus tous nuls. Un prorata
- * dont le dénominateur est incomplet ne vaut pas zéro, il ne veut rien dire ;
- * c'est le raisonnement de `savingRate`, et l'écran doit dire ce qui manque
- * plutôt qu'afficher un chiffre faux.
+ * `null` — et non des poids à zéro — dans trois cas : aucun membre, un revenu
+ * inconnu à plusieurs, ou des revenus tous nuls. Un prorata dont le
+ * dénominateur est incomplet ne vaut pas zéro, il ne veut rien dire ; c'est le
+ * raisonnement de `savingRate`, et l'écran doit dire ce qui manque plutôt
+ * qu'afficher un chiffre faux.
+ *
+ * Un membre seul n'est pas un dénominateur incomplet : un prorata à un seul
+ * participant n'est pas indéfini, il vaut 100 % — il n'y a personne à qui se
+ * comparer, donc aucun revenu à exiger. Refuser ici faisait diverger le mois
+ * filtré sur le membre unique du mois de son foyer, qui sont pourtant la même
+ * personne.
  */
 export function prorataWeights(incomes: readonly IncomeWeight[]): Money[] | null {
-  if (incomes.length < 2) return null
+  if (incomes.length === 0) return null
+  if (incomes.length === 1) {
+    // Le poids ne sert qu'à porter ce 100 % : un centime factice suffit quand
+    // le revenu n'est pas connu.
+    const only = incomes[0]?.income
+    return [only === null || only === undefined || only <= 0 ? money(1) : only]
+  }
 
   const known: Money[] = []
   for (const entry of incomes) {
@@ -380,7 +392,10 @@ export function memberShares(
     const adjustment = adjustments?.get(entry.memberId) ?? ZERO
     return {
       memberId: entry.memberId,
-      income: weights[index] ?? ZERO,
+      // Le revenu déclaré, pas le poids : à plusieurs ils sont identiques, mais
+      // le membre seul porte 100 % sans revenu connu — son poids est alors un
+      // centime factice, et l'afficher comme un revenu serait un mensonge.
+      income: entry.income ?? ZERO,
       shareBp: shares[index] ?? 0,
       due,
       adjustment,
@@ -415,6 +430,18 @@ export function scopeToMember(
   kindOf: KindOf,
   incomes: readonly IncomeWeight[],
 ): Entry[] | null {
+  // Seul du foyer, son mois est le mois du foyer : tout lui revient — le
+  // commun à son montant plein, et les lignes que personne ne porte (une paie
+  // ou un versement laissés « tout le foyer »), qui ne sont pas communes et
+  // que le découpage du prorata ne saurait donc pas lui rendre. C'est ce qui
+  // fait que la lecture filtrée sur lui et « tout le monde » disent le même
+  // centime.
+  if (incomes.length === 1 && incomes[0]?.memberId === memberId) {
+    return entries.map((entry) =>
+      entry.memberId === undefined || entry.memberId === '' ? { ...entry, memberId } : entry,
+    )
+  }
+
   const weights = prorataWeights(incomes)
   const index = incomes.findIndex((income) => income.memberId === memberId)
   if (weights === null || index < 0) return null
@@ -452,6 +479,22 @@ export function scopeToMembers(
   kindOf: KindOf,
   incomes: readonly IncomeWeight[],
 ): Map<string, Entry[]> | null {
+  // La même règle solo que `scopeToMember`, en un seul balayage : tout au
+  // membre unique, montants intacts.
+  if (incomes.length === 1) {
+    const only = incomes[0]?.memberId ?? ''
+    return new Map([
+      [
+        only,
+        entries.map((entry) =>
+          entry.memberId === undefined || entry.memberId === ''
+            ? { ...entry, memberId: only }
+            : entry,
+        ),
+      ],
+    ])
+  }
+
   const weights = prorataWeights(incomes)
   if (weights === null) return null
 
@@ -531,6 +574,7 @@ export function memberCharges(
   const index = incomes.findIndex((income) => income.memberId === memberId)
   if (weights === null || index < 0) return null
 
+  const solo = incomes.length === 1
   let own = ZERO
   let common = ZERO
   let commonTotal = ZERO
@@ -541,7 +585,12 @@ export function memberCharges(
       common = add(common, allocate(entry.amount, weights)[index] ?? ZERO)
       continue
     }
-    if (entry.memberId !== memberId) continue
+    // Seul du foyer, une ligne de personne est à lui — même règle que
+    // `scopeToMember` : sans elle, une dépense héritée « à personne » hors
+    // partage comptait dans son mois filtré sans se lire ni en perso ni en
+    // part du commun, et les deux morceaux ne redonnaient plus le total.
+    const unowned = entry.memberId === undefined || entry.memberId === ''
+    if (entry.memberId !== memberId && !(solo && unowned)) continue
     if (entry.direction !== 'out' || !isSpending(kindOf(entry.categoryId))) continue
     own = add(own, entry.amount)
   }

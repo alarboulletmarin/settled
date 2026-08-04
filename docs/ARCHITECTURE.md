@@ -168,6 +168,16 @@ ne veut rien dire. Le troisième cas se refusait de lui-même quand *tous* les
 revenus étaient nuls, jamais quand un seul l'était — le membre à 0 € recevait
 alors 0 % des charges communes, un chiffre faux qui a l'air d'un résultat.
 
+Ces refus sont des refus de *comparaison* — et le membre seul de son foyer n'a
+personne à comparer. Son coefficient vaut trivialement 100 %, sans qu'aucun
+revenu soit exigé : refuser là aussi faisait diverger le mois filtré sur lui du
+mois de son foyer, qui sont pourtant la même personne. `scopeToMember` lui rend
+alors le mois entier, montants intacts — le commun au montant plein, et les
+lignes que personne ne porte (une paie ou un versement laissés « tout le
+foyer »), qui ne sont pas communes et qu'un découpage du prorata ne saurait
+donc pas lui rendre. La régularisation, elle, se calcule et rend zéro : il
+porte 100 % de ce qu'il avance.
+
 L'asymétrie de `isRunningIn` — une règle arrêtée sort du mois, une règle à venir
 y compte déjà — est bornée à un trimestre. Sans borne, un salaire déclaré pour
 2030 déplaçait la part de chacun dès aujourd'hui ; avec elle, « à venir » veut

@@ -79,7 +79,9 @@ export function advancedEntries(
  * recompose, et c'est ce qui garantit que les reports s'annulent exactement.
  *
  * `null` tant que le prorata de ce mois-là ne se calcule pas : un écart au
- * dénominateur incomplet ne vaut pas zéro, il ne veut rien dire.
+ * dénominateur incomplet ne vaut pas zéro, il ne veut rien dire. Le membre
+ * seul, lui, calcule et rend zéro : il porte 100 % de ce qu'il avance, donc
+ * `owed` vaut `advanced` — personne à régulariser.
  */
 export function settleMonth(
   entries: readonly Entry[],

@@ -225,6 +225,11 @@ export const fr = {
        échéances, elle, garde les lignes réelles — on confirme une échéance
        entière, jamais une part. */
     prorata: 'Chiffres à la part de %s : sa part des charges communes est comprise, au prorata des revenus. Les listes gardent les échéances entières.',
+    /* Le membre seul porte 100 % sans qu'aucun revenu soit exigé : « au
+       prorata des revenus » serait un mensonge poli, et la vraie information
+       est ailleurs — ses chiffres sont ceux du foyer entier. */
+    prorataSolo:
+      'Seul du foyer, %s porte tout le commun : ses chiffres sont ceux du foyer entier. Les listes gardent les échéances entières.',
     prorataMissingOne:
       'Charges communes non réparties, faute de connaître le revenu de %s : seules les lignes à son nom sont comptées.',
     prorataMissingMany:
@@ -599,11 +604,13 @@ export const fr = {
     remainingHint: 'jusqu’à la prochaine rentrée d’argent',
     remainingNoIncome: 'jusqu’à la fin du mois',
     breakdown: 'Répartition',
-    breakdownHint: 'sorties du mois',
     upcoming: 'Prochaines échéances',
     inflow: 'Entrées',
     outflow: 'Sorties',
-    noBreakdown: 'Aucune sortie ce mois-ci.',
+    /* « Charge ni crédit », pas « sortie » : la tuile compte par nature, hors
+       épargne, et un mois où l'on n'a fait que verser sur un livret a bien vu
+       des sorties — simplement rien qui parte du foyer. */
+    noBreakdown: 'Aucune charge ni crédit ce mois-ci.',
     /* La tuile ne s'arrête pas au mois affiché : elle lit les règles au-delà
        des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout. */
     noUpcoming: 'Aucune échéance à venir.',
@@ -693,8 +700,12 @@ export const fr = {
       balance: {
         lead: 'Ce qui a réellement eu lieu ce mois-ci, et rien d’autre.',
         calculation: 'Les entrées confirmées, moins les sorties confirmées.',
+        /* La question la plus fréquente devant ce chiffre est celle de
+           l'épargne : elle sort du compte, donc elle pèse ici — et c'est la
+           capacité d'épargne qui la remet à part. Sans cette phrase, mettre
+           300 € de côté se lit comme 300 € dépensés, sans un mot. */
         apart:
-          'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte.',
+          'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte. Un versement d’épargne, lui, y compte comme une sortie — l’argent quitte bien le compte ; c’est la capacité d’épargne qui le met à part.',
       },
       forecast: {
         lead: 'Là où le mois atterrit si tout ce qui est prévu se passe comme prévu.',
@@ -713,7 +724,8 @@ export const fr = {
          Devant un chiffre qui appelle un geste, définir n'était pas la
          réponse. */
     },
-    srBreakdown: 'Répartition des sorties : %s',
+    // Le nom accessible compte comme l'anneau : charges et crédits, hors épargne.
+    srBreakdown: 'Répartition des charges et des crédits : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
   },
 
@@ -766,10 +778,16 @@ export const fr = {
        jour. Les mots sont ceux des deux tuiles, juste au-dessus. */
     show: 'Montrer',
     showAll: 'Tout',
+    /* Des natures, jamais des sens : un versement d'épargne sort du compte
+       mais n'est pas une charge, et une reprise n'est pas un revenu. Les mots
+       sont ceux des tuiles — qui comptent par nature et excluent l'épargne —
+       et de la saisie, dont l'épargne a sa propre position. */
     showOut: 'Charges',
     showIn: 'Revenus',
+    showSaving: 'Épargne',
     showEmptyOut: 'Aucune charge confirmée ce mois-ci.',
     showEmptyIn: 'Aucun revenu confirmé ce mois-ci.',
+    showEmptySaving: 'Aucun mouvement d’épargne confirmé ce mois-ci.',
     groupCountOne: '%s ligne',
     groupCount: '%s lignes',
     collapseAll: 'Tout replier',
@@ -890,6 +908,11 @@ export const fr = {
     totalMonthly: 'Total par mois',
     totalScopeOut: 'Tout le foyer · ce qui sort chaque mois, épargne et crédits compris',
     totalScopeIn: 'Tout le foyer · ce qui rentre chaque mois',
+    /* Sous une pilule, le total se borne à sa nature : « Charges » compte
+       comme la tuile du même nom — sans l'épargne — et l'épargne se compte en
+       net, reprises déduites, comme partout. */
+    totalScopeSpending: 'Tout le foyer · charges et crédits chaque mois, épargne à part',
+    totalScopeSaving: 'Tout le foyer · ce qui part sur l’épargne chaque mois, reprises déduites',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
     groupBy: 'Regrouper par',
@@ -908,10 +931,14 @@ export const fr = {
        ceux de la page du mois, à la lettre. */
     show: 'Montrer',
     showAll: 'Tout',
+    /* Des natures, comme sur la liste du mois : la mensualité d'épargne n'est
+       pas une charge, elle a sa pilule. */
     showOut: 'Charges',
     showIn: 'Revenus',
+    showSaving: 'Épargne',
     showEmptyOut: 'Aucune charge récurrente.',
     showEmptyIn: 'Aucun revenu récurrent.',
+    showEmptySaving: 'Aucune récurrence d’épargne.',
     groupCountOne: '%s récurrence',
     groupCount: '%s récurrences',
     collapseAll: 'Tout replier',
@@ -921,6 +948,8 @@ export const fr = {
     variableHint: 'Le montant sera demandé à chaque échéance.',
     fixedAmount: 'Montant fixe',
     priceChanged: 'Le prix a changé : %s → %s',
+    // Un virement d'épargne n'a pas de prix : son montant change, sans alarme.
+    amountChanged: 'Le montant a changé : %s → %s',
     priceChangedSince: 'depuis le %s',
     stop: 'Arrêter la récurrence',
     stopAction: 'Arrêter',
@@ -984,6 +1013,10 @@ export const fr = {
   split: {
     title: 'Répartition',
     subtitle: 'Ce que chacun verse sur les charges communes, au prorata des revenus.',
+    /* Seul du foyer, « au prorata des revenus » n'explique rien : la part vaut
+       100 % et n'a demandé aucun revenu. L'écran garde sa raison d'être — le
+       pot se vérifie ligne à ligne. */
+    subtitleSolo: 'Seul du foyer, tu portes tout le commun : ta part vaut 100 %.',
     total: 'Charges communes',
     totalHint: 'échéances prévues comprises',
     share: 'Part',
@@ -1054,8 +1087,10 @@ export const fr = {
       'Corrige le montant de la récurrence, ou celui de son échéance : un revenu nul ne se répartit pas, il ne dit rien.',
     goToIncome: 'Ajouter un revenu',
     goToSubscriptions: 'Voir les récurrences',
-    soloTitle: 'La répartition demande au moins deux membres.',
-    soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
+    /* Le cas du foyer sans membre — un seul suffit désormais : sa part vaut
+       100 %, et l'écran montre le pot. */
+    soloTitle: 'La répartition demande au moins un membre.',
+    soloHint: 'Ajoute qui compose le foyer. Une personne suffit : seule, elle porte tout le commun.',
     goToSettings: 'Aller aux réglages',
     srShares: 'Parts de chacun : %s',
   },

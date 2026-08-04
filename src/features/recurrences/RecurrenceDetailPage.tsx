@@ -6,7 +6,7 @@ import { fr } from '@/i18n/fr'
 import { formatDate, formatMoney, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import { removeRecurrence, resumeRecurrence, stopRecurrence, undoable } from '@/store/actions'
-import { useRecurrenceRow } from '@/store/selectors'
+import { useKindOf, useRecurrenceRow } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -38,6 +38,7 @@ export function RecurrenceDetailPage() {
   const row = useRecurrenceRow(id)
   const navigate = useNavigate()
   const currency = useCurrency()
+  const kindOf = useKindOf()
   const [confirming, setConfirming] = useState<'stop' | 'remove' | null>(null)
   const close = (): void => {
     setConfirming(null)
@@ -47,6 +48,8 @@ export function RecurrenceDetailPage() {
   if (row === null) return <Navigate to={RECURRENCES_PATH} replace />
 
   const { recurrence, monthly, annual, priceChange, stopped } = row
+  const kind = kindOf(recurrence.categoryId)
+  const costly = priceChange !== null && isCostly(priceChange, recurrence.direction, kind)
 
   return (
     <div className="flex max-w-xl flex-col gap-5">
@@ -60,21 +63,17 @@ export function RecurrenceDetailPage() {
       </PageTitle>
 
       {/* Rouge et panneau seulement quand le changement coûte : une charge qui
-          monte, un revenu qui baisse. Le DS §2.3 réserve le rouge aux
-          dépassements et aux erreurs — une augmentation de salaire n'en est pas. */}
+          monte, un revenu qui baisse — jamais l'épargne, qui reste au foyer.
+          Le DS §2.3 réserve le rouge aux dépassements et aux erreurs — une
+          augmentation de salaire n'en est pas, verser plus sur un livret non
+          plus. */}
       {priceChange !== null && (
-        <p
-          className={cn(
-            'tile flex items-start gap-2 p-4',
-            isCostly(priceChange, recurrence.direction) && 'text-danger-text',
-          )}
-        >
-          {isCostly(priceChange, recurrence.direction) && (
-            <Warning size={18} className="mt-0.5 shrink-0" />
-          )}
+        <p className={cn('tile flex items-start gap-2 p-4', costly && 'text-danger-text')}>
+          {costly && <Warning size={18} className="mt-0.5 shrink-0" />}
           <span className="t-label">
             {tpl(
-              fr.recurrences.priceChanged,
+              // Un virement d'épargne n'a pas de prix : son montant change.
+              kind === 'saving' ? fr.recurrences.amountChanged : fr.recurrences.priceChanged,
               formatMoney(priceChange.previous, currency),
               formatMoney(priceChange.current, currency),
             )}{' '}

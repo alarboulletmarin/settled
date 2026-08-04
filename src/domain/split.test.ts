@@ -342,8 +342,21 @@ describe('parts au prorata des revenus', () => {
     expect(memberShares([foyer[0]!, { memberId: 'm-2', income: null }], [eur(200_000)])).toBeNull()
   })
 
-  it('ne dit rien avec un seul membre', () => {
-    expect(memberShares([foyer[0]!], [eur(200_000)])).toBeNull()
+  it('donne tout au membre seul : un prorata à un participant vaut 100 %', () => {
+    expect(memberShares([foyer[0]!], [eur(200_000)])).toEqual([
+      {
+        memberId: 'm-1',
+        income: money(250_000),
+        shareBp: 10_000,
+        due: money(200_000),
+        adjustment: money(0),
+        toPay: money(200_000),
+      },
+    ])
+  })
+
+  it('ne dit rien sans aucun membre', () => {
+    expect(memberShares([], [eur(200_000)])).toBeNull()
   })
 
   it('ne dit rien quand tous les revenus sont à zéro', () => {
@@ -558,7 +571,6 @@ describe('le mois vu par un membre', () => {
 
   it('ne dit rien tant que le prorata ne se calcule pas', () => {
     expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!, { memberId: 'm-2', income: null }])).toBeNull()
-    expect(scopeToMember(july, 'm-1', kindOf, [foyer[0]!])).toBeNull()
     expect(scopeToMember(july, 'm-3', kindOf, foyer)).toBeNull()
   })
 
@@ -591,7 +603,6 @@ describe('le mois vu par un membre', () => {
 
     it('ne dit rien tant que le prorata ne se calcule pas', () => {
       expect(scopeToMembers(july, kindOf, [foyer[0]!, { memberId: 'm-2', income: null }])).toBeNull()
-      expect(scopeToMembers(july, kindOf, [foyer[0]!])).toBeNull()
     })
 
     it('n’a pas de clé pour qui n’est pas du foyer, comme l’autre rendait null', () => {
@@ -672,7 +683,6 @@ describe('les charges d’un membre, les siennes et sa part du foyer', () => {
   it('ne dit rien tant que le prorata ne se calcule pas', () => {
     const incomplet = [foyer[0]!, { memberId: 'm-2', income: null }]
     expect(memberCharges(july, '2026-07', 'm-1', kindOf, incomplet)).toBeNull()
-    expect(memberCharges(july, '2026-07', 'm-1', kindOf, [foyer[0]!])).toBeNull()
     expect(memberCharges(july, '2026-07', 'm-3', kindOf, foyer)).toBeNull()
   })
 
@@ -684,6 +694,110 @@ describe('les charges d’un membre, les siennes et sa part du foyer', () => {
       commonTotal: money(0),
       shareBp: 5556,
     })
+  })
+})
+
+/* --- Le foyer d'une seule personne -----------------------------------------*/
+
+/**
+ * Seul du foyer, le prorata n'a personne à comparer : la part vaut 100 %, sans
+ * qu'aucun revenu soit exigé, et le mois filtré sur le membre est le mois du
+ * foyer entier — lignes de personne comprises, qu'un découpage du commun ne
+ * saurait pas lui rendre. C'est l'identité qui manquait : solde et capacité
+ * d'épargne divergeaient entre « tout le monde » et sa pilule à lui.
+ */
+describe('un foyer d’une seule personne', () => {
+  const seul = [{ memberId: 'm-1', income: eur(250_000) }]
+  const sansRevenu = [{ memberId: 'm-1', income: null }]
+
+  const july = [
+    /* Commune : personne ne se l'est attribuée. */
+    makeEntry({ id: 'loyer', date: '2026-07-05', amount: eur(95_000), categoryId: 'logement' }),
+    /* À lui. */
+    makeEntry({ id: 'sien', date: '2026-07-15', amount: eur(4_000), categoryId: 'courses', memberId: 'm-1' }),
+    /* Laissés « tout le foyer » : ni communs ni à lui — le découpage du prorata
+       ne les voit pas, seule la règle solo les lui rend. */
+    makeEntry({ id: 'paie', date: '2026-07-01', direction: 'in', amount: eur(250_000), categoryId: 'salaire' }),
+    makeEntry({ id: 'livret', date: '2026-07-12', amount: eur(20_000), categoryId: 'livret', memberId: '' }),
+    /* Héritée d'avant la règle « à quelqu'un, ou à tout le monde » : sortie du
+       partage sans propriétaire. */
+    makeEntry({ id: 'orpheline', date: '2026-07-18', amount: eur(2_500), categoryId: 'courses', shared: false }),
+  ]
+
+  it('le coefficient vaut 100 %, revenu connu ou non', () => {
+    expect(memberShares(seul, [eur(200_000)])?.[0]).toMatchObject({ shareBp: 10_000, due: 200_000 })
+    expect(memberShares(sansRevenu, [eur(200_000)])?.[0]).toMatchObject({ shareBp: 10_000, due: 200_000 })
+  })
+
+  it('n’affiche pas le poids factice comme un revenu', () => {
+    expect(memberShares(sansRevenu, [eur(200_000)])?.[0]?.income).toBe(0)
+  })
+
+  it('son mois est le mois du foyer, montants intacts et rien d’écarté', () => {
+    const scoped = scopeToMember(july, 'm-1', kindOf, seul)
+    expect(scoped?.map((e) => e.id)).toEqual(july.map((e) => e.id))
+    expect(scoped?.map((e) => e.amount)).toEqual(july.map((e) => e.amount))
+    expect(scoped?.every((e) => e.memberId === 'm-1')).toBe(true)
+  })
+
+  it('même sans revenu déclaré', () => {
+    expect(scopeToMember(july, 'm-1', kindOf, sansRevenu)?.length).toBe(july.length)
+  })
+
+  it('les sommes par sens valent celles des entrées brutes', () => {
+    const scoped = scopeToMember(july, 'm-1', kindOf, seul) ?? []
+    const par = (entries: readonly Entry[], direction: 'in' | 'out') =>
+      sum(entries.filter((e) => e.direction === direction).map((e) => e.amount))
+    expect(par(scoped, 'in')).toBe(par(july, 'in'))
+    expect(par(scoped, 'out')).toBe(par(july, 'out'))
+  })
+
+  it('une ligne d’un id étranger passe telle quelle : le foyer la compte', () => {
+    const etrangere = makeEntry({
+      id: 'ex', date: '2026-07-20', amount: eur(1_000), categoryId: 'courses', memberId: 'm-9',
+    })
+    const scoped = scopeToMember([...july, etrangere], 'm-1', kindOf, seul)
+    expect(scoped?.find((e) => e.id === 'ex')?.memberId).toBe('m-9')
+  })
+
+  it('le balayage du foyer rend la même chose que la lecture du membre', () => {
+    const all = scopeToMembers(july, kindOf, seul)
+    expect([...(all?.keys() ?? [])]).toEqual(['m-1'])
+    expect(all?.get('m-1')).toEqual(scopeToMember(july, 'm-1', kindOf, seul))
+  })
+
+  it('perso et part du commun redonnent le total des charges de son mois', () => {
+    const charges = memberCharges(july, '2026-07', 'm-1', kindOf, seul)
+    // 950 € de commun à 100 % ; 40 € à lui, plus 25 € hérités de personne.
+    expect(charges).toEqual({
+      own: money(6_500),
+      common: money(95_000),
+      commonTotal: money(95_000),
+      shareBp: 10_000,
+    })
+    const scoped = scopeToMember(july, 'm-1', kindOf, seul) ?? []
+    const spending = sum(
+      scoped
+        .filter((e) => e.direction === 'out' && isSpending(kindOf(e.categoryId)))
+        .map((e) => e.amount),
+    )
+    expect((charges?.own ?? 0) + (charges?.common ?? 0)).toBe(spending)
+  })
+
+  it('sa part vaut aussi sans revenu déclaré', () => {
+    expect(memberCharges(july, '2026-07', 'm-1', kindOf, sansRevenu)?.shareBp).toBe(10_000)
+  })
+
+  it('un filtre resté sur quelqu’un d’autre ne dit rien, comme avant', () => {
+    expect(scopeToMember(july, 'm-2', kindOf, seul)).toBeNull()
+    expect(memberCharges(july, '2026-07', 'm-2', kindOf, seul)).toBeNull()
+  })
+
+  it('sans aucun membre, rien ne change : null partout', () => {
+    expect(memberShares([], [eur(200_000)])).toBeNull()
+    expect(scopeToMember(july, 'm-1', kindOf, [])).toBeNull()
+    expect(scopeToMembers(july, kindOf, [])).toBeNull()
+    expect(memberCharges(july, '2026-07', 'm-1', kindOf, [])).toBeNull()
   })
 })
 

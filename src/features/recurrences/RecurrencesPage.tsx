@@ -8,16 +8,19 @@ import {
   groupRecurrences,
   sortRecurrences,
 } from '@/domain/grouping'
+import { money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
 import { removeAdvance, undoable } from '@/store/actions'
 import {
   useAdvanceStatuses,
   useCategoryMap,
+  useKindOf,
   useMemberMap,
   useRecurrenceRows,
   useRecurrenceTotals,
 } from '@/store/selectors'
+import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
@@ -47,18 +50,20 @@ const SORTS = [
   { value: 'amount' as const, label: fr.recurrences.byAmount },
 ]
 
-/** Le sens que la liste montre, ou `null` pour les deux. */
-type FlowFilter = 'in' | 'out' | null
+/** La nature que la liste montre, ou `null` pour tout. */
+type NatureFilter = EntryNature | null
 
 /* L'axe range, le filtre retire — deux gestes différents, deux commandes
    différentes. C'est déjà la règle de la liste du mois, et les mots sont les
-   siens : le sens y était un axe qui rendait deux blocs dont le total en tête
-   de page donne les chiffres, alors qu'en filtre il se combine aux deux axes
-   qui restent. */
-const FLOWS: { value: FlowFilter; label: string }[] = [
+   siens : des natures, jamais des sens. Filtrer par sens rangeait la mensualité
+   d'épargne sous « Charges » — un mot que la tuile du même nom refuse, elle qui
+   compte charges et crédits sans l'épargne. Les mots sont ceux de la saisie,
+   positions comprises. */
+const NATURES: { value: NatureFilter; label: string }[] = [
   { value: null, label: fr.recurrences.showAll },
-  { value: 'out', label: fr.recurrences.showOut },
-  { value: 'in', label: fr.recurrences.showIn },
+  { value: 'expense', label: fr.recurrences.showOut },
+  { value: 'income', label: fr.recurrences.showIn },
+  { value: 'saving', label: fr.recurrences.showSaving },
 ]
 
 /**
@@ -74,19 +79,28 @@ const OPEN_BY_DEFAULT: Record<RecurrenceGroupBy, boolean> = {
  * Ce que les récurrences coûtent — ou rapportent — chaque mois.
  *
  * Le chiffre suit la pastille : câblé sur les seules sorties, il décrivait mal
- * la liste qu'il surplombe dès qu'elle montrait les revenus.
+ * la liste qu'il surplombe dès qu'elle montrait autre chose.
  *
- * Et il dit désormais ce qu'il compte, parce qu'un total sans périmètre ne se
- * vérifie pas : « 2 008,31 € » n'apprenait ni si c'était le foyer entier ou
- * quelqu'un, ni si l'épargne en faisait partie. Cet écran ne connaît pas le
- * filtre par membre — il montre les règles du foyer, pas un mois — et le sens
- * `out` ramasse les charges, les crédits **et** les versements d'épargne. Deux
- * choses qu'on ne devine pas, et qui tiennent en une ligne.
- */
-function Totals({ flow }: { flow: FlowFilter }) {
-  const income = flow === 'in'
-  const totals = useRecurrenceTotals(income ? 'in' : 'out')
+ * Et il dit ce qu'il compte, parce qu'un total sans périmètre ne se vérifie
+ * pas : « 2 008,31 € » n'apprenait ni si c'était le foyer entier ou quelqu'un,
+ * ni si l'épargne en faisait partie. Cet écran ne connaît pas le filtre par
+ * membre — il montre les règles du foyer, pas un mois. Sans filtre, le total
+ * reste celui des sorties, épargne et crédits compris ; sous une pilule, il se
+ * borne à sa nature, si bien que « Charges » ne compte plus une mensualité
+ * d'épargne — le mot est celui de la tuile Charges, il compte comme elle. */
+function Totals({ nature }: { nature: NatureFilter }) {
+  const kinds = useMemo(() => (nature === null ? null : kindsOfNature(nature)), [nature])
+  const totals = useRecurrenceTotals(kinds)
   const currency = useCurrency()
+
+  const scope =
+    nature === null
+      ? fr.recurrences.totalScopeOut
+      : nature === 'income'
+        ? fr.recurrences.totalScopeIn
+        : nature === 'saving'
+          ? fr.recurrences.totalScopeSaving
+          : fr.recurrences.totalScopeSpending
 
   return (
     <Tile variant="accent" className="mb-4">
@@ -95,9 +109,7 @@ function Totals({ flow }: { flow: FlowFilter }) {
       <p className="t-label mt-1 tnum">
         {tpl(fr.recurrences.perYear, formatMoney(totals.annual, currency, false))}
       </p>
-      <p className="t-label mt-2">
-        {income ? fr.recurrences.totalScopeIn : fr.recurrences.totalScopeOut}
-      </p>
+      <p className="t-label mt-2">{scope}</p>
       {totals.unknownCount > 0 && (
         <p className="t-label mt-1">
           {tpl(
@@ -123,24 +135,26 @@ function Totals({ flow }: { flow: FlowFilter }) {
  */
 function GroupedList({
   rows,
-  flow,
-  onFlow,
+  nature,
+  onNature,
   onOpen,
 }: {
   rows: ReturnType<typeof useRecurrenceRows>
-  flow: FlowFilter
-  onFlow: (flow: FlowFilter) => void
+  nature: NatureFilter
+  onNature: (nature: NatureFilter) => void
   onOpen: (id: string) => void
 }) {
   const categories = useCategoryMap()
+  const kindOf = useKindOf()
   const members = useMemberMap()
   const [by, setBy] = useState<RecurrenceGroupBy>('category')
   const [sort, setSort] = useState<RecurrenceSortBy>('due')
 
-  const shown = useMemo(
-    () => (flow === null ? rows : rows.filter((row) => row.recurrence.direction === flow)),
-    [rows, flow],
-  )
+  const shown = useMemo(() => {
+    if (nature === null) return rows
+    const kinds = kindsOfNature(nature)
+    return rows.filter((row) => kinds.includes(kindOf(row.recurrence.categoryId)))
+  }, [rows, nature, kindOf])
   /* Le tri passe avant le regroupement, et non après : `groupRecurrences` garde
      l'ordre qu'on lui donne à l'intérieur de chaque groupe. L'ordre des groupes
      entre eux, lui, ne bouge pas — il suit déjà le poids, ce que le tri par
@@ -153,6 +167,18 @@ function GroupedList({
   const titleOf = (key: string): string => {
     if (by === 'category') return categories.get(key)?.label ?? fr.common.other
     return key === NO_MEMBER ? fr.shell.everyone : (members.get(key)?.name ?? fr.common.other)
+  }
+
+  /* Sous une pilule, le solde d'un groupe parlerait à l'envers du total en
+     tête : les charges toutes négatives sous un chiffre positif, l'épargne au
+     signe inverse de « ce qui part sur l'épargne ». Le groupe suit donc la
+     pilule — sortie pleine, entrée, ou net d'épargne — et garde son solde sur
+     « Tout », où les natures se mêlent. */
+  const natureAmount = (total: number) => {
+    if (nature === null) return <Amount value={money(total)} size="body" signed />
+    if (nature === 'income') return <Amount value={money(total)} size="body" direction="in" />
+    if (nature === 'expense') return <Amount value={money(total)} size="body" direction="out" />
+    return <Amount value={money(-total)} size="body" signed />
   }
 
   return (
@@ -175,12 +201,12 @@ function GroupedList({
       <Segmented options={SORTS} value={sort} onChange={setSort} label={fr.recurrences.sortBy} />
 
       <div role="group" aria-label={fr.recurrences.show} className="flex flex-wrap gap-2">
-        {FLOWS.map((option) => (
+        {NATURES.map((option) => (
           <Chip
             key={option.label}
-            active={option.value === flow}
+            active={option.value === nature}
             onClick={() => {
-              onFlow(option.value)
+              onNature(option.value)
             }}
           >
             {option.label}
@@ -192,7 +218,11 @@ function GroupedList({
           dire, plutôt que de poser une tuile vide qui semble s'être cassée. */}
       {shown.length === 0 ? (
         <p className="t-label">
-          {flow === 'in' ? fr.recurrences.showEmptyIn : fr.recurrences.showEmptyOut}
+          {nature === 'income'
+            ? fr.recurrences.showEmptyIn
+            : nature === 'saving'
+              ? fr.recurrences.showEmptySaving
+              : fr.recurrences.showEmptyOut}
         </p>
       ) : (
         <Tile className="flex flex-col gap-1 p-2! md:p-2!">
@@ -220,7 +250,7 @@ function GroupedList({
                 group.unknownCount === group.rows.length ? (
                   <span className="t-axis">{fr.recurrences.variable}</span>
                 ) : (
-                  <Amount value={group.monthly} size="body" signed />
+                  natureAmount(group.monthly)
                 )
               }
             >
@@ -407,9 +437,9 @@ export function RecurrencesPage() {
   const rows = useRecurrenceRows()
   const navigate = useNavigate()
 
-  /* Le sens vit sur la page et non dans la liste : le total en tête le suit
+  /* La nature vit sur la page et non dans la liste : le total en tête la suit
      aussi, et deux états séparés les feraient annoncer deux choses. */
-  const [flow, setFlow] = useState<FlowFilter>(null)
+  const [nature, setNature] = useState<NatureFilter>(null)
 
   const active = useMemo(() => rows.filter((row) => !row.stopped), [rows])
   const stopped = useMemo(() => rows.filter((row) => row.stopped), [rows])
@@ -447,9 +477,9 @@ export function RecurrencesPage() {
         />
       ) : (
         <div className="flex max-w-3xl flex-col gap-4">
-          <Totals flow={flow} />
+          <Totals nature={nature} />
           {active.length > 0 && (
-            <GroupedList rows={active} flow={flow} onFlow={setFlow} onOpen={openDetail} />
+            <GroupedList rows={active} nature={nature} onNature={setNature} onOpen={openDetail} />
           )}
           {stopped.length > 0 && <StoppedList rows={stopped} onOpen={openDetail} />}
         </div>

@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useIsCommonFilter, useIsCurrentMonth, useMonthConfirmed } from '@/store/selectors'
+import { useIsCommonFilter, useIsCurrentMonth, useKindOf, useMonthConfirmed } from '@/store/selectors'
+import { kindsOfNature } from '@/ui/categoryKinds'
 import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile } from './BreakdownTile'
 import { CreditsTile } from './CreditsTile'
-import { ChargesTile, IncomeTile, type ShowFlow } from './FlowTiles'
+import { ChargesTile, IncomeTile, type ShowNature } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
 import { type Metric, MetricInfo } from './MetricInfo'
 import { SavingTile } from './SavingTile'
@@ -35,25 +36,31 @@ import { UpcomingTile } from './UpcomingTile'
  * Les deux tuiles de flux, elles, ne s'expliquent pas : elles mènent aux lignes
  * du mois. C'est la page qui tient cette liste, pas la grille — d'où le relais.
  *
- * Un sens dont rien n'est confirmé n'a aucune ligne à montrer : sa tuile porte
- * quand même un chiffre, qui compte les échéances encore prévues. Elle ne
+ * Une nature dont rien n'est confirmé n'a aucune ligne à montrer : sa tuile
+ * porte quand même un chiffre, qui compte les échéances encore prévues. Elle ne
  * s'ouvre alors pas, plutôt que de mener à une liste où son chiffre n'est pas.
+ * La nature, pas le sens : la tuile Charges exclut l'épargne, et un versement
+ * d'épargne confirmé ne suffit pas à lui donner des lignes à montrer.
  *
  * Pas de tuile « Récurrences » : le total mensuel et annualisé est déjà en tête
  * de l'onglet du même nom, à un doigt de la barre de navigation. Une tuile qui
  * ne fait que répéter un chiffre pour mener à l'écran où il vit prend la place
  * de ce que le mois est seul à savoir dire.
  */
-export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
+export function Dashboard({ onShowNature }: { onShowNature?: ShowNature }) {
   const [metric, setMetric] = useState<Metric | null>(null)
   const confirmed = useMonthConfirmed()
+  const kindOf = useKindOf()
   const common = useIsCommonFilter()
   const thisMonth = useIsCurrentMonth()
 
-  const flow = (direction: 'in' | 'out'): { onShow?: ShowFlow } =>
-    onShowFlow !== undefined && confirmed.some((entry) => entry.direction === direction)
-      ? { onShow: onShowFlow }
+  const openable = (nature: 'expense' | 'income'): { onShow?: ShowNature } => {
+    const kinds = kindsOfNature(nature)
+    return onShowNature !== undefined &&
+      confirmed.some((entry) => kinds.includes(kindOf(entry.categoryId)))
+      ? { onShow: onShowNature }
       : {}
+  }
 
   return (
     <>
@@ -70,8 +77,8 @@ export function Dashboard({ onShowFlow }: { onShowFlow?: ShowFlow }) {
             Part du foyer sans filtre. Reste ce que le pot sait dire : ce qu'il
             coûte, où il part, quand il tombe, et qui verse quoi. */}
         {!common && <BalanceTile onExplain={setMetric} />}
-        {!common && <IncomeTile {...flow('in')} />}
-        <ChargesTile {...flow('out')} />
+        {!common && <IncomeTile {...openable('income')} />}
+        <ChargesTile {...openable('expense')} />
         <MemberShareTile />
         <SettlementTile />
         <BreakdownTile />
