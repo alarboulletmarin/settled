@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
-import { EntriesSection, type FlowFilter } from './EntriesSection'
+import { EntriesSection, type NatureFilter } from './EntriesSection'
 import { PendingSection } from './PendingSection'
 
 export function MonthPage() {
@@ -18,15 +18,15 @@ export function MonthPage() {
   const entries = useScopedMonthEntries()
   const navigate = useNavigate()
 
-  /* Le sens montré se pilote de deux endroits — les pilules de la liste, et les
-     deux tuiles de flux. Il vit donc ici, entre les deux. L'axe, lui, ne se
-     pilote que de la liste et y reste : une tuile filtre ce qu'on voit, elle ne
-     range pas la liste autrement que l'utilisateur l'a rangée. */
-  const [flow, setFlow] = useState<FlowFilter>(null)
+  /* La nature montrée se pilote de deux endroits — les pilules de la liste, et
+     les deux tuiles de flux. Elle vit donc ici, entre les deux. L'axe, lui, ne
+     se pilote que de la liste et y reste : une tuile filtre ce qu'on voit, elle
+     ne range pas la liste autrement que l'utilisateur l'a rangée. */
+  const [nature, setNature] = useState<NatureFilter>(null)
   const [focus, setFocus] = useState(0)
 
-  const showFlow = (direction: 'in' | 'out'): void => {
-    setFlow(direction)
+  const showNature = (value: 'expense' | 'income'): void => {
+    setNature(value)
     setFocus((previous) => previous + 1)
   }
 
@@ -110,12 +110,12 @@ export function MonthPage() {
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
-          <Dashboard onShowFlow={showFlow} />
+          <Dashboard onShowNature={showNature} />
           <div className="flex max-w-3xl flex-col gap-4">
             <PendingSection />
             <EntriesSection
-              flow={flow}
-              onFlow={setFlow}
+              nature={nature}
+              onNature={setNature}
               focus={focus}
               onOpen={(entry) => {
                 void navigate(entryPath(entry.id))

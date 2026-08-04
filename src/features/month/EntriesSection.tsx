@@ -7,11 +7,13 @@ import { formatDayFull, tpl } from '@/i18n/format'
 import { reveal } from '@/lib/reveal'
 import {
   useCategoryMap,
+  useKindOf,
   useMemberFilter,
   useMemberMap,
   useMembers,
   useMonthConfirmed,
 } from '@/store/selectors'
+import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { Chip } from '@/ui/Chip'
@@ -23,8 +25,8 @@ import { ListRow } from '@/ui/ListRow'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
 
-/** Le sens que la liste montre, ou `null` pour les deux. */
-export type FlowFilter = 'in' | 'out' | null
+/** La nature que la liste montre, ou `null` pour tout. */
+export type NatureFilter = EntryNature | null
 
 const AXES = [
   { value: 'day' as const, label: fr.month.byDay },
@@ -35,11 +37,18 @@ const AXES = [
 /* L'axe range, le filtre retire — deux gestes différents, deux commandes
    différentes. La bascule dit sur quoi la liste est rangée, les pilules ce
    qu'elle montre : c'est déjà la règle de l'en-tête du mois, qui filtre par
-   membre avec les mêmes pilules. */
-const FLOWS: { value: FlowFilter; label: string }[] = [
+   membre avec les mêmes pilules.
+
+   Les pilules disent des natures, jamais des sens : un versement d'épargne
+   sort du compte mais n'est pas une charge, et une reprise n'est pas un
+   revenu. Filtrer par sens rangeait l'un sous « Charges » et l'autre sous
+   « Revenus » — deux mots empruntés aux tuiles, qui comptent par nature et
+   excluent l'épargne. Les mots sont ceux de la saisie, positions comprises. */
+const NATURES: { value: NatureFilter; label: string }[] = [
   { value: null, label: fr.month.showAll },
-  { value: 'out', label: fr.month.showOut },
-  { value: 'in', label: fr.month.showIn },
+  { value: 'expense', label: fr.month.showOut },
+  { value: 'income', label: fr.month.showIn },
+  { value: 'saving', label: fr.month.showSaving },
 ]
 
 /** Le membre en sous-libellé, ou rien : `exactOptionalPropertyTypes` interdit
@@ -61,26 +70,27 @@ function memberMeta(
 const OPEN_BY_DEFAULT: Record<GroupBy, boolean> = { day: true, category: false, member: false }
 
 /**
- * Les entrées confirmées du mois, rangées sur un axe et filtrées par sens.
+ * Les entrées confirmées du mois, rangées sur un axe et filtrées par nature.
  *
  * Le filtre est tenu par la page, pas ici : les tuiles du tableau de bord le
  * posent aussi. `focus` compte les demandes de défilement venues d'elles — un
- * compteur plutôt qu'un drapeau, sinon redemander le même sens après avoir fait
- * défiler la page ne changerait aucun état, donc ne défilerait pas.
+ * compteur plutôt qu'un drapeau, sinon redemander la même nature après avoir
+ * fait défiler la page ne changerait aucun état, donc ne défilerait pas.
  */
 export function EntriesSection({
-  flow,
-  onFlow,
+  nature,
+  onNature,
   focus,
   onOpen,
 }: {
-  flow: FlowFilter
-  onFlow: (flow: FlowFilter) => void
+  nature: NatureFilter
+  onNature: (nature: NatureFilter) => void
   focus: number
   onOpen: (entry: Entry) => void
 }) {
   const confirmed = useMonthConfirmed()
   const categories = useCategoryMap()
+  const kindOf = useKindOf()
   const members = useMemberMap()
   const memberList = useMembers()
   const memberFilter = useMemberFilter()
@@ -97,10 +107,11 @@ export function EntriesSection({
   )
 
   const [by, setBy] = useState<GroupBy>('day')
-  const entries = useMemo(
-    () => (flow === null ? confirmed : confirmed.filter((entry) => entry.direction === flow)),
-    [confirmed, flow],
-  )
+  const entries = useMemo(() => {
+    if (nature === null) return confirmed
+    const kinds = kindsOfNature(nature)
+    return confirmed.filter((entry) => kinds.includes(kindOf(entry.categoryId)))
+  }, [confirmed, nature, kindOf])
   const groups = useMemo(() => groupEntries(entries, by), [entries, by])
   const keys = useMemo(() => groups.map((g) => g.key), [groups])
   const disclosure = useDisclosureGroup(keys, OPEN_BY_DEFAULT[by])
@@ -149,12 +160,12 @@ export function EntriesSection({
             label={fr.month.groupBy}
           />
           <div role="group" aria-label={fr.month.show} className="flex flex-wrap gap-2">
-            {FLOWS.map((option) => (
+            {NATURES.map((option) => (
               <Chip
                 key={option.label}
-                active={option.value === flow}
+                active={option.value === nature}
                 onClick={() => {
-                  onFlow(option.value)
+                  onNature(option.value)
                 }}
               >
                 {option.label}
@@ -166,8 +177,9 @@ export function EntriesSection({
         {/* Hors filtre, ce total est celui de la tuile « Solde du mois », au
             même calcul près : le redire ici en ferait une seconde vérité. Sous
             filtre, en revanche, aucune tuile ne le porte — celle des charges
-            compte les échéances encore prévues, que cette liste n'a pas. */}
-        {flow !== null && entries.length > 0 && (
+            compte les échéances encore prévues, que cette liste n'a pas. Sur
+            l'épargne, c'est un net : une reprise s'y retranche, comme partout. */}
+        {nature !== null && entries.length > 0 && (
           <div className="flex items-baseline gap-2">
             <span className="t-axis">
               {tpl(
@@ -183,7 +195,11 @@ export function EntriesSection({
             le dire, plutôt que de laisser une tuile qui semble s'être cassée. */}
         {entries.length === 0 && (
           <p className="t-label">
-            {flow === 'in' ? fr.month.showEmptyIn : fr.month.showEmptyOut}
+            {nature === 'income'
+              ? fr.month.showEmptyIn
+              : nature === 'saving'
+                ? fr.month.showEmptySaving
+                : fr.month.showEmptyOut}
           </p>
         )}
 

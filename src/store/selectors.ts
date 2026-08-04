@@ -28,6 +28,7 @@ import {
   monthProgress,
   monthTotals,
   recurrenceTotals,
+  recurrenceTotalsOfKinds,
   restToLive,
   savingCapacity,
   savingLeft,
@@ -889,12 +890,22 @@ export function useMonthProgress(): number {
 
 /* --- Récurrences ----------------------------------------------------------*/
 
-export function useRecurrenceTotals(direction: 'in' | 'out' = 'out'): RecurrenceTotals {
+/**
+ * Le total des récurrences, sur les sorties par défaut — épargne et crédits
+ * compris — ou borné aux natures données quand la liste est filtrée : le
+ * chiffre doit décrire la liste qu'il surplombe, et un total « Charges » qui
+ * compterait l'épargne contredirait la tuile du même nom.
+ */
+export function useRecurrenceTotals(kinds: readonly CategoryKind[] | null = null): RecurrenceTotals {
   const recurrences = useRecurrences()
   const amountOf = useAmountOf()
+  const kindOf = useKindOf()
   return useMemo(
-    () => recurrenceTotals(recurrences, amountOf, today(), direction),
-    [recurrences, amountOf, direction],
+    () =>
+      kinds === null
+        ? recurrenceTotals(recurrences, amountOf, today(), 'out')
+        : recurrenceTotalsOfKinds(recurrences, amountOf, today(), kindOf, kinds),
+    [recurrences, amountOf, kindOf, kinds],
   )
 }
 

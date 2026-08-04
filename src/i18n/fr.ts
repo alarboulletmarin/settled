@@ -771,10 +771,16 @@ export const fr = {
        jour. Les mots sont ceux des deux tuiles, juste au-dessus. */
     show: 'Montrer',
     showAll: 'Tout',
+    /* Des natures, jamais des sens : un versement d'épargne sort du compte
+       mais n'est pas une charge, et une reprise n'est pas un revenu. Les mots
+       sont ceux des tuiles — qui comptent par nature et excluent l'épargne —
+       et de la saisie, dont l'épargne a sa propre position. */
     showOut: 'Charges',
     showIn: 'Revenus',
+    showSaving: 'Épargne',
     showEmptyOut: 'Aucune charge confirmée ce mois-ci.',
     showEmptyIn: 'Aucun revenu confirmé ce mois-ci.',
+    showEmptySaving: 'Aucun mouvement d’épargne confirmé ce mois-ci.',
     groupCountOne: '%s ligne',
     groupCount: '%s lignes',
     collapseAll: 'Tout replier',
@@ -895,6 +901,11 @@ export const fr = {
     totalMonthly: 'Total par mois',
     totalScopeOut: 'Tout le foyer · ce qui sort chaque mois, épargne et crédits compris',
     totalScopeIn: 'Tout le foyer · ce qui rentre chaque mois',
+    /* Sous une pilule, le total se borne à sa nature : « Charges » compte
+       comme la tuile du même nom — sans l'épargne — et l'épargne se compte en
+       net, reprises déduites, comme partout. */
+    totalScopeSpending: 'Tout le foyer · charges et crédits chaque mois, épargne à part',
+    totalScopeSaving: 'Tout le foyer · ce qui part sur l’épargne chaque mois, reprises déduites',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
     groupBy: 'Regrouper par',
@@ -913,10 +924,14 @@ export const fr = {
        ceux de la page du mois, à la lettre. */
     show: 'Montrer',
     showAll: 'Tout',
+    /* Des natures, comme sur la liste du mois : la mensualité d'épargne n'est
+       pas une charge, elle a sa pilule. */
     showOut: 'Charges',
     showIn: 'Revenus',
+    showSaving: 'Épargne',
     showEmptyOut: 'Aucune charge récurrente.',
     showEmptyIn: 'Aucun revenu récurrent.',
+    showEmptySaving: 'Aucune récurrence d’épargne.',
     groupCountOne: '%s récurrence',
     groupCount: '%s récurrences',
     collapseAll: 'Tout replier',

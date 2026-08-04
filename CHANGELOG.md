@@ -85,6 +85,26 @@ Aucune migration : `schemaVersion` reste à 6, rien ne change dans le document.
 - **L'écran Répartition rend le pot en solo** — une ligne à 100 %, la liste
   vérifiable — au lieu d'exiger un second membre.
 
+### Corrigé — l'épargne n'est pas une charge
+
+Aucune migration : `schemaVersion` reste à 6. Les totaux, eux, ont toujours
+été justes — la tuile Charges, la capacité d'épargne et la répartition ont
+toujours exclu l'épargne. C'étaient les filtres des listes qui mentaient.
+
+- **Les pilules des listes filtrent par nature, plus par sens.** Sur la liste
+  du mois et sur les récurrences, « Charges » filtrait ce qui *sort* du
+  compte : un versement d'épargne s'y rangeait — et une reprise se rangeait
+  sous « Revenus ». Le sous-total du filtre contredisait alors la tuile
+  Charges voisine, qui exclut l'épargne. « Charges » compte désormais comme la
+  tuile — charges et crédits — et « Revenus » ne compte que les ressources.
+- **L'épargne a sa pilule**, sur les deux listes : la même position que dans
+  la saisie, et le seul endroit où isoler versements et reprises.
+- **Le total en tête des récurrences suit le filtre** : sous « Charges » il
+  laisse l'épargne dehors, sous « Épargne » il se compte en net — reprises
+  déduites, comme partout — et chaque périmètre se dit sous le chiffre.
+- **Cliquer la tuile Revenus ou Charges** filtre la liste sur la nature que la
+  tuile compte, plus sur un sens qui montrait davantage.
+
 ### Ajouté — revenir au mois courant
 
 - **« Ce mois-ci »** dans le bandeau du mois, à droite de la navigation. Parti

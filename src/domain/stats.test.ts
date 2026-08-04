@@ -20,6 +20,7 @@ import {
   nextIncomeDate,
   restToLive,
   recurrenceTotals,
+  recurrenceTotalsOfKinds,
   type Upcoming,
   upcomingDue,
   upcomingRows,
@@ -397,6 +398,64 @@ describe('total des récurrences', () => {
       annual: 0,
       unknownCount: 0,
     })
+  })
+})
+
+/* Le total qui suit le filtre par nature des listes : « Charges » doit compter
+   comme la tuile du même nom — charges et crédits, sans l'épargne — sans quoi
+   le chiffre en tête contredit celui du tableau de bord. */
+describe('total des récurrences, borné à une nature', () => {
+  const KINDS: Record<string, CategoryKind> = {
+    logement: 'charge',
+    auto: 'debt',
+    livret: 'saving',
+    salaire: 'resource',
+  }
+  const kindOf = (id: string): CategoryKind => KINDS[id] ?? 'charge'
+  const unpriced = (r: Recurrence): Money | null => r.amount
+  const monthly = (over: Partial<Omit<Recurrence, 'period'>> & { id: string }) =>
+    makeRecurrence({ period: { unit: 'month', every: 1, anchorDay: 1 }, ...over })
+
+  const recurrences = [
+    monthly({ id: 'loyer', categoryId: 'logement', amount: eur(95_000) }),
+    monthly({ id: 'pret', categoryId: 'auto', amount: eur(30_000) }),
+    monthly({ id: 'livret', categoryId: 'livret', amount: eur(20_000) }),
+    monthly({ id: 'salaire', categoryId: 'salaire', direction: 'in', amount: eur(250_000) }),
+  ]
+
+  it('« Charges » compte les charges et les crédits, sans l’épargne', () => {
+    const totals = recurrenceTotalsOfKinds(recurrences, unpriced, '2026-07-01', kindOf, [
+      'charge',
+      'debt',
+    ])
+    expect(totals.monthly).toBe(125_000)
+    expect(totals.annual).toBe(1_500_000)
+  })
+
+  it('« Revenus » compte les ressources, et rien d’autre', () => {
+    expect(
+      recurrenceTotalsOfKinds(recurrences, unpriced, '2026-07-01', kindOf, ['resource']).monthly,
+    ).toBe(250_000)
+  })
+
+  it('« Épargne » se compte en net : une reprise récurrente se retranche', () => {
+    const withDrawback = [
+      ...recurrences,
+      monthly({ id: 'reprise', categoryId: 'livret', direction: 'in', amount: eur(5_000) }),
+    ]
+    expect(
+      recurrenceTotalsOfKinds(withDrawback, unpriced, '2026-07-01', kindOf, ['saving']).monthly,
+    ).toBe(15_000)
+  })
+
+  it('ignore une récurrence arrêtée, et compte l’inconnue à part', () => {
+    const list = [
+      monthly({ id: 'stop', categoryId: 'logement', amount: eur(9_999), endedOn: '2026-05-31' }),
+      monthly({ id: 'var', categoryId: 'logement', amount: null }),
+    ]
+    const totals = recurrenceTotalsOfKinds(list, unpriced, '2026-07-01', kindOf, ['charge', 'debt'])
+    expect(totals.monthly).toBe(0)
+    expect(totals.unknownCount).toBe(1)
   })
 })
 
