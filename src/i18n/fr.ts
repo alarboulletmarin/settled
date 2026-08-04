@@ -604,11 +604,13 @@ export const fr = {
     remainingHint: 'jusqu’à la prochaine rentrée d’argent',
     remainingNoIncome: 'jusqu’à la fin du mois',
     breakdown: 'Répartition',
-    breakdownHint: 'sorties du mois',
     upcoming: 'Prochaines échéances',
     inflow: 'Entrées',
     outflow: 'Sorties',
-    noBreakdown: 'Aucune sortie ce mois-ci.',
+    /* « Charge ni crédit », pas « sortie » : la tuile compte par nature, hors
+       épargne, et un mois où l'on n'a fait que verser sur un livret a bien vu
+       des sorties — simplement rien qui parte du foyer. */
+    noBreakdown: 'Aucune charge ni crédit ce mois-ci.',
     /* La tuile ne s'arrête pas au mois affiché : elle lit les règles au-delà
        des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout. */
     noUpcoming: 'Aucune échéance à venir.',
@@ -698,8 +700,12 @@ export const fr = {
       balance: {
         lead: 'Ce qui a réellement eu lieu ce mois-ci, et rien d’autre.',
         calculation: 'Les entrées confirmées, moins les sorties confirmées.',
+        /* La question la plus fréquente devant ce chiffre est celle de
+           l'épargne : elle sort du compte, donc elle pèse ici — et c'est la
+           capacité d'épargne qui la remet à part. Sans cette phrase, mettre
+           300 € de côté se lit comme 300 € dépensés, sans un mot. */
         apart:
-          'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte.',
+          'Une échéance encore prévue n’y compte pas : elle n’a pas eu lieu. C’est toute la différence avec le prévisionnel, qui les compte. Un versement d’épargne, lui, y compte comme une sortie — l’argent quitte bien le compte ; c’est la capacité d’épargne qui le met à part.',
       },
       forecast: {
         lead: 'Là où le mois atterrit si tout ce qui est prévu se passe comme prévu.',
@@ -718,7 +724,8 @@ export const fr = {
          Devant un chiffre qui appelle un geste, définir n'était pas la
          réponse. */
     },
-    srBreakdown: 'Répartition des sorties : %s',
+    // Le nom accessible compte comme l'anneau : charges et crédits, hors épargne.
+    srBreakdown: 'Répartition des charges et des crédits : %s',
     empty: 'Ce mois est encore vide. Ouvre-le, ou ajoute une dépense.',
   },
 
@@ -941,6 +948,8 @@ export const fr = {
     variableHint: 'Le montant sera demandé à chaque échéance.',
     fixedAmount: 'Montant fixe',
     priceChanged: 'Le prix a changé : %s → %s',
+    // Un virement d'épargne n'a pas de prix : son montant change, sans alarme.
+    amountChanged: 'Le montant a changé : %s → %s',
     priceChangedSince: 'depuis le %s',
     stop: 'Arrêter la récurrence',
     stopAction: 'Arrêter',

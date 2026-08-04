@@ -87,19 +87,28 @@ describe('un changement qui coûte', () => {
   })
 
   it('une charge qui monte pèse', () => {
-    expect(isCostly(change(100), 'out')).toBe(true)
+    expect(isCostly(change(100), 'out', 'charge')).toBe(true)
+    expect(isCostly(change(100), 'out', 'debt')).toBe(true)
   })
 
   it('une charge qui baisse ne pèse pas', () => {
-    expect(isCostly(change(-100), 'out')).toBe(false)
+    expect(isCostly(change(-100), 'out', 'charge')).toBe(false)
   })
 
   it('un revenu qui baisse pèse', () => {
-    expect(isCostly(change(-100), 'in')).toBe(true)
+    expect(isCostly(change(-100), 'in', 'resource')).toBe(true)
   })
 
   it('une augmentation de salaire n’est pas une alerte', () => {
-    expect(isCostly(change(100), 'in')).toBe(false)
+    expect(isCostly(change(100), 'in', 'resource')).toBe(false)
+  })
+
+  it('l’épargne n’alarme jamais : elle reste au foyer, rien ne coûte', () => {
+    // Verser plus sur un livret n'est pas une facture qui flambe, et une
+    // reprise récurrente qui baisse n'est pas un revenu qui fond.
+    expect(isCostly(change(100), 'out', 'saving')).toBe(false)
+    expect(isCostly(change(-100), 'out', 'saving')).toBe(false)
+    expect(isCostly(change(-100), 'in', 'saving')).toBe(false)
   })
 })
 

@@ -104,6 +104,29 @@ toujours exclu l'épargne. C'étaient les filtres des listes qui mentaient.
   déduites, comme partout — et chaque périmètre se dit sous le chiffre.
 - **Cliquer la tuile Revenus ou Charges** filtre la liste sur la nature que la
   tuile compte, plus sur un sens qui montrait davantage.
+- **Sous une pilule, les totaux parlent sa langue** : les charges en sortie
+  pleine comme la tuile du même nom, les revenus en entrée, et l'épargne en
+  net — versements moins reprises, comme partout. Le solde, signé par le sens,
+  affichait « −300 € » sous la pilule Épargne d'un mois où l'on en plaçait
+  300, et les groupes des récurrences contredisaient au signe près le total
+  posé juste au-dessus d'eux.
+- **L'alerte de changement de prix se tait sur l'épargne** : verser plus sur
+  un livret n'est pas une facture qui flambe — rouge et panneau ne valent que
+  pour une charge qui monte ou un revenu qui baisse. Le changement se lit
+  quand même, en « montant » plutôt qu'en « prix ».
+- **Le comparatif de deux mois ne peint plus en rouge un mois où l'on épargne
+  davantage** : l'écart d'un livret se lit sans alarme, le rouge reste aux
+  charges et aux crédits qui montent.
+- **« Où part l'argent » dit ce qu'il compte** : son état vide annonce
+  « Aucune charge ni crédit » — il annonçait « Aucune sortie » sur un mois où
+  400 € étaient partis sur un livret — et sa lecture d'écran nomme les charges
+  et les crédits, pas « les sorties ».
+- **La feuille du Solde du mois explique enfin l'épargne** : un versement y
+  compte comme une sortie — l'argent quitte bien le compte — et c'est la
+  capacité d'épargne qui le met à part. C'était la question la plus fréquente
+  devant ce chiffre, et aucune des trois feuilles n'y répondait.
+- **Le calendrier a sa porte Épargne**, comme le mois et le bouton flottant :
+  mettre de côté depuis un jour choisi passait par « Dépense ».
 
 ### Ajouté — revenir au mois courant
 

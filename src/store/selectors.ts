@@ -21,7 +21,6 @@ import {
   type MonthTotals,
   type RecurrenceTotals,
   type Upcoming,
-  breakdownByCategory,
   breakdownByFamily,
   entriesOfMonth,
   incomeFlow,
@@ -393,15 +392,6 @@ export function useRestToLive(): Money {
   const { entries } = useMonthScope()
   const month = useCurrentYm()
   return useMemo(() => restToLive(entries, month, today()), [entries, month])
-}
-
-export function useCategoryBreakdown(direction: 'in' | 'out' = 'out'): CategorySlice[] {
-  const { entries } = useMonthScope()
-  const month = useCurrentYm()
-  return useMemo(
-    () => breakdownByCategory(entries, month, direction),
-    [entries, month, direction],
-  )
 }
 
 /**

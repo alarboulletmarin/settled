@@ -292,6 +292,14 @@ function topSlices(totals: Map<string, Money>, limit: number): CategorySlice[] {
   return [...head, { categoryId: OTHER_CATEGORY, total: rest, share: ratio(rest, total) }]
 }
 
+/**
+ * Répartition par catégorie d'un sens de trésorerie, sans garde de nature :
+ * en `out`, un versement d'épargne y pèse à côté des courses. À ne jamais
+ * brancher tel quel sur un écran étiqueté « Dépenses » ou « Charges » — c'est
+ * exactement le camembert « Épargne 30 % à côté de Courses 12 % » que
+ * `types.ts` interdit. Les écrans passent par `breakdownByFamily` (gardé par
+ * `isSpending`) ou `savingsByCategory`.
+ */
 export function breakdownByCategory(
   entries: readonly Entry[],
   month: YearMonth,

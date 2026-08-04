@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { type GroupBy, NO_MEMBER, groupEntries } from '@/domain/grouping'
-import { sum } from '@/domain/money'
+import { money, sum } from '@/domain/money'
 import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDayFull, tpl } from '@/i18n/format'
@@ -139,6 +139,18 @@ export function EntriesSection({
     return key === NO_MEMBER ? fr.shell.everyone : (members.get(key)?.name ?? fr.common.other)
   }
 
+  /* Sous une pilule, les totaux parlent sa langue plutôt que celle du solde :
+     « Charges » en sortie pleine, comme la tuile du même nom ; « Revenus » en
+     entrée ; « Épargne » en net — les versements moins les reprises, comme
+     partout, et non l'inverse que donnerait le solde. Le solde reste la
+     lecture de « Tout », où les natures se mêlent (cahier §4.4 bis). */
+  const natureAmount = (total: number, size: 'label' | 'body') => {
+    if (nature === null) return <Amount value={money(total)} size={size} signed />
+    if (nature === 'income') return <Amount value={money(total)} size={size} direction="in" />
+    if (nature === 'expense') return <Amount value={money(total)} size={size} direction="out" />
+    return <Amount value={money(-total)} size={size} signed />
+  }
+
   return (
     <div ref={root} className="scroll-mt-4">
       <Tile className="flex flex-col gap-3">
@@ -177,8 +189,7 @@ export function EntriesSection({
         {/* Hors filtre, ce total est celui de la tuile « Solde du mois », au
             même calcul près : le redire ici en ferait une seconde vérité. Sous
             filtre, en revanche, aucune tuile ne le porte — celle des charges
-            compte les échéances encore prévues, que cette liste n'a pas. Sur
-            l'épargne, c'est un net : une reprise s'y retranche, comme partout. */}
+            compte les échéances encore prévues, que cette liste n'a pas. */}
         {nature !== null && entries.length > 0 && (
           <div className="flex items-baseline gap-2">
             <span className="t-axis">
@@ -187,7 +198,7 @@ export function EntriesSection({
                 entries.length,
               )}
             </span>
-            <Amount value={sum(groups.map((group) => group.total))} size="label" signed />
+            {natureAmount(sum(groups.map((group) => group.total)), 'label')}
           </div>
         )}
 
@@ -224,7 +235,7 @@ export function EntriesSection({
                   </span>
                 </span>
               }
-              trailing={<Amount value={group.total} size="body" signed />}
+              trailing={natureAmount(group.total, 'body')}
             >
               <ul className="flex flex-col">
                 {group.entries.map((entry) => (

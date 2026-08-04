@@ -13,7 +13,7 @@
 
 import type { ISODate } from './date'
 import { type Money, sub } from './money'
-import type { Direction, Entry, Recurrence } from './types'
+import type { CategoryKind, Direction, Entry, Recurrence } from './types'
 
 /* --- Le montant en vigueur ------------------------------------------------*/
 
@@ -113,13 +113,18 @@ export type PriceChange = {
 }
 
 /**
- * Vrai quand le changement pèse : une sortie qui monte, une entrée qui baisse.
+ * Vrai quand le changement pèse : une charge qui monte, un revenu qui baisse.
  *
- * Le sens en décide, sinon l'app signalerait une augmentation de salaire comme
- * une mauvaise nouvelle — et le DS §2.3 réserve le rouge aux dépassements et
- * aux erreurs. Un changement qui ne coûte rien se lit quand même, sans alarme.
+ * La nature tranche avant le sens : verser plus sur un livret sort davantage
+ * du compte, mais l'argent reste au foyer — rien ne coûte, rien n'alarme. Une
+ * reprise récurrente qui baisse n'est pas un revenu qui fond non plus. Pour
+ * les autres natures, le sens décide, sinon l'app signalerait une augmentation
+ * de salaire comme une mauvaise nouvelle — et le DS §2.3 réserve le rouge aux
+ * dépassements et aux erreurs. Un changement qui ne coûte rien se lit quand
+ * même, sans alarme.
  */
-export function isCostly(change: PriceChange, direction: Direction): boolean {
+export function isCostly(change: PriceChange, direction: Direction, kind: CategoryKind): boolean {
+  if (kind === 'saving') return false
   return direction === 'out' ? change.delta > 0 : change.delta < 0
 }
 

@@ -3,7 +3,7 @@ import { isCostly } from '@/domain/priceHistory'
 import { fr } from '@/i18n/fr'
 import { formatDayMonthShort, formatMoney, formatRelativeDays, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
-import type { RecurrenceRow as Row } from '@/store/selectors'
+import { type RecurrenceRow as Row, useKindOf } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Warning } from '@/ui/Icons'
@@ -29,7 +29,10 @@ export function RecurrenceRow({
   onOpen: () => void
 }) {
   const currency = useCurrency()
+  const kindOf = useKindOf()
   const { recurrence, monthly, annual, priceChange, stopped } = row
+  const kind = kindOf(recurrence.categoryId)
+  const costly = priceChange !== null && isCostly(priceChange, recurrence.direction, kind)
 
   return (
     <button
@@ -52,21 +55,18 @@ export function RecurrenceRow({
         <span className="t-axis truncate">{meta(row)}</span>
         {priceChange !== null && (
           /* L'alerte ne se déclenche que quand le changement coûte : une charge
-             qui monte, un revenu qui baisse. Un salaire augmenté en rouge avec
-             un panneau d'avertissement dirait le contraire de ce qui arrive —
-             et le DS §2.3 réserve le rouge aux dépassements et aux erreurs. */
+             qui monte, un revenu qui baisse — jamais l'épargne, qui reste au
+             foyer. Un salaire augmenté en rouge avec un panneau d'avertissement
+             dirait le contraire de ce qui arrive — et le DS §2.3 réserve le
+             rouge aux dépassements et aux erreurs. */
           <span
-            className={cn(
-              't-label mt-0.5 flex items-center gap-1',
-              isCostly(priceChange, recurrence.direction) && 'text-danger-text',
-            )}
+            className={cn('t-label mt-0.5 flex items-center gap-1', costly && 'text-danger-text')}
           >
-            {isCostly(priceChange, recurrence.direction) && (
-              <Warning size={14} className="shrink-0" />
-            )}
+            {costly && <Warning size={14} className="shrink-0" />}
             <span className="tnum truncate">
               {tpl(
-                fr.recurrences.priceChanged,
+                // Un virement d'épargne n'a pas de prix : son montant change.
+                kind === 'saving' ? fr.recurrences.amountChanged : fr.recurrences.priceChanged,
                 formatMoney(priceChange.previous, currency),
                 formatMoney(priceChange.current, currency),
               )}

@@ -8,6 +8,7 @@ import {
   groupRecurrences,
   sortRecurrences,
 } from '@/domain/grouping'
+import { money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatYearMonth, tpl } from '@/i18n/format'
 import { removeAdvance, undoable } from '@/store/actions'
@@ -168,6 +169,18 @@ function GroupedList({
     return key === NO_MEMBER ? fr.shell.everyone : (members.get(key)?.name ?? fr.common.other)
   }
 
+  /* Sous une pilule, le solde d'un groupe parlerait à l'envers du total en
+     tête : les charges toutes négatives sous un chiffre positif, l'épargne au
+     signe inverse de « ce qui part sur l'épargne ». Le groupe suit donc la
+     pilule — sortie pleine, entrée, ou net d'épargne — et garde son solde sur
+     « Tout », où les natures se mêlent. */
+  const natureAmount = (total: number) => {
+    if (nature === null) return <Amount value={money(total)} size="body" signed />
+    if (nature === 'income') return <Amount value={money(total)} size="body" direction="in" />
+    if (nature === 'expense') return <Amount value={money(total)} size="body" direction="out" />
+    return <Amount value={money(-total)} size="body" signed />
+  }
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -237,7 +250,7 @@ function GroupedList({
                 group.unknownCount === group.rows.length ? (
                   <span className="t-axis">{fr.recurrences.variable}</span>
                 ) : (
-                  <Amount value={group.monthly} size="body" signed />
+                  natureAmount(group.monthly)
                 )
               }
             >
