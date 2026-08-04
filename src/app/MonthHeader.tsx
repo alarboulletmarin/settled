@@ -36,7 +36,7 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
   const filter = useMonthFilter()
   const setFilter = useStore((s) => s.setFilter)
   if (members.length === 0) return null
-  const common = withCommon && members.length > 1
+  const common = withCommon
 
   return (
     /* Une ligne qui défile, à bord perdu : le cadre de l'en-tête est annulé puis
@@ -58,8 +58,10 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
       >
         {fr.shell.all}
       </Chip>
-      {/* Sans deux membres, il n'y a rien à partager : le commun se confond
-          alors avec tout, et une pilule de plus ne dirait que ça. */}
+      {/* Le commun se propose dès le premier membre : seul, la vue du membre
+          vaut « tout le monde » au centime, et le pot est justement la seule
+          lecture qui distingue encore les charges du foyer de ses lignes à
+          lui. */}
       {common && (
         <Chip
           className="shrink-0"
@@ -125,6 +127,12 @@ function ProrataNote() {
   const name = members.get(active)?.name ?? ''
 
   if (prorated) {
+    // Seul du foyer, « au prorata des revenus » serait un mensonge poli : la
+    // part vaut 100 % et n'a demandé aucun revenu. La note dit ce qui se
+    // passe vraiment — ses chiffres sont ceux du foyer entier.
+    if (members.size === 1) {
+      return <p className="t-label">{tpl(fr.shell.prorataSolo, name)}</p>
+    }
     return <p className="t-label">{tpl(fr.shell.prorata, name)}</p>
   }
   if (!partial) return null

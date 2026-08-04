@@ -356,6 +356,7 @@ export function useMonthEntries(ym?: YearMonth): Entry[] {
   const current = useCurrentYm()
   const filter = useMonthFilter()
   const kindOf = useKindOf()
+  const members = useMembers()
   const month = ym ?? current
   return useMemo(() => {
     // Sur le commun, la liste garde les lignes entières : c'est le pot qu'on
@@ -363,9 +364,13 @@ export function useMonthEntries(ym?: YearMonth): Entry[] {
     if (filter.kind === 'common') {
       return entriesOfMonth(entries, month).filter((entry) => isCommon(entry, kindOf))
     }
-    const member = filter.kind === 'member' ? filter.memberId : undefined
+    // Seul du foyer, le filtre sur le membre ne retranche rien aux listes :
+    // tout lui revient, le loyer compris — les tuiles au-dessus le comptent
+    // déjà, et une liste qui le tairait contredirait leur total.
+    const member =
+      filter.kind === 'member' && members.length > 1 ? filter.memberId : undefined
     return entriesOfMonth(entries, month, member)
-  }, [entries, month, filter, kindOf])
+  }, [entries, month, filter, kindOf, members])
 }
 
 /** Les entrées du mois affiché, à la portée de lecture courante. */
@@ -603,6 +608,10 @@ export function useUnassignedIncomes(): Recurrence[] {
 export function useMemberSharesOfIncome(): Map<string, number> | null {
   const incomes = useMemberIncomes()
   return useMemo(() => {
+    // Seul du foyer, le coefficient vaut trivialement 100 % et ne dépend
+    // d'aucun revenu : l'afficher aux réglages ne dirait rien. Cette
+    // lecture-ci reste muette sous deux membres, comme avant.
+    if (incomes.length < 2) return null
     // Aucune charge à répartir : c'est le coefficient qu'on lit ici, pas ce
     // que chacun doit sur un mois donné.
     const shares = memberShares(incomes, [])

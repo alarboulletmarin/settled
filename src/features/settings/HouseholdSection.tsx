@@ -217,9 +217,10 @@ export function HouseholdSection() {
           </Link>
         </p>
 
-        {/* Sous deux membres il n'y a rien à répartir, et l'écran renverrait
-            ici même : le lien ne s'affiche qu'une fois le foyer partagé. */}
-        {members.length > 1 && (
+        {/* Sans membre il n'y a personne à qui donner une part, et l'écran
+            renverrait ici même. Un seul suffit : sa part vaut 100 %, et
+            l'écran Répartition reste là où le pot se vérifie ligne à ligne. */}
+        {members.length > 0 && (
           <Link
             to={SPLIT_PATH}
             className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"

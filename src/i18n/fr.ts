@@ -225,6 +225,11 @@ export const fr = {
        échéances, elle, garde les lignes réelles — on confirme une échéance
        entière, jamais une part. */
     prorata: 'Chiffres à la part de %s : sa part des charges communes est comprise, au prorata des revenus. Les listes gardent les échéances entières.',
+    /* Le membre seul porte 100 % sans qu'aucun revenu soit exigé : « au
+       prorata des revenus » serait un mensonge poli, et la vraie information
+       est ailleurs — ses chiffres sont ceux du foyer entier. */
+    prorataSolo:
+      'Seul du foyer, %s porte tout le commun : ses chiffres sont ceux du foyer entier. Les listes gardent les échéances entières.',
     prorataMissingOne:
       'Charges communes non réparties, faute de connaître le revenu de %s : seules les lignes à son nom sont comptées.',
     prorataMissingMany:
@@ -984,6 +989,10 @@ export const fr = {
   split: {
     title: 'Répartition',
     subtitle: 'Ce que chacun verse sur les charges communes, au prorata des revenus.',
+    /* Seul du foyer, « au prorata des revenus » n'explique rien : la part vaut
+       100 % et n'a demandé aucun revenu. L'écran garde sa raison d'être — le
+       pot se vérifie ligne à ligne. */
+    subtitleSolo: 'Seul du foyer, tu portes tout le commun : ta part vaut 100 %.',
     total: 'Charges communes',
     totalHint: 'échéances prévues comprises',
     share: 'Part',
@@ -1054,8 +1063,10 @@ export const fr = {
       'Corrige le montant de la récurrence, ou celui de son échéance : un revenu nul ne se répartit pas, il ne dit rien.',
     goToIncome: 'Ajouter un revenu',
     goToSubscriptions: 'Voir les récurrences',
-    soloTitle: 'La répartition demande au moins deux membres.',
-    soloHint: 'Ajoute quelqu’un au foyer pour partager les charges.',
+    /* Le cas du foyer sans membre — un seul suffit désormais : sa part vaut
+       100 %, et l'écran montre le pot. */
+    soloTitle: 'La répartition demande au moins un membre.',
+    soloHint: 'Ajoute qui compose le foyer. Une personne suffit : seule, elle porte tout le commun.',
     goToSettings: 'Aller aux réglages',
     srShares: 'Parts de chacun : %s',
   },

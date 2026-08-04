@@ -161,8 +161,23 @@ describe('quand le report ne se calcule pas', () => {
     makeEntry({ date: '2026-07-15', amount: eur(30_000), categoryId: 'courses', memberId: 'clara', shared: true }),
   ]
 
-  it('rend null avec moins de deux membres', () => {
-    expect(settle(july, [{ memberId: 'luca', income: eur(250_000) }])).toBeNull()
+  it('rend null sans aucun membre', () => {
+    expect(settle(july, [])).toBeNull()
+  })
+
+  it('calcule et rend zéro pour le membre seul : il porte 100 % de ce qu’il avance', () => {
+    // La charge de Clara est hors foyer ici — écartée des deux côtés à la
+    // fois, comme celle de « parti » plus haut.
+    const solo = settle(july, [{ memberId: 'luca', income: eur(250_000) }]) ?? []
+    expect(solo).toEqual([{ memberId: 'luca', advanced: 0, owed: 0, adjustment: 0 }])
+
+    // Sa propre avance sur le commun lui revient en entier : rien à rattraper.
+    const avance = [
+      makeEntry({ date: '2026-07-15', amount: eur(30_000), categoryId: 'courses', memberId: 'luca', shared: true }),
+    ]
+    const report = settle(avance, [{ memberId: 'luca', income: eur(250_000) }]) ?? []
+    expect(report).toEqual([{ memberId: 'luca', advanced: 30_000, owed: 30_000, adjustment: 0 }])
+    expect(settlementBalance(report)).toBe(0)
   })
 
   it('rend null quand un revenu n’est pas connu', () => {

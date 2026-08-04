@@ -65,6 +65,26 @@ tourner indéfiniment sur son écran de démarrage.
 - Une exception au rendu donnait un **écran blanc**, reproduit à l'identique à
   chaque rechargement puisque le service worker resservait la même version.
 
+### Corrigé — le foyer d'une seule personne
+
+Aucune migration : `schemaVersion` reste à 6, rien ne change dans le document.
+
+- **Le mois filtré sur le membre unique vaut désormais le mois du foyer, au
+  centime.** Le prorata refusait de se calculer à moins de deux membres, et la
+  vue filtrée retombait sur les seules lignes à son nom : le loyer, un salaire
+  ou un versement laissés « tout le foyer » en disparaissaient, et le solde
+  comme la capacité d'épargne divergeaient de l'écran d'à côté sans raison
+  lisible. Un prorata à un seul participant n'est pas indéfini : il vaut
+  100 %, sans qu'aucun revenu soit déclaré — il n'y a personne à comparer.
+- **La tuile « Part du foyer » s'affiche aussi seul du foyer** : ses charges
+  perso d'un côté, le pot entier de l'autre — précisément la distinction qui
+  reste quand on est seul. La régularisation, elle, se calcule et rend zéro.
+- **La pilule « Commun » se propose dès le premier membre** : le pot seul, à
+  son montant plein, la seule lecture qui distingue encore les charges du
+  foyer des siennes.
+- **L'écran Répartition rend le pot en solo** — une ligne à 100 %, la liste
+  vérifiable — au lieu d'exiger un second membre.
+
 ### Ajouté — revenir au mois courant
 
 - **« Ce mois-ci »** dans le bandeau du mois, à droite de la navigation. Parti

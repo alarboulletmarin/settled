@@ -139,9 +139,14 @@ function ShareRow({ share, previousYm }: { share: MemberShare; previousYm: YearM
             </li>
           </ul>
         )}
-        <span className="t-axis w-full">
-          {`${fr.split.income} ${formatMoney(share.income, currency, false)}`}
-        </span>
+        {/* Le membre seul porte 100 % sans qu'aucun revenu soit exigé : son
+            revenu peut valoir zéro ici, et « Revenu 0,00 € » se lirait comme
+            une donnée quand c'est une absence. */}
+        {share.income > 0 && (
+          <span className="t-axis w-full">
+            {`${fr.split.income} ${formatMoney(share.income, currency, false)}`}
+          </span>
+        )}
       </div>
     </Tile>
   )
@@ -190,7 +195,10 @@ export function SplitPage() {
     void navigate('/reglages')
   }
 
-  if (members.length < 2) {
+  // Sans aucun membre, il n'y a personne à qui donner une part. Un seul
+  // suffit en revanche : sa part vaut 100 %, et l'écran reste le seul endroit
+  // où le pot se vérifie ligne à ligne — la tuile « Part du foyer » y mène.
+  if (members.length === 0) {
     return (
       <>
         <PageTitle title={fr.split.title} />
@@ -254,7 +262,9 @@ export function SplitPage() {
       <MonthHeader withMemberFilter={false} />
 
       <div className="flex max-w-3xl flex-col gap-4">
-        <p className="t-label">{fr.split.subtitle}</p>
+        <p className="t-label">
+          {members.length === 1 ? fr.split.subtitleSolo : fr.split.subtitle}
+        </p>
 
         <Tile variant="accent">
           <Eyebrow icon={SplitIcon}>{fr.split.total}</Eyebrow>
