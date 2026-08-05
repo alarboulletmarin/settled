@@ -3,7 +3,7 @@ import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import { ExternalIcon } from '@/ui/Icons'
-import { ABOUT_PATH } from './routes'
+import { ABOUT_PATH, LEGAL_NOTICE_PATH, PRIVACY_PATH, TERMS_PATH } from './routes'
 import { REPO_URL, VERSION } from './meta'
 
 /* La classe des liens de texte du repo — soulignés, et hauts de 44px pour la
@@ -30,9 +30,24 @@ export const LINK =
 export function AppFooter() {
   return (
     <footer className="flex flex-col gap-1 border-t border-border pt-5">
+      {/* Les trois pages juridiques sont ici et pas ailleurs : c'est le seul
+          endroit de l'app qu'un visiteur qui ne crée aucun foyer traverse, et
+          l'obligation de se rendre identifiable ne commence pas à la création du
+          premier. Libellés courts — « Mentions » plutôt que « Mentions
+          légales » — parce que cinq liens entiers ne tiennent pas sur deux
+          lignes à 320px, et qu'aucun n'a le droit d'y être tronqué. */}
       <nav aria-label={fr.nav.about} className="flex flex-wrap items-center gap-x-5">
         <Link to={ABOUT_PATH} className={LINK}>
           {fr.nav.about}
+        </Link>
+        <Link to={LEGAL_NOTICE_PATH} className={LINK}>
+          {fr.legal.shortNotice}
+        </Link>
+        <Link to={PRIVACY_PATH} className={LINK}>
+          {fr.legal.privacy}
+        </Link>
+        <Link to={TERMS_PATH} className={LINK}>
+          {fr.legal.shortTerms}
         </Link>
         <ExternalLink href={REPO_URL}>{fr.about.repo}</ExternalLink>
       </nav>

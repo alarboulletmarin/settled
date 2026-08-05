@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink, LINK } from '@/app/AppFooter'
-import { LICENSE_URL, REPO_URL, VERSION } from '@/app/meta'
-import { LANDING_PATH, STYLEGUIDE_ROUTE } from '@/app/routes'
+import { CHANGELOG_URL, DOCS_URL, LICENSE_URL, REPO_URL, THIRD_PARTY_URL, VERSION } from '@/app/meta'
+import { LANDING_PATH, LEGAL_ROUTES, STYLEGUIDE_ROUTE } from '@/app/routes'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
-import { DataIcon, HouseholdIcon, InfoIcon, RecurrencesIcon } from '@/ui/Icons'
+import { DataIcon, HouseholdIcon, InfoIcon, RecurrencesIcon, ShieldIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 
@@ -49,6 +49,22 @@ export function AboutPage() {
           <p className="t-body">{fr.about.dataLimit}</p>
         </Tile>
 
+        {/* Juste après « tes données » : c'est la phrase qu'on vient de lire —
+            rien ne sort de cet appareil — que ces trois pages développent, et le
+            seul endroit où elles ont une chance d'être ouvertes autrement que
+            par obligation. */}
+        <Tile className="gap-3">
+          <SectionHead icon={<ShieldIcon size={18} />} title={fr.legal.notice} />
+          <p className="t-body">{fr.legal.aboutLead}</p>
+          <div className="flex flex-wrap items-center gap-x-5">
+            {LEGAL_ROUTES.map((route) => (
+              <Link key={route.path} to={route.path} className={LINK}>
+                {route.label}
+              </Link>
+            ))}
+          </div>
+        </Tile>
+
         {/* Cette tuile *est* le pied de page de cet écran : elle porte déjà le
             dépôt, la licence et la version. Y ajouter l'`AppFooter` de la
             présentation les aurait dits deux fois à trois centimètres d'écart —
@@ -59,6 +75,11 @@ export function AboutPage() {
           <div className="flex flex-wrap items-center gap-x-5">
             <ExternalLink href={REPO_URL}>{fr.about.repo}</ExternalLink>
             <ExternalLink href={LICENSE_URL}>{fr.about.license}</ExternalLink>
+            {/* Les fontes sont sous OFL 1.1, qui demande d'être distribuée avec
+                elles : ce lien n'est pas un ornement, c'est ce qui rend la
+                distribution conforme. Il mène au fichier servi avec l'app, et
+                non à une page qui le décrirait. */}
+            <ExternalLink href={THIRD_PARTY_URL}>{fr.legal.thirdParty}</ExternalLink>
             {/* Le styleguide est ici et nulle part ailleurs côté utilisateur :
                 c'est un livrable de conception, et son lecteur est celui qui
                 vient de lire que le code est ouvert — pas celui qui arrive sur
@@ -66,11 +87,18 @@ export function AboutPage() {
             <Link to={STYLEGUIDE_ROUTE.path} className={LINK}>
               {STYLEGUIDE_ROUTE.label}
             </Link>
+            <ExternalLink href={DOCS_URL}>{fr.about.docs}</ExternalLink>
             <Link to={LANDING_PATH} className={LINK}>
               {fr.about.seeLanding}
             </Link>
           </div>
-          <p className="t-axis text-muted">{tpl(fr.about.version, VERSION)}</p>
+          {/* La version ne disait pas ce qu'elle apporte. Elle mène désormais au
+              journal, qui le dit — c'est aussi ce que demande `UpdatePrompt`
+              quand il propose de recharger. */}
+          <div className="flex flex-wrap items-center gap-x-5">
+            <p className="t-axis text-muted">{tpl(fr.about.version, VERSION)}</p>
+            <ExternalLink href={CHANGELOG_URL}>{fr.about.changelog}</ExternalLink>
+          </div>
         </Tile>
       </div>
     </>

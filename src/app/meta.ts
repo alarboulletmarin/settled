@@ -5,6 +5,20 @@
 export const REPO_URL = 'https://github.com/alarboulletmarin/tout-compte-fait'
 export const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`
 export const LICENSE = 'MIT'
+export const CHANGELOG_URL = `${REPO_URL}/blob/main/CHANGELOG.md`
+
+/* Le cahier des charges et le design system sont la source de vérité du projet
+   — le code leur obéit, et un écart est un bug. Ils n'étaient liés de nulle
+   part côté produit, alors qu'ils sont ce qu'on ouvre quand on se demande si
+   une app de finances est sérieuse. */
+export const DOCS_URL = `${REPO_URL}/tree/main/docs`
+
+/* Les notices des paquets qui voyagent dans le build — dont deux fontes sous
+   OFL 1.1, qui exige d'être distribuée avec elles. Fichier statique et non
+   route de l'app : il doit rester lisible même si le rendu casse, et c'est
+   précisément l'écran de secours qui ne monte ni routeur ni store.
+   Le fichier est produit par `npm run licences` (voir `scripts/licences.mjs`). */
+export const THIRD_PARTY_URL = '/licences-tierces.txt'
 
 /** `1.0.0` — telle que `package.json` la porte, préfixée à l'affichage. */
 export const VERSION = __APP_VERSION__

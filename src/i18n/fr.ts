@@ -1331,6 +1331,36 @@ export const fr = {
     newWindow: '(s’ouvre dans une nouvelle fenêtre)',
 
     seeLanding: 'Revoir la présentation',
+    /* La version affichée ne disait pas ce qu'elle apporte, et `UpdatePrompt`
+       demandait d'accepter une mise à jour sans la nommer. Sur une app qui
+       refuse par principe de se remplacer dans le dos de qui l'utilise, c'est
+       la moitié manquante du geste. */
+    changelog: 'Ce qui a changé',
+    /* Le cahier des charges et le design system sont la source de vérité du
+       projet, et son meilleur argument de sérieux : ils n'étaient liés de nulle
+       part côté produit. */
+    docs: 'La documentation du projet',
+  },
+
+  /* Les trois pages juridiques. Seulement leurs noms et le châssis commun : la
+     prose vit dans `i18n/legal.ts`, qui se charge avec les écrans qui la
+     rendent. Ces libellés-ci, eux, sont écrits par le pied de page sur tous les
+     écrans — ils ne peuvent pas attendre un morceau chargé à la demande. */
+  legal: {
+    notice: 'Mentions légales',
+    privacy: 'Confidentialité',
+    terms: 'Conditions d’utilisation',
+    /* Le pied de page n'a pas la place de trois libellés entiers à 320px. */
+    shortNotice: 'Mentions',
+    shortTerms: 'Conditions',
+    updated: 'À jour en %s.',
+    alsoRead: 'À lire aussi',
+    thirdParty: 'Licences des composants tiers',
+    /* Sur « à propos », là où l'on vient de lire que rien ne sort de l'appareil :
+       c'est la phrase que la page de confidentialité développe, et le seul
+       endroit où elle a une chance d'être ouverte. */
+    aboutLead:
+      'Le détail de ce qui est enregistré et de ce qui ne l’est pas, l’identité de l’éditeur et de l’hébergeur, et ce que le service promet.',
   },
 
   styleguide: {
