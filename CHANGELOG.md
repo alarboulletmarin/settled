@@ -12,6 +12,30 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — la licence passe de MIT à AGPL-3.0
+
+MIT autorisait explicitement ce que ce projet ne veut pas : reprendre le code,
+le refermer, et le vendre sans que personne ne revoie une ligne. Aucune licence
+open source n'interdit l'usage commercial — c'est un critère d'exclusion de la
+définition — donc le levier n'est pas l'interdiction, c'est le copyleft.
+
+- **Le dépôt est désormais sous [GNU AGPL-3.0-or-later](LICENSE).** Reprendre,
+  modifier, redistribuer et héberger restent libres, y compris commercialement ;
+  toute version modifiée doit être publiée sous la même licence. L'article 13
+  étend l'obligation à la simple mise en ligne : mettre cette app modifiée sur
+  un domaine, c'est en devoir la source, même sans rien distribuer.
+- **La bascule ne vaut que pour la suite.** La version `1.0.0` et tout ce qui a
+  été publié avant sont sortis sous MIT et le restent : quiconque en a obtenu
+  une copie garde ces droits-là pour toujours. C'est l'AGPL qui couvre les
+  versions à partir de celle-ci.
+- **L'app le dit là où elle tourne**, et pas seulement dans un fichier à la
+  racine : « à propos », les mentions légales, les conditions d'utilisation, le
+  préambule des licences tierces servies avec l'app, et une notice en tête du
+  JavaScript produit. L'article 13 demande que le programme offre sa source à
+  qui s'en sert — un `LICENSE` que personne n'ouvre ne le fait pas.
+- Les douze paquets embarqués (MIT, ISC, OFL 1.1) sont tous permissifs : aucun
+  n'entre en conflit avec le copyleft, et leurs notices ne changent pas.
+
 ### Ajouté — ce que l'app doit dire d'elle-même
 
 L'app était irréprochable techniquement et à découvert juridiquement. Ces

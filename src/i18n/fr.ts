@@ -1364,9 +1364,9 @@ export const fr = {
 
     project: 'Le projet',
     projectBody:
-      'Le code est ouvert, sous licence MIT : tu peux le lire, le copier, le faire tourner chez toi.',
+      'Le code est ouvert, sous licence AGPL-3.0 : tu peux le lire, le copier, le faire tourner chez toi. À une condition — ce que tu en publies reste ouvert à ton tour, même si tu te contentes de le mettre en ligne.',
     repo: 'Le code sur GitHub',
-    license: 'La licence MIT',
+    license: 'La licence AGPL-3.0',
     version: 'Version %s',
     /* Annoncé aux lecteurs d'écran, jamais à l'œil : le soulignement dit déjà
        que c'est un lien, rien ne dit qu'il quitte l'app — et en mode installé,
