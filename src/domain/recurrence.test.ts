@@ -207,6 +207,25 @@ describe('prochaine échéance', () => {
     const r = make({ unit: 'month', every: 1, anchorDay: 5, endedOn: '2026-02-28' })
     expect(nextOccurrence(r, '2026-03-01')).toBeNull()
   })
+
+  /* L'horizon a longtemps valu deux ans en dur. Il répondait juste tant que le
+     formulaire ne savait poser un intervalle que sur les mois : une annuelle
+     tous les trois ans rendait alors `null`, donc disparaissait des prochaines
+     échéances et se rangeait en fin de tri, sans qu'aucun écran ne dise
+     pourquoi. Il se déduit désormais de la période. */
+  it('voit assez loin pour les périodicités longues', () => {
+    /* Une annuelle garde le mois de son départ : celle-ci tombe chaque 15
+       janvier, tous les trois ans. Depuis mars 2026, la suivante est à près de
+       trois ans — hors de portée de l'ancien horizon, qui rendait `null`. */
+    const r = make({ unit: 'year', every: 3, anchorDay: 15 })
+    expect(nextOccurrence(r, '2026-03-16')?.date).toBe('2029-01-15')
+  })
+
+  it('ne regarde pas plus loin que nécessaire sur une périodicité courte', () => {
+    const r = make({ unit: 'week', every: 2, anchorDay: 1 })
+    /* `startedOn` vaut 2026-01-01, un jeudi : le premier lundi est le 5. */
+    expect(nextOccurrence(r, '2026-01-06')?.date).toBe('2026-01-19')
+  })
 })
 
 describe('amortissement', () => {

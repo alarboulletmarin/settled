@@ -92,7 +92,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff,woff2}'],
+        /* `txt` pour les notices de licences : elles couvrent des fontes que le
+           service worker précache, et une licence joignable seulement en ligne
+           n'accompagne pas vraiment ce qui, lui, part hors ligne. */
+        globPatterns: ['**/*.{js,css,html,svg,png,txt,woff,woff2}'],
         /* Les captures sont servies pour le manifest et le partage, jamais
            affichées par l'app : 400 Ko dans le cache hors ligne pour des images
            que personne n'ouvrira sans réseau. */
@@ -108,8 +111,16 @@ export default defineConfig({
         navigateFallback: '/index.html',
         /* Ce qui n'est pas une route de l'app ne doit pas recevoir sa coquille.
            Une requête vers `/robots.txt` hors ligne vaut mieux en échec franc
-           qu'en page HTML servie sous un nom de fichier texte. */
-        navigateFallbackDenylist: [/^\/captures\//, /^\/robots\.txt$/],
+           qu'en page HTML servie sous un nom de fichier texte. Les notices de
+           licences y sont pour une raison plus forte : on y arrive par un lien
+           de l'app, donc par une navigation — sans cette ligne, le lien rendait
+           `index.html` sous le nom du fichier, et la licence des fontes ne
+           s'affichait jamais. */
+        navigateFallbackDenylist: [
+          /^\/captures\//,
+          /^\/robots\.txt$/,
+          /^\/licences-tierces\.txt$/,
+        ],
       },
       /* Le service worker ne s'enregistre pas en développement : il resservirait
          du code figé à chaque rechargement, ce qui est exactement le contraire

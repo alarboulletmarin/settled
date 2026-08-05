@@ -85,6 +85,16 @@ export type StoreActions = {
   setYm: (ym: YearMonth) => void
   setFilter: (filter: MonthFilter) => void
   setTheme: (theme: ThemeSetting) => void
+  /**
+   * La devise dans laquelle les montants s'affichent.
+   *
+   * Elle était stockée, validée, migrée, exportée et lue par tous les montants
+   * de l'app — et réglable nulle part : elle valait « EUR » à perpétuité, sans
+   * que rien ne le dise. Ce n'est pas la multi-devise, que le cahier §2 laisse
+   * hors v1 : aucun taux n'est appliqué, aucune conversion n'a lieu, et les
+   * centimes restent des centimes. C'est le symbole sous lequel on les lit.
+   */
+  setCurrency: (currency: string) => void
   finishOnboarding: () => void
   /**
    * Ouvre un mois s'il ne l'a jamais été, à condition qu'il ne soit pas passé.
@@ -271,6 +281,13 @@ export const useStore = create<Store>()((set, get) => ({
   setTheme(theme) {
     storePreference(theme)
     get().mutate((data) => ({ ...data, settings: { ...data.settings, theme } }))
+  },
+
+  /* Pas de miroir en `localStorage`, contrairement au thème : celui-ci évite un
+     éclair de blanc avant le premier rendu, alors qu'un symbole monétaire
+     n'apparaît qu'une fois le document lu. */
+  setCurrency(currency) {
+    get().mutate((data) => ({ ...data, settings: { ...data.settings, currency } }))
   },
 
   finishOnboarding() {

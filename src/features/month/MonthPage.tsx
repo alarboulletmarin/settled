@@ -23,11 +23,32 @@ export function MonthPage() {
      se pilote que de la liste et y reste : une tuile filtre ce qu'on voit, elle
      ne range pas la liste autrement que l'utilisateur l'a rangée. */
   const [nature, setNature] = useState<NatureFilter>(null)
+  /* Le filtre venu de « Où part l'argent ». Il vit ici pour la même raison que
+     la nature : il se pose depuis une tuile et se retire depuis la liste. */
+  const [family, setFamily] = useState<string | null>(null)
   const [focus, setFocus] = useState(0)
 
   const showNature = (value: 'expense' | 'income'): void => {
     setNature(value)
+    setFamily(null)
     setFocus((previous) => previous + 1)
+  }
+
+  /* Une famille de « Où part l'argent » relève d'une seule nature, et l'anneau
+     ne compte que charges et crédits : la pilule suit, sinon le sous-total de
+     la liste et la part qu'on vient de toucher parleraient deux langues. */
+  const showFamily = (familyId: string): void => {
+    setNature('expense')
+    setFamily(familyId)
+    setFocus((previous) => previous + 1)
+  }
+
+  /* Choisir une nature retire la famille : les deux se contredisent dès qu'on
+     sort des charges, et une liste vide sous deux filtres dont un est invisible
+     ne se comprend pas. */
+  const chooseNature = (value: NatureFilter): void => {
+    setNature(value)
+    setFamily(null)
   }
 
   const create = (direction: 'in' | 'out'): void => {
@@ -110,12 +131,14 @@ export function MonthPage() {
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
-          <Dashboard onShowNature={showNature} />
+          <Dashboard onShowNature={showNature} onShowFamily={showFamily} />
           <div className="flex max-w-3xl flex-col gap-4">
             <PendingSection />
             <EntriesSection
               nature={nature}
-              onNature={setNature}
+              onNature={chooseNature}
+              family={family}
+              onFamily={setFamily}
               focus={focus}
               onOpen={(entry) => {
                 void navigate(entryPath(entry.id))

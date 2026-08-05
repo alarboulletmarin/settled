@@ -208,6 +208,15 @@ export type Advance = {
 export type MonthState = {
   ym: YearMonth
   openedAt: ISODate
+  /**
+   * Réservé, sans effet en v1 : écrit à `false`, jamais lu.
+   *
+   * Conservé plutôt que retiré — le retirer demanderait une migration pour un
+   * champ qu'une clôture de mois, le jour où elle existera, redemandera aussitôt.
+   * Mais `schemaDoc` le **dit** désormais : un document donné à un assistant
+   * enseignait trois champs sans effet comme s'ils réglaient quelque chose,
+   * ce qui est exactement l'erreur que ce document existe pour éviter.
+   */
   closed: boolean
 }
 
@@ -215,7 +224,18 @@ export type ThemeSetting = 'light' | 'dark' | 'system'
 
 export type Settings = {
   theme: ThemeSetting
+  /** Le symbole sous lequel les montants se lisent. Aucune conversion : ce
+   *  n'est pas la multi-devise, que le cahier §2 laisse hors v1. */
   currency: string
+  /**
+   * Réservé, sans effet en v1 : validé entre 1 et 28, jamais lu.
+   *
+   * L'app raisonne en mois calendaire — les `ym` du cahier §3 sont de la forme
+   * « 2026-07 ». Conservé plutôt que retiré : « mon mois va du 27 au 27 » est
+   * un chantier borné qui redemanderait ce champ, et le retirer coûterait une
+   * migration pour le remettre ensuite. Comme `MonthState.closed`, il est
+   * désormais annoncé comme réservé dans le schéma donné à un assistant.
+   */
   monthStartsOn: number
 }
 

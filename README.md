@@ -77,7 +77,8 @@ npm run dev
 | `npm run lint` | ESLint |
 | `npm test` | Vitest |
 | `npm run size` | ce que pèse le premier chargement, et son budget |
-| `npm run verify` | les cinq d'un coup — c'est la porte de sortie |
+| `npm run licences` | régénère les notices des paquets qui voyagent dans le build |
+| `npm run verify` | les six d'un coup — c'est la porte de sortie |
 
 Rien à configurer : aucune variable d'environnement, aucune clé d'API. Pour voir
 l'app pleine plutôt que vide, **Réglages → Jeu d'exemple → Charger l'exemple**
@@ -103,6 +104,28 @@ Vitest · vite-plugin-pwa.
 
 Aucune librairie de graphiques : l'anneau, les barres et les courbes sont des
 composants SVG maison. Aucun backend, donc aucun coût de fonctionnement.
+
+Douze paquets voyagent dans la version publiée : six sous MIT, un sous ISC, et
+les deux fontes — Archivo et Geist Mono — sous **SIL Open Font License 1.1**,
+qui demande d'être distribuée avec elles. Leurs notices intégrales sont dans
+[`public/licences-tierces.txt`](public/licences-tierces.txt), produit par
+`npm run licences` depuis `node_modules` et servi avec l'app. `npm run verify`
+échoue s'il a pris du retard : une liste de licences recopiée à la main diverge
+au premier `npm update`, et c'est celle qu'on ne relit jamais qui reste fausse.
+
+## Accessibilité
+
+Le [cahier des charges](docs/CAHIER-DES-CHARGES.md#5-contraintes-techniques)
+vise le niveau **AA** : contraste sur tout texte, focus clavier visible,
+`prefers-reduced-motion` respecté, graphiques doublés d'une lecture textuelle.
+Les écarts sont mesurés, tabulés et justifiés dans
+[l'architecture](docs/ARCHITECTURE.md#écarts-au-design-system) — un contraste
+annoncé et non tenu vaut moins qu'un écart assumé.
+
+Aucune obligation réglementaire ne s'applique ici : le RGAA vise le secteur
+public et les très grandes entreprises, et l'European Accessibility Act les
+services fournis aux consommateurs. C'est une exigence du projet, pas une
+conformité subie.
 
 ## Documentation
 
@@ -131,3 +154,14 @@ choix, pas un oubli.
 
 [MIT](LICENSE) — reprends, modifie, redistribue, y compris pour un usage
 commercial. Garde simplement la mention de copyright.
+
+Cela ne vaut que pour ce dépôt : les composants tiers gardent la leur, et les
+deux fontes sont sous une licence qui pose une condition de plus — voir
+[`public/licences-tierces.txt`](public/licences-tierces.txt).
+
+Le service rendu à [toutcomptefait.xyz](https://toutcomptefait.xyz), lui, n'est
+pas couvert par MIT : il a ses propres
+[mentions légales](https://toutcomptefait.xyz/mentions-legales),
+[politique de confidentialité](https://toutcomptefait.xyz/confidentialite) et
+[conditions d'utilisation](https://toutcomptefait.xyz/conditions), dont les
+textes vivent dans [`src/i18n/legal.ts`](src/i18n/legal.ts).

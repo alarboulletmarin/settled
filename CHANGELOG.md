@@ -12,6 +12,85 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — ce que l'app doit dire d'elle-même
+
+L'app était irréprochable techniquement et à découvert juridiquement. Ces
+pages ne changent rien à ce qu'elle fait ; elles rendent vérifiable ce qu'elle
+promet.
+
+- **Licences des composants tiers**, produites depuis `node_modules` par
+  `npm run licences` et servies avec l'app. Deux des douze paquets sont des
+  fontes sous SIL Open Font License 1.1 — Archivo et Geist Mono —, qui demande
+  d'être distribuée avec le logiciel de fonte : les `.woff2` partaient dans
+  `dist/assets` sans qu'aucun texte de licence ne les accompagne. Le fichier
+  est produit et jamais écrit à la main, et `npm run verify` échoue s'il a pris
+  du retard.
+- **Mentions légales** (`/mentions-legales`). L'article 1-1 de la LCEN — l'ancien
+  6 III, déplacé par la loi du 21 mai 2024 — impose à tout éditeur de se rendre
+  identifiable, hébergeur compris.
+- **Politique de confidentialité** (`/confidentialite`). L'app ne fait aucune
+  requête ; l'hébergeur, lui, journalise des adresses IP, et c'est le seul
+  traitement du projet. La page dit aussi **pourquoi il n'y a pas de bandeau
+  cookies** — IndexedDB porte les données elles-mêmes, donc l'exemption du
+  strictement nécessaire s'applique — plutôt que de laisser cette absence se
+  lire comme un oubli.
+- **Conditions d'utilisation** (`/conditions`). MIT couvre le code, pas le
+  service : sa clause de non-garantie protège qui récupère le dépôt, pas qui
+  ouvre le site.
+- Les trois répondent avant la création du foyer comme après, et se chargent à
+  la demande — leur prose ne pèse sur le premier chargement de personne.
+- **Un lien vers le journal des modifications** depuis « à propos » : la version
+  s'affichait sans dire ce qu'elle apporte, sur une app qui refuse par principe
+  de se mettre à jour dans le dos de qui l'utilise.
+- **Des données structurées** dans la page : une app gratuite, installable et
+  sous licence ouverte se présentait comme n'importe quel lien.
+
+### Ajouté — périodicités et devise
+
+- **Toutes les *n* semaines, tous les *n* ans.** Le modèle portait un intervalle
+  sur les trois unités depuis la v1 ; le formulaire n'en proposait un que sur
+  les mois. La quinzaine — le rythme d'une paie sur deux — ne se saisissait pas.
+- **La devise se règle** (Réglages). Le champ existait au modèle, validé, migré,
+  exporté et lu par tous les montants de l'app — et atteint par aucun écran : il
+  valait « EUR » à perpétuité sans que rien ne le dise. Ce n'est pas la
+  multi-devise, qui reste hors v1, et l'écran le dit : seul le symbole change,
+  rien n'est converti.
+- **« Où part l'argent » s'ouvre.** Chaque part de la légende mène aux lignes du
+  mois qu'elle compte, comme les deux tuiles de flux mènent depuis longtemps à
+  la liste filtrée sur leur nature.
+- **« Tout afficher » sur la recherche.** La coupe à vingt était annoncée mais
+  sans issue : « précise la recherche » ne sert à rien quand tout ce qui dépasse
+  porte réellement le même mot.
+
+### Corrigé — ce que le formulaire ne montrait pas, il l'effaçait
+
+- **Une périodicité que le formulaire ne savait pas décrire se faisait réécrire
+  à la première reprise de sa fiche.** Un document importé portant « toutes les
+  deux semaines » s'affichait juste, se développait juste, et revenait
+  hebdomadaire dès qu'on rouvrait sa fiche pour en corriger le libellé — ses
+  échéances à venir replanifiées au double, sans un mot. La règle du cahier §3
+  était bonne (un écran renvoie l'état complet de ce qu'il montre) ; c'est ce
+  qu'il montrait qui ne l'était pas.
+- **Une périodicité longue n'avait plus de prochaine échéance.**
+  `nextOccurrence` regardait deux ans devant elle, en dur : une annuelle tous
+  les trois ans rendait `null`, donc disparaissait de « Prochaines échéances »
+  et se rangeait en fin de tri. L'horizon se déduit désormais de la période.
+- **La note d'une entrée ne se relisait nulle part.** Il fallait rouvrir la
+  ligne pour la voir, et rien n'annonçait qu'il y en avait une — alors qu'une
+  fiche de récurrence affiche la sienne depuis toujours. Elle se lit désormais
+  sur la liste du mois et dans les résultats de recherche.
+- **« Le 31 de chaque mois » s'affichait sur une échéance qui tombe le 28.** Le
+  jour est borné et jamais reporté, donc 31 *est* le dernier jour du mois : les
+  écrans le nomment, et l'aide du champ dit le geste au lieu de le laisser
+  deviner.
+- **Le schéma donné à un assistant enseignait trois champs sans effet**
+  (`Category.icon`, `MonthState.closed`, `settings.monthStartsOn`) comme s'ils
+  réglaient quelque chose. Ils restent au modèle — deux d'entre eux sont ce
+  qu'un chantier déjà envisagé redemanderait — mais le document les annonce
+  désormais comme réservés.
+
+---
+
 Le chantier de la fiabilité du stockage. La promesse de l'app est que tout vit
 sur l'appareil ; rien n'instrumentait la frontière avec le navigateur, et
 quatre façons de tout perdre en silence coexistaient.

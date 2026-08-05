@@ -41,6 +41,7 @@ import { PiggyBank } from '@phosphor-icons/react/dist/csr/PiggyBank'
 import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
 import { MagnifyingGlass } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { Receipt } from '@phosphor-icons/react/dist/csr/Receipt'
+import { ShieldCheck } from '@phosphor-icons/react/dist/csr/ShieldCheck'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
 import { TrendUp } from '@phosphor-icons/react/dist/csr/TrendUp'
@@ -130,6 +131,10 @@ export const CategoriesIcon = adapt(Tag)
 export const SearchIcon = adapt(MagnifyingGlass)
 export const ThemeIcon = adapt(Palette)
 export const DataIcon = adapt(Database)
+/* Le repère des trois pages juridiques. Un bouclier plutôt qu'une balance :
+   ce qu'elles disent d'abord est ce qui protège celui qui lit — rien ne sort de
+   son appareil —, et non l'appareil judiciaire qui l'y oblige. */
+export const ShieldIcon = adapt(ShieldCheck)
 /* Le coffre, et non une seconde base : « Données » parle des fichiers qui
    sortent, « Sur cet appareil » de ce qui y reste rangé. */
 export const DeviceIcon = adapt(Archive)

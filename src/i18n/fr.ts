@@ -341,6 +341,15 @@ export const fr = {
 
   settings: {
     themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
+
+    currency: 'Devise',
+    /* La phrase dit surtout ce que ce réglage **ne fait pas**. Un sélecteur de
+       devise invite à croire qu'on convertit ; l'app ne convertit rien et ne le
+       fera pas — le cahier §2 laisse la multi-devise hors v1. Ne rien dire
+       aurait laissé quelqu'un changer de devise en pensant que ses montants
+       suivraient. */
+    currencyHint:
+      'Le symbole sous lequel tes montants s’affichent. Rien n’est converti : les chiffres saisis restent les mêmes.',
     aboutLink: 'Le projet, le code et la licence',
 
     household: 'Foyer',
@@ -582,7 +591,11 @@ export const fr = {
     searchEntries: 'Entrées',
     searchRecurrences: 'Récurrences',
     searchEmpty: 'Aucune ligne ne correspond à « %s ».',
-    searchMore: '… et %s de plus. Précise la recherche pour les voir.',
+    /* Sans « précise la recherche » : c'était un conseil, pas une commande, et
+       il ne servait à rien quand tout ce qui dépasse porte réellement le même
+       mot. Le bouton d'à côté fait ce que la phrase demandait. */
+    searchMore: '… et %s de plus.',
+    searchShowAll: 'Tout afficher',
     empty: 'L’historique se remplit tout seul, à mesure que les mois passent.',
     emptyHint:
       'Il n’y a encore rien à comparer : la courbe, l’écart entre deux mois et le cumul annuel arrivent avec les premières entrées.',
@@ -638,6 +651,11 @@ export const fr = {
     creditsRunningOne: '%s crédit en cours',
     creditsRunningMany: '%s crédits en cours',
     showCredits: 'Voir le détail des %s',
+    /* Sur chaque part de l'anneau. La croix seule dirait « ferme », le
+       pourcentage seul ne dit pas qu'on peut l'ouvrir : le nom accessible porte
+       le geste, et il nomme le poste pour que sept boutons ne s'annoncent pas
+       sept fois de la même façon. */
+    showFamily: 'Voir les lignes de %s',
     noCredits: 'Aucun crédit en cours.',
     split: 'Répartition',
     splitHint: 'charges communes du mois',
@@ -771,6 +789,13 @@ export const fr = {
     byDay: 'Jour',
     byCategory: 'Catégorie',
     byMember: 'Personne',
+    /* Le filtre venu de l'anneau « Où part l'argent ». Il se nomme parce qu'il
+       se retire : une liste réduite par un geste fait deux écrans plus haut, et
+       qu'aucune commande visible ne défait, se lit comme un mois où il manque
+       des lignes. « Poste » plutôt que « famille » — c'est le mot que la tuile
+       emploie déjà pour désigner ce que l'anneau découpe. */
+    familyFilter: 'Poste :',
+    familyFilterClear: 'Retirer ce filtre',
     /* Le sens ne regroupe pas, il filtre. Un axe de plus aurait rendu une
        lecture — deux blocs dont le tableau de bord donne déjà les totaux ;
        un filtre les multiplie, puisqu'il se combine aux trois axes : les
@@ -978,7 +1003,9 @@ export const fr = {
       estimateHint:
         'Sert d’ordre de grandeur — pour le total des récurrences, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
       period: 'Périodicité',
+      everyWeeks: 'Toutes les combien de semaines',
       everyMonths: 'Tous les combien de mois',
+      everyYears: 'Tous les combien d’années',
       weekday: 'Jour de la semaine',
       monthDay: 'Jour du mois',
       startedOn: 'Première échéance',
@@ -993,20 +1020,36 @@ export const fr = {
          partage, il creuse le trou à chaque fois. */
       memberRequired:
         'Dis à qui est cette récurrence : elle n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
-      monthDayHint: 'Un jour qui n’existe pas est ramené au dernier jour du mois.',
+      /* La seconde phrase n'est pas une redite de la première : elle dit le
+         geste. Le jour est borné et jamais reporté, si bien que 31 *est* « le
+         dernier jour » — encore fallait-il que quelqu'un l'écrive, plutôt que
+         de laisser deviner qu'on demande la fin du mois en saisissant 31. */
+      monthDayHint:
+        'Un jour qui n’existe pas est ramené au dernier jour du mois. Saisis 31 pour dire « le dernier jour », quel que soit le mois.',
     },
     periods: {
       weekly: 'Hebdomadaire',
+      /* Le rythme d'une paie sur deux et de bien des prélèvements. Le modèle le
+         portait depuis toujours ; seul le formulaire ne savait pas le dire. */
+      everyNWeeks: 'Toutes les n semaines',
       monthly: 'Mensuelle',
       quarterly: 'Trimestrielle',
       yearly: 'Annuelle',
       everyNMonths: 'Tous les n mois',
+      everyNYears: 'Tous les n ans',
     },
     summary: {
       weekly: 'chaque %s',
+      everyNWeeks: 'le %s, toutes les %s semaines',
       monthly: 'le %s de chaque mois',
       everyN: 'le %s, tous les %s mois',
       yearly: 'chaque année le %s',
+      everyNYears: 'tous les %s ans, le %s',
+      /* Un jour d'échéance au 31 *est* le dernier jour du mois : il tombe le 31
+         en janvier, le 28 en février et le 30 en avril, parce que le jour est
+         borné et jamais reporté. Annoncer « le 31 de chaque mois » sur une
+         échéance qui tombe le 28 décrivait la saisie, pas ce qui se passe. */
+      lastDay: 'dernier jour',
     },
   },
 
@@ -1331,6 +1374,36 @@ export const fr = {
     newWindow: '(s’ouvre dans une nouvelle fenêtre)',
 
     seeLanding: 'Revoir la présentation',
+    /* La version affichée ne disait pas ce qu'elle apporte, et `UpdatePrompt`
+       demandait d'accepter une mise à jour sans la nommer. Sur une app qui
+       refuse par principe de se remplacer dans le dos de qui l'utilise, c'est
+       la moitié manquante du geste. */
+    changelog: 'Ce qui a changé',
+    /* Le cahier des charges et le design system sont la source de vérité du
+       projet, et son meilleur argument de sérieux : ils n'étaient liés de nulle
+       part côté produit. */
+    docs: 'La documentation du projet',
+  },
+
+  /* Les trois pages juridiques. Seulement leurs noms et le châssis commun : la
+     prose vit dans `i18n/legal.ts`, qui se charge avec les écrans qui la
+     rendent. Ces libellés-ci, eux, sont écrits par le pied de page sur tous les
+     écrans — ils ne peuvent pas attendre un morceau chargé à la demande. */
+  legal: {
+    notice: 'Mentions légales',
+    privacy: 'Confidentialité',
+    terms: 'Conditions d’utilisation',
+    /* Le pied de page n'a pas la place de trois libellés entiers à 320px. */
+    shortNotice: 'Mentions',
+    shortTerms: 'Conditions',
+    updated: 'À jour en %s.',
+    alsoRead: 'À lire aussi',
+    thirdParty: 'Licences des composants tiers',
+    /* Sur « à propos », là où l'on vient de lire que rien ne sort de l'appareil :
+       c'est la phrase que la page de confidentialité développe, et le seul
+       endroit où elle a une chance d'être ouverte. */
+    aboutLead:
+      'Le détail de ce qui est enregistré et de ce qui ne l’est pas, l’identité de l’éditeur et de l’hébergeur, et ce que le service promet.',
   },
 
   styleguide: {

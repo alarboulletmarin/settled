@@ -59,7 +59,13 @@ function draftFrom(
     estimateText: recurrence?.estimate === undefined ? '' : toAmountInput(recurrence.estimate),
     shared: recurrence?.shared,
     kind: recurrence ? kindOf(recurrence.period) : 'monthly',
+    /* Chaque unité relit le sien, et seulement le sien : reprendre une
+       trimestrielle ne doit pas proposer « toutes les 3 semaines » si l'on
+       bascule ensuite sur la quinzaine. Le défaut de 2 est celui du cas le plus
+       courant de chaque unité — quinzaine, bimestre, biennale. */
+    everyWeeks: recurrence?.period.unit === 'week' ? recurrence.period.every : 2,
     everyMonths: recurrence?.period.unit === 'month' ? recurrence.period.every : 2,
+    everyYears: recurrence?.period.unit === 'year' ? recurrence.period.every : 2,
     monthDay:
       recurrence && recurrence.period.unit !== 'week'
         ? recurrence.period.anchorDay

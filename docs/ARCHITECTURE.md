@@ -40,7 +40,20 @@ montant.
 accesseurs locaux. Aucune conversion UTC nulle part.
 
 **Échéances.** Le jour d'échéance est borné, jamais reporté : une mensuelle au 31
-tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars.
+tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars. Corollaire :
+`anchorDay: 31` *est* « le dernier jour du mois », et `describePeriod` le dit
+ainsi — annoncer « le 31 » sur une échéance qui tombe le 28 décrivait la saisie
+et non ce qui se passe.
+
+**L'horizon de la prochaine échéance se déduit de la période.** Il valait deux
+ans en dur, et répondait juste tant que le formulaire ne savait poser un
+intervalle que sur les mois. `Period` en accepte un sur les trois unités : une
+annuelle tous les trois ans rendait donc `null`, disparaissait de « Prochaines
+échéances » et se rangeait en fin de tri, sans qu'aucun écran ne dise pourquoi.
+Une constante qui répond juste tant que l'app ne sait pas produire le
+contre-exemple n'est pas une borne, c'est un pari — et un document importé
+suffisait à le perdre. C'est le même défaut, du côté lecture, que celui que
+`period.ts` corrige du côté écriture.
 
 **Taux.** En points de base entiers — 450 = 4,50 %. Aucun flottant ne touche un
 calcul financier, pas plus un taux qu'un montant.
@@ -357,12 +370,22 @@ appliqué, et reste réversible en une ligne.
 
 Trois autres points relèvent de la lecture plutôt que du contraste :
 
-- `Category.icon` existe au modèle de données mais reste vide et n'est jamais
-  rendu. Le DS §9 n'admet l'icône que pour agir ou se repérer : sur une ligne de
-  liste, la pastille de couleur tient déjà le rôle de repère, et deux marqueurs
-  côte à côte n'en font plus aucun.
-- `settings.monthStartsOn` est stocké et migrable, mais la v1 raisonne en mois
-  calendaire — les `ym` du cahier sont de la forme `"2026-07"`.
+- **Trois champs réservés, et le schéma le dit.** `Category.icon` existe au
+  modèle mais reste vide et n'est jamais rendu — le DS §9 n'admet l'icône que
+  pour agir ou se repérer, et sur une ligne de liste la pastille de couleur tient
+  déjà ce rôle : deux marqueurs côte à côte n'en font plus aucun.
+  `settings.monthStartsOn` est stocké, validé et migrable, mais la v1 raisonne en
+  mois calendaire — les `ym` du cahier sont de la forme `"2026-07"`.
+  `MonthState.closed` est écrit à `false` et jamais lu.
+
+  Les trois restent au modèle : les retirer coûterait une migration, et deux
+  d'entre eux sont exactement ce qu'un chantier déjà envisagé — clôture de mois,
+  « mon mois va du 27 au 27 » — redemanderait aussitôt. Ce qui change est que
+  `persistence/schemaDoc.ts` les **annonce comme réservés**. Ce document est
+  donné à un assistant pour faire transcrire des notes : il enseignait trois
+  champs sans effet comme s'ils réglaient quelque chose, ce qui est précisément
+  l'erreur qu'il existe pour éviter chez son lecteur. Un champ mort qu'on assume
+  et un champ mort qu'on enseigne ne sont pas le même écart.
 - **Les périodes d'un graphique ne font pas 44px de large.** Le DS §8 pose ce
   plancher pour toute cible tactile ; le curseur de lecture des graphiques
   (`src/charts/ChartCursor.tsx`) n'en tient que la hauteur. Mesuré à 320px : la

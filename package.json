@@ -40,8 +40,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "size": "node scripts/size.mjs",
-    "//verify": "La porte de sortie, que la CI rejoue à l'identique. La taille vient après la construction, qui produit ce qu'elle mesure.",
-    "verify": "npm run typecheck && npm run lint && npm run test && npm run build && npm run size"
+    "//licences": "Les notices des paquets qui voyagent dans le build, dont deux fontes sous OFL 1.1 — qui exige d'être distribuée avec elles.",
+    "licences": "node scripts/licences.mjs",
+    "licences:check": "node scripts/licences.mjs --check",
+    "//verify": "La porte de sortie, que la CI rejoue à l'identique. La taille vient après la construction, qui produit ce qu'elle mesure ; les licences avant, parce qu'un fichier en retard se corrige sans rien reconstruire.",
+    "verify": "npm run typecheck && npm run lint && npm run licences:check && npm run test && npm run build && npm run size"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",

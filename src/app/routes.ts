@@ -42,6 +42,23 @@ export const LANDING_PATH = '/bienvenue'
 export const ONBOARDING_PATH = '/demarrer'
 export const ABOUT_PATH = '/a-propos'
 
+/* Les trois pages juridiques. Elles répondent dans les deux états, comme la
+   présentation et « à propos » : elles parlent du site, pas d'un foyer, et
+   l'obligation de se rendre identifiable ne commence pas à la création du
+   premier foyer.
+   Leurs libellés vivent ici et non dans `i18n/legal.ts`, qui porte la prose et
+   se charge à la demande : le pied de page les nomme sur tous les écrans, il ne
+   peut pas attendre un morceau chargé à la demande pour savoir quoi écrire. */
+export const LEGAL_NOTICE_PATH = '/mentions-legales'
+export const PRIVACY_PATH = '/confidentialite'
+export const TERMS_PATH = '/conditions'
+
+export const LEGAL_ROUTES: { path: string; label: string }[] = [
+  { path: LEGAL_NOTICE_PATH, label: fr.legal.notice },
+  { path: PRIVACY_PATH, label: fr.legal.privacy },
+  { path: TERMS_PATH, label: fr.legal.terms },
+]
+
 /* Saisies et fiches sont des écrans pleins, pas des feuilles : elles ont donc
    une URL. Aucune ne figure dans la navigation, on n'y va que par une action. */
 export const ENTRY_NEW_PATH = '/depense'
