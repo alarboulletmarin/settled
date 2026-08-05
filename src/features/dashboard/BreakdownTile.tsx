@@ -2,6 +2,7 @@ import { sum } from '@/domain/money'
 import { OTHER_CATEGORY } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
+
 import { useFamilyMap, useSpendingByFamily } from '@/store/selectors'
 import { familyColor } from '@/persistence/defaults'
 import { Amount } from '@/ui/Amount'
@@ -30,7 +31,10 @@ import { DONUT_SIZE, DONUT_SLICES, DONUT_THICKNESS } from './donut'
  * Ce qu'une personne a placé se dit sur la tuile « Capacité d'épargne », sous
  * un filtre par membre, et se détaille sur l'écran de l'épargne.
  */
-export function BreakdownTile() {
+/** Ouvrir une part sur les lignes qui la composent. */
+export type ShowFamily = (familyId: string) => void
+
+export function BreakdownTile({ onShowFamily }: { onShowFamily?: ShowFamily }) {
   const slices = useSpendingByFamily(DONUT_SLICES)
   const families = useFamilyMap()
   const currency = useCurrency()
@@ -75,17 +79,54 @@ export function BreakdownTile() {
           <Amount value={total} size="label" direction="out" withCents={false} />
         </Ring>
         {/* Toutes les parts de l'anneau, sans exception : une couleur dans
-            l'anneau que la légende ne nomme pas ne veut rien dire. */}
+            l'anneau que la légende ne nomme pas ne veut rien dire.
+
+            Chaque part **s'ouvre**, sur les lignes qu'elle compte. Les deux
+            tuiles de flux mènent depuis longtemps à la liste filtrée sur leur
+            nature — « le clic montre exactement ce que le chiffre compte »
+            (cahier §4.4 bis) —, mais celle-ci ne menait nulle part : voir
+            « Logement 890 € » et vouloir savoir ce qu'il y a dedans était un
+            geste sans réponse.
+
+            Le lien est sur la ligne et non sur la tuile : une tuile cliquable
+            qui contient une liste enferme celle-ci dans un bouton, ce que le
+            DS §6 refuse et que trois autres tuiles ont déjà eu à défaire. Et
+            une tuile entière ne saurait de toute façon pas *laquelle* des sept
+            parts on visait.
+
+            « Autres » ne s'ouvre pas : ce n'est pas une famille mais le reste
+            de la liste, et l'ouvrir promettrait un filtre qui n'existe pas. */}
         <ul className="flex min-w-0 flex-1 flex-col gap-1">
-          {slices.map((slice) => (
-            <li key={slice.categoryId} className="flex items-center gap-2">
-              <Dot color={colorOf(slice.categoryId)} />
-              <span className="t-label min-w-0 flex-1 truncate">
-                {labelOf(slice.categoryId)}
-              </span>
-              <span className="t-axis tnum shrink-0">{formatPercent(slice.share)}</span>
-            </li>
-          ))}
+          {slices.map((slice) => {
+            const openable = onShowFamily !== undefined && slice.categoryId !== OTHER_CATEGORY
+            const row = (
+              <>
+                <Dot color={colorOf(slice.categoryId)} />
+                <span className="t-label min-w-0 flex-1 truncate text-left">
+                  {labelOf(slice.categoryId)}
+                </span>
+                <span className="t-axis tnum shrink-0">{formatPercent(slice.share)}</span>
+              </>
+            )
+            return (
+              <li key={slice.categoryId}>
+                {openable ? (
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-inner transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2"
+                    aria-label={tpl(fr.dashboard.showFamily, labelOf(slice.categoryId))}
+                    onClick={() => {
+                      onShowFamily(slice.categoryId)
+                    }}
+                  >
+                    {row}
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-2">{row}</span>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </div>
       <p className="sr-only-text">{formatMoney(total, currency)}</p>

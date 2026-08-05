@@ -184,6 +184,25 @@ const sharedKindOf = memoLast((families: readonly Family[], categories: readonly
 })
 
 /**
+ * De quelle famille relève une catégorie.
+ *
+ * Mutualisé pour la même raison que `sharedKindOf` : la table est la même, et
+ * une nouvelle fonction par instance ferait rater tous les caches en aval.
+ * Rend la chaîne vide pour une catégorie inconnue — `validate.ts` redirige
+ * déjà tout lien mort, et inventer ici une famille d'accueil ferait une
+ * seconde règle de réparation à côté de la vraie.
+ */
+const sharedFamilyOf = memoLast((categories: readonly Category[]) => {
+  const familyOf = new Map(categories.map((c) => [c.id, c.familyId]))
+  return (categoryId: string): string => familyOf.get(categoryId) ?? ''
+})
+
+export function useFamilyOf(): (categoryId: string) => string {
+  const categories = useCategories()
+  return useMemo(() => sharedFamilyOf(categories), [categories])
+}
+
+/**
  * Combien vaut une récurrence à une date — montant fixe, échéance chiffrée ou
  * montant habituel, dans cet ordre (voir `amountOn`). Aujourd'hui par défaut,
  * fin de mois pour ce qui se lit sur un mois.

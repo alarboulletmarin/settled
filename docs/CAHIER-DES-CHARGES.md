@@ -34,7 +34,7 @@ App de suivi des finances du foyer. Full frontend, sans compte ni serveur.
 - Export / import du fichier de données
 - Schéma de données à copier ou télécharger, pour faire transcrire des notes déjà écrites
 - Jeu d'exemple complet, chargeable en un clic
-- Thème clair et sombre
+- Thème clair et sombre, et devise d'affichage
 
 **Hors v1** — objectifs d'épargne datés, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, solde roulant entre membres (une dette entre personnes qui court de mois en mois jusqu'à ce qu'un geste la solde ; la régularisation, elle, corrige le mois suivant et s'arrête là).
 
@@ -245,6 +245,10 @@ La liste se **filtre par nature** — Tout, Charges, Revenus, Épargne : les mot
 
 Sous une pilule, les totaux — le sous-total du filtre et l'en-tête de chaque groupe — parlent la langue de la pilule et non celle du solde : les charges en sortie pleine, comme la tuile du même nom, les revenus en entrée, et l'épargne **en net** — les versements moins les reprises, comme partout, et non l'inverse que donnerait le solde, où mettre 300 € de côté se lirait « −300 € » sous une pilule nommée Épargne. Le solde reste la lecture de « Tout », où les natures se mêlent.
 
+Elle se filtre aussi **par poste**, quand on y arrive depuis l'anneau « Où part l'argent » (§4.6). Le filtre se nomme et se retire d'une pilule : une liste réduite par un geste fait deux écrans plus haut, et qu'aucune commande visible ne défait, se lit comme un mois où il manque des lignes. Choisir une nature l'efface — les deux se contredisent dès qu'on sort des charges.
+
+**La note d'une ligne se lit dans la liste**, jointe au membre par un point médian. Elle se saisissait et ne se relisait nulle part : il fallait rouvrir la ligne pour la voir, et rien n'annonçait qu'il y en avait une — alors qu'une fiche de récurrence affiche la sienne depuis toujours. C'était une asymétrie, pas une décision.
+
 Les groupes se replient. Par jour, ils s'ouvrent — c'est l'ordre de la lecture. Par catégorie ou par personne, ils se replient : c'est un résumé dans lequel on entre, et l'en-tête porte déjà la réponse. Un « tout replier » vaut pour la liste entière.
 
 Par jour, du plus récent au plus ancien. Sur les deux autres axes, le plus gros mouvement d'abord.
@@ -262,7 +266,7 @@ Vue mensuelle. Chaque jour porte une pastille par échéance, couleur de la cat�
 - **Solde prévisionnel** : en incluant les `planned` restantes.
 - **Reste à vivre** : solde prévisionnel jusqu'à la prochaine entrée d'argent.
 - **Capacité d'épargne** : ressources − charges − crédits, donc avant versements, avec le taux d'épargne en seconde lecture. C'est ce que le solde ne dit pas : lui compte un versement comme une sortie, si bien qu'un mois où l'on met 300 € de côté se lit comme un mois où l'on a dépensé 300 € de plus.
-- **Où part l'argent** : répartition par famille, sur les charges et les crédits. L'épargne en est exclue et se lit à part — elle sort du compte mais reste au foyer. Et elle ne s'y lit pas non plus en seconde lecture : un « mis de côté » sous l'anneau additionnait au foyer des épargnes individuelles, ce que le reste de l'app refuse de faire, et le faisait au seul confirmé quand l'anneau compte aussi les prévues. Ce qu'une personne a placé se dit sur **Capacité d'épargne**, sous un filtre par membre, et se détaille sur l'écran de l'épargne.
+- **Où part l'argent** : répartition par famille, sur les charges et les crédits. L'épargne en est exclue et se lit à part — elle sort du compte mais reste au foyer. Et elle ne s'y lit pas non plus en seconde lecture : un « mis de côté » sous l'anneau additionnait au foyer des épargnes individuelles, ce que le reste de l'app refuse de faire, et le faisait au seul confirmé quand l'anneau compte aussi les prévues. Ce qu'une personne a placé se dit sur **Capacité d'épargne**, sous un filtre par membre, et se détaille sur l'écran de l'épargne. **Chaque part de la légende s'ouvre** sur les lignes du mois qu'elle compte (§4.4 bis) : les deux tuiles de flux mènent depuis longtemps à la liste filtrée sur leur nature, et voir « Logement 890 € » sans pouvoir demander ce qu'il y a dedans était un geste sans réponse. Le lien est sur la ligne et non sur la tuile — une tuile cliquable enfermerait la légende dans un bouton, et ne saurait pas laquelle des sept parts on visait. « Autres » ne s'ouvre pas : ce n'est pas une famille mais le reste de la liste.
 - **Capacité d'épargne**, seconde lecture : le reste à placer hors filtre, et « placé · reste » sous un filtre par membre — les deux moitiés de la capacité, individuelles l'une comme l'autre.
 - **Crédits** : capital restant dû, tous crédits confondus.
 - **Dépenses par jour**, barres empilées par catégorie — sur les charges et les crédits, hors épargne, comme partout.
@@ -285,7 +289,7 @@ Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, cal
 ### 4.7 Historique et comparatifs
 
 - Navigation mois par mois sur toute la période couverte par les données.
-- **Recherche par libellé**, tous mois confondus, entrées et récurrences. Retrouver « ce prélèvement de mars » imposait sinon de naviguer mois par mois. Elle vit ici parce que c'est l'écran du regard en arrière, et parce que la barre d'onglets en porte cinq et n'en tient pas six. Casse et accents mis de côté, appariement en sous-chaîne, muette en dessous de deux lettres. Chaque résultat mène à sa fiche, et ce qu'une limite d'affichage laisse de côté est compté et annoncé.
+- **Recherche par libellé**, tous mois confondus, entrées et récurrences. Retrouver « ce prélèvement de mars » imposait sinon de naviguer mois par mois. Elle vit ici parce que c'est l'écran du regard en arrière, et parce que la barre d'onglets en porte cinq et n'en tient pas six. Casse et accents mis de côté, appariement en sous-chaîne, muette en dessous de deux lettres. Chaque résultat mène à sa fiche, et porte sa note à côté de sa date — c'est souvent elle qui distingue deux lignes au même libellé. Ce qu'une limite d'affichage laisse de côté est compté, annoncé, et **se montre** : « précise la recherche » était un conseil et non une commande, et il ne sert à rien quand tout ce qui dépasse porte réellement le même mot. Le premier écran reste court — répondre à « ce prélèvement de mars » demande dix lignes, pas deux cents —, et « Tout afficher » lève la coupe pour la recherche en cours, jamais pour la suivante.
 - Courbe entrées / sorties / solde sur les 12 derniers mois.
 - Comparaison de deux mois au choix, écart par catégorie en valeur et en pourcentage.
 - Comparaison d'années : cumul par mois, année N contre année N−1.
@@ -359,6 +363,7 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 - **Aucun indicateur de sauvegarde permanent.** L'écriture est débouncée et regroupée : un témoin qui suivrait son état clignoterait pour annoncer ce qui n'a jamais échoué. Ce qu'il faut savoir est l'anomalie, et elle a son bandeau.
 - **Sauvegardes locales** : cinq instantanés tournants, un par jour de saisie, listés avec leur date et ce qu'ils contiennent, restaurables après **double** confirmation — c'est un remplacement, exactement comme un import, et la sauvegarde est relue et validée avant qu'on demande quoi que ce soit. Elles vivent dans ce navigateur et disparaîtraient avec lui : elles ne remplacent pas un export, elles rattrapent l'accident du jour. « Tout effacer » les emporte, sans quoi la triple confirmation mentirait.
 - **Récupération** : si le document stocké ne se lit pas, l'écran d'arrivée propose l'import, le téléchargement de la copie brute — un document que l'app ne sait pas ouvrir n'est pas forcément un document perdu —, le rechargement, puis l'effacement après **double** confirmation. Tant que rien n'est tranché, la création d'un foyer est barrée : elle écraserait ce qu'on n'a pas su lire.
+- **Devise d'affichage** : le symbole sous lequel les montants se lisent, choisi dans une courte liste. Ce n'est **pas** la multi-devise, qui reste hors v1 : aucun taux n'est appliqué, rien n'est converti, les centimes saisis restent les mêmes centimes — et l'écran le dit, parce qu'un sélecteur de devise invite précisément à croire le contraire. Le champ existait au modèle depuis la v1, lu par tous les montants de l'app et réglable nulle part : il valait « EUR » à perpétuité sans que rien ne le dise.
 - Une bannière rappelle l'export si le dernier date de plus de 30 jours, ou n'a jamais eu lieu — le texte dit alors ce qu'il en est plutôt que d'invoquer un export inexistant.
 - Elle s'écarte à la croix ou d'un balayage vers le haut. Le refus est enregistré sur l'appareil et vaut pour un cycle de trente jours : une croix ne condamne pas au silence des données qui ne sont sauvegardées nulle part. Un export l'oublie.
 

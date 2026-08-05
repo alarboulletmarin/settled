@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ABOUT_PATH } from '@/app/routes'
 import { fr } from '@/i18n/fr'
+import { currencySymbol } from '@/i18n/format'
 import { useStore } from '@/store/store'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { InfoIcon, ThemeIcon } from '@/ui/Icons'
+import { Field, Select } from '@/ui/Field'
+import { BalanceIcon, InfoIcon, ThemeIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
@@ -17,6 +19,13 @@ const THEME_OPTIONS = [
   { value: 'dark' as const, label: fr.theme.dark },
   { value: 'system' as const, label: fr.theme.system },
 ]
+
+/* Les devises des pays où l'on tient ses comptes en français, plus les deux
+   qu'un foyer francophone croise le plus souvent. Une liste et non un champ
+   libre : `Intl` accepte n'importe quelle chaîne de trois lettres et rend
+   alors le code brut en guise de symbole — sur chaque montant de l'app, sans
+   moyen de revenir autrement qu'en retrouvant ce même champ. */
+const CURRENCIES = ['EUR', 'CHF', 'CAD', 'XPF', 'GBP', 'USD']
 
 function ThemeSection() {
   const theme = useStore((s) => s.data.settings.theme)
@@ -32,6 +41,54 @@ function ThemeSection() {
         label={fr.theme.label}
         className="w-fit"
       />
+    </Tile>
+  )
+}
+
+/**
+ * La devise sous laquelle les montants se lisent.
+ *
+ * Elle était stockée, validée, migrée, exportée, et lue par **tous** les
+ * montants de l'app — mais réglable nulle part : elle valait « EUR » à
+ * perpétuité, sans que rien ne le dise. Un champ qui décide de l'affichage de
+ * chaque chiffre et qu'aucun écran n'atteint est un réglage en panne, pas un
+ * défaut assumé.
+ *
+ * Ce n'est pas la multi-devise, que le cahier §2 laisse hors v1, et l'écran le
+ * dit : aucun taux n'est appliqué, rien n'est converti, les centimes saisis
+ * restent les mêmes centimes. Seul le symbole change. Le dire ici évite
+ * exactement le contresens qu'un sélecteur de devise invite à faire.
+ *
+ * Une liste courte plutôt qu'un champ libre : `Intl` accepte n'importe quel
+ * code ISO, y compris ceux qu'on tape de travers, et rend alors le code brut à
+ * la place du symbole sur chaque montant de l'app.
+ */
+function CurrencySection() {
+  const currency = useStore((s) => s.data.settings.currency)
+  const setCurrency = useStore((s) => s.setCurrency)
+
+  return (
+    <Tile className="gap-3">
+      <Eyebrow icon={BalanceIcon}>{fr.settings.currency}</Eyebrow>
+      <p className="t-label">{fr.settings.currencyHint}</p>
+      <Field label={fr.settings.currency}>
+        {(id) => (
+          <Select
+            id={id}
+            value={currency}
+            className="w-fit"
+            onChange={(event) => {
+              setCurrency(event.target.value)
+            }}
+          >
+            {CURRENCIES.map((code) => (
+              <option key={code} value={code}>
+                {`${code} · ${currencySymbol(code)}`}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
     </Tile>
   )
 }
@@ -65,6 +122,9 @@ export function SettingsPage() {
         <HouseholdSection />
         <CategoriesSection />
         <ThemeSection />
+        {/* Juste après le thème : ce sont les deux réglages d'apparence, et
+            celui-ci n'en est un que parce qu'aucune conversion n'a lieu. */}
+        <CurrencySection />
         {/* Avant les données : celle-ci dit où elles vivent, la suivante
             comment les en faire sortir — et se termine sur un effacement, qui
             clôt un sujet plutôt qu'il n'en ouvre un. */}

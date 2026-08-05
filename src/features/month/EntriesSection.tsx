@@ -7,6 +7,8 @@ import { formatDayFull, tpl } from '@/i18n/format'
 import { reveal } from '@/lib/reveal'
 import {
   useCategoryMap,
+  useFamilyMap,
+  useFamilyOf,
   useKindOf,
   useMemberFilter,
   useMemberMap,
@@ -20,7 +22,8 @@ import { Chip } from '@/ui/Chip'
 import { Disclosure } from '@/ui/Disclosure'
 import { useDisclosureGroup } from '@/ui/useDisclosureGroup'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { EntriesIcon } from '@/ui/Icons'
+import { Close, EntriesIcon } from '@/ui/Icons'
+import { familyColor } from '@/persistence/defaults'
 import { ListRow } from '@/ui/ListRow'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
@@ -51,15 +54,32 @@ const NATURES: { value: NatureFilter; label: string }[] = [
   { value: 'saving', label: fr.month.showSaving },
 ]
 
-/** Le membre en sous-libellé, ou rien : `exactOptionalPropertyTypes` interdit
- *  de passer explicitement `undefined` à une prop optionnelle. */
-function memberMeta(
+/**
+ * Le sous-libellé d'une ligne : à qui elle est, et ce qu'on a noté dessus.
+ *
+ * La note se saisissait et ne se relisait nulle part — ni ici, ni au
+ * calendrier, ni dans les résultats de recherche : il fallait rouvrir la ligne
+ * pour la voir, et rien n'annonçait qu'il y en avait une. Une fiche de
+ * récurrence, elle, affiche la sienne depuis toujours ; c'était une asymétrie,
+ * pas une décision.
+ *
+ * Les deux se joignent plutôt que de se chasser : « Alix · avance de janvier »
+ * répond aux deux questions sur une ligne qui n'en a qu'une à donner, et
+ * `ListRow` la tronque comme le reste.
+ *
+ * Rend `{}` et non `{ meta: undefined }` : `exactOptionalPropertyTypes`
+ * interdit de passer explicitement `undefined` à une prop optionnelle.
+ */
+function rowMeta(
   members: Map<string, { name: string }>,
   entry: Entry,
+  withMember: boolean,
 ): { meta?: string } {
-  if (entry.memberId === undefined) return {}
-  const name = members.get(entry.memberId)?.name
-  return name === undefined ? {} : { meta: name }
+  const name =
+    withMember && entry.memberId !== undefined ? members.get(entry.memberId)?.name : undefined
+  const note = entry.note?.trim()
+  const meta = [name, note === '' ? undefined : note].filter((part) => part !== undefined).join(' · ')
+  return meta === '' ? {} : { meta }
 }
 
 /**
@@ -80,17 +100,24 @@ const OPEN_BY_DEFAULT: Record<GroupBy, boolean> = { day: true, category: false, 
 export function EntriesSection({
   nature,
   onNature,
+  family,
+  onFamily,
   focus,
   onOpen,
 }: {
   nature: NatureFilter
   onNature: (nature: NatureFilter) => void
+  /** Une famille de « Où part l'argent », ou `null` pour toutes. */
+  family: string | null
+  onFamily: (family: string | null) => void
   focus: number
   onOpen: (entry: Entry) => void
 }) {
   const confirmed = useMonthConfirmed()
   const categories = useCategoryMap()
   const kindOf = useKindOf()
+  const familyOf = useFamilyOf()
+  const families = useFamilyMap()
   const members = useMemberMap()
   const memberList = useMembers()
   const memberFilter = useMemberFilter()
@@ -108,10 +135,14 @@ export function EntriesSection({
 
   const [by, setBy] = useState<GroupBy>('day')
   const entries = useMemo(() => {
-    if (nature === null) return confirmed
-    const kinds = kindsOfNature(nature)
-    return confirmed.filter((entry) => kinds.includes(kindOf(entry.categoryId)))
-  }, [confirmed, nature, kindOf])
+    const kinds = nature === null ? null : kindsOfNature(nature)
+    if (kinds === null && family === null) return confirmed
+    return confirmed.filter(
+      (entry) =>
+        (kinds === null || kinds.includes(kindOf(entry.categoryId))) &&
+        (family === null || familyOf(entry.categoryId) === family),
+    )
+  }, [confirmed, nature, kindOf, family, familyOf])
   const groups = useMemo(() => groupEntries(entries, by), [entries, by])
   const keys = useMemo(() => groups.map((g) => g.key), [groups])
   const disclosure = useDisclosureGroup(keys, OPEN_BY_DEFAULT[by])
@@ -186,6 +217,32 @@ export function EntriesSection({
           </div>
         </div>
 
+        {/* Le filtre venu de « Où part l'argent ». Il se montre parce qu'il se
+            retire : une liste réduite par un geste fait deux écrans plus haut,
+            et qu'aucune commande visible ne défait, se lit comme un mois où il
+            manque des lignes. Une pilule à part des natures, et non une de
+            plus parmi elles : celles-là sont un choix entre quatre, celle-ci
+            est une condition en cours. */}
+        {family !== null && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="t-axis">{fr.month.familyFilter}</span>
+            <Chip
+              active
+              color={familyColor(family)}
+              onClick={() => {
+                onFamily(null)
+              }}
+            >
+              {families.get(family)?.label ?? fr.common.other}
+              {/* Une croix sur un contrôle qui retire : c'est la famille ACTION
+                  du DS §9, la seule que la pilule admette. Le nom accessible
+                  dit le geste, que la croix seule ne dit pas. */}
+              <Close size={14} />
+              <span className="sr-only-text">{fr.month.familyFilterClear}</span>
+            </Chip>
+          </div>
+        )}
+
         {/* Hors filtre, ce total est celui de la tuile « Solde du mois », au
             même calcul près : le redire ici en ferait une seconde vérité. Sous
             filtre, en revanche, aucune tuile ne le porte — celle des charges
@@ -243,7 +300,7 @@ export function EntriesSection({
                     <ListRow
                       color={categories.get(entry.categoryId)?.color ?? 'var(--cat-rest)'}
                       label={entry.label}
-                      {...(by === 'member' ? {} : memberMeta(members, entry))}
+                      {...rowMeta(members, entry, by !== 'member')}
                       trailing={<Amount value={entry.amount} direction={entry.direction} />}
                       onClick={() => {
                         onOpen(entry)

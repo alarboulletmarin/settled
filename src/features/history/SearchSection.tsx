@@ -6,6 +6,7 @@ import { fr } from '@/i18n/fr'
 import { formatDate, tpl } from '@/i18n/format'
 import { useCategoryMap, useEntries, useRecurrences } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
+import { Button } from '@/ui/Button'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, TextInput } from '@/ui/Field'
 import { SearchIcon } from '@/ui/Icons'
@@ -23,6 +24,20 @@ import { Tile } from '@/ui/Tile'
 const LIMIT = 20
 
 /**
+ * Ce qu'on affiche quand on demande à tout voir.
+ *
+ * La coupe à vingt était annoncée — « … et 94 de plus » —, ce qui vaut mieux
+ * qu'une coupe muette, mais elle n'offrait aucune issue : « précise la
+ * recherche » est un conseil, pas une commande, et il ne sert à rien quand les
+ * cent quatorze lignes portent réellement le même mot. Elle se lève donc, et
+ * l'écran redevient ce qu'il était sans elle : long, mais complet.
+ *
+ * Elle ne disparaît pas pour autant : le premier écran reste court, parce que
+ * répondre à « ce prélèvement de mars » demande dix lignes et non deux cents.
+ */
+const ALL = Number.MAX_SAFE_INTEGER
+
+/**
  * Retrouver une ligne sans naviguer mois par mois.
  *
  * Elle vit sur l'historique, et non derrière un sixième onglet — la barre en
@@ -37,18 +52,23 @@ const LIMIT = 20
  */
 export function SearchSection() {
   const [query, setQuery] = useState('')
+  /* Se referme dès que la recherche change : une liste complète héritée du mot
+     précédent n'a pas été demandée pour celui-ci. */
+  const [showAll, setShowAll] = useState(false)
   const entries = useEntries()
   const recurrences = useRecurrences()
   const categories = useCategoryMap()
   const navigate = useNavigate()
 
+  const limit = showAll ? ALL : LIMIT
   const found = useMemo(
     () => ({
-      entries: searchEntries(entries, query, LIMIT),
-      recurrences: searchRecurrences(recurrences, query, LIMIT),
+      entries: searchEntries(entries, query, limit),
+      recurrences: searchRecurrences(recurrences, query, limit),
     }),
-    [entries, recurrences, query],
+    [entries, recurrences, query, limit],
   )
+  const hidden = found.entries.hidden + found.recurrences.hidden
 
   const searching = isSearchable(query)
   const nothing =
@@ -56,6 +76,12 @@ export function SearchSection() {
 
   const colorOf = (categoryId: string): string =>
     categories.get(categoryId)?.color ?? 'var(--cat-rest)'
+
+  /** La date, et la note quand il y en a une. */
+  const metaOf = (entry: { date: string; note?: string }): string => {
+    const note = entry.note?.trim()
+    return note === undefined || note === '' ? formatDate(entry.date) : `${formatDate(entry.date)} · ${note}`
+  }
 
   return (
     <Tile className="gap-4">
@@ -71,6 +97,7 @@ export function SearchSection() {
             maxLength={60}
             onChange={(event) => {
               setQuery(event.target.value)
+              setShowAll(false)
             }}
           />
         )}
@@ -81,13 +108,16 @@ export function SearchSection() {
       {found.entries.items.length > 0 && (
         <div className="flex flex-col gap-1">
           <span className="t-label font-medium">{fr.history.searchEntries}</span>
+          {/* La note se joint à la date plutôt que de rester invisible jusqu'à
+              ce qu'on rouvre la ligne — c'est souvent elle qui distingue deux
+              résultats au même libellé. */}
           <ul className="flex flex-col">
             {found.entries.items.map((entry) => (
               <li key={entry.id}>
                 <ListRow
                   color={colorOf(entry.categoryId)}
                   label={entry.label}
-                  meta={formatDate(entry.date)}
+                  meta={metaOf(entry)}
                   planned={entry.status === 'planned'}
                   trailing={<Amount value={entry.amount} direction={entry.direction} />}
                   onClick={() => {
@@ -97,9 +127,6 @@ export function SearchSection() {
               </li>
             ))}
           </ul>
-          {found.entries.hidden > 0 && (
-            <p className="t-label">{tpl(fr.history.searchMore, found.entries.hidden)}</p>
-          )}
         </div>
       )}
 
@@ -131,9 +158,27 @@ export function SearchSection() {
               </li>
             ))}
           </ul>
-          {found.recurrences.hidden > 0 && (
-            <p className="t-label">{tpl(fr.history.searchMore, found.recurrences.hidden)}</p>
-          )}
+        </div>
+      )}
+
+      {/* Une coupe annoncée vaut mieux qu'une coupe muette — c'était déjà le
+          cas —, mais « précise la recherche » est un conseil et non une
+          commande : il ne sert à rien quand les cent quatorze lignes portent
+          réellement le même mot. Le compte des deux listes se dit d'un seul
+          endroit, sous les deux, parce que c'est une seule décision : on
+          demande à tout voir, pas à tout voir des entrées. */}
+      {hidden > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="t-label">{tpl(fr.history.searchMore, hidden)}</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setShowAll(true)
+            }}
+          >
+            {fr.history.searchShowAll}
+          </Button>
         </div>
       )}
     </Tile>

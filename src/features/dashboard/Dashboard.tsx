@@ -3,7 +3,7 @@ import { useIsCommonFilter, useIsCurrentMonth, useKindOf, useMonthConfirmed } fr
 import { kindsOfNature } from '@/ui/categoryKinds'
 import { BentoGrid } from '@/ui/Tile'
 import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
-import { BreakdownTile } from './BreakdownTile'
+import { BreakdownTile, type ShowFamily } from './BreakdownTile'
 import { CreditsTile } from './CreditsTile'
 import { ChargesTile, IncomeTile, type ShowNature } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
@@ -47,7 +47,13 @@ import { UpcomingTile } from './UpcomingTile'
  * ne fait que répéter un chiffre pour mener à l'écran où il vit prend la place
  * de ce que le mois est seul à savoir dire.
  */
-export function Dashboard({ onShowNature }: { onShowNature?: ShowNature }) {
+export function Dashboard({
+  onShowNature,
+  onShowFamily,
+}: {
+  onShowNature?: ShowNature
+  onShowFamily?: ShowFamily
+}) {
   const [metric, setMetric] = useState<Metric | null>(null)
   const confirmed = useMonthConfirmed()
   const kindOf = useKindOf()
@@ -81,7 +87,7 @@ export function Dashboard({ onShowNature }: { onShowNature?: ShowNature }) {
         <ChargesTile {...openable('expense')} />
         <MemberShareTile />
         <SettlementTile />
-        <BreakdownTile />
+        <BreakdownTile {...(onShowFamily === undefined ? {} : { onShowFamily })} />
         {!common && <ForecastTile onExplain={setMetric} />}
         {/* « Reste à vivre » se lit depuis aujourd'hui, pas depuis le mois
             affiché : c'est le prévisionnel arrêté à la prochaine rentrée
