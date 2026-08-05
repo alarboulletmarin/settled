@@ -77,6 +77,16 @@ describe('schemaDocument', () => {
     expect(doc).toContain('`months[]`')
     expect(doc).toContain('`Advance.memberId` est obligatoire')
   })
+
+  /* Le document embarque le source des types, réservés compris : sans cette
+     règle, il enseignait trois champs sans effet comme s'ils réglaient quelque
+     chose — exactement l'erreur qu'il existe pour éviter chez son lecteur. */
+  it('annonce les champs réservés plutôt que de les laisser passer pour des réglages', () => {
+    for (const field of ['`Category.icon`', '`MonthState.closed`', '`settings.monthStartsOn`']) {
+      expect(doc).toContain(field)
+    }
+    expect(doc).toContain('réservés et sans effet')
+  })
 })
 
 describe('l’exemple minimal du document', () => {

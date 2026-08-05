@@ -67,6 +67,7 @@ const RULES = [
   '**Un `Debt` ou une `Advance` ne produit aucun mouvement d’argent.** Il faut lui lier la récurrence qui pose les mensualités (`recurrenceId`), sinon rien ne s’amortit. Le capital restant dû est dérivé des mensualités confirmées, jamais saisi.',
   '**`Advance.memberId` est obligatoire** — une épargne est toujours à quelqu’un. Une avance sans lui est écartée à l’import.',
   '**Les `id` sont des chaînes libres**, à toi de les choisir. Ils doivent être uniques dans leur tableau, et tout `categoryId`, `memberId`, `familyId` ou `recurrenceId` cité doit désigner quelque chose qui existe.',
+  '**Trois champs sont réservés et sans effet en v1.** `Category.icon`, `MonthState.closed` et `settings.monthStartsOn` sont lus, validés et conservés à l’import, mais aucun écran ne s’en sert : l’icône n’est jamais rendue, un mois n’est jamais clos, et l’app raisonne en mois calendaire. Laisse-les à leur valeur par défaut — `""`, `false`, `1`. Y mettre autre chose ne casse rien et ne fait rien non plus, et ce document préfère le dire plutôt que de te laisser croire à un réglage.',
 ]
 
 /** Un document minimal mais complet : deux personnes, un salaire chacune, un loyer partagé. */

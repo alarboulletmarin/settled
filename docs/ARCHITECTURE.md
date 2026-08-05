@@ -370,12 +370,22 @@ appliqué, et reste réversible en une ligne.
 
 Trois autres points relèvent de la lecture plutôt que du contraste :
 
-- `Category.icon` existe au modèle de données mais reste vide et n'est jamais
-  rendu. Le DS §9 n'admet l'icône que pour agir ou se repérer : sur une ligne de
-  liste, la pastille de couleur tient déjà le rôle de repère, et deux marqueurs
-  côte à côte n'en font plus aucun.
-- `settings.monthStartsOn` est stocké et migrable, mais la v1 raisonne en mois
-  calendaire — les `ym` du cahier sont de la forme `"2026-07"`.
+- **Trois champs réservés, et le schéma le dit.** `Category.icon` existe au
+  modèle mais reste vide et n'est jamais rendu — le DS §9 n'admet l'icône que
+  pour agir ou se repérer, et sur une ligne de liste la pastille de couleur tient
+  déjà ce rôle : deux marqueurs côte à côte n'en font plus aucun.
+  `settings.monthStartsOn` est stocké, validé et migrable, mais la v1 raisonne en
+  mois calendaire — les `ym` du cahier sont de la forme `"2026-07"`.
+  `MonthState.closed` est écrit à `false` et jamais lu.
+
+  Les trois restent au modèle : les retirer coûterait une migration, et deux
+  d'entre eux sont exactement ce qu'un chantier déjà envisagé — clôture de mois,
+  « mon mois va du 27 au 27 » — redemanderait aussitôt. Ce qui change est que
+  `persistence/schemaDoc.ts` les **annonce comme réservés**. Ce document est
+  donné à un assistant pour faire transcrire des notes : il enseignait trois
+  champs sans effet comme s'ils réglaient quelque chose, ce qui est précisément
+  l'erreur qu'il existe pour éviter chez son lecteur. Un champ mort qu'on assume
+  et un champ mort qu'on enseigne ne sont pas le même écart.
 - **Les périodes d'un graphique ne font pas 44px de large.** Le DS §8 pose ce
   plancher pour toute cible tactile ; le curseur de lecture des graphiques
   (`src/charts/ChartCursor.tsx`) n'en tient que la hauteur. Mesuré à 320px : la
