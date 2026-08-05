@@ -5,7 +5,7 @@ import { CategorySelect } from '@/ui/CategorySelect'
 import { kindsOfNature } from '@/ui/categoryKinds'
 import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
 import { Segmented } from '@/ui/Segmented'
-import { PERIOD_OPTIONS, type PeriodDraft } from './period'
+import { LAST_DAY, PERIOD_OPTIONS, type PeriodDraft, type PeriodKind } from './period'
 import type { DraftErrors, RecurrenceDraft } from './useRecurrenceForm'
 
 /* Les mêmes trois positions que la saisie ponctuelle, et pour la même raison :
@@ -26,6 +26,14 @@ const AMOUNT_KINDS = [
   { value: 'fixed' as const, label: fr.recurrences.fixedAmount },
   { value: 'variable' as const, label: fr.recurrences.variable },
 ]
+
+/* Quelles questions une périodicité pose encore : un jour de la semaine, ou un
+   jour du mois. Une annuelle ne pose ni l'un ni l'autre — sa date entière est
+   celle de la première échéance. Déclaré ici plutôt qu'en conditions inversées
+   dans le rendu : « ni hebdomadaire ni annuelle » avait déjà cessé d'être vrai
+   à l'arrivée de deux périodicités de plus. */
+const WEEKLY_KINDS: PeriodKind[] = ['weekly', 'everyNWeeks']
+const MONTH_DAY_KINDS: PeriodKind[] = ['monthly', 'quarterly', 'everyNMonths']
 
 export type FieldsProps = {
   draft: RecurrenceDraft
@@ -244,7 +252,7 @@ export function PeriodFields({ draft, patch, withStart = true }: PeriodFieldsPro
         </Field>
       )}
 
-      {draft.kind === 'weekly' && (
+      {WEEKLY_KINDS.includes(draft.kind) && (
         <Field label={fr.recurrences.form.weekday} required>
           {(id) => (
             <Select
@@ -264,40 +272,89 @@ export function PeriodFields({ draft, patch, withStart = true }: PeriodFieldsPro
         </Field>
       )}
 
-      {draft.kind === 'everyNMonths' && (
-        <Field label={fr.recurrences.form.everyMonths} required>
-          {(id) => (
-            <TextInput
-              id={id}
-              type="number"
-              min={1}
-              max={24}
-              value={String(draft.everyMonths)}
-              onChange={(e) => {
-                patch({ everyMonths: Math.max(1, Number(e.target.value) || 1) })
-              }}
-            />
-          )}
-        </Field>
+      {/* Les trois « tous les n » partagent une seule écriture : c'est le même
+          champ à trois unités près, et trois copies auraient fini par diverger
+          d'une borne ou d'un arrondi. */}
+      {draft.kind === 'everyNWeeks' && (
+        <IntervalField
+          label={fr.recurrences.form.everyWeeks}
+          max={52}
+          value={draft.everyWeeks}
+          onChange={(everyWeeks) => {
+            patch({ everyWeeks })
+          }}
+        />
       )}
 
-      {draft.kind !== 'weekly' && draft.kind !== 'yearly' && (
+      {draft.kind === 'everyNMonths' && (
+        <IntervalField
+          label={fr.recurrences.form.everyMonths}
+          max={24}
+          value={draft.everyMonths}
+          onChange={(everyMonths) => {
+            patch({ everyMonths })
+          }}
+        />
+      )}
+
+      {draft.kind === 'everyNYears' && (
+        <IntervalField
+          label={fr.recurrences.form.everyYears}
+          max={10}
+          value={draft.everyYears}
+          onChange={(everyYears) => {
+            patch({ everyYears })
+          }}
+        />
+      )}
+
+      {MONTH_DAY_KINDS.includes(draft.kind) && (
         <Field label={fr.recurrences.form.monthDay} required hint={fr.recurrences.form.monthDayHint}>
           {(id, describedBy) => (
             <TextInput
               id={id}
               type="number"
               min={1}
-              max={31}
+              max={LAST_DAY}
               aria-describedby={describedBy}
               value={String(draft.monthDay)}
               onChange={(e) => {
-                patch({ monthDay: Math.min(31, Math.max(1, Number(e.target.value) || 1)) })
+                patch({ monthDay: Math.min(LAST_DAY, Math.max(1, Number(e.target.value) || 1)) })
               }}
             />
           )}
         </Field>
       )}
     </>
+  )
+}
+
+/** Le « tous les combien » d'une périodicité, quelle que soit son unité. */
+function IntervalField({
+  label,
+  max,
+  value,
+  onChange,
+}: {
+  label: string
+  max: number
+  value: number
+  onChange: (value: number) => void
+}) {
+  return (
+    <Field label={label} required>
+      {(id) => (
+        <TextInput
+          id={id}
+          type="number"
+          min={1}
+          max={max}
+          value={String(value)}
+          onChange={(e) => {
+            onChange(Math.min(max, Math.max(1, Number(e.target.value) || 1)))
+          }}
+        />
+      )}
+    </Field>
   )
 }

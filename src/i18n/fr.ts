@@ -978,7 +978,9 @@ export const fr = {
       estimateHint:
         'Sert d’ordre de grandeur — pour le total des récurrences, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
       period: 'Périodicité',
+      everyWeeks: 'Toutes les combien de semaines',
       everyMonths: 'Tous les combien de mois',
+      everyYears: 'Tous les combien d’années',
       weekday: 'Jour de la semaine',
       monthDay: 'Jour du mois',
       startedOn: 'Première échéance',
@@ -993,20 +995,36 @@ export const fr = {
          partage, il creuse le trou à chaque fois. */
       memberRequired:
         'Dis à qui est cette récurrence : elle n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
-      monthDayHint: 'Un jour qui n’existe pas est ramené au dernier jour du mois.',
+      /* La seconde phrase n'est pas une redite de la première : elle dit le
+         geste. Le jour est borné et jamais reporté, si bien que 31 *est* « le
+         dernier jour » — encore fallait-il que quelqu'un l'écrive, plutôt que
+         de laisser deviner qu'on demande la fin du mois en saisissant 31. */
+      monthDayHint:
+        'Un jour qui n’existe pas est ramené au dernier jour du mois. Saisis 31 pour dire « le dernier jour », quel que soit le mois.',
     },
     periods: {
       weekly: 'Hebdomadaire',
+      /* Le rythme d'une paie sur deux et de bien des prélèvements. Le modèle le
+         portait depuis toujours ; seul le formulaire ne savait pas le dire. */
+      everyNWeeks: 'Toutes les n semaines',
       monthly: 'Mensuelle',
       quarterly: 'Trimestrielle',
       yearly: 'Annuelle',
       everyNMonths: 'Tous les n mois',
+      everyNYears: 'Tous les n ans',
     },
     summary: {
       weekly: 'chaque %s',
+      everyNWeeks: 'le %s, toutes les %s semaines',
       monthly: 'le %s de chaque mois',
       everyN: 'le %s, tous les %s mois',
       yearly: 'chaque année le %s',
+      everyNYears: 'tous les %s ans, le %s',
+      /* Un jour d'échéance au 31 *est* le dernier jour du mois : il tombe le 31
+         en janvier, le 28 en février et le 30 en avril, parce que le jour est
+         borné et jamais reporté. Annoncer « le 31 de chaque mois » sur une
+         échéance qui tombe le 28 décrivait la saisie, pas ce qui se passe. */
+      lastDay: 'dernier jour',
     },
   },
 

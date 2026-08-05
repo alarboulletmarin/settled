@@ -40,7 +40,20 @@ montant.
 accesseurs locaux. Aucune conversion UTC nulle part.
 
 **Échéances.** Le jour d'échéance est borné, jamais reporté : une mensuelle au 31
-tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars.
+tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars. Corollaire :
+`anchorDay: 31` *est* « le dernier jour du mois », et `describePeriod` le dit
+ainsi — annoncer « le 31 » sur une échéance qui tombe le 28 décrivait la saisie
+et non ce qui se passe.
+
+**L'horizon de la prochaine échéance se déduit de la période.** Il valait deux
+ans en dur, et répondait juste tant que le formulaire ne savait poser un
+intervalle que sur les mois. `Period` en accepte un sur les trois unités : une
+annuelle tous les trois ans rendait donc `null`, disparaissait de « Prochaines
+échéances » et se rangeait en fin de tri, sans qu'aucun écran ne dise pourquoi.
+Une constante qui répond juste tant que l'app ne sait pas produire le
+contre-exemple n'est pas une borne, c'est un pari — et un document importé
+suffisait à le perdre. C'est le même défaut, du côté lecture, que celui que
+`period.ts` corrige du côté écriture.
 
 **Taux.** En points de base entiers — 450 = 4,50 %. Aucun flottant ne touche un
 calcul financier, pas plus un taux qu'un montant.

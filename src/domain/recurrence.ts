@@ -123,10 +123,31 @@ export function occurrencesInMonth(recurrence: Recurrence, month: YearMonth): Oc
   return expandRecurrence(recurrence, startOfMonth(month), endOfMonth(month))
 }
 
+/**
+ * Combien de jours il faut regarder devant soi pour être sûr de trouver la
+ * prochaine échéance, s'il y en a une.
+ *
+ * L'horizon était fixe — deux ans, « la plus longue périodicité raisonnable ».
+ * Il l'était tant que le formulaire ne savait poser qu'un `every` sur les mois :
+ * une annuelle tous les trois ans n'avait alors aucune prochaine échéance, donc
+ * disparaissait de « Prochaines échéances » et se rangeait en fin de tri, sans
+ * qu'aucun écran ne dise pourquoi. Une constante qui répond juste tant que
+ * l'app ne sait pas produire le contre-exemple n'est pas une borne, c'est un
+ * pari — et celui-ci était perdu d'avance par un document importé.
+ *
+ * Un intervalle plein, plus un mois de marge : la première échéance cherchée
+ * peut tomber la veille de l'intervalle suivant, et un jour d'échéance borné se
+ * déplace de quelques jours d'un mois à l'autre.
+ */
+function horizonDays(period: Recurrence['period']): number {
+  const every = normalizeEvery(period.every)
+  const span = period.unit === 'week' ? 7 * every : period.unit === 'year' ? 366 * every : 31 * every
+  return span + 31
+}
+
 /** Prochaine échéance à partir de `from`, borne incluse. null si terminée. */
 export function nextOccurrence(recurrence: Recurrence, from: ISODate): Occurrence | null {
-  // Deux ans suffisent à couvrir la plus longue périodicité raisonnable.
-  const horizon = addDays(from, 366 * 2)
+  const horizon = addDays(from, horizonDays(recurrence.period))
   return expandRecurrence(recurrence, from, horizon)[0] ?? null
 }
 
