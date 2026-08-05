@@ -2,12 +2,17 @@
  * Les licences de ce qui voyage dans l'app publiée.
  *
  * Six des douze paquets sont sous MIT, un sous ISC, et **deux sous SIL Open
- * Font License 1.1** — Archivo et Geist Mono. L'OFL n'est pas la licence de ce
- * dépôt, et elle pose une condition que MIT ne pose pas dans les mêmes termes :
- * le logiciel de fonte, modifié ou non, se distribue **avec le texte de sa
- * licence et sa notice de copyright**. Or les `.woff2` sont empaquetés dans
- * `dist/assets/` et servis à chaque visite. Sans ce fichier-là, l'app
- * distribuait deux fontes sans leur licence.
+ * Font License 1.1** — Archivo et Geist Mono. L'OFL n'est la licence ni du
+ * dépôt ni d'aucun de ces paquets-là, et elle pose sa condition sur des
+ * fichiers qui ne sont pas du code : le logiciel de fonte, modifié ou non, se
+ * distribue **avec le texte de sa licence et sa notice de copyright**. Or les
+ * `.woff2` sont empaquetés dans `dist/assets/` et servis à chaque visite. Sans
+ * ce fichier-là, l'app distribuait deux fontes sans leur licence.
+ *
+ * Le préambule qu'il porte sert une seconde fin depuis que le dépôt est sous
+ * AGPL : il nomme la licence de l'app et l'adresse de sa source, dans un
+ * fichier servi avec elle. L'article 13 demande que le programme offre sa
+ * source à qui s'en sert, et un `LICENSE` resté sur GitHub ne le fait pas.
  *
  * Il est **produit, jamais écrit à la main** : une seconde liste de licences
  * recopiée à côté du `node_modules` divergerait au premier `npm update`, et
@@ -29,6 +34,14 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 const OUT = 'public/licences-tierces.txt'
+
+/* L'adresse de la source, lue sur le manifeste et non recopiée : c'est l'offre
+   que l'article 13 de l'AGPL demande, et une URL fausse dans un fichier servi
+   avec l'app serait pire que pas d'URL du tout. Le `git+` et le `.git` sont la
+   forme que npm attend, pas celle qu'on ouvre dans un navigateur. */
+const REPO_URL = JSON.parse(readFileSync('package.json', 'utf8'))
+  .repository.url.replace(/^git\+/, '')
+  .replace(/\.git$/, '')
 
 /* Le nom du fichier de licence n'est normalisé nulle part : chaque paquet
    choisit sa casse et son extension. On les essaie dans l'ordre du plus
@@ -80,10 +93,15 @@ function render(packages) {
     'Licences des composants tiers — Tout compte fait',
     RULE,
     '',
-    "Tout compte fait est publié sous licence MIT (voir le fichier LICENSE du",
-    "dépôt). Les composants ci-dessous sont l'œuvre de tiers, portent leur propre",
-    'licence, et voyagent dans la version publiée de l’app : leur code ou leurs',
-    'fichiers de fonte sont servis au navigateur de qui l’ouvre.',
+    'Tout compte fait est publié sous licence GNU Affero General Public License,',
+    'version 3 ou ultérieure. Le texte intégral est dans le fichier LICENSE du',
+    `dépôt, et la source complète du programme tel qu’il tourne est ici :`,
+    '',
+    `  ${REPO_URL}`,
+    '',
+    'Les composants ci-dessous sont l’œuvre de tiers, portent leur propre licence,',
+    'et voyagent dans la version publiée de l’app : leur code ou leurs fichiers de',
+    'fonte sont servis au navigateur de qui l’ouvre.',
     '',
     'Deux d’entre eux — les fontes Archivo et Geist Mono — sont sous SIL Open Font',
     'License 1.1, qui demande que le logiciel de fonte soit distribué avec sa',

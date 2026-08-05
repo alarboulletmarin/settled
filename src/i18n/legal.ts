@@ -90,7 +90,8 @@ export const legalNotice: LegalDocument = {
     {
       heading: 'Code et licences',
       body: [
-        'Le code de Tout compte fait est publié sous licence MIT : il peut être lu, copié, modifié et redistribué, y compris pour un usage commercial, à condition d’en conserver la mention de copyright. Le texte complet est dans le dépôt.',
+        'Le code de Tout compte fait est publié sous licence GNU Affero General Public License, version 3 ou ultérieure : il peut être lu, copié, modifié, redistribué et hébergé, y compris pour un usage commercial. La contrepartie est que toute version modifiée doit être publiée sous la même licence — et l’article 13 le demande dès la mise en ligne, sans qu’il faille distribuer quoi que ce soit. Le texte complet est dans le dépôt, dont le lien est en bas de cette page.',
+        'Les versions publiées avant celle-ci l’ont été sous licence MIT et le restent : le changement de licence ne vaut que pour la suite.',
         'L’app embarque des composants tiers qui portent leurs propres licences — six sous MIT, un sous ISC, et deux fontes sous SIL Open Font License 1.1, qui exige d’être distribuée avec elles. Leurs notices intégrales sont servies avec l’app, et le lien est en bas de cette page.',
       ],
     },
@@ -162,7 +163,7 @@ export const terms: LegalDocument = {
     {
       heading: 'Ce que couvrent ces conditions',
       body: [
-        `Elles portent sur le service rendu à l’adresse ${PUBLISHER.domain}. Elles ne portent pas sur le code : celui-ci est publié sous licence MIT, et c’est cette licence — et elle seule — qui dit ce que tu peux en faire si tu le récupères pour le faire tourner ailleurs.`,
+        `Elles portent sur le service rendu à l’adresse ${PUBLISHER.domain}. Elles ne portent pas sur le code : celui-ci est publié sous licence AGPL-3.0, et c’est cette licence — et elle seule — qui dit ce que tu peux en faire si tu le récupères pour le faire tourner ailleurs.`,
         'Utiliser le site vaut acceptation de ce qui suit.',
       ],
     },

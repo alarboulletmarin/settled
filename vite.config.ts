@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type Plugin } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -13,9 +13,50 @@ const { version } = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
 ) as { version: string }
 
+/**
+ * La notice que porte le JavaScript servi.
+ *
+ * C'est le raisonnement des licences de fontes, appliqué au code : ce qui
+ * voyage porte sa licence. Le fichier `LICENSE` reste sur GitHub, la
+ * minification efface tous les commentaires du source, et l'article 13 de
+ * l'AGPL demande justement qu'un programme accessible par le réseau offre sa
+ * source à qui s'en sert. Sans ces quatre lignes, le code servi est anonyme.
+ *
+ * **Un plugin et non `build.rollupOptions.output.banner`.** Cette option-là a
+ * été essayée d'abord : elle ne survit pas au minifieur de Rolldown, qui
+ * supprime les commentaires — y compris ceux marqués `/*!` — et le bundle
+ * sortait sans un octet de notice. `generateBundle` passe après lui.
+ *
+ * Le seul morceau d'entrée, pas les sept du graphe initial : la notice se lit
+ * en tête du fichier qu'on ouvre, la recopier dans chaque morceau ne la rendrait
+ * pas plus vraie et coûterait sept fois. Elle y arrive juste après la table
+ * `__vite__mapDeps`, que Vite pose lui-même en tête ; `enforce: 'post'` a été
+ * essayé pour passer devant, sans effet. Une ligne de plomberie au-dessus n'a
+ * jamais empêché personne de lire la suivante.
+ */
+function noticeAGPL(): Plugin {
+  const notice = [
+    `/*! Tout compte fait v${version} — Copyright (C) 2026 Andréa Larboullet Marin`,
+    ' * Licence : GNU AGPL-3.0-or-later <https://www.gnu.org/licenses/agpl-3.0.html>',
+    ' * Source complète : https://github.com/alarboulletmarin/tout-compte-fait',
+    ' * Fourni SANS AUCUNE GARANTIE, dans les limites permises par la loi. */',
+  ].join('\n')
+
+  return {
+    name: 'tcf:notice-agpl',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      for (const output of Object.values(bundle)) {
+        if (output.type === 'chunk' && output.isEntry) output.code = `${notice}\n${output.code}`
+      }
+    },
+  }
+}
+
 export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [
+    noticeAGPL(),
     react(),
     tailwindcss(),
     VitePWA({

@@ -6,9 +6,10 @@ dépôt, pour que personne ne perde son temps.
 ## Ce que ce projet est, et ce qu'il n'est pas
 
 **Tout compte fait est un projet personnel dont le code est ouvert.** Il est
-publié sous licence MIT parce qu'il n'y a aucune raison de le garder fermé, et
-parce qu'un budget familial qui prétend ne rien envoyer nulle part doit pouvoir
-le prouver — c'est-à-dire se laisser lire.
+publié sous licence AGPL-3.0 : ouvert parce qu'un budget familial qui prétend ne
+rien envoyer nulle part doit pouvoir le prouver — c'est-à-dire se laisser lire
+—, et sous copyleft parce qu'il n'y a aucune raison qu'il se referme chez
+quelqu'un d'autre.
 
 Ce n'est pas un projet communautaire cherchant à s'agrandir. Concrètement :
 
@@ -21,9 +22,10 @@ Ce n'est pas un projet communautaire cherchant à s'agrandir. Concrètement :
   [cahier des charges](docs/CAHIER-DES-CHARGES.md) et l'apparence par le
   [design system](docs/DESIGN-SYSTEM.md). Une PR qui les contredit sera refusée,
   même bien écrite — d'où la règle qui suit.
-- **Le fork est légitime et encouragé.** Si ta vision diverge, la licence MIT
-  est là pour ça : forke, renomme, fais-en ce que tu veux. C'est un usage
-  parfaitement normal, pas un échec.
+- **Le fork est légitime et encouragé.** Si ta vision diverge, la licence est là
+  pour ça : forke, renomme, pars. C'est un usage parfaitement normal, pas un
+  échec. L'AGPL n'y met qu'une condition — ton fork reste ouvert lui aussi, y
+  compris si tu te contentes de le mettre en ligne.
 
 ## Signaler un bug
 

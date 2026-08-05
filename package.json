@@ -23,13 +23,13 @@
   "bugs": {
     "url": "https://github.com/alarboulletmarin/tout-compte-fait/issues"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "author": "Andréa Larboullet Marin",
   "type": "module",
   "engines": {
     "node": ">=22.12"
   },
-  "//": "`private` empêche un `npm publish` accidentel : c'est une app qu'on déploie, pas un paquet qu'on publie. Le code reste sous licence MIT.",
+  "//": "`private` empêche un `npm publish` accidentel : c'est une app qu'on déploie, pas un paquet qu'on publie. Le code, lui, reste ouvert — sous AGPL-3.0, qui demande qu'il le reste chez qui le reprend.",
   "private": true,
   "scripts": {
     "dev": "vite",

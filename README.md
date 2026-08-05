@@ -6,7 +6,7 @@
 Les données vivent dans le navigateur. Rien ne sort de l'appareil.
 
 [![CI](https://github.com/alarboulletmarin/tout-compte-fait/actions/workflows/ci.yml/badge.svg)](https://github.com/alarboulletmarin/tout-compte-fait/actions/workflows/ci.yml)
-[![Licence MIT](https://img.shields.io/badge/licence-MIT-2F5D4C)](LICENSE)
+[![Licence AGPL-3.0](https://img.shields.io/badge/licence-AGPL--3.0-2F5D4C)](LICENSE)
 [![PWA](https://img.shields.io/badge/PWA-installable-2F5D4C)](#installation-sur-le-t%C3%A9l%C3%A9phone)
 
 [**Ouvrir l'app**](https://toutcomptefait.xyz) · [Documentation](docs/) · [Contribuer](CONTRIBUTING.md)
@@ -152,15 +152,24 @@ choix, pas un oubli.
 
 ## Licence
 
-[MIT](LICENSE) — reprends, modifie, redistribue, y compris pour un usage
-commercial. Garde simplement la mention de copyright.
+[AGPL-3.0-or-later](LICENSE) — reprends, modifie, redistribue, héberge, y
+compris pour un usage commercial. Une seule condition, mais elle est ferme :
+**ce qui part d'ici reste ouvert.** Toute version modifiée doit être publiée
+sous la même licence — et l'article 13 étend l'obligation à la simple mise en
+ligne, sans qu'il soit besoin de distribuer quoi que ce soit. Mettre une version
+modifiée de cette app sur un domaine, c'est en devoir la source.
+
+C'est un choix, et il remplace la licence MIT qui couvrait le projet jusqu'ici :
+le code est ouvert pour se laisser lire et reprendre, pas pour être refermé
+ailleurs. Les versions publiées sous MIT le restent, l'AGPL ne vaut que pour la
+suite.
 
 Cela ne vaut que pour ce dépôt : les composants tiers gardent la leur, et les
 deux fontes sont sous une licence qui pose une condition de plus — voir
 [`public/licences-tierces.txt`](public/licences-tierces.txt).
 
 Le service rendu à [toutcomptefait.xyz](https://toutcomptefait.xyz), lui, n'est
-pas couvert par MIT : il a ses propres
+pas couvert par l'AGPL : il a ses propres
 [mentions légales](https://toutcomptefait.xyz/mentions-legales),
 [politique de confidentialité](https://toutcomptefait.xyz/confidentialite) et
 [conditions d'utilisation](https://toutcomptefait.xyz/conditions), dont les

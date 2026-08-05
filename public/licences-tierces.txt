@@ -1,10 +1,15 @@
 Licences des composants tiers — Tout compte fait
 ==============================================================================
 
-Tout compte fait est publié sous licence MIT (voir le fichier LICENSE du
-dépôt). Les composants ci-dessous sont l'œuvre de tiers, portent leur propre
-licence, et voyagent dans la version publiée de l’app : leur code ou leurs
-fichiers de fonte sont servis au navigateur de qui l’ouvre.
+Tout compte fait est publié sous licence GNU Affero General Public License,
+version 3 ou ultérieure. Le texte intégral est dans le fichier LICENSE du
+dépôt, et la source complète du programme tel qu’il tourne est ici :
+
+  https://github.com/alarboulletmarin/tout-compte-fait
+
+Les composants ci-dessous sont l’œuvre de tiers, portent leur propre licence,
+et voyagent dans la version publiée de l’app : leur code ou leurs fichiers de
+fonte sont servis au navigateur de qui l’ouvre.
 
 Deux d’entre eux — les fontes Archivo et Geist Mono — sont sous SIL Open Font
 License 1.1, qui demande que le logiciel de fonte soit distribué avec sa
