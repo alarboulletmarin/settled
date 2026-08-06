@@ -29,28 +29,25 @@ import { useCurrency } from '@/ui/currency'
  * question suivante n'est pas « qu'est-ce qu'une capacité » mais « où je la
  * place, et combien m'en reste-t-il ». La feuille répondait à l'autre.
  *
- * **Sa seconde lecture porte deux clauses, et pas au même horizon.** Ce qui est
- * déjà versé est un fait — donc le confirmé seul, sans quoi la tuile annoncerait
- * le 3 du mois trois cents euros que rien n'a fait partir. Ce qu'il reste à
- * placer est une décision, qui se prend sur le mois entier : un virement déjà
- * programmé n'est pas un geste à prendre. Les deux ne se recomposent donc pas
- * avec la capacité tant qu'un versement est en attente, et c'est voulu — c'est
- * le registre que les tuiles de flux tiennent déjà, « 5 341 € · dont 141 €
- * encore à venir ».
+ * **Sa seconde lecture porte deux clauses, et les deux au même horizon que le
+ * chiffre.** Ce qui est versé et ce qu'il reste à placer sont les deux moitiés
+ * de la capacité : posés à côté d'elle, ils doivent la redonner, sinon la tuile
+ * se lit comme une erreur de calcul. Ce qui interdit de dire le versement au
+ * seul confirmé, si tentant que ce soit — le mois entier compte alors dans
+ * deux des trois chiffres, et il manque à l'écran ce qui est programmé sans
+ * être parti. L'écran de l'épargne, qui compte le mois entier lui aussi, dirait
+ * de surcroît un autre montant sous le même mot.
  *
- * La première clause se dit avec ou sans filtre. Elle ne se disait que filtrée,
- * au motif qu'une somme d'épargnes individuelles ne décide de rien : ça vaut
- * pour le reste à placer, pas pour un constat, et l'écran de l'épargne
- * additionne déjà les versements du foyer sans que la question se pose. Hors
- * filtre et sur un téléphone, le mois ne disait donc nulle part ce qu'il avait
- * mis de côté — le solde, lui, comptait le versement comme une dépense.
+ * Le versement se dit avec ou sans filtre. Il ne se disait que filtré, au motif
+ * qu'une somme d'épargnes individuelles ne décide de rien : ça vaut pour le
+ * reste à placer, qui appelle un geste et se décide sur un compte à la fois,
+ * pas pour un constat — l'écran de l'épargne additionne d'ailleurs déjà les
+ * versements du foyer. Hors filtre et sur un téléphone, le mois ne disait donc
+ * nulle part ce qu'il avait mis de côté, quand son solde comptait le versement
+ * comme une dépense.
  */
 export function SavingTile() {
   const totals = useKindTotals(true)
-  /* Le mois entier pour la capacité et le reste, le confirmé pour ce qui est
-     parti. Deux appels et non deux calculs : `useMonthScope` mémoïse la portée,
-     le second ne relit rien. */
-  const done = useKindTotals().saving
   const currency = useCurrency()
   const navigate = useNavigate()
 
@@ -61,12 +58,12 @@ export function SavingTile() {
      depuis le livret — la fait passer sous zéro, et le montant se nomme alors
      pour ce qu'il est. À zéro, rien : une lecture sans réponse vaut mieux
      absente que fausse. */
-  const doneHint =
-    done === ZERO
+  const placedHint =
+    totals.saving === ZERO
       ? null
-      : done > ZERO
-        ? tpl(fr.dashboard.savingDone, formatMoney(done, currency))
-        : tpl(fr.dashboard.savingBack, formatMoney(abs(done), currency))
+      : totals.saving > ZERO
+        ? tpl(fr.dashboard.savingPlaced, formatMoney(totals.saving, currency))
+        : tpl(fr.dashboard.savingWithdrawn, formatMoney(abs(totals.saving), currency))
 
   /* Le dépassement n'est pas un reste : placer plus qu'on ne dégage est une
      information, et « reste −57 € » n'en serait pas une. */
@@ -92,16 +89,18 @@ export function SavingTile() {
       <div className="flex flex-wrap items-baseline gap-x-2">
         <Amount value={capacity} size="tile-fit" tone={capacity < 0 ? 'danger' : 'default'} />
         {/* Deux clauses et deux seuils, parce qu'elles ne font pas la même
-            longueur. Le constat tient en trois mots et passe donc par la
+            longueur. Le versement tient en trois mots et passe donc par la
             requête de conteneur de `.tile-hint`, comme les deux tuiles de flux :
             c'est ce qui le rend lisible sur un téléphone, où la tuile prend
-            toute la largeur. La décision, elle, est une phrase — « les
-            versements dépassent la capacité de 57 € » — et garde le seuil de
-            viewport, faute de rangée assez haute pour une seconde ligne sous
-            1024px. Les deux restent dans le DOM à toutes les largeurs : ce qui
-            ne s'affiche pas se lit quand même. */}
-        {doneHint !== null && <span className="t-label tile-hint">{doneHint}</span>}
-        {doneHint !== null && (
+            toute la largeur. Le reste, lui, est une phrase — « les versements
+            dépassent la capacité de 57 € » — et garde le seuil de viewport,
+            faute de rangée assez haute pour une seconde ligne sous 1024px.
+            Réunis en une seule, ils ne tenaient à aucune largeur sous ce
+            seuil-là, et le versement ne s'affichait donc nulle part. Les deux
+            restent dans le DOM à toutes les largeurs : ce qui ne s'affiche pas
+            se lit quand même. */}
+        {placedHint !== null && <span className="t-label tile-hint">{placedHint}</span>}
+        {placedHint !== null && (
           <span aria-hidden="true" className="t-label max-lg:hidden">
             ·
           </span>

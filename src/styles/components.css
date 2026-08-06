@@ -144,8 +144,8 @@
      phrase (« les versements dépassent la capacité de 57 € ») : plus longue que
      celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à voir avec
      celui-là. Ce n'est donc pas le format qui décide, c'est la longueur — et
-     `SavingTile` a scindé sa seconde lecture pour cette raison : le constat
-     (« 300 € déjà versé », trois mots) passe ici, la décision reste là-bas.
+     `SavingTile` a scindé sa seconde lecture pour cette raison : le versement
+     (« 300 € versé », trois mots) passe ici, le reste à placer demeure là-bas.
      Réunies, les deux ne s'affichaient nulle part sous 1024px, ce qui est mot
      pour mot le trou trouvé sur les tuiles de flux. */
   .tile-hint {

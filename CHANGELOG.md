@@ -33,16 +33,15 @@ a dépensé 300 € de plus. La tuile **Capacité d'épargne** savait déjà le
 rattraper, mais seulement sous un filtre par membre et seulement au-delà de
 1024px : sur un téléphone, hors filtre, l'app ne le disait nulle part.
 
-- **« 198,00 € déjà versé » se lit avec ou sans filtre**, et à la largeur de sa
-  tuile plutôt qu'à celle de l'écran. La condition valait pour le *reste à
-  placer* — une décision, qui se prend sur un compte à la fois ; un constat
+- **« 804,00 € versé » se lit avec ou sans filtre**, et à la largeur de sa tuile
+  plutôt qu'à celle de l'écran. La condition valait pour le *reste à placer* —
+  il appelle un geste, et le geste se fait sur un compte à la fois ; un constat
   s'additionne, et l'écran de l'épargne l'additionnait déjà.
-- **Au confirmé seul.** Un virement programmé pour le 28 n'a pas eu lieu, et
-  l'annoncer le 3 serait annoncer un fait qui n'en est pas un. Le reste à
-  placer, lui, reste prévisionnel : un versement déjà programmé n'est pas un
-  geste à prendre. Les deux ne se recomposent donc pas avec la capacité tant
-  qu'un versement est en attente — c'est le registre de « Revenus · dont 141 €
-  encore à venir ».
+- **Sur le mois entier**, comme la capacité et le reste à placer qui
+  l'encadrent : les deux clauses sont les deux moitiés du chiffre et doivent le
+  redonner. Trois montants voisins qui ne s'additionnent pas se lisent comme une
+  erreur de calcul, et l'écran de l'épargne — qui compte le mois entier lui
+  aussi — aurait annoncé un autre montant sous le même mot.
 - **Une reprise se nomme.** Le mois où une avance est posée, le livret rend plus
   qu'il ne reçoit : la tuile lit « 510 € repris de l'épargne », jamais un montant
   négatif. Rien à dire, rien d'affiché.

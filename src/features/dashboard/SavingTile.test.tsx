@@ -77,12 +77,12 @@ function renderTile() {
   )
 }
 
-describe('« Capacité d’épargne » — ce qui est déjà versé', () => {
+describe('« Capacité d’épargne » — ce que le mois verse', () => {
   beforeEach(() => {
     useStore.setState({ filter: ALL_FILTER })
   })
 
-  /* La régression que ce fichier existe pour tenir : le constat ne se disait
+  /* La régression que ce fichier existe pour tenir : le versement ne se disait
      que sous un filtre par membre, si bien qu'un foyer qui venait de placer
      300 € lisait un mois où il n'avait fait que dépenser. */
   it('dit ce qui est versé sans filtre par membre', () => {
@@ -90,22 +90,28 @@ describe('« Capacité d’épargne » — ce qui est déjà versé', () => {
     renderTile()
 
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingDone, euros(money(30000))))),
+      screen.getByText(said(tpl(fr.dashboard.savingPlaced, euros(money(30000))))),
     ).toBeInTheDocument()
   })
 
-  /* Le constat est au confirmé seul : un virement programmé pour le 28 n'a pas
-     eu lieu, et l'annoncer le 3 serait annoncer un fait qui n'en est pas un.
-     Le reste à placer, lui, le compte — c'est une décision, et celle-là est
-     prise. */
-  it('ne compte pas un versement encore prévu', () => {
+  /* L'invariant de la tuile, et la raison pour laquelle le versement se compte
+     sur le mois entier plutôt qu'au seul confirmé : les deux clauses sont les
+     deux moitiés du chiffre qu'elles accompagnent, et doivent le redonner.
+     Un virement encore prévu compte donc dans les deux, sans quoi il manquerait
+     à l'addition et la tuile se lirait comme une erreur de calcul. */
+  it('compte un versement encore prévu, et redonne la capacité', () => {
     setUp([saving({ amount: money(30000), status: 'planned' })])
     renderTile()
 
-    expect(screen.queryByText(/déjà versé/)).not.toBeInTheDocument()
+    expect(
+      screen.getByText(said(tpl(fr.dashboard.savingPlaced, euros(money(30000))))),
+    ).toBeInTheDocument()
     expect(
       screen.getByText(said(tpl(fr.dashboard.savingLeft, euros(money(80000))))),
     ).toBeInTheDocument()
+    // 300 versés + 800 restants = 1 100 de capacité. Le nom accessible du
+    // chiffre porte le montant entier ; l'affichage le découpe en parties.
+    expect(screen.getByText(said(euros(money(110000))))).toBeInTheDocument()
   })
 
   /* Le mois où une avance est posée : le livret paie une charge de l'année et
@@ -118,18 +124,18 @@ describe('« Capacité d’épargne » — ce qui est déjà versé', () => {
     renderTile()
 
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingBack, euros(money(51000))))),
+      screen.getByText(said(tpl(fr.dashboard.savingWithdrawn, euros(money(51000))))),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/déjà versé/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/€ versé/)).not.toBeInTheDocument()
   })
 
   /* Une lecture qui n'a pas de réponse vaut mieux absente que fausse : rien
-     n'est parti, la clause n'existe pas. */
+     n'a bougé, la clause n'existe pas. */
   it('ne dit rien quand le mois n’a bougé aucune épargne', () => {
     setUp([])
     renderTile()
 
-    expect(screen.queryByText(/déjà versé/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/€ versé/)).not.toBeInTheDocument()
     expect(screen.queryByText(/repris de l’épargne/)).not.toBeInTheDocument()
     expect(
       screen.getByText(said(tpl(fr.dashboard.savingLeft, euros(money(110000))))),
@@ -144,7 +150,7 @@ describe('« Capacité d’épargne » — ce qui est déjà versé', () => {
     renderTile()
 
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingDone, euros(money(30000))))),
+      screen.getByText(said(tpl(fr.dashboard.savingPlaced, euros(money(30000))))),
     ).toBeInTheDocument()
   })
 })
