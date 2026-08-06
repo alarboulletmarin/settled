@@ -122,13 +122,29 @@ export function QuickEntry() {
           'bottom-[calc(4.5rem+env(safe-area-inset-bottom))]',
         )}
       >
+        {/* `items-stretch` et non `items-end` : trois boutons dimensionnés
+              chacun sur son libellé alignent leur bord droit et font un
+              escalier à gauche, ce qui les donne à lire comme trois objets
+              empilés plutôt que comme les trois portes d'un même geste. Le
+              groupe est déjà en largeur de contenu — son parent est
+              `items-end` —, donc sa largeur *est* celle du plus large, et
+              l'étirement n'a rien à imposer de plus.
+
+              Pas de `flex-1`/`basis-0` comme au pied de `Sheet` : là-bas la
+              largeur est donnée et les actions se la partagent, ici c'est le
+              contenu qui la fixe. Et le contenu de chaque bouton reste centré,
+              donc les « + » ne s'alignent pas tout à fait — les décaler
+              demanderait de défaire le `justify-center` de `Button`, que `cn`
+              ne sait pas fusionner : la classe ajoutée ne remplacerait pas
+              l'autre, elle s'ajouterait, et c'est l'ordre du CSS produit qui
+              trancherait. Un demi-écart de libellé ne vaut pas ce silence-là. */}
         {open && (
           <div
             ref={doorsRef}
             id="portes-de-saisie"
             role="group"
             aria-label={fr.shell.quickEntryLabel}
-            className="flex flex-col items-end gap-2"
+            className="flex flex-col items-stretch gap-2"
           >
             {doors.map((door) => (
               <Button
