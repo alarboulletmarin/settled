@@ -140,10 +140,14 @@
      hauteur ne la portent, et une ligne tranchée en deux vaut moins qu'une
      ligne absente. C'est le seul écran où le trou de l'audit subsiste.
 
-     Les `4x1` gardent leur `max-lg:sr-only` et ne passent pas ici : leur seconde
-     lecture est une phrase (« placé 300 €, reste 1 200 € à placer »), plus
-     longue que celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à
-     voir avec celui-là. */
+     Les `4x1` gardent leur `max-lg:sr-only` pour ce qui, chez elles, est une
+     phrase (« les versements dépassent la capacité de 57 € ») : plus longue que
+     celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à voir avec
+     celui-là. Ce n'est donc pas le format qui décide, c'est la longueur — et
+     `SavingTile` a scindé sa seconde lecture pour cette raison : le constat
+     (« 300 € déjà versé », trois mots) passe ici, la décision reste là-bas.
+     Réunies, les deux ne s'affichaient nulle part sous 1024px, ce qui est mot
+     pour mot le trou trouvé sur les tuiles de flux. */
   .tile-hint {
     position: absolute;
     width: 1px;

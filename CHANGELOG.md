@@ -12,6 +12,41 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Corrigé — les trois portes de saisie étaient en escalier
+
+Dépliées, **Dépense**, **Revenu** et **Épargne** étaient dimensionnées chacune
+sur son libellé et calées à droite : leur bord gauche faisait un escalier, et
+trois boutons qui ouvrent trois portes du même geste se lisaient comme trois
+objets empilés. Le pied de feuille modale égalisait déjà ses actions ; le bouton
+flottant est arrivé après, et personne n'avait reposé la question.
+
+- **Les trois portes partagent une largeur** — celle de la plus large, que le
+  groupe avait déjà. Le contenu de chaque bouton reste centré : le décaler
+  demanderait de défaire le centrage du composant, et `cn` concatène les classes
+  sans les fusionner, donc la classe ajoutée ne remplacerait pas l'autre.
+
+### Ajouté — le mois dit enfin ce qu'il a mis de côté
+
+Le solde du mois compte un versement d'épargne comme une sortie. C'est exact en
+trésorerie, et ça fait passer un mois où l'on a placé 300 € pour un mois où l'on
+a dépensé 300 € de plus. La tuile **Capacité d'épargne** savait déjà le
+rattraper, mais seulement sous un filtre par membre et seulement au-delà de
+1024px : sur un téléphone, hors filtre, l'app ne le disait nulle part.
+
+- **« 198,00 € déjà versé » se lit avec ou sans filtre**, et à la largeur de sa
+  tuile plutôt qu'à celle de l'écran. La condition valait pour le *reste à
+  placer* — une décision, qui se prend sur un compte à la fois ; un constat
+  s'additionne, et l'écran de l'épargne l'additionnait déjà.
+- **Au confirmé seul.** Un virement programmé pour le 28 n'a pas eu lieu, et
+  l'annoncer le 3 serait annoncer un fait qui n'en est pas un. Le reste à
+  placer, lui, reste prévisionnel : un versement déjà programmé n'est pas un
+  geste à prendre. Les deux ne se recomposent donc pas avec la capacité tant
+  qu'un versement est en attente — c'est le registre de « Revenus · dont 141 €
+  encore à venir ».
+- **Une reprise se nomme.** Le mois où une avance est posée, le livret rend plus
+  qu'il ne reçoit : la tuile lit « 510 € repris de l'épargne », jamais un montant
+  négatif. Rien à dire, rien d'affiché.
+
 ### Modifié — la licence passe de MIT à AGPL-3.0
 
 MIT autorisait explicitement ce que ce projet ne veut pas : reprendre le code,
