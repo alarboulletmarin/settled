@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
@@ -96,81 +102,129 @@ export function QuickEntry() {
     },
   ]
 
+  /* Les flèches parcourent le menu, comme le veut le motif ARIA du `role`
+     qu'il porte : trois cibles empilées sous le pouce se parcourent aussi au
+     clavier, et Tab seul obligerait à traverser la pile pour en sortir. Les
+     boutons restent tabulables — un `tabindex` tournant est le motif strict,
+     mais il retirerait du parcours de tabulation trois boutons que rien ne
+     signale comme un menu à qui n'utilise que Tab. */
+  const onKeys = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End']
+    if (!keys.includes(event.key)) return
+    const items = [...(doorsRef.current?.querySelectorAll('button') ?? [])]
+    if (items.length === 0) return
+    const from = items.indexOf(document.activeElement as HTMLButtonElement)
+    const to =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? items.length - 1
+          : // Le parcours boucle : arrivé en bas, on repart en haut.
+            (from + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+    event.preventDefault()
+    items[to]?.focus()
+  }
+
   return (
     <>
-      {/* Le calque ne noircit rien : les trois boutons se posent sur le coin
-          bas-droit de la page, pas sur ce qu'on lisait. Il n'est là que pour
-          rendre au reste de l'écran son geste le plus évident — toucher à côté
-          referme. */}
-      {open && (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 z-30"
-          onClick={() => {
-            setOpen(false)
-          }}
-        />
-      )}
+      {/* Le calque fait reculer la page d'un plan, et referme au toucher. Il ne
+          noircissait rien : trois boutons posés sur une liste de montants s'y
+          confondaient, et rien ne disait qu'on était devant une question plutôt
+          que devant l'écran du mois. Douze pour cent suffisent — il s'agit de
+          faire reculer, pas de cacher.
 
-      {/* Au-dessus de la barre d'onglets (56px plus l'indicateur d'accueil), et
-          sous le bandeau de mise à jour (`z-50`) : celui-ci est rare, il porte
-          une décision, et un bouton qui lui passerait devant en cacherait la
-          moitié. */}
+          Il s'arrête au-dessus de la barre d'onglets plutôt que de la couvrir :
+          elle n'est pas ce qu'on lisait, elle est une sortie, et l'assombrir
+          reviendrait à la retirer alors qu'elle reste utilisable — changer
+          d'écran referme les portes de toute façon. */}
+      <div
+        aria-hidden="true"
+        onClick={() => {
+          setOpen(false)
+        }}
+        className={cn(
+          'quick-scrim fixed inset-x-0 top-0 z-30 lg:hidden',
+          'bottom-[calc(var(--nav-h)+env(safe-area-inset-bottom))]',
+          'transition-opacity duration-[var(--dur)] ease-ds',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
+
+      {/* Au-dessus de la barre d'onglets — sa rangée, son filet, l'indicateur
+          d'accueil du système, et 16px par-dessus : le bouton s'adosse à la
+          barre sans la toucher, et c'est cette marge-là qui le sépare d'une
+          cible qu'on ne visait pas. Sous le bandeau de mise à jour (`z-50`) :
+          celui-ci est rare, il porte une décision, et un bouton qui lui
+          passerait devant en cacherait la moitié. */}
       <div
         className={cn(
-          'fixed right-4 z-40 flex flex-col items-end gap-2 lg:hidden',
-          'bottom-[calc(4.5rem+env(safe-area-inset-bottom))]',
+          'quick-doors fixed right-4 z-40 flex flex-col items-end gap-3 lg:hidden',
+          'bottom-[calc(var(--nav-h)+1rem+env(safe-area-inset-bottom))]',
         )}
       >
-        {/* `items-stretch` et non `items-end` : trois boutons dimensionnés
-              chacun sur son libellé alignent leur bord droit et font un
-              escalier à gauche, ce qui les donne à lire comme trois objets
-              empilés plutôt que comme les trois portes d'un même geste. Le
-              groupe est déjà en largeur de contenu — son parent est
-              `items-end` —, donc sa largeur *est* celle du plus large, et
-              l'étirement n'a rien à imposer de plus.
+        {/* Les portes restent montées, repliées comprises : c'est ce qui leur
+            donne une fermeture animée autant qu'une ouverture, là où un montage
+            conditionnel ne peut animer que l'arrivée. Repliées, elles sortent
+            de l'arbre d'accessibilité et du parcours de tabulation — `inert`
+            fait les deux dans un navigateur, `aria-hidden` le redit pour les
+            outils qui ne le connaissent pas encore.
 
-              Pas de `flex-1`/`basis-0` comme au pied de `Sheet` : là-bas la
-              largeur est donnée et les actions se la partagent, ici c'est le
-              contenu qui la fixe. Et le contenu de chaque bouton reste centré,
-              donc les « + » ne s'alignent pas tout à fait — les décaler
-              demanderait de défaire le `justify-center` de `Button`, que `cn`
-              ne sait pas fusionner : la classe ajoutée ne remplacerait pas
-              l'autre, elle s'ajouterait, et c'est l'ordre du CSS produit qui
-              trancherait. Un demi-écart de libellé ne vaut pas ce silence-là. */}
-        {open && (
-          <div
-            ref={doorsRef}
-            id="portes-de-saisie"
-            role="group"
-            aria-label={fr.shell.quickEntryLabel}
-            className="flex flex-col items-stretch gap-2"
-          >
-            {doors.map((door) => (
-              <Button
-                key={door.path}
-                variant={door.variant}
-                className="shadow-tile"
-                onClick={() => {
-                  create(door.path)
-                }}
-              >
+            La largeur du groupe est fixe et vit dans la feuille de style : elle
+            aligne les bords, porte la colonne d'icônes, et surtout permet au
+            bouton de fermeture de se centrer dessous — cette position-là dépend
+            d'une largeur qu'un contenu variable ne donnerait qu'après coup. */}
+        <div
+          ref={doorsRef}
+          id="portes-de-saisie"
+          role="menu"
+          data-open={open}
+          inert={!open}
+          /* `undefined` et non `false` : `aria-hidden="false"` est licite mais
+             se pose dans le DOM pour ne rien dire, et un attribut qui traîne
+             finit par se lire comme un état. */
+          aria-hidden={open ? undefined : true}
+          aria-label={fr.shell.quickEntryLabel}
+          onKeyDown={onKeys}
+          className="flex flex-col items-stretch gap-2"
+        >
+          {doors.map((door, index) => (
+            <Button
+              key={door.path}
+              role="menuitem"
+              variant={door.variant}
+              // `--i` porte le rang dans l'escalier d'arrivée : la valeur est
+              // l'ordre de l'écran du mois, pas une décision de mise en forme.
+              style={{ '--i': index } as CSSProperties}
+              className="quick-door shadow-tile"
+              onClick={() => {
+                create(door.path)
+              }}
+            >
+              <span className="quick-door-row">
                 <Plus size={18} />
                 {door.label}
-              </Button>
-            ))}
-          </div>
-        )}
+              </span>
+            </Button>
+          ))}
+        </div>
 
         {/* Le glyphe pivote plutôt que d'être remplacé par une croix : c'est le
             même bouton, et un `+` qui devient `×` sous le doigt dit mieux qu'il
             se referme que deux icônes qui se succèdent. Le nom accessible, lui,
-            change pour de bon — il dit ce que le prochain appui fait. */}
+            change pour de bon — il dit ce que le prochain appui fait.
+
+            Déplié, il glisse sous le milieu de la colonne : replié il vit au
+            coin, où le pouce le trouve sans viser, et ce coin-là n'est pas le
+            milieu de trois boutons. Les deux positions ne peuvent pas être la
+            même, et c'est la fermeture qui cède — on ouvre bien plus souvent
+            qu'on ne renonce. Le déplacement est porté par la même transition
+            que la rotation, donc il se lit comme le dépliement lui-même et non
+            comme un saut. */}
         <button
           ref={trigger}
           type="button"
           aria-expanded={open}
-          {...(open ? { 'aria-controls': 'portes-de-saisie' } : {})}
+          aria-controls="portes-de-saisie"
           aria-label={open ? fr.shell.quickEntryClose : fr.shell.quickEntry}
           onClick={() => {
             setOpen((previous) => !previous)
@@ -181,9 +235,9 @@ export function QuickEntry() {
                propriété `rotate`, et une transition déclarée sur `transform` ne
                la voit pas — le glyphe basculait d'un coup. Vérifié en lisant le
                style calculé, pas en relisant la classe. */
-            'shadow-tile transition-[rotate,filter] duration-[var(--dur)] ease-ds',
+            'shadow-tile transition-[rotate,translate,filter] duration-[var(--dur)] ease-ds',
             'hover:brightness-95 active:brightness-90',
-            open && 'rotate-45',
+            open && 'translate-x-[calc((3.5rem-var(--quick-w))/2)] rotate-45',
           )}
         >
           <Plus size={24} />

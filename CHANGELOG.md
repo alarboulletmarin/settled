@@ -12,6 +12,30 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — les portes de saisie deviennent un menu
+
+Les trois boutons partageaient une largeur depuis peu, mais rien d'autre : leurs
+« + » tombaient où le libellé les laissait, la croix se cachait au coin sous la
+dernière porte, et le tout se posait sur la liste du mois sans qu'un pixel ne
+dise qu'on était devant une question plutôt que devant l'écran.
+
+- **Une colonne à largeur fixe**, tenue dans la feuille de style. C'est elle qui
+  permet aux `+` et aux libellés de tomber chacun sur un axe — `[icône] [texte]`,
+  la colonne d'icône à 20px — et à la croix de se centrer sous la pile. Cette
+  position-là dépend d'une largeur qu'un contenu variable ne donne qu'après coup.
+- **Un voile à 12 %** (28 % en sombre, où le noir sur du sapin ne se voit pas)
+  qui s'arrête au-dessus de la barre d'onglets : elle n'est pas ce qu'on lisait,
+  c'est une sortie, et elle reste utilisable.
+- **Une ouverture et une fermeture animées** — opacité, translation, échelle sur
+  160 ms, décalées de 30 ms par porte à l'arrivée et jamais au départ. Les portes
+  restent montées pour pouvoir s'animer en partant ; repliées, `inert` et
+  `aria-hidden` les retirent du parcours et des annonces.
+- **`role="menu"`**, et donc le motif clavier qui va avec : flèches haut et bas
+  avec bouclage, Origine et Fin. Un rôle qui promet un parcours doit le tenir.
+- La marge sous la barre d'onglets vient d'un jeton `--nav-h` plutôt que d'une
+  valeur recopiée : la barre occupe 56px plus son filet, et 16px la séparent du
+  bouton.
+
 ### Corrigé — les trois portes de saisie étaient en escalier
 
 Dépliées, **Dépense**, **Revenu** et **Épargne** étaient dimensionnées chacune

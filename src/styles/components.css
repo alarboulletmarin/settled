@@ -400,3 +400,80 @@
     }
   }
 }
+
+@layer components {
+  /* --- Portes de saisie — DS §6 -------------------------------------------
+   *
+   * La colonne a une largeur **fixe**, et c'est ce qui tient tout le reste :
+   * trois boutons dimensionnés sur leur libellé ne peuvent ni aligner leurs
+   * bords, ni porter une colonne d'icônes commune, ni laisser le bouton de
+   * fermeture se centrer sous eux — cette dernière position dépend de la
+   * largeur du groupe, qu'un contenu variable rend inconnue jusqu'au rendu.
+   *
+   * 10,5rem est mesuré sur le plus long des trois libellés, « Dépense » à
+   * 15px, plus la gouttière et la colonne d'icône, plus le cadre de `Button`.
+   * En dessous de 360px d'écran elle descend d'un cran : à 320px la page laisse
+   * 288px, et 168 en prendraient plus de la moitié pour trois mots.
+   */
+  .quick-doors {
+    --quick-w: 10.5rem;
+    --quick-icon: 20px;
+  }
+
+  .quick-scrim {
+    background-color: var(--scrim);
+  }
+
+  @media (max-width: 359.98px) {
+    .quick-doors {
+      --quick-w: 9.5rem;
+    }
+  }
+
+  .quick-door {
+    width: var(--quick-w);
+  }
+
+  /* `[icône] [libellé]`, la colonne d'icône à largeur fixe : les trois « + »
+     tombent sur un axe, les trois libellés sur un autre. Le `justify-center`
+     de `Button` n'a plus rien à décider — son unique enfant occupe toute la
+     largeur —, ce qui évite d'avoir à le défaire : `cn` concatène sans
+     fusionner, et la classe ajoutée ne remplacerait pas l'autre. */
+  .quick-door-row {
+    display: grid;
+    grid-template-columns: var(--quick-icon) 1fr;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+  }
+
+  /* L'ouverture et la fermeture, sur les trois propriétés que le DS §4 admet.
+     Un décalage de 30ms par porte, dans l'ordre de l'écran du mois — assez
+     pour qu'on voie trois choses arriver, pas assez pour qu'on les attende. */
+  .quick-door {
+    transition:
+      opacity var(--dur) var(--ease),
+      translate var(--dur) var(--ease),
+      scale var(--dur) var(--ease);
+    transition-delay: calc(var(--i, 0) * 30ms);
+  }
+
+  .quick-doors[data-open='false'] .quick-door {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.96;
+    /* En se refermant, les trois partent ensemble : l'escalier n'a de sens
+       qu'à l'arrivée, où il donne l'ordre de lecture. En sortie il ne ferait
+       que retarder le geste suivant. */
+    transition-delay: 0ms;
+  }
+
+  /* Le voile neutralise déjà les durées (`--dur: 0ms`), mais pas les délais :
+     sans ça, les portes attendraient encore 60ms pour rien. */
+  @media (prefers-reduced-motion: reduce) {
+    .quick-door {
+      transition-delay: 0ms !important;
+    }
+  }
+}
