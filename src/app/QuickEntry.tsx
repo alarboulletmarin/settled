@@ -156,7 +156,13 @@ export function QuickEntry() {
           cible qu'on ne visait pas. Sous le bandeau de mise à jour (`z-50`) :
           celui-ci est rare, il porte une décision, et un bouton qui lui
           passerait devant en cacherait la moitié. */}
+      {/* `data-open` vit ici et non sur le menu : c'est cet élément qui porte
+          `.quick-doors`, donc la largeur de colonne dont les portes et la croix
+          se servent, et le sélecteur qui les replie a besoin des deux sur le
+          même nœud. Séparés, il ne désignait rien et les portes restaient
+          affichées en permanence. */}
       <div
+        data-open={open}
         className={cn(
           'quick-doors fixed right-4 z-40 flex flex-col items-end gap-3 lg:hidden',
           'bottom-[calc(var(--nav-h)+1rem+env(safe-area-inset-bottom))]',
@@ -177,7 +183,6 @@ export function QuickEntry() {
           ref={doorsRef}
           id="portes-de-saisie"
           role="menu"
-          data-open={open}
           inert={!open}
           /* `undefined` et non `false` : `aria-hidden="false"` est licite mais
              se pose dans le DOM pour ne rien dire, et un attribut qui traîne

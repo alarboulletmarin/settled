@@ -115,6 +115,20 @@ describe('QuickEntry — le bouton de saisie flottant', () => {
     expect(screen.getByRole('menuitem', { name: fr.entry.newSaving })).toHaveFocus()
   })
 
+  /* Ce que le repli coûte : les portes restent montées, et c'est une règle CSS
+     seule qui les efface. Elle vise `.quick-doors[data-open='false']`, donc les
+     deux sur le même nœud — séparés, le sélecteur ne désigne rien et les trois
+     boutons s'affichent en permanence, ce qui est arrivé. jsdom ne charge pas
+     la feuille de style et ne peut pas le voir à l'écran : c'est le contrat
+     entre le composant et le sélecteur qu'on tient ici, faute de mieux. */
+  it('porte l’état de repli sur le nœud que le style vise', async () => {
+    const { container } = renderAt('/')
+    expect(container.querySelector('.quick-doors[data-open="false"]')).not.toBeNull()
+
+    await userEvent.click(trigger())
+    expect(container.querySelector('.quick-doors[data-open="true"]')).not.toBeNull()
+  })
+
   /* Repliées, les portes restent montées pour pouvoir s'animer en partant.
      Elles ne doivent alors être ni annoncées, ni atteignables. */
   it('retire les portes repliées de l’arbre d’accessibilité', async () => {
