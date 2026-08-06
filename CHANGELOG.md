@@ -12,6 +12,64 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — les portes de saisie deviennent un menu
+
+Les trois boutons partageaient une largeur depuis peu, mais rien d'autre : leurs
+« + » tombaient où le libellé les laissait, la croix se cachait au coin sous la
+dernière porte, et le tout se posait sur la liste du mois sans qu'un pixel ne
+dise qu'on était devant une question plutôt que devant l'écran.
+
+- **Une colonne à largeur fixe**, tenue dans la feuille de style. C'est elle qui
+  permet aux `+` et aux libellés de tomber chacun sur un axe — `[icône] [texte]`,
+  la colonne d'icône à 20px — et à la croix de se centrer sous la pile. Cette
+  position-là dépend d'une largeur qu'un contenu variable ne donne qu'après coup.
+- **Un voile à 12 %** (28 % en sombre, où le noir sur du sapin ne se voit pas)
+  qui s'arrête au-dessus de la barre d'onglets : elle n'est pas ce qu'on lisait,
+  c'est une sortie, et elle reste utilisable.
+- **Une ouverture et une fermeture animées** — opacité, translation, échelle sur
+  160 ms, décalées de 30 ms par porte à l'arrivée et jamais au départ. Les portes
+  restent montées pour pouvoir s'animer en partant ; repliées, `inert` et
+  `aria-hidden` les retirent du parcours et des annonces.
+- **`role="menu"`**, et donc le motif clavier qui va avec : flèches haut et bas
+  avec bouclage, Origine et Fin. Un rôle qui promet un parcours doit le tenir.
+- La marge sous la barre d'onglets vient d'un jeton `--nav-h` plutôt que d'une
+  valeur recopiée : la barre occupe 56px plus son filet, et 16px la séparent du
+  bouton.
+
+### Corrigé — les trois portes de saisie étaient en escalier
+
+Dépliées, **Dépense**, **Revenu** et **Épargne** étaient dimensionnées chacune
+sur son libellé et calées à droite : leur bord gauche faisait un escalier, et
+trois boutons qui ouvrent trois portes du même geste se lisaient comme trois
+objets empilés. Le pied de feuille modale égalisait déjà ses actions ; le bouton
+flottant est arrivé après, et personne n'avait reposé la question.
+
+- **Les trois portes partagent une largeur** — celle de la plus large, que le
+  groupe avait déjà. Le contenu de chaque bouton reste centré : le décaler
+  demanderait de défaire le centrage du composant, et `cn` concatène les classes
+  sans les fusionner, donc la classe ajoutée ne remplacerait pas l'autre.
+
+### Ajouté — le mois dit enfin ce qu'il a mis de côté
+
+Le solde du mois compte un versement d'épargne comme une sortie. C'est exact en
+trésorerie, et ça fait passer un mois où l'on a placé 300 € pour un mois où l'on
+a dépensé 300 € de plus. La tuile **Capacité d'épargne** savait déjà le
+rattraper, mais seulement sous un filtre par membre et seulement au-delà de
+1024px : sur un téléphone, hors filtre, l'app ne le disait nulle part.
+
+- **« 804,00 € versé » se lit avec ou sans filtre**, et à la largeur de sa tuile
+  plutôt qu'à celle de l'écran. La condition valait pour le *reste à placer* —
+  il appelle un geste, et le geste se fait sur un compte à la fois ; un constat
+  s'additionne, et l'écran de l'épargne l'additionnait déjà.
+- **Sur le mois entier**, comme la capacité et le reste à placer qui
+  l'encadrent : les deux clauses sont les deux moitiés du chiffre et doivent le
+  redonner. Trois montants voisins qui ne s'additionnent pas se lisent comme une
+  erreur de calcul, et l'écran de l'épargne — qui compte le mois entier lui
+  aussi — aurait annoncé un autre montant sous le même mot.
+- **Une reprise se nomme.** Le mois où une avance est posée, le livret rend plus
+  qu'il ne reçoit : la tuile lit « 510 € repris de l'épargne », jamais un montant
+  négatif. Rien à dire, rien d'affiché.
+
 ### Modifié — la licence passe de MIT à AGPL-3.0
 
 MIT autorisait explicitement ce que ce projet ne veut pas : reprendre le code,

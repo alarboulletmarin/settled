@@ -60,6 +60,9 @@
   --text-muted: #5d6562;
   --shadow:
     0 1px 2px rgb(11 14 13 / 0.04), 0 8px 24px rgb(11 14 13 / 0.06);
+  /* Le voile posé sous une surcouche. Il ne cache pas ce qu'il y a derrière —
+     il le fait reculer d'un plan, le temps qu'une question se pose devant. */
+  --scrim: rgb(11 14 13 / 0.12);
 }
 
 [data-theme='dark'] {
@@ -73,6 +76,9 @@
      valable sur le fond de page ; les surfaces la repointent (voir plus bas). */
   --text-muted: var(--pine-100);
   --shadow: none;
+  /* Plus dense qu'en clair : sur du sapin, douze pour cent de noir ne se
+     voient pas, et un voile qu'on ne voit pas ne recule rien. */
+  --scrim: rgb(11 14 13 / 0.28);
 }
 
 /* Identiques dans les deux thèmes — c'est volontaire (DS §2.2). */
@@ -175,6 +181,14 @@
 
   /* Épaisseur de l'anneau signature — DS §6. */
   --ring-width: 12px;
+
+  /* Ce que la barre d'onglets occupe en bas d'un téléphone : ses 56px de
+     rangée, plus le filet qui la sépare du contenu. Ce qui flotte au-dessus
+     s'y adosse — le bouton de saisie et son voile —, et deux valeurs écrites
+     à la main auraient dérivé au premier changement de l'une d'elles.
+     La marge de sécurité du système n'y est pas : elle s'ajoute au cas par
+     cas, `env()` n'étant pas interpolable dans un token réutilisé tel quel. */
+  --nav-h: calc(3.5rem + 1px);
 
   /* Atténuation du symbole monétaire. Le DS pose 0.5 ; 0.6 est le minimum qui
      tienne le 4,5:1. Une tuile dont la couleur de texte n'a pas de marge peut

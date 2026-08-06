@@ -636,13 +636,23 @@ export const fr = {
        taux décrit le mois passé, le reste appelle un geste — c'est lui qui fait
        ouvrir l'écran. Le taux s'y lit, à côté de sa ventilation. */
     savingLeft: 'reste %s à placer',
-    /* Sous un filtre par membre seulement : ce qu'il a déjà placé et ce qu'il
-       lui reste à placer, les deux moitiés de sa capacité. Au foyer, la somme
-       de deux épargnes individuelles ne décide de rien et ne se dit pas.
-       Deux versions, parce qu'un dépassement n'est pas un reste : placer plus
-       qu'on ne dégage se dit, et ne s'annonce pas comme « reste −57 € ». */
-    savingPlacedLeft: '%s placé · reste %s',
-    savingPlacedOver: '%s placé · %s de plus que la capacité',
+    /* Ce que le mois verse, dit avec ou sans filtre. La condition tombe : elle
+       valait pour le *reste à placer*, qui appelle un geste et se décide sur un
+       compte à la fois — au foyer, la somme de deux restes ne se décide nulle
+       part. Le versement, lui, est un constat, et l'écran de l'épargne
+       l'additionne déjà au foyer sans que ça pose de question.
+       Le mois entier, comme la capacité et le reste qui l'encadrent : les deux
+       clauses sont les deux moitiés du chiffre, elles doivent le redonner. Au
+       seul confirmé — plus juste sur le mot « versé », et tentant pour ça — il
+       manquerait à l'écran ce qui est programmé sans être parti, et l'écran de
+       l'épargne annoncerait un autre montant sous le même mot.
+       « Versé » et non « placé », comme `savings.placedTotal` et `entry.savingIn` :
+       le même geste garde le même mot d'un écran à l'autre.
+       Deux versions, parce que l'épargne se compte en net : le mois où une
+       avance est posée, le livret rend plus qu'il ne reçoit, et « −510 € versé »
+       ne se lit pas — c'est une reprise, elle se nomme. */
+    savingPlaced: '%s versé',
+    savingWithdrawn: '%s repris de l’épargne',
     showSavings: 'Voir où placer %s',
     spending: 'Où part l’argent',
     spendingHint: 'charges et crédits, hors épargne',

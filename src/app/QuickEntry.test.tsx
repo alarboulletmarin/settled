@@ -34,12 +34,12 @@ const url = () => screen.getByTestId('url').textContent
 describe('QuickEntry — le bouton de saisie flottant', () => {
   it('ne montre les trois portes qu’une fois déplié', async () => {
     renderAt('/')
-    expect(screen.queryByRole('button', { name: fr.entry.newOut })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: fr.entry.newOut })).not.toBeInTheDocument()
 
     await userEvent.click(trigger())
-    expect(screen.getByRole('button', { name: fr.entry.newOut })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: fr.entry.newIn })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: fr.entry.newSaving })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: fr.entry.newOut })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: fr.entry.newIn })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: fr.entry.newSaving })).toBeInTheDocument()
   })
 
   it('annonce son état et change de nom quand il se déplie', async () => {
@@ -60,25 +60,25 @@ describe('QuickEntry — le bouton de saisie flottant', () => {
   ])('« %s » ouvre %s', async (label, expected) => {
     renderAt('/')
     await userEvent.click(trigger())
-    await userEvent.click(screen.getByRole('button', { name: label }))
+    await userEvent.click(screen.getByRole('menuitem', { name: label }))
     expect(url()).toBe(expected)
   })
 
   it('se replie sur Échap, et rend le focus au bouton', async () => {
     renderAt('/')
     await userEvent.click(trigger())
-    expect(screen.getByRole('button', { name: fr.entry.newOut })).toHaveFocus()
+    expect(screen.getByRole('menuitem', { name: fr.entry.newOut })).toHaveFocus()
 
     await userEvent.keyboard('{Escape}')
-    expect(screen.queryByRole('button', { name: fr.entry.newOut })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: fr.entry.newOut })).not.toBeInTheDocument()
     expect(trigger()).toHaveFocus()
   })
 
   it('se replie une fois la porte franchie', async () => {
     renderAt('/')
     await userEvent.click(trigger())
-    await userEvent.click(screen.getByRole('button', { name: fr.entry.newOut }))
-    expect(screen.queryByRole('button', { name: fr.entry.newIn })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('menuitem', { name: fr.entry.newOut }))
+    expect(screen.queryByRole('menuitem', { name: fr.entry.newIn })).not.toBeInTheDocument()
   })
 
   /* Il vit dans la coquille et ne se démonte jamais : l'état survivrait à un
@@ -87,11 +87,60 @@ describe('QuickEntry — le bouton de saisie flottant', () => {
   it('se replie quand l’écran change sans passer par lui', async () => {
     renderAt('/')
     await userEvent.click(trigger())
-    expect(screen.getByRole('button', { name: fr.entry.newOut })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: fr.entry.newOut })).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('link', { name: fr.nav.calendar }))
-    expect(screen.queryByRole('button', { name: fr.entry.newOut })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: fr.entry.newOut })).not.toBeInTheDocument()
     expect(url()).toBe('/calendrier')
+  })
+
+  /* Le menu porte `role="menu"` : les flèches le parcourent, et le parcours
+     boucle. Sans ça le rôle promet un motif clavier qu'il ne tient pas. */
+  it('se parcourt aux flèches, et boucle', async () => {
+    renderAt('/')
+    await userEvent.click(trigger())
+    expect(screen.getByRole('menuitem', { name: fr.entry.newOut })).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('menuitem', { name: fr.entry.newIn })).toHaveFocus()
+
+    await userEvent.keyboard('{End}')
+    expect(screen.getByRole('menuitem', { name: fr.entry.newSaving })).toHaveFocus()
+
+    // La dernière porte suivie d'une flèche bas ramène à la première.
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('menuitem', { name: fr.entry.newOut })).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowUp}')
+    expect(screen.getByRole('menuitem', { name: fr.entry.newSaving })).toHaveFocus()
+  })
+
+  /* Ce que le repli coûte : les portes restent montées, et c'est une règle CSS
+     seule qui les efface. Elle vise `.quick-doors[data-open='false']`, donc les
+     deux sur le même nœud — séparés, le sélecteur ne désigne rien et les trois
+     boutons s'affichent en permanence, ce qui est arrivé. jsdom ne charge pas
+     la feuille de style et ne peut pas le voir à l'écran : c'est le contrat
+     entre le composant et le sélecteur qu'on tient ici, faute de mieux. */
+  it('porte l’état de repli sur le nœud que le style vise', async () => {
+    const { container } = renderAt('/')
+    expect(container.querySelector('.quick-doors[data-open="false"]')).not.toBeNull()
+
+    await userEvent.click(trigger())
+    expect(container.querySelector('.quick-doors[data-open="true"]')).not.toBeNull()
+  })
+
+  /* Repliées, les portes restent montées pour pouvoir s'animer en partant.
+     Elles ne doivent alors être ni annoncées, ni atteignables. */
+  it('retire les portes repliées de l’arbre d’accessibilité', async () => {
+    const { container } = renderAt('/')
+    const menu = container.querySelector('#portes-de-saisie')
+
+    expect(menu).toHaveAttribute('aria-hidden', 'true')
+    expect(menu).toHaveAttribute('inert')
+
+    await userEvent.click(trigger())
+    expect(menu).not.toHaveAttribute('aria-hidden')
+    expect(menu).not.toHaveAttribute('inert')
   })
 
   /* Le calque referme aussi : toucher à côté est le geste le plus évident
@@ -100,10 +149,10 @@ describe('QuickEntry — le bouton de saisie flottant', () => {
     const { container } = renderAt('/')
     await userEvent.click(trigger())
 
-    const overlay = container.querySelector('.fixed.inset-0')
+    const overlay = container.querySelector('.quick-scrim')
     expect(overlay).not.toBeNull()
     await userEvent.click(overlay as Element)
-    expect(screen.queryByRole('button', { name: fr.entry.newOut })).not.toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: fr.entry.newOut })).not.toBeInTheDocument()
   })
 
   /* Même garde que le raccourci « n » : sur un écran de saisie, il partirait

@@ -140,10 +140,14 @@
      hauteur ne la portent, et une ligne tranchée en deux vaut moins qu'une
      ligne absente. C'est le seul écran où le trou de l'audit subsiste.
 
-     Les `4x1` gardent leur `max-lg:sr-only` et ne passent pas ici : leur seconde
-     lecture est une phrase (« placé 300 €, reste 1 200 € à placer »), plus
-     longue que celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à
-     voir avec celui-là. */
+     Les `4x1` gardent leur `max-lg:sr-only` pour ce qui, chez elles, est une
+     phrase (« les versements dépassent la capacité de 57 € ») : plus longue que
+     celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à voir avec
+     celui-là. Ce n'est donc pas le format qui décide, c'est la longueur — et
+     `SavingTile` a scindé sa seconde lecture pour cette raison : le versement
+     (« 300 € versé », trois mots) passe ici, le reste à placer demeure là-bas.
+     Réunies, les deux ne s'affichaient nulle part sous 1024px, ce qui est mot
+     pour mot le trou trouvé sur les tuiles de flux. */
   .tile-hint {
     position: absolute;
     width: 1px;
@@ -393,6 +397,83 @@
 
     .chart-months .chart-month-short {
       display: none;
+    }
+  }
+}
+
+@layer components {
+  /* --- Portes de saisie — DS §6 -------------------------------------------
+   *
+   * La colonne a une largeur **fixe**, et c'est ce qui tient tout le reste :
+   * trois boutons dimensionnés sur leur libellé ne peuvent ni aligner leurs
+   * bords, ni porter une colonne d'icônes commune, ni laisser le bouton de
+   * fermeture se centrer sous eux — cette dernière position dépend de la
+   * largeur du groupe, qu'un contenu variable rend inconnue jusqu'au rendu.
+   *
+   * 10,5rem est mesuré sur le plus long des trois libellés, « Dépense » à
+   * 15px, plus la gouttière et la colonne d'icône, plus le cadre de `Button`.
+   * En dessous de 360px d'écran elle descend d'un cran : à 320px la page laisse
+   * 288px, et 168 en prendraient plus de la moitié pour trois mots.
+   */
+  .quick-doors {
+    --quick-w: 10.5rem;
+    --quick-icon: 20px;
+  }
+
+  .quick-scrim {
+    background-color: var(--scrim);
+  }
+
+  @media (max-width: 359.98px) {
+    .quick-doors {
+      --quick-w: 9.5rem;
+    }
+  }
+
+  .quick-door {
+    width: var(--quick-w);
+  }
+
+  /* `[icône] [libellé]`, la colonne d'icône à largeur fixe : les trois « + »
+     tombent sur un axe, les trois libellés sur un autre. Le `justify-center`
+     de `Button` n'a plus rien à décider — son unique enfant occupe toute la
+     largeur —, ce qui évite d'avoir à le défaire : `cn` concatène sans
+     fusionner, et la classe ajoutée ne remplacerait pas l'autre. */
+  .quick-door-row {
+    display: grid;
+    grid-template-columns: var(--quick-icon) 1fr;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+  }
+
+  /* L'ouverture et la fermeture, sur les trois propriétés que le DS §4 admet.
+     Un décalage de 30ms par porte, dans l'ordre de l'écran du mois — assez
+     pour qu'on voie trois choses arriver, pas assez pour qu'on les attende. */
+  .quick-door {
+    transition:
+      opacity var(--dur) var(--ease),
+      translate var(--dur) var(--ease),
+      scale var(--dur) var(--ease);
+    transition-delay: calc(var(--i, 0) * 30ms);
+  }
+
+  .quick-doors[data-open='false'] .quick-door {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.96;
+    /* En se refermant, les trois partent ensemble : l'escalier n'a de sens
+       qu'à l'arrivée, où il donne l'ordre de lecture. En sortie il ne ferait
+       que retarder le geste suivant. */
+    transition-delay: 0ms;
+  }
+
+  /* Le voile neutralise déjà les durées (`--dur: 0ms`), mais pas les délais :
+     sans ça, les portes attendraient encore 60ms pour rien. */
+  @media (prefers-reduced-motion: reduce) {
+    .quick-door {
+      transition-delay: 0ms !important;
     }
   }
 }
