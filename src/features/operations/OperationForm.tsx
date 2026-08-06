@@ -1,0 +1,374 @@
+import type { ReactNode } from 'react'
+import { fr } from '@/i18n/fr'
+import { memberPatch } from '@/features/split/memberDraft'
+import { SharedField } from '@/features/split/SharedField'
+import { PeriodFields } from '@/features/recurrences/PeriodFields'
+import { useMembers } from '@/store/selectors'
+import { Button } from '@/ui/Button'
+import { CategorySelect } from '@/ui/CategorySelect'
+import { ConfirmDialog } from '@/ui/ConfirmDialog'
+import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
+import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
+import { PageTitle } from '@/ui/PageTitle'
+import { Segmented } from '@/ui/Segmented'
+import { Tile } from '@/ui/Tile'
+import { useLeaveGuard } from '@/ui/useLeaveGuard'
+import { saveOperation } from './save'
+import { type Operation, type OperationDefaults, useOperationForm } from './useOperationForm'
+
+/**
+ * Ce qu'on enregistre, du point de vue de qui le fait.
+ *
+ * Le modèle n'a que deux sens, et c'est juste : un virement d'épargne sort bien
+ * du compte. Mais l'écran demandait le sens, si bien que mettre 200 € de côté
+ * passait par « Dépense » et allait chercher « Livrets » entre les courses et
+ * le carburant. On ne dépense pas son épargne, on la déplace — et l'épargne a
+ * donc sa position, d'où l'écran déduit le sens.
+ */
+const NATURES = [
+  { value: 'expense' as const, label: fr.entry.natureExpense },
+  { value: 'income' as const, label: fr.entry.natureIncome },
+  { value: 'saving' as const, label: fr.entry.natureSaving },
+]
+
+/**
+ * Les deux sens d'un mouvement d'épargne. Le second n'existait pas : on pouvait
+ * verser sur un livret, jamais y reprendre — l'écran n'offrait alors que des
+ * catégories de revenus, et un retrait de livret n'en est pas un.
+ */
+const MOVEMENTS = [
+  { value: 'out' as const, label: fr.entry.savingIn },
+  { value: 'in' as const, label: fr.entry.savingOut },
+]
+
+const RHYTHMS = [
+  { value: 'once' as const, label: fr.entry.once },
+  { value: 'recurring' as const, label: fr.entry.recurring },
+]
+
+const AMOUNT_KINDS = [
+  { value: 'fixed' as const, label: fr.recurrences.fixedAmount },
+  { value: 'variable' as const, label: fr.recurrences.variable },
+]
+
+/**
+ * Le titre : générique à la création, précis en reprise.
+ *
+ * À la création, la nature et le rythme se changent d'un doigt — un titre qui
+ * suivrait les six combinaisons donnerait l'impression de changer d'écran sans
+ * bouger, et « Ajouter une récurrence » s'affichait déjà au-dessus d'un
+ * formulaire qu'un seul geste ramenait au ponctuel. Ce qu'on enregistre se lit
+ * sur les bascules, juste dessous.
+ *
+ * En reprise, rien ne bouge plus : ni la nature ni le rythme ne se changent, et
+ * le titre peut donc dire précisément ce qu'on est en train de modifier.
+ */
+function titleFor(operation: Operation | null, nature: EntryNature): string {
+  if (operation === null) return fr.entry.addOperation
+  if (operation.kind === 'recurrence') return fr.recurrences.edit
+  if (nature === 'saving') return fr.entry.editSaving
+  return nature === 'income' ? fr.entry.editIn : fr.entry.editOut
+}
+
+export type OperationFormProps = {
+  /** Ce qu'on reprend, ou `null` pour une création. */
+  operation: Operation | null
+  /** Ce que la porte d'entrée transmet, et tout ce qu'elle transmet. */
+  defaults: OperationDefaults
+  /** Où l'on repart, une fois enregistré ou renoncé. */
+  onDone: () => void
+  /** Les gestes propres à ce qu'on reprend, à côté d'« Annuler ». */
+  actions?: ReactNode
+  /** Ce qui ne se mêle pas aux boutons qui closent la saisie — la suppression. */
+  footer?: ReactNode
+}
+
+/**
+ * Le formulaire de saisie — **le** formulaire, au singulier.
+ *
+ * Il y en avait deux : celui d'une entrée et celui d'une récurrence. Deux
+ * écritures d'un même geste — décrire une opération —, qui ne différaient que
+ * par la case « ça se répète ». Elles avaient donc divergé : ordre des champs,
+ * libellés, messages d'erreur, champs présents d'un côté et absents de l'autre,
+ * et une correction sur deux qui n'atteignait qu'une moitié des utilisateurs.
+ *
+ * Il n'en reste qu'un, et les portes d'entrée ne transmettent que des valeurs
+ * initiales : nature présélectionnée et rythme ponctuel depuis « Ajouter une
+ * dépense », rythme récurrent depuis « Ajouter une récurrence ». Rien à l'écran
+ * ne dit par où l'on est passé, et c'est le but : il n'existe pas deux sortes
+ * de récurrences.
+ *
+ * C'est un écran plein, pas une feuille : le formulaire tient d'un seul tenant,
+ * sans rien à faire glisser ni couche à refermer pour revenir au mois.
+ */
+export function OperationForm({
+  operation,
+  defaults,
+  onDone,
+  actions,
+  footer,
+}: OperationFormProps) {
+  const members = useMembers()
+  const { draft, patch, errors, needsMember, optionalAmount, firstDuePaid, build } =
+    useOperationForm(operation, defaults)
+  const guard = useLeaveGuard(draft, onDone)
+
+  const submit = (): void => {
+    const built = build()
+    if (built === null) return
+    saveOperation(built, operation)
+    onDone()
+  }
+
+  /* Seulement à la création. Convertir après coup une dépense passée en
+     récurrence — ou l'inverse — réécrirait un historique, et c'est une autre
+     histoire que celle de cet écran. */
+  const canSwitchRhythm = operation === null
+
+  return (
+    <div className="flex max-w-xl flex-col gap-5">
+      <PageTitle title={titleFor(operation, draft.nature)} onBack={guard.request} />
+
+      <form
+        id="operation-form"
+        onSubmit={(event) => {
+          event.preventDefault()
+          submit()
+        }}
+      >
+        <Tile className="gap-4">
+          {/* Les trois choix, dans l'ordre où ils se posent : ce que
+              j'enregistre, à quel rythme, et — seulement alors, parce que la
+              question n'existe pas ailleurs — quel genre de montant. */}
+          <div className="flex flex-wrap gap-2">
+            <Segmented
+              options={NATURES}
+              value={draft.nature}
+              onChange={(nature) => {
+                /* Changer de nature vide la catégorie : les listes ne se
+                   recouvrent pas, et une catégorie de charge restée en place
+                   sur une saisie d'épargne serait enregistrée telle quelle.
+                   L'épargne arrive en versement — c'est le geste courant ; on
+                   n'y reprend qu'exceptionnellement. */
+                patch({
+                  nature,
+                  direction: nature === 'income' ? 'in' : 'out',
+                  categoryId: '',
+                })
+              }}
+              label={fr.entry.nature}
+            />
+
+            {/* Les deux sens d'un mouvement d'épargne. Ailleurs, le sens
+                découle de la nature et n'a pas à être demandé. */}
+            {draft.nature === 'saving' && (
+              <Segmented
+                options={MOVEMENTS}
+                value={draft.direction}
+                onChange={(direction) => {
+                  patch({ direction })
+                }}
+                label={fr.entry.savingMovement}
+              />
+            )}
+
+            {canSwitchRhythm && (
+              <Segmented
+                options={RHYTHMS}
+                value={draft.recurring ? 'recurring' : 'once'}
+                onChange={(rhythm) => {
+                  patch({ recurring: rhythm === 'recurring' })
+                }}
+                label={fr.entry.rhythm}
+              />
+            )}
+
+            {/* Une opération ponctuelle a toujours un montant : la question ne
+                se pose qu'à une règle, qui peut laisser chaque échéance le
+                sien. */}
+            {draft.recurring && (
+              <Segmented
+                options={AMOUNT_KINDS}
+                value={draft.variable ? 'variable' : 'fixed'}
+                onChange={(kind) => {
+                  patch({ variable: kind === 'variable' })
+                }}
+                label={fr.recurrences.form.amountKind}
+              />
+            )}
+          </div>
+
+          <Field
+            label={fr.entry.amount}
+            {...(optionalAmount
+              ? { optional: true, hint: fr.entry.variableAmountHint }
+              : { required: true })}
+            {...(errors.amount ? { error: errors.amount } : {})}
+          >
+            {(id, describedBy) => (
+              <AmountInput
+                id={id}
+                aria-describedby={describedBy}
+                value={draft.amountText}
+                invalid={Boolean(errors.amount)}
+                placeholder="0,00"
+                autoFocus
+                onChange={(e) => {
+                  patch({ amountText: e.target.value })
+                }}
+              />
+            )}
+          </Field>
+
+          <Field label={fr.entry.category} required {...(errors.category ? { error: errors.category } : {})}>
+            {(id, describedBy) => (
+              <CategorySelect
+                id={id}
+                aria-describedby={describedBy}
+                direction={draft.direction}
+                kinds={kindsOfNature(draft.nature)}
+                value={draft.categoryId}
+                onChange={(e) => {
+                  patch({ categoryId: e.target.value })
+                }}
+              />
+            )}
+          </Field>
+
+          {/* Un seul champ de date, dont le libellé suit le rythme : en
+              récurrence, la date saisie est la première échéance. C'est elle
+              aussi qui préremplit le jour du mois et le jour de la semaine —
+              « le 1er mars » répond déjà à « quel jour du mois ». */}
+          <Field
+            label={draft.recurring ? fr.entry.firstDate : fr.entry.date}
+            required
+            {...(draft.recurring && operation === null
+              ? { hint: firstDuePaid ? fr.entry.firstDatePaid : fr.entry.firstDatePlanned }
+              : {})}
+          >
+            {(id, describedBy) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                type="date"
+                value={draft.startedOn}
+                onChange={(e) => {
+                  if (e.target.value !== '') patch({ startedOn: e.target.value })
+                }}
+              />
+            )}
+          </Field>
+
+          {draft.recurring && <PeriodFields draft={draft} patch={patch} />}
+
+          <Field label={fr.entry.label} required {...(errors.label ? { error: errors.label } : {})}>
+            {(id, describedBy) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                value={draft.label}
+                invalid={Boolean(errors.label)}
+                placeholder={
+                  draft.recurring ? fr.entry.labelPlaceholderRecurring : fr.entry.labelPlaceholder
+                }
+                maxLength={60}
+                onChange={(e) => {
+                  patch({ label: e.target.value })
+                }}
+              />
+            )}
+          </Field>
+
+          {members.length > 0 && (
+            /* La phrase sert d'aide tant qu'on n'a pas essayé d'enregistrer,
+               puis d'erreur : c'est la même, et elle dit pourquoi ce champ,
+               facultatif ailleurs, ne l'est pas ici. */
+            <Field
+              label={fr.entry.member}
+              {...(needsMember
+                ? {
+                    required: true,
+                    hint: draft.recurring
+                      ? fr.entry.memberRequiredRecurring
+                      : fr.entry.memberRequired,
+                  }
+                : { optional: true })}
+              {...(errors.member ? { error: errors.member } : {})}
+            >
+              {(id, describedBy) => (
+                <Select
+                  id={id}
+                  aria-describedby={describedBy}
+                  value={draft.memberId}
+                  invalid={Boolean(errors.member)}
+                  onChange={(e) => {
+                    patch(memberPatch(e.target.value))
+                  }}
+                >
+                  <option value="">{fr.shell.everyone}</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </Field>
+          )}
+
+          {/* `SharedField` décide seul de son affichage : il ne se montre que
+              sur une sortie de nature charge ou dette. L'épargne et le revenu
+              n'ont donc rien à écarter ici — ils tombent sous la même règle,
+              au même endroit, pour la même raison. */}
+          <SharedField
+            categoryId={draft.categoryId}
+            memberId={draft.memberId}
+            value={draft.shared}
+            onChange={(shared) => {
+              patch({ shared })
+            }}
+          />
+
+          {/* La note se lit sur la ligne du mois et se cherche depuis
+              l'historique. En dernier : c'est le champ dont on se passe. */}
+          <Field label={fr.entry.note} optional>
+            {(id) => (
+              <TextInput
+                id={id}
+                value={draft.note}
+                placeholder={
+                  draft.recurring ? fr.entry.notePlaceholderRecurring : fr.entry.notePlaceholder
+                }
+                maxLength={140}
+                onChange={(e) => {
+                  patch({ note: e.target.value })
+                }}
+              />
+            )}
+          </Field>
+        </Tile>
+      </form>
+
+      <div className="flex flex-wrap gap-2">
+        {/* Le bouton nomme ce qui va être créé : c'est le dernier endroit où le
+            dire, et le seul qui ne change plus rien après. En reprise, il n'y a
+            rien à nommer — on enregistre ce qui existe déjà. */}
+        <Button type="submit" form="operation-form">
+          {operation !== null
+            ? fr.common.save
+            : draft.recurring
+              ? fr.entry.saveRecurrence
+              : fr.entry.saveOperation}
+        </Button>
+        <Button variant="secondary" onClick={guard.request}>
+          {fr.common.cancel}
+        </Button>
+        {actions}
+      </div>
+
+      {footer}
+
+      <ConfirmDialog {...guard.dialog} />
+    </div>
+  )
+}
