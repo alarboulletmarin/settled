@@ -142,16 +142,42 @@ export function IdentityFields({ draft, patch, errors, members, needsMember = fa
   )
 }
 
+/**
+ * « Montant fixe » ou « montant variable ».
+ *
+ * Extraite du bloc de montant pour que la saisie d'une dépense la pose aussi :
+ * basculée en récurrence, elle crée exactement le même objet, et une porte qui
+ * ne sait poser que des montants fixes rend une moitié du modèle inatteignable
+ * — un salaire, une facture d'électricité. Une seconde copie de la bascule
+ * aurait fini par ne plus proposer les mêmes réponses que celle-ci.
+ */
+export function AmountKindField({
+  variable,
+  onChange,
+}: {
+  variable: boolean
+  onChange: (variable: boolean) => void
+}) {
+  return (
+    <Segmented
+      options={AMOUNT_KINDS}
+      value={variable ? 'variable' : 'fixed'}
+      onChange={(kind) => {
+        onChange(kind === 'variable')
+      }}
+      label={fr.recurrences.form.amountKind}
+    />
+  )
+}
+
 export function AmountFields({ draft, patch, errors }: Omit<FieldsProps, 'members'>) {
   return (
     <>
-      <Segmented
-        options={AMOUNT_KINDS}
-        value={draft.variable ? 'variable' : 'fixed'}
-        onChange={(kind) => {
-          patch({ variable: kind === 'variable' })
+      <AmountKindField
+        variable={draft.variable}
+        onChange={(variable) => {
+          patch({ variable })
         }}
-        label={fr.recurrences.form.amountKind}
       />
 
       {draft.variable ? (
@@ -238,10 +264,11 @@ export function PeriodFields({ draft, patch, withStart = true }: PeriodFieldsPro
       </Field>
 
       {withStart && (
-        <Field label={fr.recurrences.form.startedOn} required>
-          {(id) => (
+        <Field label={fr.recurrences.form.startedOn} required hint={fr.recurrences.form.startedOnHint}>
+          {(id, describedBy) => (
             <TextInput
               id={id}
+              aria-describedby={describedBy}
               type="date"
               value={draft.startedOn}
               onChange={(e) => {

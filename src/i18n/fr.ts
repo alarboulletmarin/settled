@@ -868,6 +868,11 @@ export const fr = {
     sharedLocked: 'Personne ne s’attribue cette ligne : elle est commune, et se répartit au prorata.',
     member: 'Membre',
     note: 'Note',
+    /* Le champ existait dans le brouillon et partait bien à l'enregistrement,
+       mais l'écran ne le montrait nulle part : la note se lit sur la ligne du
+       mois et se cherche depuis l'historique, et rien ne permettait d'en
+       écrire une. Le formulaire de récurrence, lui, l'a toujours posée. */
+    notePlaceholder: 'Payé en liquide',
     direction: 'Sens',
 
     /* L'écran demande ce qu'on enregistre, pas le sens de trésorerie : verser
@@ -906,8 +911,17 @@ export const fr = {
     once: 'Ponctuel',
     recurring: 'Récurrence',
     firstDate: 'Première échéance',
+    /* « chaque mois » était écrit en dur, sous un champ de périodicité qui
+       propose aussi la semaine, le trimestre et l'année : la phrase mentait dès
+       qu'on choisissait autre chose qu'une mensuelle. Elle dit le rythme sans
+       le nommer — c'est le champ juste au-dessus qui le nomme. */
     recurringHint:
-      'Celle-ci est enregistrée comme payée, les suivantes arrivent à confirmer chaque mois.',
+      'Celle-ci est enregistrée comme payée, les suivantes arrivent à confirmer à chaque échéance.',
+    /* En montant variable, le champ ne décrit plus la règle mais la seule
+       échéance qu'on connaisse : celle qu'on vient de payer. La règle, elle,
+       n'en fixe aucun — d'où deux phrases et non une. */
+    variableAmountHint:
+      'Celui de cette première échéance. La récurrence n’en fixe aucun : les suivantes seront à chiffrer une par une, et c’est ce montant-ci qui leur sert d’ordre de grandeur.',
   },
 
   recurrences: {
@@ -1019,6 +1033,12 @@ export const fr = {
       weekday: 'Jour de la semaine',
       monthDay: 'Jour du mois',
       startedOn: 'Première échéance',
+      /* Pendant de `entry.recurringHint` : la saisie d'une dépense disait ce
+         qu'il advient de la première échéance — payée d'avance, puisqu'on vient
+         de la vivre —, cet écran-ci ne disait rien. Or elle n'y part pas
+         confirmée, et c'est justement la seule chose qui sépare les deux
+         portes : elle méritait d'être écrite des deux côtés. */
+      startedOnHint: 'Elle arrive à confirmer, comme les suivantes.',
       note: 'Note',
       notePlaceholder: 'Résiliable en ligne',
       categoryPlaceholder: 'Choisis une catégorie',

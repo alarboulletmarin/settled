@@ -221,7 +221,9 @@ Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
 ### 4.4 Saisie ponctuelle
 
-Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre. Créée directement en `confirmed`.
+Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre, note. Créée directement en `confirmed`.
+
+La **note** ferme un aller sans retour : `Entry.note` se lit sur la ligne du mois (§4.4 bis), se cherche depuis l'historique et survit à une reprise, mais aucun écran ne permettait d'en écrire une — elle n'entrait dans le document que par un import. Elle est en dernier, comme sur la fiche d'une récurrence : c'est le champ dont on se passe.
 
 Le membre est **facultatif tant que le partage prend la ligne en charge, obligatoire dès qu'il ne la prend pas** — voir « à quelqu'un, ou à tout le monde » en §4.7 ter. Le champ le dit à l'ouverture, avec la raison, et pas seulement après un échec d'enregistrement.
 
@@ -232,6 +234,10 @@ En **Épargne**, une seconde bascule dit le mouvement : **Je place** (l'argent q
 La case « à partager » ne s'affiche qu'en Dépense, et seulement sur une catégorie de nature `charge` ou `debt` : un versement d'épargne sort du compte mais reste à qui le fait, et un revenu ne se répartit pas davantage — on compare ce que chacun gagne, on ne se le redistribue pas. Ailleurs, la case ne pouvait qu'afficher « non » et proposer un « oui » que le calcul aurait ignoré. Sur « tout le foyer », elle est cochée et verrouillée (§4.7 ter).
 
 Une bascule **Ponctuel / Récurrence** y siège aussi, à la création seulement. En récurrence, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en récurrence réécrirait un historique.
+
+Basculé en récurrence, cet écran **pose les mêmes questions que celui des récurrences** (§4.2) — c'est le même objet qu'on crée, et une porte qui n'en décrit qu'une partie en rend l'autre inatteignable. La bascule **montant fixe / variable** y figure donc aussi. Le montant, lui, reste exigé même en variable, et ce n'est pas une exception à la règle du §4.2 : là-bas il chiffre la règle, qui peut n'en fixer aucun ; ici il chiffre l'échéance du jour, qu'on vient de payer. C'est elle qui donne son premier chiffre à une règle variable — elle en devient le montant habituel, et la suite prend le dessus dès qu'une échéance est chiffrée. Une échéance marquée payée d'avance porte donc le montant saisi, et non zéro. Seule la première échéance sépare encore les deux portes — payée ici, à confirmer là-bas — et **les deux écrans le disent**, chacun sous son champ de date.
+
+L'ordre des champs, lui, reste propre à chaque écran : celui-ci suit le formulaire court ci-dessus, dont la bascule fait partie, et redistribuer sous le doigt des champs déjà remplis coûterait plus que l'écart qu'il resterait à combler.
 
 Dépense, revenu et épargne sont trois points d'entrée distincts, côte à côte, sur le mois, sur le bouton flottant comme sur le calendrier : la nature est choisie avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. On ne met pas de côté par « Dépense » — la troisième porte existe partout où les deux premières existent. Titre et confirmation suivent — on n'annonce pas « dépense ajoutée » après un salaire.
 

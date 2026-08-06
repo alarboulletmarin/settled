@@ -12,6 +12,38 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Corrigé — les deux portes d'une récurrence ne posaient pas les mêmes questions
+
+Une récurrence se crée de deux endroits — l'onglet « Récurrences », et l'écran de
+saisie basculé sur « Récurrence ». Les deux fabriquent le même objet ; seul le
+premier savait le décrire en entier.
+
+- **« Montant fixe » ou « montant variable » manquait** à la saisie. Le modèle
+  porte les deux depuis toujours, et l'écran des récurrences pose la question
+  depuis toujours ; par cette porte-là, une facture d'électricité ou un salaire
+  qui varie étaient simplement inatteignables. La bascule y est désormais, au
+  même endroit et avec les mêmes mots — une seule écriture, partagée.
+- **Le montant reste exigé** même en variable, et ce n'est pas une entorse : ici
+  il ne chiffre pas la règle mais l'échéance du jour, celle qu'on vient de payer.
+  C'est elle qui donne son premier chiffre à la règle, et le champ le dit.
+- **Une échéance payée d'avance porte le montant payé.** Elle sortait à zéro dès
+  que la règle n'en fixait aucun — annoncée « payée », pour rien.
+- **Le champ « Note » manquait à toute la saisie**, ponctuelle comprise : la note
+  se lit sur la ligne du mois et se cherche depuis l'historique, elle survivait à
+  une reprise, elle partait bien à l'enregistrement — et aucun écran ne
+  permettait d'en écrire une.
+- **Les mots suivent ce qu'on enregistre.** « Donne un libellé à cette entrée »
+  s'affichait sous un écran intitulé « Ajouter une récurrence », et l'exemple de
+  libellé proposé était « Courses » — ce qu'on ne saisit précisément pas en
+  récurrent.
+- **« les suivantes arrivent à confirmer chaque mois »** était écrit en dur sous
+  un champ qui propose aussi la semaine, le trimestre et l'année : la phrase
+  mentait dès qu'on choisissait autre chose qu'une mensuelle.
+- **L'écran des récurrences dit à son tour ce qu'il advient de la première
+  échéance** — elle arrive à confirmer, là où la saisie l'enregistre payée.
+  C'est la seule différence qui reste entre les deux portes, et elle est
+  maintenant écrite des deux côtés.
+
 ### Modifié — les portes de saisie deviennent un menu
 
 Les trois boutons partageaient une largeur depuis peu, mais rien d'autre : leurs

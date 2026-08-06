@@ -25,7 +25,7 @@ import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 import { useLeaveGuard } from '@/ui/useLeaveGuard'
-import { PeriodFields } from '@/features/recurrences/RecurrenceFormFields'
+import { AmountKindField, PeriodFields } from '@/features/recurrences/RecurrenceFormFields'
 import {
   type PeriodDraft,
   defaultsFrom,
@@ -84,6 +84,11 @@ type Draft = Omit<PeriodDraft, 'startedOn'> & {
   /** `undefined` = la règle de partage tranche. */
   shared: boolean | undefined
   recurring: boolean
+  /**
+   * Récurrence à montant variable. Sans effet sur une saisie ponctuelle : un
+   * fait a toujours un montant, c'est la règle qui peut ne pas en fixer.
+   */
+  variable: boolean
   note: string
 }
 
@@ -120,6 +125,7 @@ function initial(
     memberId: entry?.memberId ?? '',
     shared: entry?.shared,
     recurring: false,
+    variable: false,
     note: entry?.note ?? '',
   }
 }
@@ -146,6 +152,29 @@ const TOAST = {
 /** La clé du toast : l'épargne parle d'elle-même, les deux autres du sens. */
 const toastKey = (nature: EntryNature, direction: Direction): 'in' | 'out' | 'saving' =>
   nature === 'saving' ? 'saving' : direction
+
+/**
+ * Les mots de l'écran suivent ce qu'il enregistre.
+ *
+ * Basculé en récurrence, il ne pose plus un fait mais une règle — et il le
+ * disait à moitié : le titre changeait, les phrases restaient celles d'une
+ * entrée. « Donne un libellé à cette entrée » sous un écran qui annonce
+ * « Ajouter une récurrence », et un exemple de libellé (« Courses ») qui est
+ * précisément ce qu'on ne saisit pas en récurrent. Les deux jeux existaient
+ * déjà, chacun sur sa porte ; il n'en manquait que le choix.
+ */
+const WORDS = {
+  once: {
+    labelPlaceholder: fr.entry.labelPlaceholder,
+    labelRequired: fr.entry.labelRequired,
+    memberRequired: fr.entry.memberRequired,
+  },
+  recurring: {
+    labelPlaceholder: fr.recurrences.form.labelPlaceholder,
+    labelRequired: fr.recurrences.form.labelRequired,
+    memberRequired: fr.recurrences.form.memberRequired,
+  },
+} as const
 
 /**
  * Formulaire court du cahier §4.4 : montant, catégorie, date, libellé, membre.
@@ -183,6 +212,8 @@ function EntryForm({
       ? entry
       : null
 
+  const words = draft.recurring ? WORDS.recurring : WORDS.once
+
   const amount = parseAmount(draft.amountText)
   /* Une ligne qui n'entre pas dans les charges communes doit être à quelqu'un :
      sans propriétaire, elle n'apparaîtrait dans le mois de personne. Le champ
@@ -190,11 +221,15 @@ function EntryForm({
   const needsMember =
     members.length > 0 &&
     memberRequired(draft.direction, kindOf(draft.categoryId), draft.memberId, draft.shared)
+  /* Le montant reste exigé même sur une récurrence variable, et ce n'est pas
+     une entorse : ici il ne chiffre pas la règle mais l'échéance du jour, celle
+     qu'on vient de payer. C'est l'écran des récurrences, où rien n'est encore
+     tombé, qui peut s'en passer. */
   const errors = {
     amount: amount === null || amount <= 0 ? fr.entry.amountRequired : undefined,
     category: draft.categoryId === '' ? fr.entry.categoryRequired : undefined,
-    label: draft.label.trim() === '' ? fr.entry.labelRequired : undefined,
-    member: needsMember ? fr.entry.memberRequired : undefined,
+    label: draft.label.trim() === '' ? words.labelRequired : undefined,
+    member: needsMember ? words.memberRequired : undefined,
   }
   const shown = showErrors
     ? errors
@@ -237,8 +272,20 @@ function EntryForm({
     // confirmée : l'utilisateur vient de dire qu'elle a eu lieu.
     if (entry === null && draft.recurring) {
       addRecurrencePaidOn(
-        { ...common, amount, period: periodOf(periodDraftOf(draft)), startedOn: draft.date },
+        {
+          ...common,
+          // Une règle variable ne fixe aucun montant ; l'échéance du jour, si.
+          amount: draft.variable ? null : amount,
+          /* Et ce montant-là devient son « montant habituel » : c'est la seule
+             observation qu'on ait, et le seul chiffre qui resterait à la règle
+             si l'entrée qu'on vient de créer venait à être supprimée. Toute
+             échéance chiffrée reprend aussitôt le dessus (voir `amountOn`). */
+          ...(draft.variable ? { estimate: amount } : {}),
+          period: periodOf(periodDraftOf(draft)),
+          startedOn: draft.date,
+        },
         draft.date,
+        amount,
       )
       toast(fr.recurrences.added)
       onDone()
@@ -317,7 +364,26 @@ function EntryForm({
             )}
           </div>
 
-          <Field label={fr.entry.amount} required {...(shown.amount ? { error: shown.amount } : {})}>
+          {/* Fixe ou variable — la question de l'écran des récurrences, posée
+              ici avec les mêmes mots et au même endroit, juste au-dessus du
+              montant qu'elle qualifie. Sans elle, cette porte-là ne savait
+              poser que des règles à montant fixe : ni salaire, ni facture
+              d'électricité, alors qu'elle crée le même objet que l'autre. */}
+          {draft.recurring && (
+            <AmountKindField
+              variable={draft.variable}
+              onChange={(variable) => {
+                patch({ variable })
+              }}
+            />
+          )}
+
+          <Field
+            label={fr.entry.amount}
+            required
+            {...(draft.recurring && draft.variable ? { hint: fr.entry.variableAmountHint } : {})}
+            {...(shown.amount ? { error: shown.amount } : {})}
+          >
             {(id, describedBy) => (
               <AmountInput
                 id={id}
@@ -379,7 +445,7 @@ function EntryForm({
                 aria-describedby={describedBy}
                 value={draft.label}
                 invalid={Boolean(shown.label)}
-                placeholder={fr.entry.labelPlaceholder}
+                placeholder={words.labelPlaceholder}
                 maxLength={60}
                 onChange={(e) => {
                   patch({ label: e.target.value })
@@ -432,6 +498,25 @@ function EntryForm({
               patch({ shared })
             }}
           />
+
+          {/* La note se lit sur la ligne du mois et se cherche depuis
+              l'historique ; elle survivait à une reprise et partait bien à
+              l'enregistrement — mais aucun écran de saisie ne permettait d'en
+              écrire une. Elle est là où le formulaire de récurrence la pose
+              déjà, en dernier : c'est le champ dont on se passe. */}
+          <Field label={fr.entry.note} optional>
+            {(id) => (
+              <TextInput
+                id={id}
+                value={draft.note}
+                placeholder={fr.entry.notePlaceholder}
+                maxLength={140}
+                onChange={(e) => {
+                  patch({ note: e.target.value })
+                }}
+              />
+            )}
+          </Field>
         </Tile>
       </form>
 
