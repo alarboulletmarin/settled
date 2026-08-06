@@ -193,12 +193,7 @@ export function addRecurrence(input: Omit<Recurrence, 'id'>): Recurrence {
  * dans une seule mutation — donc un seul rendu, une seule écriture — et surtout
  * l'échéance du jour ne peut pas rester prévue si la suite échouait.
  */
-export function addRecurrencePaidOn(
-  input: Omit<Recurrence, 'id'>,
-  on: ISODate,
-  /** Ce qui a été payé ce jour-là. Seul chiffre d'une règle à montant variable. */
-  paidAmount?: Money,
-): Recurrence {
+export function addRecurrencePaidOn(input: Omit<Recurrence, 'id'>, on: ISODate): Recurrence {
   const recurrence: Recurrence = { ...input, id: makeId() }
   mutate((data) =>
     updates.confirmOccurrence(
@@ -206,7 +201,6 @@ export function addRecurrencePaidOn(
       recurrence.id,
       on,
       makeId,
-      paidAmount,
     ),
   )
   return recurrence

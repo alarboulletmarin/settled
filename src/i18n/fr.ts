@@ -857,7 +857,12 @@ export const fr = {
     category: 'Catégorie',
     date: 'Date',
     label: 'Libellé',
+    /* Les exemples suivent le rythme, et rien d'autre : « Courses » n'est pas
+       ce qu'on saisit en récurrent, « Loyer » pas ce qu'on saisit à la main
+       chaque mois. Le champ, son libellé et sa validation ne bougent pas — un
+       exemple qui colle est une aide, deux formulaires n'en sont pas une. */
     labelPlaceholder: 'Courses',
+    labelPlaceholderRecurring: 'Loyer',
     categoryPlaceholder: 'Choisis une catégorie',
     shared: 'Charge commune, à partager entre les membres',
     sharedHint: 'Elle entre dans la répartition au prorata des revenus.',
@@ -873,6 +878,7 @@ export const fr = {
        mois et se cherche depuis l'historique, et rien ne permettait d'en
        écrire une. Le formulaire de récurrence, lui, l'a toujours posée. */
     notePlaceholder: 'Payé en liquide',
+    notePlaceholderRecurring: 'Résiliable en ligne',
     direction: 'Sens',
 
     /* L'écran demande ce qu'on enregistre, pas le sens de trésorerie : verser
@@ -899,10 +905,17 @@ export const fr = {
     amountRequired: 'Indique un montant supérieur à zéro.',
     categoryRequired: 'Choisis une catégorie.',
     labelRequired: 'Donne un libellé à cette entrée.',
+    /* Le même message, dit de ce qu'on enregistre : « cette entrée » sous un
+       écran qui pose une règle laissait croire à deux formulaires. */
+    labelRequiredRecurring: 'Donne un libellé à cette récurrence.',
     /* Sans propriétaire ni partage, la ligne n'apparaîtrait dans le mois de
        personne, et la somme des soldes cesserait de valoir celui du foyer. */
     memberRequired:
       'Dis à qui est cette ligne : elle n’entre pas dans les charges communes, donc sans propriétaire elle n’apparaîtrait dans le mois de personne.',
+    /* Une récurrence pose une échéance par période : le trou se creuse à
+       chaque fois, et c'est ce que la phrase ajoute. */
+    memberRequiredRecurring:
+      'Dis à qui est cette récurrence : elle n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
     planned: 'Prévue',
     confirmed: 'Confirmée',
 
@@ -911,17 +924,30 @@ export const fr = {
     once: 'Ponctuel',
     recurring: 'Récurrence',
     firstDate: 'Première échéance',
-    /* « chaque mois » était écrit en dur, sous un champ de périodicité qui
-       propose aussi la semaine, le trimestre et l'année : la phrase mentait dès
-       qu'on choisissait autre chose qu'une mensuelle. Elle dit le rythme sans
-       le nommer — c'est le champ juste au-dessus qui le nomme. */
-    recurringHint:
-      'Celle-ci est enregistrée comme payée, les suivantes arrivent à confirmer à chaque échéance.',
-    /* En montant variable, le champ ne décrit plus la règle mais la seule
-       échéance qu'on connaisse : celle qu'on vient de payer. La règle, elle,
-       n'en fixe aucun — d'où deux phrases et non une. */
+    /* Ce qu'il advient de la première échéance, et il n'y a que deux réponses.
+       Elles ne dépendent pas de la porte par laquelle on est arrivé mais de la
+       seule chose qui compte : a-t-elle eu lieu ? Une échéance datée d'hier ou
+       d'aujourd'hui, dont le montant est fixe, oui. Une échéance à venir, ou
+       dont le montant reste à saisir, non.
+       « chaque mois » était d'ailleurs écrit en dur sous un champ qui propose
+       aussi la semaine, le trimestre et l'année : la phrase mentait dès qu'on
+       choisissait autre chose qu'une mensuelle. */
+    firstDatePaid: 'Celle-ci est enregistrée comme payée ; les suivantes arriveront à confirmer.',
+    firstDatePlanned: 'Elle arrivera à confirmer, comme les suivantes.',
+    /* En montant variable, le champ ne chiffre plus la règle — elle n'en fixe
+       aucun — mais ce qu'on lui prête en attendant. */
     variableAmountHint:
-      'Celui de cette première échéance. La récurrence n’en fixe aucun : les suivantes seront à chiffrer une par une, et c’est ce montant-ci qui leur sert d’ordre de grandeur.',
+      'Le montant sera demandé à chaque échéance. Celui-ci sert d’ordre de grandeur en attendant — pour le total des récurrences, et pour la répartition au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
+
+    /* Un seul écran de saisie, donc un seul titre : la nature et le rythme s'y
+       changent d'un doigt, et un titre qui suivrait les six combinaisons
+       donnerait l'impression d'avoir changé d'écran sans bouger. Ce qu'on
+       enregistre se lit sur les bascules, juste dessous.
+       Le bouton, lui, nomme ce qui va être créé : c'est le dernier endroit où
+       le dire, et le seul qui ne change plus rien après. */
+    addOperation: 'Ajouter une opération',
+    saveOperation: 'Ajouter l’opération',
+    saveRecurrence: 'Ajouter la récurrence',
   },
 
   recurrences: {
@@ -994,7 +1020,6 @@ export const fr = {
     expandAll: 'Tout déplier',
     unknownAmounts: '%s à montant variable, non chiffré%s',
     variable: 'Montant variable',
-    variableHint: 'Le montant sera demandé à chaque échéance.',
     fixedAmount: 'Montant fixe',
     priceChanged: 'Le prix a changé : %s → %s',
     // Un virement d'épargne n'a pas de prix : son montant change, sans alarme.
@@ -1012,20 +1037,13 @@ export const fr = {
     removeConfirm:
       'La récurrence disparaît avec ses échéances à venir. Celles déjà confirmées restent dans l’historique.',
     stopHint: 'Les échéances déjà confirmées restent dans l’historique.',
+    /* Ce que la périodicité seule demande. Tout le reste du formulaire — le
+       libellé, le montant, la catégorie, le membre, la note et leurs messages —
+       vit sous `entry` : la saisie n'a qu'un écran, elle n'a donc qu'un jeu de
+       mots. Ce bloc-ci en avait un second, mot pour mot le même à trois nuances
+       près, et chaque correction n'en corrigeait qu'un. */
     form: {
-      label: 'Libellé',
-      labelPlaceholder: 'Loyer',
-      direction: 'Sens',
-      category: 'Catégorie',
-      member: 'Membre',
-      amount: 'Montant',
       amountKind: 'Type de montant',
-      /* Un montant variable ne vaut rien tant qu'aucune échéance n'est tombée.
-         Pour un salaire, ça suffit à laisser tout le foyer sans répartition :
-         ce champ est le seul endroit où l'on peut s'avancer avant. */
-      estimate: 'Montant habituel',
-      estimateHint:
-        'Sert d’ordre de grandeur — pour le total des récurrences, et pour répartir les charges communes au prorata s’il s’agit d’un revenu. Chaque échéance chiffrée prend aussitôt le dessus.',
       period: 'Périodicité',
       everyWeeks: 'Toutes les combien de semaines',
       everyMonths: 'Tous les combien de mois',
@@ -1033,23 +1051,7 @@ export const fr = {
       weekday: 'Jour de la semaine',
       monthDay: 'Jour du mois',
       startedOn: 'Première échéance',
-      /* Pendant de `entry.recurringHint` : la saisie d'une dépense disait ce
-         qu'il advient de la première échéance — payée d'avance, puisqu'on vient
-         de la vivre —, cet écran-ci ne disait rien. Or elle n'y part pas
-         confirmée, et c'est justement la seule chose qui sépare les deux
-         portes : elle méritait d'être écrite des deux côtés. */
-      startedOnHint: 'Elle arrive à confirmer, comme les suivantes.',
       note: 'Note',
-      notePlaceholder: 'Résiliable en ligne',
-      categoryPlaceholder: 'Choisis une catégorie',
-      shared: 'Charge commune, à partager entre les membres',
-      labelRequired: 'Donne un libellé à cette récurrence.',
-      amountRequired: 'Indique un montant, ou choisis « montant variable ».',
-      categoryRequired: 'Choisis une catégorie.',
-      /* Une récurrence pose une échéance par mois : sans propriétaire ni
-         partage, il creuse le trou à chaque fois. */
-      memberRequired:
-        'Dis à qui est cette récurrence : elle n’entre pas dans les charges communes, donc sans propriétaire ses échéances n’apparaîtraient dans le mois de personne.',
       /* La seconde phrase n'est pas une redite de la première : elle dit le
          geste. Le jour est borné et jamais reporté, si bien que 31 *est* « le
          dernier jour » — encore fallait-il que quelqu'un l'écrive, plutôt que

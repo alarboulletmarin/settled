@@ -505,23 +505,15 @@ export function confirmOccurrence(
   recurrenceId: string,
   date: ISODate,
   makeId: () => string,
-  amount?: Money,
 ): Data {
-  /* Le montant payé, quand l'appelant le connaît. Il ne se déduit pas toujours
-     de la règle : une récurrence à montant variable n'en porte aucun, et
-     l'échéance partait donc confirmée à zéro — annoncée « payée », pour rien.
-     C'est précisément le cas de la saisie qui pose la règle et la dépense du
-     jour d'un seul geste : là, le montant vient d'être saisi. */
-  const paid = { status: 'confirmed' as const, ...(amount === undefined ? {} : { amount }) }
-
   const existing = data.entries.find((e) => e.recurrenceId === recurrenceId && e.date === date)
-  if (existing !== undefined) return updateEntry(data, existing.id, paid)
+  if (existing !== undefined) return confirmEntry(data, existing.id)
 
   const recurrence = data.recurrences.find((r) => r.id === recurrenceId)
   if (recurrence === undefined) return data
 
   const entry = buildPlannedEntry(recurrence, date, data.entries, makeId)
-  return addEntry(data, { ...entry, ...paid })
+  return addEntry(data, { ...entry, status: 'confirmed' })
 }
 
 /** Confirmation en bloc — le geste du cahier §4.3. */

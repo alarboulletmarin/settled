@@ -1,586 +1,93 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { type ISODate, isValidISO } from '@/domain/date'
-import { parseAmount, toAmountInput } from '@/domain/money'
-import type { Direction, Entry } from '@/domain/types'
+import { isValidISO } from '@/domain/date'
+import type { Entry } from '@/domain/types'
 import { DIRECTION_PARAM, NATURE_PARAM, directionFromParam, natureFromParam } from '@/app/routes'
 import { fr } from '@/i18n/fr'
-import {
-  addEntry,
-  addRecurrencePaidOn,
-  removeEntry,
-  replaceEntry,
-  unconfirmEntry,
-  undoable,
-} from '@/store/actions'
-import { memberRequired } from '@/domain/split'
-import { useCurrentYm, useEntry, useKindOf, useMembers } from '@/store/selectors'
+import { removeEntry, unconfirmEntry, undoable } from '@/store/actions'
+import { useCurrentYm, useEntry, useKindOf } from '@/store/selectors'
 import { Button } from '@/ui/Button'
-import { CategorySelect } from '@/ui/CategorySelect'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
-import { type EntryNature, kindsOfNature } from '@/ui/categoryKinds'
-import { AmountInput, Field, Select, TextInput } from '@/ui/Field'
-import { Segmented } from '@/ui/Segmented'
-import { PageTitle } from '@/ui/PageTitle'
-import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
-import { useLeaveGuard } from '@/ui/useLeaveGuard'
-import { AmountKindField, PeriodFields } from '@/features/recurrences/RecurrenceFormFields'
-import {
-  type PeriodDraft,
-  defaultsFrom,
-  monthlyDraftFrom,
-  periodOf,
-} from '@/features/recurrences/period'
-import { SharedField } from '@/features/split/SharedField'
-import { memberPatch } from '@/features/split/memberDraft'
+import { OperationForm } from '@/features/operations/OperationForm'
 import { defaultDateFor } from './defaultDate'
 
 /**
- * Ce qu'on enregistre, du point de vue de qui le fait.
+ * Les gestes qui n'existent que sur une ligne déjà écrite.
  *
- * Le modèle n'a que deux sens, et c'est juste : un virement d'épargne sort bien
- * du compte. Mais l'écran demandait le sens, si bien que mettre 200 € de côté
- * passait par « Dépense » et allait chercher « Livrets » entre les courses et
- * le carburant. On ne dépense pas son épargne, on la déplace — et l'épargne a
- * donc sa position, d'où l'écran déduit le sens.
+ * Ils vivent ici et non dans le formulaire : celui-ci décrit une opération, il
+ * n'a pas à savoir qu'une échéance peut faire demi-tour. Ce sont d'ailleurs les
+ * seuls écarts entre les deux portes qui subsistent, et ils ne tiennent pas à
+ * la porte mais à ce qu'on a sous les yeux — une entrée existante.
  */
-const NATURES = [
-  { value: 'expense' as const, label: fr.entry.natureExpense },
-  { value: 'income' as const, label: fr.entry.natureIncome },
-  { value: 'saving' as const, label: fr.entry.natureSaving },
-]
-
-/**
- * Les deux sens d'un mouvement d'épargne. Le second n'existait pas : on pouvait
- * verser sur un livret, jamais y reprendre — l'écran n'offrait alors que des
- * catégories de revenus, et un retrait de livret n'en est pas un.
- */
-const MOVEMENTS = [
-  { value: 'out' as const, label: fr.entry.savingIn },
-  { value: 'in' as const, label: fr.entry.savingOut },
-]
-
-const RHYTHMS = [
-  { value: 'once' as const, label: fr.entry.once },
-  { value: 'recurring' as const, label: fr.entry.recurring },
-]
-
-/**
- * La périodicité vit dans le brouillon, mais pas sa date de départ : c'est
- * `date` qui la porte. Une dépense qu'on bascule en récurrence a déjà dit
- * quand elle a lieu, et deux champs de date pour une seule réponse feraient
- * douter de laquelle compte.
- */
-type Draft = Omit<PeriodDraft, 'startedOn'> & {
-  amountText: string
-  /** Ce qu'on enregistre. Le sens en découle, sauf en épargne. */
-  nature: EntryNature
-  direction: Direction
-  categoryId: string
-  date: ISODate
-  label: string
-  memberId: string
-  /** `undefined` = la règle de partage tranche. */
-  shared: boolean | undefined
-  recurring: boolean
-  /**
-   * Récurrence à montant variable. Sans effet sur une saisie ponctuelle : un
-   * fait a toujours un montant, c'est la règle qui peut ne pas en fixer.
-   */
-  variable: boolean
-  note: string
-}
-
-const periodDraftOf = (draft: Draft): PeriodDraft => ({ ...draft, startedOn: draft.date })
-
-function initial(
-  entry: Entry | null,
-  defaultDate: ISODate,
-  defaultDirection: Direction,
-  defaultNature: EntryNature,
-  isSaving: (categoryId: string) => boolean,
-): Draft {
-  const date = entry?.date ?? defaultDate
-  const { startedOn: _unused, ...period } = monthlyDraftFrom(date)
-  const direction = entry?.direction ?? defaultDirection
-  return {
-    ...period,
-    amountText: entry ? toAmountInput(entry.amount) : '',
-    /* En reprise, la nature se relit sur la catégorie plutôt que d'être
-       stockée : elle est déjà dans la donnée, et un second champ finirait par
-       en diverger. */
-    nature:
-      entry === null
-        ? defaultNature
-        : isSaving(entry.categoryId)
-          ? 'saving'
-          : direction === 'in'
-            ? 'income'
-            : 'expense',
-    direction,
-    categoryId: entry?.categoryId ?? '',
-    date,
-    label: entry?.label ?? '',
-    memberId: entry?.memberId ?? '',
-    shared: entry?.shared,
-    recurring: false,
-    variable: false,
-    note: entry?.note ?? '',
-  }
-}
-
-/** Le titre suit ce qu'on enregistre : on n'ajoute pas « une dépense » de
- *  2 300 € de salaire, ni « une dépense » de 200 € versés sur un livret. */
-function titleFor(entry: Entry | null, nature: EntryNature, recurring: boolean): string {
-  if (nature === 'saving') return entry === null ? fr.entry.addSaving : fr.entry.editSaving
-  if (entry === null) {
-    if (recurring) return fr.recurrences.add
-    return nature === 'income' ? fr.entry.addIn : fr.entry.addOut
-  }
-  return nature === 'income' ? fr.entry.editIn : fr.entry.editOut
-}
-
-/** Et la confirmation aussi : annoncer « Dépense ajoutée » après un salaire
- *  ferait douter de ce qui vient d'être enregistré. */
-const TOAST = {
-  added: { in: fr.entry.addedIn, out: fr.entry.addedOut, saving: fr.entry.addedSaving },
-  updated: { in: fr.entry.updatedIn, out: fr.entry.updatedOut, saving: fr.entry.updatedSaving },
-  removed: { in: fr.entry.removedIn, out: fr.entry.removedOut, saving: fr.entry.removedSaving },
-} as const
-
-/** La clé du toast : l'épargne parle d'elle-même, les deux autres du sens. */
-const toastKey = (nature: EntryNature, direction: Direction): 'in' | 'out' | 'saving' =>
-  nature === 'saving' ? 'saving' : direction
-
-/**
- * Les mots de l'écran suivent ce qu'il enregistre.
- *
- * Basculé en récurrence, il ne pose plus un fait mais une règle — et il le
- * disait à moitié : le titre changeait, les phrases restaient celles d'une
- * entrée. « Donne un libellé à cette entrée » sous un écran qui annonce
- * « Ajouter une récurrence », et un exemple de libellé (« Courses ») qui est
- * précisément ce qu'on ne saisit pas en récurrent. Les deux jeux existaient
- * déjà, chacun sur sa porte ; il n'en manquait que le choix.
- */
-const WORDS = {
-  once: {
-    labelPlaceholder: fr.entry.labelPlaceholder,
-    labelRequired: fr.entry.labelRequired,
-    memberRequired: fr.entry.memberRequired,
-  },
-  recurring: {
-    labelPlaceholder: fr.recurrences.form.labelPlaceholder,
-    labelRequired: fr.recurrences.form.labelRequired,
-    memberRequired: fr.recurrences.form.memberRequired,
-  },
-} as const
-
-/**
- * Formulaire court du cahier §4.4 : montant, catégorie, date, libellé, membre.
- * Une saisie ponctuelle est créée directement en `confirmed`.
- *
- * C'est un écran plein, pas une feuille : le formulaire tient d'un seul tenant,
- * sans rien à faire glisser ni couche à refermer pour revenir au mois.
- */
-function EntryForm({
-  entry,
-  defaultDate,
-  defaultDirection,
-  defaultNature,
-  onDone,
-}: {
-  entry: Entry | null
-  defaultDate: ISODate
-  defaultDirection: Direction
-  defaultNature: EntryNature
-  onDone: () => void
-}) {
-  const members = useMembers()
-  const kindOf = useKindOf()
-  const [draft, setDraft] = useState<Draft>(() =>
-    initial(entry, defaultDate, defaultDirection, defaultNature, (id) => kindOf(id) === 'saving'),
-  )
-  const [showErrors, setShowErrors] = useState(false)
-  const [confirmingRemoval, setConfirmingRemoval] = useState(false)
-  const guard = useLeaveGuard(draft, onDone)
-
+function EntryActions({ entry, onDone }: { entry: Entry; onDone: () => void }) {
   /* Ce qui peut redevenir « prévu » : une échéance de récurrence déjà
-     confirmée, et rien d'autre. */
-  const unconfirmable =
-    entry !== null && entry.status === 'confirmed' && entry.recurrenceId !== undefined
-      ? entry
-      : null
-
-  const words = draft.recurring ? WORDS.recurring : WORDS.once
-
-  const amount = parseAmount(draft.amountText)
-  /* Une ligne qui n'entre pas dans les charges communes doit être à quelqu'un :
-     sans propriétaire, elle n'apparaîtrait dans le mois de personne. Le champ
-     ne s'exige évidemment que s'il y a quelqu'un à désigner. */
-  const needsMember =
-    members.length > 0 &&
-    memberRequired(draft.direction, kindOf(draft.categoryId), draft.memberId, draft.shared)
-  /* Le montant reste exigé même sur une récurrence variable, et ce n'est pas
-     une entorse : ici il ne chiffre pas la règle mais l'échéance du jour, celle
-     qu'on vient de payer. C'est l'écran des récurrences, où rien n'est encore
-     tombé, qui peut s'en passer. */
-  const errors = {
-    amount: amount === null || amount <= 0 ? fr.entry.amountRequired : undefined,
-    category: draft.categoryId === '' ? fr.entry.categoryRequired : undefined,
-    label: draft.label.trim() === '' ? words.labelRequired : undefined,
-    member: needsMember ? words.memberRequired : undefined,
-  }
-  const shown = showErrors
-    ? errors
-    : { amount: undefined, category: undefined, label: undefined, member: undefined }
-
-  const patch = (next: Partial<Draft>): void => {
-    setDraft((current) => {
-      // Changer la date réaligne les ancres de périodicité tant que
-      // l'utilisateur ne les a pas lui-même touchées — c'est la même règle que
-      // sur l'écran des récurrences, et ici la date *est* la première échéance.
-      if (next.date !== undefined && next.date !== current.date) {
-        return { ...current, ...next, ...defaultsFrom(next.date) }
-      }
-      return { ...current, ...next }
-    })
-  }
-
-  /** `PeriodFields` parle en `PeriodDraft` ; ici, `startedOn` s'appelle `date`. */
-  const patchPeriod = (next: Partial<PeriodDraft>): void => {
-    const { startedOn, ...rest } = next
-    patch({ ...rest, ...(startedOn === undefined ? {} : { date: startedOn }) })
-  }
-
-  const submit = (): void => {
-    setShowErrors(true)
-    if (Object.values(errors).some((error) => error !== undefined)) return
-    if (amount === null) return
-
-    const common = {
-      label: draft.label.trim(),
-      categoryId: draft.categoryId,
-      ...(draft.memberId === '' ? {} : { memberId: draft.memberId }),
-      direction: draft.direction,
-      ...(draft.shared === undefined ? {} : { shared: draft.shared }),
-      ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
-    }
-
-    // Basculé en récurrence, l'écran ne pose plus un fait mais une règle. Elle
-    // produit ses échéances dans la foulée, et celle du jour saisi part déjà
-    // confirmée : l'utilisateur vient de dire qu'elle a eu lieu.
-    if (entry === null && draft.recurring) {
-      addRecurrencePaidOn(
-        {
-          ...common,
-          // Une règle variable ne fixe aucun montant ; l'échéance du jour, si.
-          amount: draft.variable ? null : amount,
-          /* Et ce montant-là devient son « montant habituel » : c'est la seule
-             observation qu'on ait, et le seul chiffre qui resterait à la règle
-             si l'entrée qu'on vient de créer venait à être supprimée. Toute
-             échéance chiffrée reprend aussitôt le dessus (voir `amountOn`). */
-          ...(draft.variable ? { estimate: amount } : {}),
-          period: periodOf(periodDraftOf(draft)),
-          startedOn: draft.date,
-        },
-        draft.date,
-        amount,
-      )
-      toast(fr.recurrences.added)
-      onDone()
-      return
-    }
-
-    /* Reprendre une échéance prévue pour en corriger le montant ne la confirme
-       pas : modifier n'est pas confirmer, et la confirmation a son geste. */
-    const payload = { ...common, amount, date: draft.date, status: entry?.status ?? 'confirmed' }
-    if (entry === null) {
-      addEntry(payload)
-      toast(TOAST.added[toastKey(draft.nature, draft.direction)])
-    } else {
-      replaceEntry(entry.id, payload)
-      toast(TOAST.updated[toastKey(draft.nature, draft.direction)])
-    }
-    onDone()
-  }
+     confirmée, et rien d'autre. Confirmer n'est pas un aller simple, mais une
+     saisie ponctuelle est un fait, jamais une prévision en attente — elle se
+     corrige ou se supprime. Pas de confirmation, le geste se refait d'un clic. */
+  if (entry.status !== 'confirmed' || entry.recurrenceId === undefined) return null
 
   return (
-    <div className="flex max-w-xl flex-col gap-5">
-      <PageTitle title={titleFor(entry, draft.nature, draft.recurring)} onBack={guard.request} />
+    <Button
+      variant="secondary"
+      onClick={() => {
+        unconfirmEntry(entry.id)
+        toast(fr.month.unconfirmed)
+        onDone()
+      }}
+    >
+      {fr.month.unconfirm}
+    </Button>
+  )
+}
 
-      <form
-        id="entry-form"
-        onSubmit={(event) => {
-          event.preventDefault()
-          submit()
+function RemoveEntry({ entry, onDone }: { entry: Entry; onDone: () => void }) {
+  const [confirming, setConfirming] = useState(false)
+  const kindOf = useKindOf()
+  const saving = kindOf(entry.categoryId) === 'saving'
+  const removed = saving
+    ? fr.entry.removedSaving
+    : entry.direction === 'in'
+      ? fr.entry.removedIn
+      : fr.entry.removedOut
+
+  return (
+    <div className="border-t border-border pt-4">
+      <Button
+        variant="ghost"
+        onClick={() => {
+          setConfirming(true)
         }}
       >
-        <Tile className="gap-4">
-          <div className="flex flex-wrap gap-2">
-            <Segmented
-              options={NATURES}
-              value={draft.nature}
-              onChange={(nature) => {
-                /* Changer de nature vide la catégorie : les listes ne se
-                   recouvrent pas, et une catégorie de charge restée en place
-                   sur une saisie d'épargne serait enregistrée telle quelle.
-                   L'épargne arrive en versement — c'est le geste courant ; on
-                   n'y reprend qu'exceptionnellement. */
-                patch({
-                  nature,
-                  direction: nature === 'income' ? 'in' : 'out',
-                  categoryId: '',
-                })
-              }}
-              label={fr.entry.nature}
-            />
-
-            {/* Les deux sens d'un mouvement d'épargne. Ailleurs, le sens
-                découle de la nature et n'a pas à être demandé. */}
-            {draft.nature === 'saving' && (
-              <Segmented
-                options={MOVEMENTS}
-                value={draft.direction}
-                onChange={(direction) => {
-                  patch({ direction })
-                }}
-                label={fr.entry.savingMovement}
-              />
-            )}
-
-            {/* Seulement à la création. Convertir après coup une dépense passée
-                en récurrence — ou l'inverse — réécrirait un historique, et
-                c'est une autre histoire que celle de cet écran. */}
-            {entry === null && (
-              <Segmented
-                options={RHYTHMS}
-                value={draft.recurring ? 'recurring' : 'once'}
-                onChange={(rhythm) => {
-                  patch({ recurring: rhythm === 'recurring' })
-                }}
-                label={fr.entry.rhythm}
-              />
-            )}
-          </div>
-
-          {/* Fixe ou variable — la question de l'écran des récurrences, posée
-              ici avec les mêmes mots et au même endroit, juste au-dessus du
-              montant qu'elle qualifie. Sans elle, cette porte-là ne savait
-              poser que des règles à montant fixe : ni salaire, ni facture
-              d'électricité, alors qu'elle crée le même objet que l'autre. */}
-          {draft.recurring && (
-            <AmountKindField
-              variable={draft.variable}
-              onChange={(variable) => {
-                patch({ variable })
-              }}
-            />
-          )}
-
-          <Field
-            label={fr.entry.amount}
-            required
-            {...(draft.recurring && draft.variable ? { hint: fr.entry.variableAmountHint } : {})}
-            {...(shown.amount ? { error: shown.amount } : {})}
-          >
-            {(id, describedBy) => (
-              <AmountInput
-                id={id}
-                aria-describedby={describedBy}
-                value={draft.amountText}
-                invalid={Boolean(shown.amount)}
-                placeholder="0,00"
-                autoFocus
-                onChange={(e) => {
-                  patch({ amountText: e.target.value })
-                }}
-              />
-            )}
-          </Field>
-
-          <Field label={fr.entry.category} required {...(shown.category ? { error: shown.category } : {})}>
-            {(id, describedBy) => (
-              <CategorySelect
-                id={id}
-                aria-describedby={describedBy}
-                direction={draft.direction}
-                kinds={kindsOfNature(draft.nature)}
-                value={draft.categoryId}
-                onChange={(e) => {
-                  patch({ categoryId: e.target.value })
-                }}
-              />
-            )}
-          </Field>
-
-          {/* Un seul champ de date, dont le libellé suit le rythme : en
-              récurrence, la date saisie est la première échéance. */}
-          <Field
-            label={draft.recurring ? fr.entry.firstDate : fr.entry.date}
-            required
-            {...(draft.recurring ? { hint: fr.entry.recurringHint } : {})}
-          >
-            {(id, describedBy) => (
-              <TextInput
-                id={id}
-                aria-describedby={describedBy}
-                type="date"
-                value={draft.date}
-                onChange={(e) => {
-                  if (e.target.value !== '') patch({ date: e.target.value })
-                }}
-              />
-            )}
-          </Field>
-
-          {draft.recurring && (
-            <PeriodFields draft={periodDraftOf(draft)} patch={patchPeriod} withStart={false} />
-          )}
-
-          <Field label={fr.entry.label} required {...(shown.label ? { error: shown.label } : {})}>
-            {(id, describedBy) => (
-              <TextInput
-                id={id}
-                aria-describedby={describedBy}
-                value={draft.label}
-                invalid={Boolean(shown.label)}
-                placeholder={words.labelPlaceholder}
-                maxLength={60}
-                onChange={(e) => {
-                  patch({ label: e.target.value })
-                }}
-              />
-            )}
-          </Field>
-
-          {members.length > 0 && (
-            /* La phrase sert d'aide tant qu'on n'a pas essayé d'enregistrer,
-               puis d'erreur : c'est la même, et elle dit pourquoi ce champ,
-               facultatif ailleurs, ne l'est pas ici. */
-            <Field
-              label={fr.entry.member}
-              {...(needsMember
-                ? { required: true, hint: fr.entry.memberRequired }
-                : { optional: true })}
-              {...(shown.member ? { error: shown.member } : {})}
-            >
-              {(id, describedBy) => (
-                <Select
-                  id={id}
-                  aria-describedby={describedBy}
-                  value={draft.memberId}
-                  invalid={Boolean(shown.member)}
-                  onChange={(e) => {
-                    patch(memberPatch(e.target.value))
-                  }}
-                >
-                  <option value="">{fr.shell.everyone}</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-          )}
-
-          {/* `SharedField` décide seul de son affichage : il ne se montre que
-              sur une sortie de nature charge ou dette. L'épargne et le revenu
-              n'ont donc rien à écarter ici — ils tombent sous la même règle,
-              au même endroit, pour la même raison. */}
-          <SharedField
-            categoryId={draft.categoryId}
-            memberId={draft.memberId}
-            value={draft.shared}
-            onChange={(shared) => {
-              patch({ shared })
-            }}
-          />
-
-          {/* La note se lit sur la ligne du mois et se cherche depuis
-              l'historique ; elle survivait à une reprise et partait bien à
-              l'enregistrement — mais aucun écran de saisie ne permettait d'en
-              écrire une. Elle est là où le formulaire de récurrence la pose
-              déjà, en dernier : c'est le champ dont on se passe. */}
-          <Field label={fr.entry.note} optional>
-            {(id) => (
-              <TextInput
-                id={id}
-                value={draft.note}
-                placeholder={fr.entry.notePlaceholder}
-                maxLength={140}
-                onChange={(e) => {
-                  patch({ note: e.target.value })
-                }}
-              />
-            )}
-          </Field>
-        </Tile>
-      </form>
-
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit" form="entry-form">
-          {fr.common.save}
-        </Button>
-        <Button variant="secondary" onClick={guard.request}>
-          {fr.common.cancel}
-        </Button>
-        {/* Confirmer n'est pas un aller simple, et seule une échéance peut
-            faire demi-tour : une saisie ponctuelle est un fait, jamais une
-            prévision en attente — elle se corrige ou se supprime. Pas de
-            confirmation, le geste se refait d'un clic. */}
-        {unconfirmable !== null && (
-          <Button
-            variant="secondary"
-            onClick={() => {
-              unconfirmEntry(unconfirmable.id)
-              toast(fr.month.unconfirmed)
-              onDone()
-            }}
-          >
-            {fr.month.unconfirm}
-          </Button>
-        )}
-      </div>
-
-      {/* La suppression ne se mêle pas aux deux boutons qui closent la saisie. */}
-      {entry !== null && (
-        <div className="border-t border-border pt-4">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setConfirmingRemoval(true)
-            }}
-          >
-            {fr.entry.remove}
-          </Button>
-          <ConfirmDialog
-            open={confirmingRemoval}
-            title={fr.entry.remove}
-            steps={[{ question: fr.entry.removeConfirm, action: fr.common.delete }]}
-            onCancel={() => {
-              setConfirmingRemoval(false)
-            }}
-            onConfirm={() => {
-              setConfirmingRemoval(false)
-              undoable(TOAST.removed[toastKey(draft.nature, entry.direction)], () => {
-                removeEntry(entry.id)
-              })
-              onDone()
-            }}
-          />
-        </div>
-      )}
-
-      <ConfirmDialog {...guard.dialog} />
+        {fr.entry.remove}
+      </Button>
+      <ConfirmDialog
+        open={confirming}
+        title={fr.entry.remove}
+        steps={[{ question: fr.entry.removeConfirm, action: fr.common.delete }]}
+        onCancel={() => {
+          setConfirming(false)
+        }}
+        onConfirm={() => {
+          setConfirming(false)
+          undoable(removed, () => {
+            removeEntry(entry.id)
+          })
+          onDone()
+        }}
+      />
     </div>
   )
 }
 
 /**
  * `/depense` pour une saisie neuve, `/depense/:id` pour en reprendre une.
+ *
+ * La page ne fait plus que trois choses : retrouver ce qu'on reprend, poser les
+ * valeurs initiales du formulaire — nature présélectionnée, rythme ponctuel —
+ * et savoir où revenir. Le formulaire, lui, est celui de l'écran des
+ * récurrences, au champ près : c'est le même geste.
+ *
  * Le paramètre `date` permet au calendrier d'ouvrir la saisie sur le jour
  * sélectionné plutôt que sur le premier du mois.
  */
@@ -606,13 +113,22 @@ export function EntryPage() {
   const defaultDate = asked !== null && isValidISO(asked) ? asked : defaultDateFor(ym)
 
   return (
-    <EntryForm
+    <OperationForm
       key={entry?.id ?? 'new'}
-      entry={entry}
-      defaultDate={defaultDate}
-      defaultDirection={directionFromParam(params.get(DIRECTION_PARAM))}
-      defaultNature={natureFromParam(params.get(NATURE_PARAM), params.get(DIRECTION_PARAM))}
+      operation={entry === null ? null : { kind: 'entry', entry }}
+      defaults={{
+        nature: natureFromParam(params.get(NATURE_PARAM), params.get(DIRECTION_PARAM)),
+        direction: directionFromParam(params.get(DIRECTION_PARAM)),
+        date: defaultDate,
+        recurring: false,
+      }}
       onDone={goBack}
+      {...(entry === null
+        ? {}
+        : {
+            actions: <EntryActions entry={entry} onDone={goBack} />,
+            footer: <RemoveEntry entry={entry} onDone={goBack} />,
+          })}
     />
   )
 }

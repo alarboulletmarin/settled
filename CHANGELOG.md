@@ -12,37 +12,46 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
-### Corrigé — les deux portes d'une récurrence ne posaient pas les mêmes questions
+### Modifié — un seul formulaire de saisie, plusieurs états initiaux
 
-Une récurrence se crée de deux endroits — l'onglet « Récurrences », et l'écran de
-saisie basculé sur « Récurrence ». Les deux fabriquent le même objet ; seul le
-premier savait le décrire en entier.
+Décrire une dépense de ce matin et décrire un loyer mensuel sont le même geste à
+une case près, celle qui dit « ça se répète ». Il y en avait pourtant deux : un
+formulaire d'entrée, un formulaire de récurrence. Ils avaient donc divergé —
+ordre des champs, libellés, messages, champs présents d'un côté et absents de
+l'autre — et l'utilisateur pouvait deviner par quel bouton il était arrivé.
 
-- **« Montant fixe » ou « montant variable » manquait** à la saisie. Le modèle
-  porte les deux depuis toujours, et l'écran des récurrences pose la question
-  depuis toujours ; par cette porte-là, une facture d'électricité ou un salaire
-  qui varie étaient simplement inatteignables. La bascule y est désormais, au
-  même endroit et avec les mêmes mots — une seule écriture, partagée.
-- **Le montant reste exigé** même en variable, et ce n'est pas une entorse : ici
-  il ne chiffre pas la règle mais l'échéance du jour, celle qu'on vient de payer.
-  C'est elle qui donne son premier chiffre à la règle, et le champ le dit.
-- **Une échéance payée d'avance porte le montant payé.** Elle sortait à zéro dès
-  que la règle n'en fixait aucun — annoncée « payée », pour rien.
+Il n'en reste qu'un, et les portes ne transmettent que des valeurs initiales :
+nature présélectionnée et rythme **Ponctuel** depuis « Ajouter une dépense /
+un revenu / une épargne », rythme **Récurrence** depuis l'onglet Récurrences.
+Rien n'y enferme non plus : arrivé par « Ajouter une récurrence » pour constater
+qu'il s'agit d'un achat unique, un doigt suffit.
+
+- **Trois choix successifs** en tête : Dépense / Revenu / Épargne, Ponctuel /
+  Récurrence, puis Montant fixe / Montant variable — ce dernier seulement en
+  récurrence, où la question existe. Ensuite, les champs communs aux deux
+  rythmes : montant, catégorie, libellé, membre, charge commune, note.
+- **« Montant variable » devient atteignable depuis la saisie**, où il manquait :
+  une facture d'électricité ou un salaire qui varie ne s'y saisissaient pas, bien
+  que le modèle les porte depuis toujours.
 - **Le champ « Note » manquait à toute la saisie**, ponctuelle comprise : la note
-  se lit sur la ligne du mois et se cherche depuis l'historique, elle survivait à
-  une reprise, elle partait bien à l'enregistrement — et aucun écran ne
-  permettait d'en écrire une.
-- **Les mots suivent ce qu'on enregistre.** « Donne un libellé à cette entrée »
-  s'affichait sous un écran intitulé « Ajouter une récurrence », et l'exemple de
-  libellé proposé était « Courses » — ce qu'on ne saisit précisément pas en
-  récurrent.
-- **« les suivantes arrivent à confirmer chaque mois »** était écrit en dur sous
-  un champ qui propose aussi la semaine, le trimestre et l'année : la phrase
-  mentait dès qu'on choisissait autre chose qu'une mensuelle.
-- **L'écran des récurrences dit à son tour ce qu'il advient de la première
-  échéance** — elle arrive à confirmer, là où la saisie l'enregistre payée.
-  C'est la seule différence qui reste entre les deux portes, et elle est
-  maintenant écrite des deux côtés.
+  se lit sur la ligne du mois, se cherche depuis l'historique et survivait à une
+  reprise, mais aucun écran ne permettait d'en écrire une.
+- **La première échéance ne dépend plus de la porte**, mais de la seule question
+  qui compte : a-t-elle eu lieu ? Payée si elle est datée d'aujourd'hui ou
+  d'avant et que le montant est fixe ; à confirmer si elle est à venir, ou si la
+  règle est variable — la marquer payée l'enregistrerait à une supposition.
+  L'écran le dit sous le champ de date, avant l'enregistrement.
+- **Le titre est « Ajouter une opération »** à la création : nature et rythme se
+  changent d'un doigt, et « Ajouter une récurrence » s'affichait déjà au-dessus
+  d'un formulaire qu'un seul geste ramenait au ponctuel. C'est le bouton qui
+  nomme ce qui va être créé — « Ajouter l'opération », « Ajouter la récurrence ».
+  En reprise, plus rien ne bouge et le titre redevient précis.
+- **Le jour du mois se préremplit depuis la première échéance** : « le 1er mars »
+  répond déjà à « quel jour du mois ». Il reste modifiable.
+- **Un seul jeu de mots.** « Donne un libellé à cette entrée » s'affichait sous
+  un écran intitulé « Ajouter une récurrence » ; « les suivantes arrivent à
+  confirmer chaque mois » était écrit en dur sous un champ qui propose aussi la
+  semaine, le trimestre et l'année.
 
 ### Modifié — les portes de saisie deviennent un menu
 

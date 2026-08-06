@@ -188,7 +188,7 @@ Le catalogue se **filtre par libellé**. Quarante-six catégories sous onze fami
 
 ### 4.2 Récurrences
 
-- Création : libellé, catégorie, sens, périodicité, jour d'échéance, montant fixe ou « variable », membre selon la même règle que la saisie ponctuelle (§4.7 ter). Une récurrence pose une échéance par période : sans propriétaire ni partage, elle creuserait le trou à chaque fois.
+- Création et reprise : **le formulaire de saisie du §4.4**, ouvert avec le rythme réglé sur « Récurrence ». Pas un second écran — c'est le même objet qu'on décrit, et deux formulaires pour un objet finissent toujours par ne plus poser les mêmes questions. Ses champs, ses règles et ses mots sont donc ceux du §4.4, y compris « membre » (§4.7 ter) : une récurrence pose une échéance par période, si bien que sans propriétaire ni partage, elle creuserait le trou à chaque fois.
 - Périodicités : hebdomadaire, mensuelle, trimestrielle, annuelle — et **un intervalle sur chacune des trois unités** : toutes les *n* semaines, tous les *n* mois, tous les *n* ans. Le modèle porte un `every` sur les trois depuis toujours ; le formulaire n'en proposait un que sur les mois, si bien qu'une quinzaine — le rythme d'une paie sur deux — ne se saisissait pas, et qu'une périodicité importée que le formulaire ne savait pas montrer se faisait **réécrire à sa première reprise**, en silence : un écran renvoie l'état complet de ce qu'il montre (§3), et ce qu'il ne montre pas s'efface.
 - Le jour d'échéance est **borné, jamais reporté** : une mensuelle au 31 tombe le 31 janvier, le 28 février, puis de nouveau le 31 mars. Saisir 31 est donc la façon de dire « le dernier jour du mois », et les écrans le disent avec ces mots-là plutôt que d'annoncer « le 31 » sur une échéance qui tombe le 28.
 - Liste triée par prochaine échéance, avec le coût mensuel équivalent et le coût annuel.
@@ -219,11 +219,24 @@ L'opération est idempotente — une échéance est reconnue à sa paire récurr
 
 Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
 
-### 4.4 Saisie ponctuelle
+### 4.4 Saisie
 
-Écran plein, avec son URL. Formulaire court : sens, montant, catégorie, date, libellé, membre, note. Créée directement en `confirmed`.
+**Un seul formulaire, plusieurs états initiaux.** Décrire une dépense de ce matin et décrire un loyer mensuel sont le même geste à une case près, celle qui dit « ça se répète ». Il y en avait pourtant deux — un pour l'`Entry`, un pour la `Recurrence` — et ils avaient nécessairement divergé : ordre des champs différent, libellés et messages différents, champs présents d'un côté et absents de l'autre, une correction sur deux qui n'atteignait qu'une moitié des utilisateurs. Deux formulaires pour un objet, c'est laisser croire qu'il existe deux sortes de récurrences.
 
-La **note** ferme un aller sans retour : `Entry.note` se lit sur la ligne du mois (§4.4 bis), se cherche depuis l'historique et survit à une reprise, mais aucun écran ne permettait d'en écrire une — elle n'entrait dans le document que par un import. Elle est en dernier, comme sur la fiche d'une récurrence : c'est le champ dont on se passe.
+Il n'en reste qu'un. Les portes d'entrée ne transmettent **que des valeurs initiales**, jamais un formulaire différent :
+
+| Porte | Nature | Rythme |
+| --- | --- | --- |
+| Dépense / Revenu / Épargne | présélectionnée | **Ponctuel** |
+| Récurrences → Ajouter | Dépense | **Récurrence** |
+
+Rien à l'écran ne dit par où l'on est passé — mêmes champs, mêmes mots, mêmes espacements, mêmes comportements. Et rien n'y enferme : arrivé par « Ajouter une récurrence » pour constater qu'il s'agit d'un achat unique, un doigt suffit, sans ressortir chercher l'autre porte.
+
+Écran plein, avec son URL. Trois choix successifs, en tête : **Dépense / Revenu / Épargne**, puis **Ponctuel / Récurrence**, puis — seulement en récurrence, où la question existe — **Montant fixe / Montant variable**. Puis les champs communs aux deux rythmes : montant, catégorie, libellé, membre, charge commune, note. Le rythme n'ajoute qu'une chose : la **date** devient la **première échéance**, et la périodicité s'affiche avec ce qu'elle demande.
+
+Le **titre** ne nomme donc plus ce qu'on croit enregistrer — « Ajouter une opération », à la création, quelles que soient les bascules. Un titre qui suivrait les six combinaisons donnerait l'impression de changer d'écran sans bouger, et « Ajouter une récurrence » s'affichait déjà au-dessus d'un formulaire qu'un seul geste ramenait au ponctuel. C'est le **bouton** qui nomme ce qui va être créé — « Ajouter l'opération », « Ajouter la récurrence » : le dernier endroit où le dire, et le seul qui ne change plus rien après. En reprise, en revanche, ni la nature ni le rythme ne bougent plus, et le titre redevient précis.
+
+La **note** ferme un aller sans retour : `Entry.note` se lit sur la ligne du mois (§4.4 bis), se cherche depuis l'historique et survit à une reprise, mais aucun écran ne permettait d'en écrire une — elle n'entrait dans le document que par un import. Elle est en dernier : c'est le champ dont on se passe.
 
 Le membre est **facultatif tant que le partage prend la ligne en charge, obligatoire dès qu'il ne la prend pas** — voir « à quelqu'un, ou à tout le monde » en §4.7 ter. Le champ le dit à l'ouverture, avec la raison, et pas seulement après un échec d'enregistrement.
 
@@ -233,15 +246,17 @@ En **Épargne**, une seconde bascule dit le mouvement : **Je place** (l'argent q
 
 La case « à partager » ne s'affiche qu'en Dépense, et seulement sur une catégorie de nature `charge` ou `debt` : un versement d'épargne sort du compte mais reste à qui le fait, et un revenu ne se répartit pas davantage — on compare ce que chacun gagne, on ne se le redistribue pas. Ailleurs, la case ne pouvait qu'afficher « non » et proposer un « oui » que le calcul aurait ignoré. Sur « tout le foyer », elle est cochée et verrouillée (§4.7 ter).
 
-Une bascule **Ponctuel / Récurrence** y siège aussi, à la création seulement. En récurrence, l'écran ne pose plus un fait mais une règle : la date saisie devient la première échéance, la périodicité s'affiche, et une `Recurrence` est créée à la place de l'`Entry`. L'échéance du jour saisi part **confirmée** — l'utilisateur vient de dire qu'elle a eu lieu — et les suivantes arrivent prévues. En reprise, la bascule n'apparaît pas : convertir après coup une dépense passée en récurrence réécrirait un historique.
+La bascule **Ponctuel / Récurrence** n'existe qu'à la création. En récurrence, l'écran ne pose plus un fait mais une règle : une `Recurrence` est créée à la place de l'`Entry`. En reprise, la bascule disparaît — convertir après coup une dépense passée en récurrence, ou l'inverse, réécrirait un historique.
 
-Basculé en récurrence, cet écran **pose les mêmes questions que celui des récurrences** (§4.2) — c'est le même objet qu'on crée, et une porte qui n'en décrit qu'une partie en rend l'autre inatteignable. La bascule **montant fixe / variable** y figure donc aussi. Le montant, lui, reste exigé même en variable, et ce n'est pas une exception à la règle du §4.2 : là-bas il chiffre la règle, qui peut n'en fixer aucun ; ici il chiffre l'échéance du jour, qu'on vient de payer. C'est elle qui donne son premier chiffre à une règle variable — elle en devient le montant habituel, et la suite prend le dessus dès qu'une échéance est chiffrée. Une échéance marquée payée d'avance porte donc le montant saisi, et non zéro. Seule la première échéance sépare encore les deux portes — payée ici, à confirmer là-bas — et **les deux écrans le disent**, chacun sous son champ de date.
+**Ce qu'il advient de la première échéance ne dépend pas de la porte, mais de la seule question qui compte : a-t-elle eu lieu ?** Elle part **confirmée** si elle est datée d'aujourd'hui ou d'avant *et* que le montant est fixe — c'est « j'ai payé le loyer, et c'est tous les mois », le geste le plus fréquent de la saisie. Elle part **prévue**, comme les suivantes, si elle est à venir — rien n'a eu lieu — ou si la règle est à montant variable : la marquer payée l'enregistrerait à l'estimation, c'est-à-dire à une supposition. L'écran le dit sous le champ de date, **avant** l'enregistrement : ce qui va se passer ne se découvre pas après coup.
 
-L'ordre des champs, lui, reste propre à chaque écran : celui-ci suit le formulaire court ci-dessus, dont la bascule fait partie, et redistribuer sous le doigt des champs déjà remplis coûterait plus que l'écart qu'il resterait à combler.
+Le **montant** est exigé partout, sauf sur une règle à montant variable où il devient facultatif — il n'y chiffre plus l'opération mais l'ordre de grandeur qu'on lui prête, en attendant la première échéance chiffrée (`Recurrence.estimate`, §4.2). Un chiffre saisi n'est jamais avalé en silence pour autant : zéro ou illisible reste une erreur.
 
-Dépense, revenu et épargne sont trois points d'entrée distincts, côte à côte, sur le mois, sur le bouton flottant comme sur le calendrier : la nature est choisie avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. On ne met pas de côté par « Dépense » — la troisième porte existe partout où les deux premières existent. Titre et confirmation suivent — on n'annonce pas « dépense ajoutée » après un salaire.
+Le **jour du mois** et le **jour de la semaine** se préremplissent depuis la première échéance : « le 1er mars » répond déjà à « quel jour du mois », et le redemander serait poser deux fois la même question. Ils restent modifiables — c'est la date suivante qui les reprend.
 
-La date proposée est aujourd'hui si l'on est dans le mois affiché, sinon le premier de ce mois — et le jour sélectionné quand la saisie part du calendrier.
+Dépense, revenu et épargne sont trois points d'entrée distincts, côte à côte, sur le mois, sur le bouton flottant comme sur le calendrier : la nature est choisie avant d'ouvrir le formulaire, qui s'ouvre déjà réglé. On ne met pas de côté par « Dépense » — la troisième porte existe partout où les deux premières existent. La **confirmation** suit ce qui a été enregistré — on n'annonce pas « dépense ajoutée » après un salaire, ni « dépense ajoutée » après une récurrence.
+
+La date proposée est aujourd'hui si l'on est dans le mois affiché, sinon le premier de ce mois — et le jour sélectionné quand la saisie part du calendrier. La règle vaut pour les deux portes.
 
 ### 4.4 bis Liste du mois
 

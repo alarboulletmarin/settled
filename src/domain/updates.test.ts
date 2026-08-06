@@ -155,45 +155,6 @@ describe('échéance payée d’avance', () => {
     const before = makeData({ recurrences: [monthly] })
     expect(confirmOccurrence(before, 'inconnue', '2026-07-31', sequentialIds())).toBe(before)
   })
-
-  /* Une règle à montant variable n'en porte aucun : l'échéance qu'on annonce
-     « payée » sortait donc à zéro, faute de pouvoir la chiffrer autrement. Le
-     montant vient de l'écran qui l'a saisie. */
-  const variable = makeRecurrence({
-    id: 'r2',
-    amount: null,
-    startedOn: '2026-07-31',
-    period: { unit: 'month', every: 1, anchorDay: 31 },
-  })
-
-  it('chiffre l’échéance payée d’un variable avec le montant donné', () => {
-    const before = makeData({ recurrences: [variable] })
-    const after = confirmOccurrence(before, 'r2', '2026-07-31', sequentialIds(), eur(8750))
-
-    expect(after.entries[0]).toMatchObject({ status: 'confirmed', amount: 8750 })
-  })
-
-  it('chiffre aussi l’échéance déjà posée par la synchronisation', () => {
-    const opened = makeData({
-      recurrences: [variable],
-      months: [{ ym: '2026-07', openedAt: '2026-07-01', closed: false }],
-    })
-    const planned = syncRecurrenceEntries(opened, 'r2', sequentialIds(), '2026-07-01')
-    const after = confirmOccurrence(planned, 'r2', '2026-07-31', sequentialIds('bis'), eur(8750))
-
-    const july = after.entries.filter((e) => e.date === '2026-07-31')
-    expect(july).toHaveLength(1)
-    expect(july[0]).toMatchObject({ status: 'confirmed', amount: 8750 })
-  })
-
-  /* Sans montant, rien ne change : c'est la règle qui chiffre, et le geste de
-     confirmation en bloc du mois n'a rien à dire de plus. */
-  it('laisse le montant de la règle quand l’appelant n’en donne aucun', () => {
-    const before = makeData({ recurrences: [monthly] })
-    const after = confirmOccurrence(before, 'r1', '2026-07-31', sequentialIds())
-
-    expect(after.entries[0]).toMatchObject({ status: 'confirmed', amount: 1399 })
-  })
 })
 
 describe('poser une avance', () => {
