@@ -41,7 +41,9 @@ Restent les surfaces suivantes.
   `src/persistence/validate.ts`.
 - **Fuite de données hors de l'appareil** — toute requête réseau émise avec le
   contenu du foyer serait une faille grave, et par construction il n'en existe
-  aucune.
+  aucune. Une CSP `default-src 'self'` le refuse en plus au niveau du
+  navigateur, y compris si une dépendance était compromise (voir
+  [DEPLOIEMENT.md](docs/DEPLOIEMENT.md#les-en-têtes-de-sécurité)).
 - **Corruption ou perte silencieuse de données** : une migration de schéma ou un
   import qui détruirait un document sans le dire.
 - **Contournement du service worker** menant à servir du code périmé ou modifié.

@@ -12,6 +12,40 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — le navigateur refuse maintenant ce que l'app ne faisait déjà pas
+
+L'app ne demande rien à l'extérieur : aucun `fetch`, aucune ressource tierce,
+les fontes auto-hébergées. Rien ne l'attestait pourtant, et « rien ne sort de
+ton appareil » restait une phrase qu'il fallait croire sur parole — ou vérifier
+en relisant le code. Les réponses portent désormais une **CSP stricte** et trois
+en-têtes qui la complètent : la promesse devient une règle que le navigateur
+applique, et elle tiendrait même si une dépendance npm était compromise.
+
+- **`Content-Security-Policy`** en `default-src 'self'`, avec
+  `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'none'` et
+  `form-action 'none'` — ce dernier parce qu'un formulaire qui partirait par
+  accident emporterait des montants dans une URL.
+- **`X-Content-Type-Options: nosniff`**, **`Referrer-Policy: no-referrer`** et
+  un **`Permissions-Policy`** qui refuse caméra, micro, géolocalisation,
+  capteurs, paiement, partage et Topics. L'app n'en demande aucun.
+- **Le hash `sha256` du script en ligne est calculé, jamais recopié.**
+  `index.html` en contient un — le miroir `localStorage` du thème, qui évite une
+  frame en clair au démarrage. Une empreinte écrite à la main serait fausse au
+  premier caractère changé, et l'app partirait avec une page qui ne s'affiche
+  pas. `npm run csp` la produit depuis le fichier réellement servi.
+- **Un audit qui échoue avant le déploiement, pas après.** `npm run csp:check`
+  — dans `npm run verify`, donc dans la CI — lit la politique telle qu'elle est
+  écrite dans `vercel.json` et l'oppose à `dist/` : scripts en ligne, feuilles,
+  `url()` du CSS, icônes du manifeste, précache du service worker, et les API
+  que `Permissions-Policy` gouverne. Une police Google, une balise `<style>`, un
+  `onclick=` ou un `preconnect` vers un tiers cassent la construction.
+
+Deux concessions, que l'audit a trouvées et que le code seul ne montrait pas :
+`font-src` autorise `data:`, parce que Geist Mono embarque des sous-ensembles en
+base64 — sans quoi toutes les fontes tombaient en repli système, partout, sans
+une erreur ; et `Permissions-Policy` laisse `clipboard-write=(self)`, sans quoi
+le bouton « copier le schéma » s'éteignait en silence.
+
 ### Modifié — un seul formulaire de saisie, plusieurs états initiaux
 
 Décrire une dépense de ce matin et décrire un loyer mensuel sont le même geste à
