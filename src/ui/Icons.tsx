@@ -45,6 +45,7 @@ import { ShieldCheck } from '@phosphor-icons/react/dist/csr/ShieldCheck'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
 import { TrendUp } from '@phosphor-icons/react/dist/csr/TrendUp'
+import { Users } from '@phosphor-icons/react/dist/csr/Users'
 import { UsersThree } from '@phosphor-icons/react/dist/csr/UsersThree'
 import { Wallet } from '@phosphor-icons/react/dist/csr/Wallet'
 import { WarningCircle } from '@phosphor-icons/react/dist/csr/WarningCircle'
@@ -126,6 +127,11 @@ export const CreditsIcon = adapt(Bank)
 export const SplitIcon = adapt(UsersThree)
 export const ToConfirmIcon = adapt(CheckCircle)
 export const EntriesIcon = adapt(ListBullets)
+/* Deux personnes et non une maison : la section qu'il repère s'appelle
+   « Personnes », et l'app ne suppose plus qu'on tienne un foyer. Deux glyphes
+   distincts de `SplitIcon` (trois personnes), qui repère la répartition — un
+   repère qui sert deux fois n'en est plus un (DS §9). */
+export const PeopleIcon = adapt(Users)
 export const HouseholdIcon = adapt(House)
 export const CategoriesIcon = adapt(Tag)
 export const SearchIcon = adapt(MagnifyingGlass)

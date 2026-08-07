@@ -14,26 +14,23 @@ import { OnboardingPage } from './OnboardingPage'
 
 /* Le premier lancement, tel qu'il se présente : rien d'enregistré, statut
    « onboarding ». C'est cette garde-là qui fait que les récurrences posées à la
-   troisième étape n'ont encore aucune échéance — voir `startWith`. */
+   seconde étape n'ont encore aucune échéance — voir `startWith`. */
 function firstLaunch(): void {
   useStore.setState({ status: 'onboarding', data: emptyData(), error: null, ym: currentYm() })
 }
 
 const state = () => useStore.getState()
 
-/** Répond aux deux questions et s'arrête sur la troisième étape. */
-async function answerBoth(names: readonly string[]): Promise<void> {
+/* Aucun nom ne se demande plus : la première étape porte les personnes. Le
+   nom affiché vit dans les réglages, facultatif — il n'a jamais rien décidé, et
+   l'exiger pour continuer était la seule question bloquante de l'app. */
+/** Répond à la première étape et s'arrête sur la seconde. */
+async function answerFirst(names: readonly string[]): Promise<void> {
   render(
     <MemoryRouter>
       <OnboardingPage />
     </MemoryRouter>,
   )
-
-  await userEvent.type(
-    screen.getByLabelText(new RegExp(fr.onboarding.householdLabel)),
-    'Chez nous',
-  )
-  await userEvent.click(screen.getByRole('button', { name: fr.common.next }))
 
   for (const name of names) {
     /* Sans `exact`, « Prénom » attraperait aussi les champs de renommage des
@@ -59,7 +56,7 @@ const fill = async (label: string, amount: string): Promise<void> => {
    chaînes se compareraient sur deux caractères d'espace différents. */
 const spoken = (cents: number): string => formatMoney(money(cents), 'EUR').replace(/\s/g, ' ')
 
-describe('les trois étapes du premier lancement', () => {
+describe('les deux étapes du premier lancement', () => {
   beforeEach(firstLaunch)
 
   afterEach(() => {
@@ -67,7 +64,7 @@ describe('les trois étapes du premier lancement', () => {
   })
 
   it('pose un salaire par personne et un loyer commun, puis ouvre le mois', async () => {
-    await answerBoth(['Alix', 'Camille'])
+    await answerFirst(['Alix', 'Camille'])
 
     await fill(tpl(fr.onboarding.starterSalaryOf, 'Alix'), '2400')
     await fill(tpl(fr.onboarding.starterSalaryOf, 'Camille'), '1850')
@@ -115,8 +112,8 @@ describe('les trois étapes du premier lancement', () => {
     expect(data.months.map((m) => m.ym)).toStrictEqual([ym])
   })
 
-  it('accepte un revenu sans personne à qui l’attribuer — le foyer solo', async () => {
-    await answerBoth([])
+  it('accepte un revenu sans personne à qui l’attribuer — l’usage solo', async () => {
+    await answerFirst([])
 
     await fill(fr.onboarding.starterSalarySolo, '1700')
     await userEvent.click(screen.getByRole('button', { name: fr.onboarding.start }))
@@ -132,7 +129,7 @@ describe('les trois étapes du premier lancement', () => {
      bouton qui la saute est visible. Sans ce test, « facultative » ne serait
      qu'une intention écrite dans un commentaire. */
   it('s’ouvre quand même quand on saute l’étape', async () => {
-    await answerBoth(['Alix'])
+    await answerFirst(['Alix'])
 
     await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
 
@@ -141,7 +138,7 @@ describe('les trois étapes du premier lancement', () => {
   })
 
   it('ignore un champ vide sans retenir les autres', async () => {
-    await answerBoth(['Alix'])
+    await answerFirst(['Alix'])
 
     // Le loyer reste vide, et le salaire passe quand même.
     await fill(tpl(fr.onboarding.starterSalaryOf, 'Alix'), '2400')
@@ -152,7 +149,7 @@ describe('les trois étapes du premier lancement', () => {
   })
 
   it('montre la part de chacun dès que deux revenus et un loyer sont posés', async () => {
-    await answerBoth(['Alix', 'Camille'])
+    await answerFirst(['Alix', 'Camille'])
 
     // Rien encore : l'aperçu dit ce que l'étape débloque plutôt qu'un zéro.
     expect(screen.getByText(fr.onboarding.previewStarterEmpty)).toBeInTheDocument()
@@ -179,11 +176,6 @@ describe('les trois étapes du premier lancement', () => {
     )
     expect(screen.queryByText(fr.onboarding.backup)).not.toBeInTheDocument()
 
-    await userEvent.type(
-      screen.getByLabelText(new RegExp(fr.onboarding.householdLabel)),
-      'Chez nous',
-    )
-    await userEvent.click(screen.getByRole('button', { name: fr.common.next }))
     await userEvent.click(screen.getByRole('button', { name: fr.onboarding.solo }))
 
     expect(screen.getByText(fr.onboarding.backup)).toBeInTheDocument()

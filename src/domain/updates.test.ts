@@ -289,7 +289,7 @@ describe('récurrences', () => {
   })
 
   /* Le formulaire envoie l'état complet de ce qu'il montre : remettre un
-     récurrence à « tout le foyer » doit effacer le membre, pas le laisser. */
+     récurrence à « en commun » doit effacer le membre, pas le laisser. */
   it('rend la récurrence au foyer quand le formulaire n’envoie plus de membre', () => {
     const owned = makeData({
       recurrences: [

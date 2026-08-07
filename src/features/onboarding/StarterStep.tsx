@@ -4,20 +4,20 @@ import { AmountInput, Field } from '@/ui/Field'
 import type { StarterLine } from './starter'
 
 /**
- * Troisième étape : ce qui revient chaque mois. Facultative, et elle le dit.
+ * Seconde étape : ce qui revient chaque mois. Facultative, et elle le dit.
  *
- * Les deux premières questions suffisent à créer un foyer, et le cahier §4.1 a
- * raison de refuser un questionnaire de configuration. Mais « ne rien exiger »
- * et « ne rien proposer » sont deux choses différentes : l'app ne vaut rien
- * tant que les récurrences ne sont pas posées — c'est sa thèse, écrite en
- * première ligne de la présentation —, et rien n'y conduisait. On arrivait sur
- * un tableau de bord à zéro dont le seul geste offert, une dépense ponctuelle,
- * n'amorce aucune prévision.
+ * La question qui précède suffit à démarrer, et le cahier §4.1 a raison de
+ * refuser un questionnaire de configuration. Mais « ne rien exiger » et « ne
+ * rien proposer » sont deux choses différentes : l'app ne vaut rien tant que
+ * les récurrences ne sont pas posées — c'est sa thèse, écrite en première ligne
+ * de la présentation —, et rien n'y conduisait. On arrivait sur un tableau de
+ * bord à zéro dont le seul geste offert, une dépense ponctuelle, n'amorce
+ * aucune prévision.
  *
  * D'où deux lignes, pas dix : un salaire par personne — le seul chiffre qui
- * fasse parler le prorata — et le loyer. Rien n'est obligatoire, un champ vide
- * ne bloque rien, et « Je le ferai plus tard » est un vrai bouton posé à côté
- * du principal, pas un lien qu'il faut chercher.
+ * fasse parler le prorata — et ce qu'on verse pour se loger. Rien n'est
+ * obligatoire, un champ vide ne bloque rien, et « Je le ferai plus tard » est
+ * un vrai bouton posé à côté du principal, pas un lien qu'il faut chercher.
  *
  * Aucun champ de jour : voir `starterRecurrences`.
  */
@@ -49,7 +49,12 @@ export function StarterStep({
 
       <div className="flex flex-col gap-4">
         {lines.map((line, index) => (
-          <Field key={line.key} label={line.label} optional>
+          <Field
+            key={line.key}
+            label={line.label}
+            optional
+            {...(line.hint === undefined ? {} : { hint: line.hint })}
+          >
             {(id) => (
               <AmountInput
                 id={id}

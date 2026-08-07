@@ -1,5 +1,5 @@
 /* ============================================================================
- * Le jeu d'exemple — un foyer complet, pour voir l'app pleine sans rien saisir.
+ * Le jeu d'exemple — un document complet, pour voir l'app pleine sans rien saisir.
  *
  * Une app neuve n'a rien à montrer : pas de courbe, pas de répartition, pas de
  * capital restant dû. Tout ce qui fait l'intérêt du produit demande des mois de
@@ -81,7 +81,7 @@ function counter(): () => string {
   }
 }
 
-/* --- Les règles du foyer --------------------------------------------------*/
+/* --- Les règles --------------------------------------------------*/
 
 /**
  * Les récurrences, définies par leur décalage en mois par rapport au premier
@@ -217,7 +217,7 @@ const RECURRENCES: RecurrenceSeed[] = [
     from: 1,
   },
 
-  /* --- Communication. Les mobiles sont à chacun, l'internet au foyer. */
+  /* --- Communication. Les mobiles sont à chacun, l'internet en commun. */
   {
     id: 'ex-r-mobile-alix',
     label: 'Mobile Alix',
@@ -287,7 +287,7 @@ const RECURRENCES: RecurrenceSeed[] = [
     from: 0,
   },
 
-  /* --- Les deux charges qu'une personne règle mais que le foyer partage : la
+  /* --- Les deux charges qu'une personne règle mais que les deux partagent : la
          case « à partager » est ici une exception à la règle, et c'est elle qui
          fait exister la régularisation du mois suivant. */
   {
@@ -486,7 +486,7 @@ const ONE_OFFS: (AdHocSeed & { at: number })[] = [
     categoryId: 'outings',
     direction: 'out',
     amounts: [145000],
-    note: 'Une semaine à quatre. Personne ne se l’attribue : c’est le foyer.',
+    note: 'Une semaine à quatre. Personne ne se l’attribue : c’est en commun.',
   },
   {
     at: 8,
@@ -535,7 +535,7 @@ const at = <T,>(table: readonly T[], index: number): T => table[index % table.le
 const dayOf = (ym: YearMonth, day: number): ISODate => clampToMonth(ym, day)
 
 /**
- * Un foyer de deux personnes, quinze mois d'historique, le mois courant à
+ * Deux personnes, quinze mois d'historique, le mois courant à
  * moitié confirmé et le suivant déjà prévu.
  */
 export function exampleData(on: ISODate = today()): Data {
@@ -579,7 +579,7 @@ function withCatalogue(data: Data): Data {
     archived: false,
   }
   /* Archiver n'efface rien et se défait : la location longue durée n'a jamais
-     servi à ce foyer, elle sort des listes de saisie sans quitter le document. */
+     servi ici, elle sort des listes de saisie sans quitter le document. */
   return archiveCategory(addCategory(addFamily(data, family), category), 'leasing')
 }
 

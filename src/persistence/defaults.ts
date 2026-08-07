@@ -214,7 +214,7 @@ export function repairedCategory(direction: 'in' | 'out'): Category {
 export function emptyData(): Data {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
-    household: { name: fr.defaults.householdName, members: [] },
+    household: { name: '', members: [] },
     families: defaultFamilies(),
     categories: defaultCategories(),
     recurrences: [],

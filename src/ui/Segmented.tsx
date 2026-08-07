@@ -24,8 +24,8 @@ export type SegmentedProps<T extends string> = {
  * une contradiction. Elle vit à bord perdu dans un bandeau, où une piste peut se
  * donner les quatre pixels de cadre qui logent l'anneau ; une bascule vit dans
  * une tuile, dont la largeur est le cadre lui-même. Et son nombre de positions
- * est connu d'avance, quand la rangée de filtres compte autant de pilules que le
- * foyer a de membres.
+ * est connu d'avance, quand la rangée de filtres compte autant de pilules qu'il
+ * y a de personnes.
  *
  * **Elle annonce un groupe de boutons radio, et se comporte comme tel.** Elle
  * n'en portait que les rôles : chaque position était un arrêt de tabulation, et

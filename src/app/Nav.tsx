@@ -22,9 +22,15 @@ export function Sidebar({ householdName }: { householdName: string }) {
       aria-label={fr.nav.label}
       className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 p-5 lg:flex"
     >
+      {/* Le nom est facultatif — il ne se demande plus au premier lancement.
+          Vide, la seconde ligne ne s'affiche pas plutôt que de tenir une place
+          blanche : le nom de l'app est au-dessus, et il suffit à dire où l'on
+          est. Aucun repli à inventer. */}
       <div className="mb-6 flex flex-col gap-0.5 px-3">
         <span className="t-eyebrow text-muted">{fr.app.name}</span>
-        <span className="t-section truncate">{householdName}</span>
+        {householdName.trim() !== '' && (
+          <span className="t-section truncate">{householdName}</span>
+        )}
       </div>
 
       {NAV_ROUTES.map((route) => {

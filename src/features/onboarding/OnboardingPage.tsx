@@ -2,26 +2,32 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { currentYm } from '@/domain/date'
 import { fr } from '@/i18n/fr'
-import { addMember, addRecurrence, removeMember, renameMember, setHouseholdName } from '@/store/actions'
-import { useCategoryMap, useHouseholdName, useMembers } from '@/store/selectors'
+import { addMember, addRecurrence, removeMember, renameMember } from '@/store/actions'
+import { useCategoryMap, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Tile } from '@/ui/Tile'
-import { HouseholdStep } from './HouseholdStep'
 import { MembersStep } from './MembersStep'
 import { StarterStep } from './StarterStep'
 import { StepProgress } from './StepProgress'
-import { HouseholdPreview, MembersPreview, StarterPreview } from './StepPreview'
+import { MembersPreview, StarterPreview } from './StepPreview'
 import { starterLines, starterRecurrences } from './starter'
 
-const LAST_STEP = 3
+const LAST_STEP = 2
 
 /**
- * Deux questions, une proposition, puis l'app est utilisable. Le jeu de
+ * Une question, une proposition, puis l'app est utilisable. Le jeu de
  * catégories par défaut est déjà posé par le document initial : il n'y a rien
  * à demander de plus.
  *
- * La troisième étape n'est pas une question, c'est une offre — voir
- * `StarterStep`. Les deux premières créent le foyer ; celle-ci lui donne de
+ * Le nom ne se demande plus. Il ouvrait l'onboarding et il était la seule
+ * réponse *exigée* de toute l'app — pour un libellé de barre latérale, que
+ * `Nav` sait très bien laisser vide puisqu'il affiche déjà le nom de l'app
+ * au-dessus. Il vit désormais dans les réglages, facultatif. La question qui
+ * ouvrait l'app demandait par la même occasion à quelqu'un qui vit chez ses
+ * parents de nommer un foyer qui n'est pas le sien.
+ *
+ * La seconde étape n'est pas une question, c'est une offre — voir
+ * `StarterStep`. La première pose les personnes ; celle-ci donne à l'app de
  * quoi parler dès le premier écran, et se saute d'un bouton visible.
  *
  * L'écran ne fait plus que ça. Les trois façons de ne pas commencer par une page
@@ -35,23 +41,20 @@ const LAST_STEP = 3
  * tâche, et c'est elle qui doit tomber sous le pouce.
  */
 export function OnboardingPage() {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
-  const householdName = useHouseholdName()
-  const [draftName, setDraftName] = useState(householdName)
+  const [step, setStep] = useState<1 | 2>(1)
   const members = useMembers()
   const categories = useCategoryMap()
   const finishOnboarding = useStore((s) => s.finishOnboarding)
   const navigate = useNavigate()
 
-  /* Les montants de la troisième étape vivent ici plutôt que dans l'étape :
-     l'aperçu posé à côté les lit à chaque frappe, comme le nom du foyer à la
-     première question, et deux états qui décrivent la même saisie auraient fini
-     par diverger d'un chiffre. */
+  /* Les montants de la seconde étape vivent ici plutôt que dans l'étape :
+     l'aperçu posé à côté les lit à chaque frappe, et deux états qui décrivent
+     la même saisie auraient fini par diverger d'un chiffre. */
   const [amounts, setAmounts] = useState<Record<string, string>>({})
   const lines = useMemo(() => starterLines(members), [members])
 
   /* `replace`, pour que le retour ramène à la présentation et non à un
-     formulaire dont le foyer est déjà créé. Naviguer plutôt que laisser le
+     formulaire dont le document est déjà créé. Naviguer plutôt que laisser le
      filet `*` d'`AppRoutes` rediriger : le filet marcherait, au prix d'un rendu
      intermédiaire à l'URL des questions et d'une animation d'entrée jouée deux
      fois. */
@@ -90,7 +93,7 @@ export function OnboardingPage() {
           ? {}
           : {
               onBack: () => {
-                setStep(step === 3 ? 2 : 1)
+                setStep(1)
               },
             })}
       />
@@ -98,16 +101,6 @@ export function OnboardingPage() {
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
         <Tile>
           {step === 1 && (
-            <HouseholdStep
-              name={draftName}
-              onChange={setDraftName}
-              onSubmit={(name) => {
-                setHouseholdName(name)
-                setStep(2)
-              }}
-            />
-          )}
-          {step === 2 && (
             <MembersStep
               members={members}
               onAdd={(name) => {
@@ -116,11 +109,11 @@ export function OnboardingPage() {
               onRename={renameMember}
               onRemove={removeMember}
               onNext={() => {
-                setStep(3)
+                setStep(2)
               }}
             />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <StarterStep
               lines={lines}
               amounts={amounts}
@@ -133,9 +126,8 @@ export function OnboardingPage() {
           )}
         </Tile>
 
-        {step === 1 && <HouseholdPreview name={draftName} />}
-        {step === 2 && <MembersPreview members={members} />}
-        {step === 3 && <StarterPreview lines={lines} amounts={amounts} members={members} />}
+        {step === 1 && <MembersPreview members={members} />}
+        {step === 2 && <StarterPreview lines={lines} amounts={amounts} members={members} />}
       </div>
 
       <div className="flex flex-col gap-1">

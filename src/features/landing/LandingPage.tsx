@@ -21,9 +21,9 @@ import { RecoveryDoor } from './RecoveryDoor'
 /**
  * La première page de l'app, et sa vitrine.
  *
- * Elle existe parce que l'écran d'arrivée était la question « Comment s'appelle
- * ton foyer ? » : on demandait de répondre avant d'avoir dit ce que l'app suit,
- * où vont les données, ni pourquoi elle vaut la peine d'être remplie.
+ * Elle existe parce que l'écran d'arrivée était une question posée d'emblée :
+ * on demandait de répondre avant d'avoir dit ce que l'app suit, où vont les
+ * données, ni pourquoi elle vaut la peine d'être remplie.
  *
  * Elle vit au-dessus du gate, à une URL stable, et répond donc dans les deux
  * états — c'est ce qui permet de la lier depuis le dépôt, et d'y revenir depuis
@@ -83,7 +83,7 @@ export function LandingPage() {
             doigt — la lecture de la base se compte en dizaines de
             millisecondes, et un libellé qui se corrige se remarque plus qu'une
             rangée qui apparaît. */}
-        {/* Rien non plus quand le document ne se lit pas : « Créer mon foyer »
+        {/* Rien non plus quand le document ne se lit pas : « Créer mon suivi »
             écraserait ce qu'on n'a pas su ouvrir, et le bloc de récupération
             juste dessous porte déjà les quatre recours, dans leur ordre. */}
         {status !== 'loading' && !unreadable && (

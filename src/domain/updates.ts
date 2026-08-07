@@ -254,7 +254,7 @@ export function updateRecurrence(data: Data, id: string, patch: Partial<Recurren
  * Un formulaire n'envoie pas un correctif, il envoie l'état complet de ce qu'il
  * montre : ce qui n'y figure pas, l'utilisateur l'a vidé. Une fusion —
  * `{ ...r, ...patch }` — ne sait pas distinguer « inchangé » d'« effacé », et
- * garde donc en place le membre qu'on vient de remettre à « tout le foyer » ou
+ * garde donc en place le membre qu'on vient de remettre à « en commun » ou
  * la case « à partager » qu'on vient de rendre à la règle. L'écran annonce alors
  * une modification que le document n'a pas prise. La réécriture, elle, efface ce
  * qui a été effacé.

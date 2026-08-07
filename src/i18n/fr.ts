@@ -6,14 +6,14 @@
 export const fr = {
   app: {
     name: 'Tout compte fait',
-    tagline: 'Les finances du foyer, sur ton appareil.',
+    tagline: 'Tes finances, sur ton appareil.',
   },
 
   /* La prose de la présentation n'est pas ici : elle vit dans `i18n/landing.ts`,
      avec la page qui la rend. Même raison que `i18n/legal.ts` — ce fichier-ci
      est importé par presque tous les composants, donc il pèse sur le premier
      chargement de tout le monde, et une page qu'on ne relit pas après avoir
-     créé son foyer n'a aucune raison d'y voyager. Seul son nom de lien reste
+     commencé n'a aucune raison d'y voyager. Seul son nom de lien reste
      ici, en `nav.landing` : « à propos » l'écrit sans charger la page. */
 
   calendarNames: {
@@ -130,18 +130,23 @@ export const fr = {
     quickEntryClose: 'Fermer les portes de saisie',
     quickEntryLabel: 'Portes de saisie',
     filterByMember: 'Filtrer par membre',
-    /* « Tout le monde » sur le filtre, « Tout le foyer » sur la saisie : ce
-       n'est pas la même chose, et une seule chaîne le disait des deux côtés.
-       Ici c'est tout ce qui a eu lieu, le pot et les lignes de chacun ; là-bas
-       c'est une ligne que personne ne porte, donc commune. Le filtre « Commun »
-       rend la différence visible.
+    /* « Tout le monde » sur le filtre, « En commun » sur la saisie : ce n'est
+       pas la même chose, et les deux ont porté la même étiquette. Ici c'est
+       tout ce qui a eu lieu, le pot et les lignes de chacun ; là-bas c'est une
+       ligne que personne ne porte, donc commune — d'où le mot qu'elle partage
+       désormais avec le filtre « Commun » juste en dessous.
        Pas « Tout » non plus : la liste du mois porte déjà une pilule de ce nom,
        et deux « Tout » sur un même écran ne filtrent pas la même chose. */
     all: 'Tout le monde',
     common: 'Commun',
     commonNote:
       'Le pot commun seul, à son montant plein : les charges et les crédits que personne ne s’est attribués, plus ce qui est coché « à partager ». Aucune part n’est calculée ici — chacun verse la sienne sur l’écran Répartition.',
-    everyone: 'Tout le foyer',
+    /* Une ligne que personne ne porte est commune, par la règle même
+       (`defaultShared`) : l'étiquette le dit désormais avec le mot du filtre
+       voisin. Elle a dit « en commun » pendant que le filtre disait « tout
+       le monde » à un écran d'écart, en voulant dire le contraire — l'un est
+       une lecture, l'autre est ce que vaut une ligne sans propriétaire. */
+    everyone: 'En commun',
     /* Les chiffres d'un membre comprennent sa part des charges communes : sans
        elle, chacun se lirait comme s'il vivait sans loyer. La liste des
        échéances, elle, garde les lignes réelles — on confirme une échéance
@@ -149,9 +154,9 @@ export const fr = {
     prorata: 'Chiffres à la part de %s : sa part des charges communes est comprise, au prorata des revenus. Les listes gardent les échéances entières.',
     /* Le membre seul porte 100 % sans qu'aucun revenu soit exigé : « au
        prorata des revenus » serait un mensonge poli, et la vraie information
-       est ailleurs — ses chiffres sont ceux du foyer entier. */
+       est ailleurs — ses chiffres sont ceux de l'ensemble. */
     prorataSolo:
-      'Seul du foyer, %s porte tout le commun : ses chiffres sont ceux du foyer entier. Les listes gardent les échéances entières.',
+      '%s est la seule personne ici : elle porte tout le commun, et ses chiffres sont ceux de l’ensemble. Les listes gardent les échéances entières.',
     prorataMissingOne:
       'Charges communes non réparties, faute de connaître le revenu de %s : seules les lignes à son nom sont comptées.',
     prorataMissingMany:
@@ -274,9 +279,14 @@ export const fr = {
       'Le symbole sous lequel tes montants s’affichent. Rien n’est converti : les chiffres saisis restent les mêmes.',
     aboutLink: 'Le projet, le code et la licence',
 
-    household: 'Foyer',
-    householdName: 'Nom du foyer',
-    householdPlaceholder: 'Maison',
+    household: 'Personnes',
+    /* Le nom ne décrit plus un foyer, il décore un en-tête — et il est
+       facultatif : la barre latérale affiche déjà le nom de l'app au-dessus,
+       et se passe très bien d'une seconde ligne. Il ne se demande donc plus au
+       premier lancement, où il était la seule réponse exigée de toute l'app. */
+    householdName: 'Nom affiché',
+    householdHint: 'En haut de chaque écran. Facultatif.',
+    householdPlaceholder: '',
     members: 'Membres',
     memberAdd: 'Ajouter un membre',
     memberName: 'Prénom',
@@ -286,19 +296,22 @@ export const fr = {
        membre, et « Prénom » seul les annoncerait tous pareil. */
     memberRename: 'Prénom de %s',
     memberRemove: 'Retirer %s',
-    memberRemoved: '%s a été retiré du foyer',
+    memberRemoved: '%s a été retiré·e',
     memberRemoveHint: 'Ses entrées sont conservées, simplement sans étiquette.',
     memberRemoveConfirm:
-      'Ses entrées et ses récurrences repassent au foyer : rien n’est effacé. Retirer %s ?',
-    /* Une avance est toujours à quelqu'un : elle ne peut pas repasser au foyer
+      'Ses entrées et ses récurrences repassent en commun : rien n’est effacé. Retirer %s ?',
+    /* Une avance est toujours à quelqu'un : elle ne peut pas repasser en commun
        comme le reste, donc elle part. C'est la seule chose que ce geste efface,
        et la question ne peut pas la taire — les mensualités déjà revenues sur
        le livret, elles, restent. */
     memberRemoveConfirmAdvanceOne:
-      'Ses entrées et ses récurrences repassent au foyer. Son avance, elle, ne peut appartenir à personne : elle est supprimée, ses mensualités déjà versées restent. Retirer %s ?',
+      'Ses entrées et ses récurrences repassent en commun. Son avance, elle, ne peut appartenir à personne : elle est supprimée, ses mensualités déjà versées restent. Retirer %s ?',
     memberRemoveConfirmAdvances:
-      'Ses entrées et ses récurrences repassent au foyer. Ses %s avances, elles, ne peuvent appartenir à personne : elles sont supprimées, leurs mensualités déjà versées restent. Retirer %s ?',
-    membersEmpty: 'Aucun membre. Le foyer fonctionne très bien en solo.',
+      'Ses entrées et ses récurrences repassent en commun. Ses %s avances, elles, ne peuvent appartenir à personne : elles sont supprimées, leurs mensualités déjà versées restent. Retirer %s ?',
+    /* Personne n'est le cas par défaut, pas une dérogation : la phrase dit ce
+       qui se passe alors, sans concéder que ça « fonctionne quand même ». */
+    membersEmpty:
+      'Personne pour l’instant : tout t’est attribué. Ajoute quelqu’un si tu partages des dépenses.',
     /* Le revenu ne se saisit pas ici : il se lit sur les récurrences de
        ressources du membre. Le stocker à côté en ferait une seconde vérité.
        Reste à dire *pourquoi* il ne se lit pas, quand c'est le cas : les deux
@@ -315,8 +328,8 @@ export const fr = {
     memberIncomeHint:
       'Le revenu de chacun se lit sur ses récurrences de salaire ou d’allocation, et sert à répartir les charges communes au prorata.',
     memberIncomeLink: 'Ajouter un revenu',
-    /* Un salaire resté « tout le foyer » ne compte dans le revenu de personne,
-       et c'est la première explication d'une répartition qui ne se calcule pas. */
+    /* Un salaire resté « en commun » ne compte dans le revenu de personne, et
+       c'est la première explication d'une répartition qui ne se calcule pas. */
     incomeUnassignedOne: '%s n’est à personne : ce revenu ne compte dans aucune part.',
     incomeUnassignedMany: '%s ne sont à personne : ces revenus ne comptent dans aucune part.',
     incomeUnassignedFix: 'Attribue-les à quelqu’un pour qu’ils pèsent dans le prorata.',
@@ -366,7 +379,7 @@ export const fr = {
     /* Un import est un effacement déguisé : le fichier arrive, tout le reste
        part. Il se confirme donc deux fois, comme un remplacement, sans aller
        jusqu'aux trois de la réinitialisation — il reste quelque chose après. */
-    importConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
+    importConfirm2: 'Les personnes, les récurrences et les entrées actuelles seront perdues. Confirmer ?',
     imported: 'Données importées',
     importMigrated: 'Données importées et mises à jour depuis un format plus ancien',
     /* Un import qui n'aboutit pas et qui ne le dit pas est la pire des pertes :
@@ -408,7 +421,7 @@ export const fr = {
       duplicateId: 'identifiant en double',
       unknownCategory: 'catégorie introuvable, rangée dans « À ranger »',
       unknownFamily: 'famille introuvable',
-      unknownMember: 'membre introuvable, rendue au foyer',
+      unknownMember: 'membre introuvable, rendue en commun',
       unknownRecurrence: 'récurrence introuvable, lien retiré',
     },
 
@@ -427,25 +440,25 @@ export const fr = {
 
     example: 'Jeu d’exemple',
     exampleHint:
-      'Un foyer complet — deux salaires, trois crédits, une avance, plus d’un an d’historique — pour voir l’app pleine sans rien saisir.',
+      'Un exemple complet — deux salaires, trois crédits, une avance, plus d’un an d’historique — pour voir l’app pleine sans rien saisir.',
     exampleLoad: 'Charger l’exemple',
     /* Un exemple remplace tout, exactement comme un import : deux questions, ni
        une de moins ni les trois de l'effacement, puisqu'il reste quelque chose
        après. Au premier lancement, en revanche, il n'y a rien à perdre et on
        n'en pose aucune. */
     exampleConfirm: 'Remplacer toutes les données par le jeu d’exemple ?',
-    exampleConfirm2: 'Le foyer, les récurrences et les entrées actuels seront perdus. Confirmer ?',
+    exampleConfirm2: 'Les personnes, les récurrences et les entrées actuelles seront perdues. Confirmer ?',
     exampleLoaded: 'Jeu d’exemple chargé',
     exampleFailed: 'Le jeu d’exemple n’a pas pu être chargé. Vérifie ta connexion, puis réessaie.',
 
     reset: 'Tout effacer',
-    resetHint: 'Efface le foyer, les récurrences et toutes les entrées. Sans retour.',
+    resetHint: 'Efface les personnes, les récurrences et toutes les entrées. Sans retour.',
     /* Trois questions, et trois questions différentes : ce qui part, le fait
        qu'il n'y a pas de retour, puis la dernière chance d'exporter. Trois fois
        la même phrase ne se lit pas, elle se clique. */
     resetConfirm1: 'Effacer toutes les données de cet appareil ?',
     resetConfirm2:
-      'Le foyer, les membres, les récurrences, les crédits et toutes les entrées partent. Il n’y a pas de retour.',
+      'Les personnes, les récurrences, les crédits et toutes les entrées partent. Il n’y a pas de retour.',
     resetConfirm3: 'Dernière question. Exporte d’abord si tu veux garder une trace.',
     resetDone: 'Données effacées',
     resetFailed: 'L’effacement n’a pas abouti. Recharge la page et réessaie.',
@@ -497,7 +510,7 @@ export const fr = {
        le graphique, comme `srTrailing` l'est par la page. */
     srCumulativeRead: '%s : %s',
     noData: 'Aucune donnée sur cette période.',
-    /* Sur un foyer neuf, les trois tuiles empilaient trois phrases d'excuse —
+    /* Sur un document neuf, les trois tuiles empilaient trois phrases d'excuse —
        pas assez pour une courbe, pas deux mois à comparer, pas d'année
        complète. Trois façons de dire la même chose, et aucune ne disait quoi
        faire. Un seul état vide les remplace tant que rien n'a été saisi, comme
@@ -544,7 +557,7 @@ export const fr = {
     outflow: 'Sorties',
     /* « Charge ni crédit », pas « sortie » : la tuile compte par nature, hors
        épargne, et un mois où l'on n'a fait que verser sur un livret a bien vu
-       des sorties — simplement rien qui parte du foyer. */
+       des sorties — simplement rien qui soit sorti pour de bon. */
     noBreakdown: 'Aucune charge ni crédit ce mois-ci.',
     /* La tuile ne s'arrête pas au mois affiché : elle lit les règles au-delà
        des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout. */
@@ -560,9 +573,9 @@ export const fr = {
     savingLeft: 'reste %s à placer',
     /* Ce que le mois verse, dit avec ou sans filtre. La condition tombe : elle
        valait pour le *reste à placer*, qui appelle un geste et se décide sur un
-       compte à la fois — au foyer, la somme de deux restes ne se décide nulle
-       part. Le versement, lui, est un constat, et l'écran de l'épargne
-       l'additionne déjà au foyer sans que ça pose de question.
+       compte à la fois — à plusieurs, la somme de deux restes ne se décide
+       nulle part. Le versement, lui, est un constat, et l'écran de l'épargne
+       l'additionne déjà pour tout le monde sans que ça pose de question.
        Le mois entier, comme la capacité et le reste qui l'encadrent : les deux
        clauses sont les deux moitiés du chiffre, elles doivent le redonner. Au
        seul confirmé — plus juste sur le mot « versé », et tentant pour ça — il
@@ -607,10 +620,10 @@ export const fr = {
 
        Le montant à virer est le chiffre de tête, et non une ligne parmi trois.
        C'est le geste que la tuile sert : un virement sur le compte joint, dont
-       la somme se recopie telle quelle. Le total des charges communes du foyer
-       en est parti — c'est un chiffre qu'on ne doit pas, et il se lit encore
-       sur l'écran Répartition, qui est fait pour ça. */
-    /* L'eyebrow nomme le chiffre plutôt que la tuile : « Part du foyer » puis
+       la somme se recopie telle quelle. Le total des charges communes en est
+       parti — c'est un chiffre qu'on ne doit pas, et il se lit encore sur
+       l'écran Répartition, qui est fait pour ça. */
+    /* L'eyebrow nomme le chiffre plutôt que la tuile : un nom de tuile puis
        « À verser sur le commun » juste en dessous disaient deux fois la même
        chose, et cette redite valait les trente pixels qui débordaient. */
     memberShare: 'À verser sur le commun',
@@ -633,7 +646,7 @@ export const fr = {
        accompagnait se lisent maintenant ligne à ligne dans la tuile, qui n'est
        plus un bouton derrière lequel tout disparaissait. Le nom du membre y
        reste, lui : rien dans le contenu ne le porte, il vient du filtre. */
-    srMemberShare: '%s porte %s des charges communes du foyer.',
+    srMemberShare: '%s porte %s des charges communes.',
 
     /* Quatre soldes qui se ressemblent à l'œil sans dire la même chose. Chacun
        dit son calcul, puis ce qui le sépare de son voisin — c'est la question
@@ -717,7 +730,7 @@ export const fr = {
     unconfirmedAll: 'Mois remis à confirmer',
     entries: 'Ce mois',
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',
-    /* Le mois vide d'un foyer qui n'a encore posé aucune récurrence n'est pas
+    /* Le mois vide d'un document qui n'a encore posé aucune récurrence n'est pas
        le mois vide de tout le monde : c'est un amorçage, et le geste qui
        l'amorce n'est pas une dépense. Une dépense ponctuelle ne prévoit rien —
        ce qui fait qu'un mois s'écrit tout seul est ce qui revient. */
@@ -794,10 +807,10 @@ export const fr = {
     categoryPlaceholder: 'Choisis une catégorie',
     shared: 'Charge commune, à partager entre les membres',
     sharedHint: 'Elle entre dans la répartition au prorata des revenus.',
-    /* Sur « tout le foyer », la case ne se décoche pas : une charge que
-       personne ne s'attribue est commune par règle, et la décocher sans dire à
-       qui elle est la ferait sortir du compte du foyer sans apparaître dans le
-       mois de personne. La case reste, cochée, pour dire ce qui se passe. */
+    /* Sur « en commun », la case ne se décoche pas : une charge que personne
+       ne s'attribue est commune par règle, et la décocher sans dire à qui elle
+       est la ferait sortir du compte sans apparaître dans le mois de
+       personne. La case reste, cochée, pour dire ce qui se passe. */
     sharedLocked: 'Personne ne s’attribue cette ligne : elle est commune, et se répartit au prorata.',
     member: 'Membre',
     note: 'Note',
@@ -837,7 +850,7 @@ export const fr = {
        écran qui pose une règle laissait croire à deux formulaires. */
     labelRequiredRecurring: 'Donne un libellé à cette récurrence.',
     /* Sans propriétaire ni partage, la ligne n'apparaîtrait dans le mois de
-       personne, et la somme des soldes cesserait de valoir celui du foyer. */
+       personne, et la somme des soldes cesserait de valoir le solde total. */
     memberRequired:
       'Dis à qui est cette ligne : elle n’entre pas dans les charges communes, donc sans propriétaire elle n’apparaîtrait dans le mois de personne.',
     /* Une récurrence pose une échéance par période : le trou se creuse à
@@ -905,17 +918,17 @@ export const fr = {
 
        Et il dit son périmètre, parce qu'un total sans périmètre ne se vérifie
        pas. Deux questions restaient sans réponse à l'écran : de qui, et de
-       quoi. Cette page ne connaît pas le filtre par membre — elle montre les
-       règles du foyer — et le sens « ce qui sort » ramasse les charges, les
+       quoi. Cette page ne connaît pas le filtre par membre — elle montre
+       toutes les règles — et le sens « ce qui sort » ramasse les charges, les
        crédits et les versements d'épargne. */
     totalMonthly: 'Total par mois',
-    totalScopeOut: 'Tout le foyer · ce qui sort chaque mois, épargne et crédits compris',
-    totalScopeIn: 'Tout le foyer · ce qui rentre chaque mois',
+    totalScopeOut: 'Tout le monde · ce qui sort chaque mois, épargne et crédits compris',
+    totalScopeIn: 'Tout le monde · ce qui rentre chaque mois',
     /* Sous une pilule, le total se borne à sa nature : « Charges » compte
        comme la tuile du même nom — sans l'épargne — et l'épargne se compte en
        net, reprises déduites, comme partout. */
-    totalScopeSpending: 'Tout le foyer · charges et crédits chaque mois, épargne à part',
-    totalScopeSaving: 'Tout le foyer · ce qui part sur l’épargne chaque mois, reprises déduites',
+    totalScopeSpending: 'Tout le monde · charges et crédits chaque mois, épargne à part',
+    totalScopeSaving: 'Tout le monde · ce qui part sur l’épargne chaque mois, reprises déduites',
     totalAnnual: 'Total annuel',
     perMonth: '%s par mois',
     groupBy: 'Regrouper par',
@@ -1016,10 +1029,10 @@ export const fr = {
   split: {
     title: 'Répartition',
     subtitle: 'Ce que chacun verse sur les charges communes, au prorata des revenus.',
-    /* Seul du foyer, « au prorata des revenus » n'explique rien : la part vaut
-       100 % et n'a demandé aucun revenu. L'écran garde sa raison d'être — le
-       pot se vérifie ligne à ligne. */
-    subtitleSolo: 'Seul du foyer, tu portes tout le commun : ta part vaut 100 %.',
+    /* Seul·e, « au prorata des revenus » n'explique rien : la part vaut 100 %
+       et n'a demandé aucun revenu. L'écran garde sa raison d'être — le pot se
+       vérifie ligne à ligne. */
+    subtitleSolo: 'Tu es seul·e ici : tu portes tout le commun, ta part vaut 100 %.',
     total: 'Charges communes',
     totalHint: 'échéances prévues comprises',
     share: 'Part',
@@ -1050,13 +1063,13 @@ export const fr = {
     settlementNotACost:
       'Un report ne change pas ce que le mois a coûté à quelqu’un, seulement ce qu’il verse.',
     method: 'Comment c’est calculé',
-    methodFormula: 'Part de chacun = son revenu ÷ revenus du foyer.',
+    methodFormula: 'Part de chacun = son revenu ÷ la somme des revenus.',
     /* Le revenu est dérivé des récurrences de ressources, jamais déclaré à
        part : une seconde vérité finirait par diverger de la première. */
     methodIncome:
       'Le revenu vient des récurrences de salaire et d’allocation de chacun, ramenées au mois. Une prime ponctuelle ne le déplace pas — elle a lieu, mais elle ne dit rien de ce qu’on gagne.',
     methodVariable:
-      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Une récurrence laissée « tout le foyer » ne compte dans le revenu de personne.',
+      'Un salaire à montant variable vaut sa dernière échéance chiffrée, à défaut son montant habituel. Une récurrence laissée « en commun » ne compte dans le revenu de personne.',
     methodIncluded: 'Les charges et les crédits que personne ne s’est attribués.',
     methodFlagged: 'Les dépenses cochées « à partager ».',
     methodExcluded:
@@ -1090,10 +1103,11 @@ export const fr = {
       'Corrige le montant de la récurrence, ou celui de son échéance : un revenu nul ne se répartit pas, il ne dit rien.',
     goToIncome: 'Ajouter un revenu',
     goToSubscriptions: 'Voir les récurrences',
-    /* Le cas du foyer sans membre — un seul suffit désormais : sa part vaut
-       100 %, et l'écran montre le pot. */
-    soloTitle: 'La répartition demande au moins un membre.',
-    soloHint: 'Ajoute qui compose le foyer. Une personne suffit : seule, elle porte tout le commun.',
+    /* Le cas sans personne — une seule suffit désormais : sa part vaut 100 %,
+       et l'écran montre le pot. */
+    soloTitle: 'La répartition demande au moins une personne.',
+    soloHint:
+      'Ajoute les personnes avec qui tu partages. Une seule suffit : elle porte alors tout le commun.',
     goToSettings: 'Aller aux réglages',
     srShares: 'Parts de chacun : %s',
   },
@@ -1127,7 +1141,7 @@ export const fr = {
     savingCategoryRequired: 'Dis sur quel support tu as pris l’argent.',
     member: 'Avancé par',
     memberRequired: 'Dis qui a avancé : une épargne est toujours à quelqu’un.',
-    memberNone: 'Ajoute un membre au foyer pour enregistrer une avance.',
+    memberNone: 'Ajoute une personne pour enregistrer une avance.',
     from: 'Du mois de',
     to: 'Au mois de',
     periodInvalid: 'Le dernier mois ne peut pas précéder le premier.',
@@ -1177,11 +1191,11 @@ export const fr = {
     placed: 'Où ça se place',
     placedTotal: 'Versé ce mois',
     placedEmpty: 'Aucun versement ce mois-ci.',
-    /* Un versement au foyer entier n'est à personne, et l'épargne ne se partage
-       pas : il ne compte donc dans la capacité de personne. C'est le pendant
-       exact du salaire resté « tout le foyer » sur la répartition. */
+    /* Un versement que personne ne porte n'est à personne, et l'épargne ne se
+       partage pas : il ne compte donc dans la capacité de personne. C'est le
+       pendant exact du salaire resté « en commun » sur la répartition. */
     placedUnassigned:
-      'Un versement laissé « tout le foyer » n’entre dans l’épargne de personne. Attribue-le pour qu’il compte.',
+      'Un versement laissé « en commun » n’entre dans l’épargne de personne. Attribue-le pour qu’il compte.',
 
     left: 'Reste à placer',
     leftHint: 'capacité − versements',
@@ -1205,7 +1219,7 @@ export const fr = {
     method: 'Comment c’est calculé',
     methodFormula: 'Capacité = revenus − charges − crédits.',
     methodExcluded:
-      'Un versement n’est pas une charge : il sort du compte, mais il reste à qui le fait. Il ne pèse donc ni dans les charges du mois, ni dans le partage du foyer.',
+      'Un versement n’est pas une charge : il sort du compte, mais il reste à qui le fait. Il ne pèse donc ni dans les charges du mois, ni dans le partage.',
     methodShared:
       'Sous un filtre, la capacité tient compte de la part des charges communes que la personne porte — au prorata des revenus, comme partout ailleurs.',
     methodBalance:
@@ -1255,20 +1269,19 @@ export const fr = {
   },
 
   onboarding: {
-    step: 'Étape %s sur 3',
-    householdTitle: 'Comment s’appelle ton foyer ?',
-    householdHint: 'Tu pourras le changer plus tard.',
-    householdLabel: 'Nom du foyer',
-    householdPlaceholder: 'Maison',
-    householdEmpty: 'Donne un nom à ton foyer pour continuer.',
-    membersTitle: 'Qui vit ici ?',
+    step: 'Étape %s sur 2',
+    /* « Qui vit ici ? » supposait la cohabitation, que le calcul n'utilise
+       jamais : le prorata marche aussi bien pour deux personnes à deux
+       adresses. La question porte donc sur ce dont l'app se sert — le partage
+       d'une dépense —, et elle n'exclut plus qui vit chez quelqu'un d'autre. */
+    membersTitle: 'Avec qui tu partages des dépenses ?',
     /* Le hint disait le mécanisme — « les membres servent d'étiquette » — et
        l'aperçu promettait le prorata « une fois leurs revenus posés », sans que
        rien ne dise *où* on les pose. Quelqu'un qui ajoutait deux prénoms en
        attendant deux champs de salaire ne trouvait rien, et le prorata restait
        muet sans qu'il sache pourquoi. La réponse tient en une proposition. */
     membersHint:
-      'Les membres servent d’étiquette sur les dépenses. Leurs revenus se posent à l’étape suivante. Tu peux passer et rester en solo.',
+      'Les prénoms servent d’étiquette sur les dépenses. Leurs revenus se posent à l’étape suivante. Tu peux passer : tout te sera attribué.',
     membersLabel: 'Prénom',
     membersPlaceholder: 'Alix',
     membersAdd: 'Ajouter',
@@ -1278,7 +1291,7 @@ export const fr = {
     /* Rien à perdre au premier lancement — aucune entrée n'existe encore —,
        mais un retrait se demande partout de la même façon : apprendre ici que
        la croix agit sans prévenir se paierait plus tard, ailleurs. */
-    membersRemoveConfirm: 'Retirer %s du foyer ?',
+    membersRemoveConfirm: 'Retirer %s ?',
     solo: 'Je suis seul·e',
     start: 'Commencer',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
@@ -1289,7 +1302,7 @@ export const fr = {
     backup:
       'C’est aussi la contrepartie : vider ce navigateur les efface. Exporte un fichier de temps en temps, depuis les réglages.',
 
-    /* Troisième étape, facultative. Le cahier §4.1 refuse le questionnaire de
+    /* Seconde étape, facultative. Le cahier §4.1 refuse le questionnaire de
        configuration, et il a raison — mais « ne rien exiger » et « ne rien
        proposer » sont deux choses différentes. L'app ne vaut rien tant que les
        récurrences ne sont pas posées : c'est sa thèse, et rien n'y conduisait.
@@ -1300,7 +1313,12 @@ export const fr = {
       'Une seule ligne suffit à faire parler l’app : elle pose les échéances des mois à venir et en tire le prévisionnel. Rien n’est obligatoire ici.',
     starterSalaryOf: 'Salaire de %s',
     starterSalarySolo: 'Ton salaire',
-    starterRent: 'Loyer, ou crédit immobilier',
+    /* « Loyer » seul disait « cette app n'est pas pour toi » à qui n'en paie
+       pas — chez ses parents, hébergé, logé par l'employeur. La ligne nomme
+       donc les trois façons de payer pour se loger, et dit qu'on peut la
+       laisser vide. Elle l'était déjà : il ne manquait que de le dire. */
+    starterRent: 'Loyer, crédit immobilier, ou ce que tu verses pour te loger',
+    starterRentHint: 'Laisse vide si tu ne paies rien pour ça.',
     /* Ce que la récurrence portera comme nom, et qui n'est pas celui du champ :
        « Salaire de Alix » redirait sur la ligne ce que sa pastille de membre
        dit déjà, et le libellé de la catégorie — « Salaires, retraites ou
@@ -1320,19 +1338,18 @@ export const fr = {
        étape porte le sien, sans quoi on n'a plus qu'à répondre ou à fermer. */
     backToLanding: 'Revenir à la présentation',
     backToStep: 'Revenir à l’étape %s',
-    progress: 'Progression : étape %s sur 3',
+    progress: 'Progression : étape %s sur 2',
 
-    /* L'aperçu montre la réponse à son emplacement réel plutôt que de la
-       décrire : ce qu'on tape à l'étape 1 est ce qu'on lira en haut de chaque
-       écran, et le montrer là est plus court que de le promettre. */
-    previewHousehold: 'Ce que tu liras en haut de chaque écran',
+    /* L'aperçu montre ce que la réponse change plutôt que de le promettre.
+       Sans personne, il ne concède pas que « ça marche quand même » : c'est un
+       usage à part entière, et le dire autrement apprend à s'excuser. */
     previewMembersEmpty:
-      'Sans personne ici, tout t’est attribué — le foyer fonctionne très bien en solo.',
+      'Sans personne ici, tout t’est attribué. C’est un usage à part entière, pas un mode dégradé.',
     previewMembers:
       'Leurs revenus se posent à l’étape suivante. Une fois là, les charges communes se partagent entre eux au prorata.',
     previewStarterEmpty:
       'Sans rien ici, le mois s’ouvre à zéro et tout reste à saisir ligne par ligne. Un salaire suffit à ce qu’il s’écrive tout seul.',
-    /* L'aperçu de l'étape 3 ne promet pas le prorata : il le calcule, avec la
+    /* L'aperçu de l'étape 2 ne promet pas le prorata : il le calcule, avec la
        fonction du domaine qui le calcule partout ailleurs. C'est la thèse de
        l'app, montrée à l'instant où elle se décide. */
     previewStarterMonth: 'Ce que ton mois affichera',
@@ -1342,7 +1359,7 @@ export const fr = {
   about: {
     what: 'Ce que c’est',
     whatBody:
-      'Tout compte fait suit les finances d’un foyer : ce qui rentre, ce qui sort, ce qu’il reste, et qui paie quoi.',
+      'Tout compte fait suit tes finances : ce qui rentre, ce qui sort, ce qu’il reste, et qui paie quoi.',
     whatNotBank:
       'Ce n’est pas une banque. Aucun compte n’y est relié, aucun relevé n’y est lu : tu écris ce que tu sais, l’app tient les comptes.',
     whatOffline:
@@ -1560,7 +1577,6 @@ export const fr = {
   },
 
   defaults: {
-    householdName: 'Maison',
     /* Où atterrit une ligne dont la catégorie n'existait pas. Le nom dit ce
        qu'il reste à faire, plutôt que ce qui s'est passé : « à ranger » est un
        geste, « catégorie introuvable » est un constat. */

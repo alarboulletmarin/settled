@@ -154,8 +154,8 @@ export function OnboardingRoutes() {
           path={ONBOARDING_PATH}
           element={unreadable ? <Navigate to={LANDING_PATH} replace /> : <OnboardingPage />}
         />
-        {/* Sans coquille : la colonne latérale nommerait un foyer sans nom et
-            mènerait à cinq écrans qui n'existent pas encore. */}
+        {/* Sans coquille : la colonne latérale mènerait à cinq écrans qui
+            n'existent pas encore. */}
         <Route
           path={ABOUT_PATH}
           element={

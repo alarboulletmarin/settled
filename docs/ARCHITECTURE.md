@@ -25,7 +25,7 @@ doit faire, et le [design system](DESIGN-SYSTEM.md) de quoi elle a l'air.
   plafonne ; ces deux prose-là sont rendues par des écrans chargés à la demande,
   et personne ne les relit au quotidien. Elles voyagent avec eux.
 - `src/persistence/schemaDoc.ts` — le modèle de données à donner à un assistant,
-  et `src/persistence/example.ts` — le foyer d'exemple. Tous deux dérivés du
+  et `src/persistence/example.ts` — le document d'exemple. Tous deux dérivés du
   code, tous deux chargés à la demande.
 - `src/app/meta.ts` — le dépôt, la licence et la version. La version est lue sur
   `package.json` à la construction (`define` dans `vite.config.ts`) : la recopier
@@ -65,7 +65,9 @@ calcul financier, pas plus un taux qu'un montant.
 
 **La présentation avant la question.** L'écran d'arrivée était « Comment
 s'appelle ton foyer ? » : on demandait de répondre avant d'avoir dit ce que
-l'app suit ni où vont les données. `/bienvenue` passe devant, et elle est
+l'app suit ni où vont les données. Cette question-là n'existe plus du tout —
+elle n'achetait qu'un libellé de colonne latérale, et supposait au passage un
+foyer qu'on tient, ce que ne fait pas qui vit chez ses parents (cahier §4.1). `/bienvenue` passe devant, et elle est
 construite avec les tuiles, l'anneau et les chiffres de l'app plutôt qu'avec des
 visuels — le DS §1 interdit l'illustration, et une grille qui *est* le produit
 démontre mieux qu'une capture. Elle vit au-dessus du gate, donc à une URL stable
@@ -96,13 +98,13 @@ sans compte : changer de téléphone, vider son navigateur, la gratuité, l'édi
 Ouvertes et non repliées derrière un chevron : quelqu'un de méfiant n'a pas à
 cliquer pour obtenir la réponse qui lèverait sa méfiance. C'est aussi de là que
 le cahier des charges et le design system deviennent atteignables — « à propos »
-les liait déjà, mais un visiteur qui ne crée aucun foyer ne va pas jusque-là.
+les liait déjà, mais un visiteur qui ne crée rien ne va pas jusque-là.
 
-**Rien ne s'écrit avant que le foyer existe.** `mutate` ne programme d'écriture
-qu'une fois le statut passé à `ready`. Sans cette garde, répondre à la première
-question puis fermer l'onglet laissait un document enregistré : au lancement
-suivant l'app s'ouvrait « prête » sur un foyer sans membre, et les deux
-questions ne revenaient jamais. C'est `finishOnboarding` qui programme la
+**Rien ne s'écrit avant que le document existe.** `mutate` ne programme
+d'écriture qu'une fois le statut passé à `ready`. Sans cette garde, répondre à la
+première question puis fermer l'onglet laissait un document enregistré : au
+lancement suivant l'app s'ouvrait « prête » sur un document sans personne, et
+les étapes ne revenaient jamais. C'est `finishOnboarding` qui programme la
 première écriture — il le faisait déjà explicitement, et cet appel n'avait de
 sens que si rien n'avait été écrit avant lui.
 
@@ -209,14 +211,13 @@ ne veut rien dire. Le troisième cas se refusait de lui-même quand *tous* les
 revenus étaient nuls, jamais quand un seul l'était — le membre à 0 € recevait
 alors 0 % des charges communes, un chiffre faux qui a l'air d'un résultat.
 
-Ces refus sont des refus de *comparaison* — et le membre seul de son foyer n'a
-personne à comparer. Son coefficient vaut trivialement 100 %, sans qu'aucun
-revenu soit exigé : refuser là aussi faisait diverger le mois filtré sur lui du
-mois de son foyer, qui sont pourtant la même personne. `scopeToMember` lui rend
-alors le mois entier, montants intacts — le commun au montant plein, et les
-lignes que personne ne porte (une paie ou un versement laissés « tout le
-foyer »), qui ne sont pas communes et qu'un découpage du prorata ne saurait
-donc pas lui rendre. La régularisation, elle, se calcule et rend zéro : il
+Ces refus sont des refus de *comparaison* — et le membre seul n'a personne à
+comparer. Son coefficient vaut trivialement 100 %, sans qu'aucun revenu soit
+exigé : refuser là aussi faisait diverger le mois filtré sur lui du mois entier,
+qui sont pourtant la même personne. `scopeToMember` lui rend alors le mois
+entier, montants intacts — le commun au montant plein, et les lignes que
+personne ne porte (une paie ou un versement laissés « en commun »), qui ne sont
+pas communes et qu'un découpage du prorata ne saurait donc pas lui rendre. La régularisation, elle, se calcule et rend zéro : il
 porte 100 % de ce qu'il avance.
 
 L'asymétrie de `isRunningIn` — une règle arrêtée sort du mois, une règle à venir
@@ -304,7 +305,7 @@ de sortie, pas les départs qui ne passent pas par eux.
 **La recherche est du calcul pur, et elle vit sur l'historique.** L'appariement
 est dans `domain/search.ts`, testé : casse et accents mis de côté — on ne tape
 pas ses accents au pouce —, en sous-chaîne, et muet en dessous de deux lettres,
-où une seule apparie la moitié du foyer et rend plus long que la liste qu'elle
+où une seule apparie la moitié des lignes et rend plus long que la liste qu'elle
 réduit. La recherche globale n'a pas de sixième onglet : la barre en porte cinq
 et n'en tient pas six à 320px (DS §5). Elle est sur l'historique, qui est de
 toute façon l'écran de la question — « ce prélèvement de mars » est un regard en
@@ -325,14 +326,14 @@ quelque chose, et chaque lien mort avait sa façon d'être faux en silence : une
 catégorie inconnue retombait sur `charge` par le double repli de
 `kindOfCategory`, donc la dépense devenait commune et partagée ; un membre
 inconnu faisait disparaître une entrée de toutes les vues filtrées tout en la
-laissant peser sur le foyer. Le contrôle vit dans `validate.ts` et non dans une
+laissant peser sur le total. Le contrôle vit dans `validate.ts` et non dans une
 étape de `MIGRATIONS`, parce que la normalisation est ce que **tout** document
 traverse — y compris un fichier déjà à la version courante et écrit à la main,
 qu'une migration ne verrait jamais. Elle ne change pas la forme du document, et
 n'a donc rien à incrémenter.
 
 Trois gestes, et le plus doux qui règle chaque cas. Un lien facultatif se
-**coupe** : la ligne rend son membre ou sa règle au foyer et reste modifiable.
+**coupe** : la ligne rend son membre ou sa règle au commun et reste modifiable.
 La catégorie, qui n'est pas facultative, se **redirige** vers une catégorie de
 réparation visible — même famille d'accueil qu'avant, donc même nature : ce qui
 change n'est pas le calcul, c'est qu'on la voit. Ce qui ne peut être ni coupé ni
@@ -355,7 +356,7 @@ Le recopier eût été une seconde description du modèle, qui aurait divergé d
 et enseigné un document que l'app refuse : exactement l'erreur qu'il existe pour
 éviter chez son lecteur.
 
-**L'exemple est construit, pas commité.** `exampleData(on)` bâtit un foyer de
+**L'exemple est construit, pas commité.** `exampleData(on)` bâtit un document de
 quinze mois à partir d'une date, en posant des récurrences puis en *ouvrant*
 chaque mois par `openMonth` — jamais en écrivant une `Entry` à la main. Deux
 conséquences : le jeu est toujours à l'heure, là où un `.json` figé serait vide
@@ -424,6 +425,15 @@ Trois autres points relèvent de la lecture plutôt que du contraste :
   fait en revanche toute la hauteur du tracé (160px), et la lecture existe par
   trois autres chemins : le clavier (flèches, `Origine`, `Fin`), le nom
   accessible de chaque mois, et la lecture d'ensemble en `sr-only`.
+
+- **Le manifeste PWA dit encore « foyer », seul de toute l'app.** Le mot a été
+  retiré partout ailleurs — interface, page d'accueil, métadonnées, README —
+  parce qu'il suppose un foyer qu'on tient, ce que ne fait ni qui vit seul, ni
+  qui vit chez ses parents, ni qui partage à distance (cahier §4.1). Le `name`
+  de `vite.config.ts` reste : il porte l'identité des installations déjà en
+  place, et le changer renomme l'icône sur l'écran d'accueil de gens qui n'ont
+  rien demandé. L'écart est donc temporaire par nature — il tombera au prochain
+  changement de manifeste qui s'imposera pour une autre raison.
 
 La date du dernier export vit en `localStorage`, hors du document : elle décrit
 l'état de sauvegarde de cet appareil, et l'inclure ferait qu'un fichier importé

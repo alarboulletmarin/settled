@@ -45,6 +45,7 @@ const MARKER: [string, IconComponent][] = [
   ['ToConfirmIcon', Icons.ToConfirmIcon],
   ['EntriesIcon', Icons.EntriesIcon],
   ['HouseholdIcon', Icons.HouseholdIcon],
+  ['PeopleIcon', Icons.PeopleIcon],
   ['CategoriesIcon', Icons.CategoriesIcon],
   ['SearchIcon', Icons.SearchIcon],
   ['ThemeIcon', Icons.ThemeIcon],

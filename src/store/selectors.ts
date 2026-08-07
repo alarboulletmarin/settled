@@ -738,7 +738,7 @@ export function useSavingsByCategory(limit?: number): CategorySlice[] {
 /**
  * Les versements du mois que personne ne porte.
  *
- * L'épargne ne se partage jamais : un versement laissé « tout le foyer » ne
+ * L'épargne ne se partage jamais : un versement laissé « en commun » ne
  * tombe donc dans le scope d'aucun membre, et n'entre dans la capacité de
  * personne. Il sort bien du compte du foyer, mais la somme des lectures
  * individuelles cesse de valoir celle du foyer sans que rien ne le dise —

@@ -36,7 +36,7 @@ export type AppStatus = 'loading' | 'onboarding' | 'ready'
  * `member` relève du second — ses lignes plus sa part du commun, si bien que la
  * somme des vues vaut le foyer. `common` relève du premier : le pot seul, à son
  * montant plein, qui n'appartient à personne. Les confondre était l'ambiguïté
- * d'une seule pilule « Tout le foyer » qui voulait dire « tout » ici et « le
+ * d'une seule étiquette « Tout le foyer » qui voulait dire « tout » ici et « le
  * commun » sur l'écran de saisie.
  *
  * Type discriminé plutôt qu'un `string | undefined` avec une valeur convenue :

@@ -73,7 +73,7 @@ describe('la portée du mois, mutualisée', () => {
 
 /* Seul du foyer, la vue filtrée sur le membre doit valoir « tout le monde » au
    centime : le prorata vaut trivialement 100 %, et les lignes que personne ne
-   porte — le loyer commun, une paie laissée « tout le foyer » — lui
+   porte — le loyer commun, une paie laissée « en commun » — lui
    reviennent. C'est l'incohérence qui a motivé la règle : solde et capacité
    d'épargne divergeaient entre les deux pilules d'un même foyer d'une
    personne. */

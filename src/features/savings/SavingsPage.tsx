@@ -126,7 +126,7 @@ function Placed({ saved }: { saved: Money }) {
           reçu, et le chiffre négatif au-dessus paraîtrait faux sans ça. */}
       {saved < ZERO && <p className="t-label">{fr.savings.withdrawn}</p>}
 
-      {/* Un versement resté « tout le foyer » n'est à personne, et l'épargne ne
+      {/* Un versement resté « en commun » n'est à personne, et l'épargne ne
           se partage pas : il ne compte dans la capacité de personne, et rien
           nulle part ne le disait. C'est le pendant du salaire non attribué de
           l'écran Répartition. Dit une seule fois, hors filtre : sous filtre, il

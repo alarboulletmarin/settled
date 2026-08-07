@@ -40,7 +40,7 @@ Restent les surfaces suivantes.
   l'app autre chose que refuser proprement. La validation est dans
   `src/persistence/validate.ts`.
 - **Fuite de données hors de l'appareil** — toute requête réseau émise avec le
-  contenu du foyer serait une faille grave, et par construction il n'en existe
+  contenu du document serait une faille grave, et par construction il n'en existe
   aucune. Une CSP `default-src 'self'` le refuse en plus au niveau du
   navigateur, y compris si une dépendance était compromise (voir
   [DEPLOIEMENT.md](docs/DEPLOIEMENT.md#les-en-têtes-de-sécurité)).
@@ -53,13 +53,13 @@ Restent les surfaces suivantes.
 
 - **L'accès physique à un appareil déverrouillé.** Les données sont en clair en
   IndexedDB, comme n'importe quelle app web sans compte : qui tient le téléphone
-  déverrouillé tient le foyer. C'est un choix assumé — chiffrer exigerait un mot
+  déverrouillé tient les données. C'est un choix assumé — chiffrer exigerait un mot
   de passe, donc un moyen de le perdre, donc une perte de données définitive
   contre une menace que le verrouillage de l'appareil traite déjà.
 - **Un fichier d'export mal rangé.** Il est en clair, par conception : il doit
   rester lisible et réimportable dans dix ans, sans dépendre de l'app.
 - **L'effacement des données par le navigateur** — vider le stockage du site
-  efface le foyer. C'est documenté, c'est la raison d'être de l'export.
+  efface tout. C'est documenté, c'est la raison d'être de l'export.
 - Les rapports d'outil automatique sans démonstration d'impact, et les en-têtes
   manquants sur un site statique sans authentification.
 
