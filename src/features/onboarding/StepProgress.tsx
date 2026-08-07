@@ -18,7 +18,10 @@ import { Ring } from '@/ui/Ring'
  * retour du navigateur, et sans lui quelqu'un qui veut relire la présentation
  * ou charger l'exemple n'a plus qu'à répondre ou à fermer.
  */
-export function StepProgress({ step, onBack }: { step: 1 | 2; onBack?: () => void }) {
+/** Le nombre d'étapes. Vit ici parce que c'est ici que la jauge le divise. */
+const STEPS = 3
+
+export function StepProgress({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   const label = tpl(fr.onboarding.progress, step)
 
   return (
@@ -28,14 +31,22 @@ export function StepProgress({ step, onBack }: { step: 1 | 2; onBack?: () => voi
           <ChevronLeft size={18} />
         </Link>
       ) : (
-        <button type="button" onClick={onBack} className={BACK} aria-label={fr.onboarding.backToStep}>
+        /* Le retour nomme l'étape où il ramène : avec trois étapes, « revenir en
+           arrière » ne désigne plus un seul endroit, et un lecteur d'écran qui
+           n'entend que « retour » ne sait pas s'il perd une réponse. */
+        <button
+          type="button"
+          onClick={onBack}
+          className={BACK}
+          aria-label={tpl(fr.onboarding.backToStep, step - 1)}
+        >
           <ChevronLeft size={18} />
         </button>
       )}
 
       {/* L'anneau colle à son libellé plutôt que de fuir au bord droit : une
           jauge posée à l'autre bout de la ligne ne se rattache plus à rien. */}
-      <Ring size={56} value={step / 2} label={label} srText={label} className="shrink-0" />
+      <Ring size={56} value={step / STEPS} label={label} srText={label} className="shrink-0" />
 
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="t-eyebrow text-muted">{fr.app.name}</span>

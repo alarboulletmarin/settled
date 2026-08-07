@@ -167,10 +167,21 @@ type MonthState = {
 
 ### 4.1 Premier lancement
 
-Deux étapes, aucune ne peut être sautée sur la première.
+Trois étapes. Seule la première exige une réponse ; **rien à configurer pour démarrer** reste la règle.
 
 1. Nom du foyer. Champ libre, pré-rempli avec « Maison ».
 2. Membres. L'utilisateur peut passer directement (usage solo) ou ajouter des personnes, prénom uniquement.
+3. **Ce qui revient chaque mois — facultative.** Un montant de salaire par membre (ou un seul, sans propriétaire, dans un foyer d'une personne) et un montant de loyer. Chaque montant saisi pose une récurrence mensuelle ; un champ laissé vide ne pose rien, et un bouton « Je le ferai plus tard », aussi visible que le principal, ouvre l'app sans rien poser.
+
+La troisième étape n'est pas un questionnaire de configuration, et c'est la condition de son existence : elle ne pose aucune question dont la réponse serait exigée, elle ne demande ni catégorie, ni jour, ni périodicité. Mais « ne rien exiger » et « ne rien proposer » sont deux choses différentes — l'app ne vaut rien tant que les récurrences ne sont pas posées (§4.2), c'est sa thèse, et le seul geste que l'écran du mois offrait ensuite était une dépense ponctuelle, qui n'amorce aucune prévision.
+
+Ses deux lignes ne sont pas choisies au hasard. Le revenu d'une personne ne se déclare nulle part : il se lit sur ses récurrences de nature `resource` (§4.7 ter), donc un salaire par membre est le seul chiffre qui fasse parler le prorata. Le loyer est la charge commune que tout foyer porte, et la première qui rende le partage lisible.
+
+Le **jour d'échéance ne se demande pas** — un champ de plus par ligne ramènerait le questionnaire. Les récurrences sont posées au 1er du mois courant, mensuelles, et l'étape le dit en clair : le jour, le libellé et la catégorie s'ajustent ensuite depuis la fiche (§4.2). Le loyer ne porte ni membre ni exception de partage : la règle du §4.7 ter le rend commun, et le poser explicitement recopierait la règle au lieu de s'y fier.
+
+Les échéances de ces récurrences naissent à l'ouverture du mois courant, comme celles de n'importe quel mois qui s'ouvre : **à confirmer**, jamais confirmées d'office — l'app ne sait pas si le loyer de ce mois-ci a déjà été payé.
+
+La contrepartie du local-first — vider le navigateur efface tout, l'export est le seul recours — est **nommée à la dernière étape**, sous la promesse de confidentialité. Elle ne se découvrait qu'au bout de trente jours, par le rappel du §4.8.
 
 Un jeu de catégories par défaut est créé, modifiable ensuite.
 
@@ -218,6 +229,8 @@ Un mois passé ne s'ouvre jamais tout seul : y faire apparaître des échéances
 L'opération est idempotente — une échéance est reconnue à sa paire récurrence + date — donc naviguer d'un mois à l'autre ne duplique rien.
 
 Une `Entry` `planned` compte dans les prévisions, jamais dans le réalisé.
+
+**Un mois vide n'a pas toujours la même cause, et n'appelle donc pas le même geste.** Tant qu'aucune récurrence n'existe, c'est un foyer qui n'a pas démarré : l'état vide propose d'abord d'en poser une, parce qu'une dépense ponctuelle n'amorce aucune prévision. Dès qu'il en existe une, le mois vide redevient un mois ordinaire et les deux portes de saisie reprennent leur rang. Les trois restent offertes dans les deux cas — au-delà de 1024px, la rangée d'actions est masquée sur un mois vide, et l'état vide est alors la seule porte de saisie de l'écran.
 
 ### 4.4 Saisie
 
