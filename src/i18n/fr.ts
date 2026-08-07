@@ -9,90 +9,12 @@ export const fr = {
     tagline: 'Les finances du foyer, sur ton appareil.',
   },
 
-  landing: {
-    /* La promesse est déjà `app.tagline` — la répéter ici en ferait une seconde
-       vérité. Ce qui suit dit le mécanisme, parce que « suivi des finances du
-       foyer » ne distingue cette app d'aucune autre. */
-    intro:
-      'Tu écris une fois ce qui revient chaque mois — loyer, abonnements, salaires. Le mois suivant s’ouvre déjà rempli de ce qui est prévu, et tu confirmes au fil de l’eau ce qui est réellement tombé.',
-    /* Pas « Commencer » : c'est déjà le libellé du dernier bouton des deux
-       questions (`onboarding.start`). Le DS §7 veut qu'une action garde son nom
-       dans le flux — donc que deux actions différentes ne le partagent pas. */
-    start: 'Créer mon foyer',
-    open: 'Ouvrir mon mois',
-    exampleHint: 'Juste voir à quoi ça ressemble ? Un foyer d’exemple, complet, en un clic.',
-    privacy: 'Pas de compte, pas de serveur. Deux questions, et l’app est utilisable.',
-
-    /* L'installation se propose juste sous cette phrase-là, et c'est le seul
-       endroit où elle a un sens : « pas de serveur » vient d'être écrit, donc
-       la question « et si je change de navigateur » vient d'être posée. Le
-       texte dit ce que l'installation apporte — pas qu'elle est possible, ce
-       que le bouton dit déjà.
-       La purge de Safari est nommée en clair. Le cahier §5 la connaît, et une
-       app dont toute la promesse est que les données restent sur l'appareil
-       doit dire ce qui, sur cet appareil, peut les effacer. */
-    installTitle: 'Installe-la sur ton appareil',
-    installBody:
-      'Elle s’ouvre en plein écran, fonctionne hors ligne, et surtout : un site non installé voit ses données effacées par Safari après une semaine sans visite. Installée, elle les garde.',
-    installAction: 'Installer',
-
-    /* L'app est hors-ligne d'abord et ne le disait jamais. Le chip ne s'affiche
-       que hors ligne : en ligne, il n'aurait rien à apprendre. Il dit ce qui
-       continue, pas ce qui manque — c'est une app dont c'est justement
-       l'argument, pas un service en panne. */
-    offline: 'Hors ligne — tout continue de fonctionner',
-
-    /* Ce que portent les tuiles : une étiquette, un chiffre, une lecture
-       secondaire. Le raisonnement de chacune est plus bas, en `principles`, où
-       rien ne le coupe par le bas (DS §5). */
-    monthTitle: 'Prévu, puis confirmé',
-    monthHint: 'confirmé sur prévu',
-    monthRing: 'Part du mois déjà confirmée',
-    monthRingRead: '68 % du mois est confirmé, soit 1 240 € sur 1 820 €.',
-    monthOf: '%s sur %s',
-    incomeHint: 'salaires et allocations du mois',
-    splitTitle: 'Chacun sa part',
-    privacyTitle: 'Rien ne sort d’ici',
-    privacyShort: 'Pas de compte, pas de serveur.',
-
-    /* Les quatre idées qui font l'app, en prose et hors de la grille : elles
-       demandent trois lignes chacune, et une tuile qui en porte trois n'est plus
-       une tuile. */
-    principles: 'Ce qui distingue cette app',
-    monthBody:
-      'Le mois s’ouvre seul avec tout ce qui revient. Tu coches ce qui est tombé ; le reste continue de s’afficher comme prévu, sans disparaître de la prévision.',
-    splitBody:
-      'Les charges communes se répartissent entre les membres au prorata de leurs revenus, et la somme des parts vaut exactement le total, au centime près. Ce qu’une seule personne a avancé se régularise le mois suivant.',
-    privacyBody:
-      'Pas de compte, pas de serveur, pas de mesure d’audience. Tes données vivent dans ce navigateur, et l’export est la seule porte de sortie — c’est toi qui l’ouvres.',
-
-    /* Quatrième principe, et non plus une tuile. « QUATRE NATURES, UN SEUL
-       FLUX » fait 28 caractères : sur une 4×1 à 320px, la pilule en demandait
-       244 pour 246 disponibles. Deux pixels de marge, c'est-à-dire le même
-       débordement que « CAPACITÉ D'ÉPARGNE », mais en sursis. En prose, l'idée
-       a de toute façon la place d'être dite en entier. */
-    kindsTitle: 'Quatre natures, un seul flux',
-    kindsBody:
-      'Rien n’est rangé en comptes bancaires : tout est une entrée ou une sortie, sous l’une des quatre natures. Le sens dit si l’argent entre ou sort, la nature dit ce qu’il devient — un virement sur un livret sort du compte comme un plein d’essence, mais l’un est déplacé et l’autre consommé.',
-
-    /* La seule chose qui empêche la grille de mentir. En texte lisible et non
-       en filigrane : un avertissement qu'on ne peut pas lire n'en est pas un. */
-    sample: 'Les chiffres ci-dessus sont ceux d’un foyer d’exemple.',
-
-    /* Deux, et non trois : la troisième — celle qui veut seulement voir — est
-       servie tout en haut, à côté du bouton principal. C'est une porte d'entrée,
-       pas un recours, et le même bouton deux fois sur un même écran ne se lit
-       plus comme deux occasions mais comme une redite. */
-    doors: 'Deux façons de ne pas commencer par une page blanche',
-    /* Déplacées depuis `onboarding` avec les contrôles qu'elles décrivent : une
-       clé qui ment sur son lieu d'emploi se retrouve un jour modifiée pour un
-       écran qu'elle ne sert plus. */
-    importTitle: 'Restaurer un export',
-    importHint: 'Tu as déjà un fichier Tout compte fait ? Restaure-le sans passer par les questions.',
-    schemaTitle: 'Partir de tes notes',
-    schemaHint:
-      'Tes comptes sont déjà écrits quelque part ? Donne ce schéma à un assistant avec tes notes, il t’en fera un fichier à importer.',
-  },
+  /* La prose de la présentation n'est pas ici : elle vit dans `i18n/landing.ts`,
+     avec la page qui la rend. Même raison que `i18n/legal.ts` — ce fichier-ci
+     est importé par presque tous les composants, donc il pèse sur le premier
+     chargement de tout le monde, et une page qu'on ne relit pas après avoir
+     créé son foyer n'a aucune raison d'y voyager. Seul son nom de lien reste
+     ici, en `nav.landing` : « à propos » l'écrit sans charger la page. */
 
   calendarNames: {
     months: [

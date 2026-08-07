@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fr } from '@/i18n/fr'
+import { landing } from '@/i18n/landing'
 import { InstallBanner } from './InstallBanner'
 
 /* L'événement n'existe pas dans jsdom, et le module l'écoute sur `window` dès
@@ -19,7 +19,7 @@ function setOnLine(value: boolean): void {
   Object.defineProperty(navigator, 'onLine', { value, configurable: true })
 }
 
-const installButton = () => screen.queryByRole('button', { name: fr.landing.installAction })
+const installButton = () => screen.queryByRole('button', { name: landing.installAction })
 
 describe('InstallBanner — l’installation', () => {
   afterEach(() => {
@@ -35,13 +35,13 @@ describe('InstallBanner — l’installation', () => {
   it('ne propose rien tant que le navigateur n’a rien proposé', () => {
     render(<InstallBanner />)
     expect(installButton()).not.toBeInTheDocument()
-    expect(screen.queryByText(fr.landing.installTitle)).not.toBeInTheDocument()
+    expect(screen.queryByText(landing.installTitle)).not.toBeInTheDocument()
   })
 
   it('apparaît dès que le navigateur ouvre la porte', () => {
     render(<InstallBanner />)
     fireInstallPrompt()
-    expect(screen.getByText(fr.landing.installTitle)).toBeInTheDocument()
+    expect(screen.getByText(landing.installTitle)).toBeInTheDocument()
     expect(installButton()).toBeInTheDocument()
   })
 
@@ -49,7 +49,7 @@ describe('InstallBanner — l’installation', () => {
     render(<InstallBanner />)
     const prompt = fireInstallPrompt()
 
-    await userEvent.click(screen.getByRole('button', { name: fr.landing.installAction }))
+    await userEvent.click(screen.getByRole('button', { name: landing.installAction }))
     expect(prompt).toHaveBeenCalledTimes(1)
 
     /* Un `beforeinstallprompt` ne se consomme qu'une fois : un bandeau qui
@@ -76,7 +76,7 @@ describe('InstallBanner — le hors-ligne', () => {
 
   it('ne dit rien tant que le réseau répond', () => {
     render(<InstallBanner />)
-    expect(screen.queryByText(fr.landing.offline)).not.toBeInTheDocument()
+    expect(screen.queryByText(landing.offline)).not.toBeInTheDocument()
   })
 
   it('annonce que tout continue dès que le réseau tombe', () => {
@@ -86,12 +86,12 @@ describe('InstallBanner — le hors-ligne', () => {
     act(() => {
       window.dispatchEvent(new Event('offline'))
     })
-    expect(screen.getByRole('status')).toHaveTextContent(fr.landing.offline)
+    expect(screen.getByRole('status')).toHaveTextContent(landing.offline)
 
     setOnLine(true)
     act(() => {
       window.dispatchEvent(new Event('online'))
     })
-    expect(screen.queryByText(fr.landing.offline)).not.toBeInTheDocument()
+    expect(screen.queryByText(landing.offline)).not.toBeInTheDocument()
   })
 })

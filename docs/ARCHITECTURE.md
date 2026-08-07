@@ -19,6 +19,11 @@ doit faire, et le [design system](DESIGN-SYSTEM.md) de quoi elle a l'air.
   rapporte ce qu'elle a fait.
 - `src/persistence/tabs.ts` — ce que les onglets se disent, et rien d'autre.
 - `src/i18n/fr.ts` — toutes les chaînes. Aucun texte en dur dans un composant.
+  Deux exceptions, et la même raison : `src/i18n/legal.ts` et
+  `src/i18n/landing.ts`. Ce fichier-ci est importé par presque tous les
+  composants, donc il pèse dans le graphe initial que `scripts/size.mjs`
+  plafonne ; ces deux prose-là sont rendues par des écrans chargés à la demande,
+  et personne ne les relit au quotidien. Elles voyagent avec eux.
 - `src/persistence/schemaDoc.ts` — le modèle de données à donner à un assistant,
   et `src/persistence/example.ts` — le foyer d'exemple. Tous deux dérivés du
   code, tous deux chargés à la demande.
@@ -69,6 +74,29 @@ qui remplacent des données ne s'affichent que devant quelqu'un qui n'en a pas.
 
 Corollaire du même déplacement : `resetAll()` retombe sur elle. Le formulaire
 s'affichait jusqu'ici à l'URL de l'écran d'où l'on venait, `/reglages` comprise.
+
+**Elle démontre le calcul, pas seulement la grille.** La bento montrait un seul
+écran — le mois —, et ce qui distingue vraiment l'app y était *raconté* :
+prorata, régularisation du mois suivant, cascade de la capacité d'épargne
+n'existaient qu'en prose. `LandingProof` les pose avec les composants et le
+vocabulaire des vrais écrans, jusqu'à la ligne de vérification de `SplitPage`.
+D'où une contrainte nouvelle sur `features/landing/sample.ts` : **tous ses
+montants se recomposent**, d'un bout à l'autre de la page — le mois prévu vaut
+charges + crédits, la capacité vaut revenus − charges − crédits, les parts
+redonnent le pot au centime, et les deux reports s'annulent pour que ce soit
+encore vrai après régularisation. `sample.test.ts` tient ces invariants ; sans
+lui, un montant modifié à la main ferait mentir à l'écran la page qui promet que
+tout se vérifie.
+
+**Ce qu'elle traite en plus de ce qu'elle montre.** Le modèle économique est
+énoncé sous la promesse de confidentialité — « rien à vendre puisque rien n'est
+collecté, rien à financer puisqu'il n'y a pas de serveur » —, et `LandingQuestions`
+répond aux quatre objections qui décident vraiment devant une app de finances
+sans compte : changer de téléphone, vider son navigateur, la gratuité, l'éditeur.
+Ouvertes et non repliées derrière un chevron : quelqu'un de méfiant n'a pas à
+cliquer pour obtenir la réponse qui lèverait sa méfiance. C'est aussi de là que
+le cahier des charges et le design system deviennent atteignables — « à propos »
+les liait déjà, mais un visiteur qui ne crée aucun foyer ne va pas jusque-là.
 
 **Rien ne s'écrit avant que le foyer existe.** `mutate` ne programme d'écriture
 qu'une fois le statut passé à `ready`. Sans cette garde, répondre à la première

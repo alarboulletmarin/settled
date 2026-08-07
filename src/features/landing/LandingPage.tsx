@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppFooter } from '@/app/AppFooter'
 import { ONBOARDING_PATH } from '@/app/routes'
 import { fr } from '@/i18n/fr'
+import { landing } from '@/i18n/landing'
 import { useStore } from '@/store/store'
 import { ExampleControl } from '@/features/settings/ExampleControl'
 import { ImportControl } from '@/features/settings/ImportControl'
@@ -12,6 +13,8 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { DataIcon, RecurrencesIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { InstallBanner } from './InstallBanner'
+import { LandingProof } from './LandingProof'
+import { LandingQuestions } from './LandingQuestions'
 import { LandingTiles } from './LandingTiles'
 import { RecoveryDoor } from './RecoveryDoor'
 
@@ -73,7 +76,7 @@ export function LandingPage() {
           <span className="t-eyebrow text-muted">{fr.app.name}</span>
           <h1 className="t-hero-fit max-w-[16ch]">{fr.app.tagline}</h1>
         </div>
-        <p className="t-body max-w-prose">{fr.landing.intro}</p>
+        <p className="t-body max-w-prose">{landing.intro}</p>
 
         {/* Tant que l'hydratation n'a pas répondu, on ne sait pas encore quoi
             proposer. Rien plutôt qu'un bouton qui changerait de sens sous le
@@ -84,39 +87,62 @@ export function LandingPage() {
             écraserait ce qu'on n'a pas su ouvrir, et le bloc de récupération
             juste dessous porte déjà les quatre recours, dans leur ordre. */}
         {status !== 'loading' && !unreadable && (
-          <div className="flex flex-wrap items-center gap-3">
+          <>
             {empty ? (
-              <>
+              /* La rangée et sa légende, en colonne : « Charger l'exemple » dit
+                 le geste sans dire pourquoi on le ferait, et la phrase qui le
+                 disait — `landing.exampleHint` — était écrite depuis le début
+                 sans être branchée nulle part. Sous les deux boutons plutôt
+                 qu'à côté du second : une légende posée dans une rangée qui
+                 passe à la ligne à 320px se retrouve un jour au-dessus de ce
+                 qu'elle légende. */
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    onClick={() => {
+                      void navigate(ONBOARDING_PATH)
+                    }}
+                  >
+                    {landing.start}
+                  </Button>
+                  {/* Aucune confirmation : rien n'a encore été enregistré, et
+                      faire confirmer la perte de rien n'apprend qu'une chose —
+                      que les questions de cette app ne veulent rien dire. */}
+                  <ExampleControl confirm={false} />
+                </div>
+                <p className="t-label">{landing.exampleHint}</p>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   onClick={() => {
-                    void navigate(ONBOARDING_PATH)
+                    void navigate('/')
                   }}
                 >
-                  {fr.landing.start}
+                  {landing.open}
                 </Button>
-                {/* Aucune confirmation : rien n'a encore été enregistré, et
-                    faire confirmer la perte de rien n'apprend qu'une chose —
-                    que les questions de cette app ne veulent rien dire. */}
-                <ExampleControl confirm={false} />
-              </>
-            ) : (
-              <Button
-                onClick={() => {
-                  void navigate('/')
-                }}
-              >
-                {fr.landing.open}
-              </Button>
+              </div>
             )}
-          </div>
+          </>
         )}
 
-        <p className="t-label">{fr.landing.privacy}</p>
+        {/* Les deux moitiés de la même réponse, dans un seul bloc. La première
+            dit d'où ne viennent pas les données ; la seconde dit pourquoi c'est
+            gratuit, et son silence se lisait comme un piège. Le raisonnement
+            était écrit dans le README — « aucun backend, donc aucun coût de
+            fonctionnement » — et n'avait jamais atteint la page qui en a
+            besoin. `gap-1` : elles se répondent, elles ne font pas deux points
+            d'une liste. */}
+        <div className="flex flex-col gap-1">
+          <p className="t-label">{landing.privacy}</p>
+          <p className="t-label">{landing.free}</p>
+        </div>
 
-        {/* Juste sous la phrase qui dit qu'il n'y a ni compte ni serveur : c'est
-            elle qui pose la question à laquelle l'installation répond — s'il n'y
-            a de copie nulle part, qu'est-ce qui garde celle-ci ? Elle ne
-            s'affiche que quand le navigateur a de quoi la tenir. */}
+        {/* Juste sous les phrases qui disent qu'il n'y a ni compte ni serveur :
+            ce sont elles qui posent la question à laquelle l'installation
+            répond — s'il n'y a de copie nulle part, qu'est-ce qui garde
+            celle-ci ? Elle ne s'affiche que quand le navigateur a de quoi la
+            tenir. */}
         <InstallBanner />
       </header>
 
@@ -128,11 +154,21 @@ export function LandingPage() {
         <LandingTiles />
         {/* La seule chose qui empêche la grille de mentir. En texte lisible et
             non en filigrane : un avertissement qu'on ne peut pas lire n'en est
-            pas un. */}
-        <p className="t-label">{fr.landing.sample}</p>
+            pas un. Il couvre aussi les chiffres de `LandingProof`, qui sont
+            ceux du même foyer et le disent en toutes lettres — deux
+            avertissements sur une page n'en font pas un plus fort. */}
+        <p className="t-label">{landing.sample}</p>
       </div>
 
       <LandingPrinciples />
+
+      {/* Ce que les principes viennent d'affirmer, démontré : le prorata, la
+          régularisation, la vérification à zéro et la cascade de la capacité.
+          Après eux et pas avant — un calcul posé avant qu'on ait dit ce qu'il
+          calcule ne prouve rien. */}
+      <LandingProof />
+
+      <LandingQuestions />
 
       {/* Pas sous le bloc de récupération, qui porte déjà l'import : deux
           boutons du même nom sur un écran ne font pas deux occasions. */}
@@ -156,17 +192,17 @@ export function LandingPage() {
 function LandingPrinciples() {
   return (
     <section className="flex flex-col gap-5">
-      <h2 className="t-section">{fr.landing.principles}</h2>
+      <h2 className="t-section">{landing.principles}</h2>
       {/* Deux colonnes et non quatre : à `max-w-5xl`, quatre blocs de prose
           tombent sous 230px de large, où une ligne ne porte plus que cinq mots.
           `gap-4` comme toute grille de contenu de l'app — une gouttière propre
           à cette page se serait vue contre celle du bento, juste au-dessus. */}
       <div className="grid gap-4 lg:grid-cols-2">
         {[
-          { title: fr.landing.monthTitle, body: fr.landing.monthBody },
-          { title: fr.landing.splitTitle, body: fr.landing.splitBody },
-          { title: fr.landing.kindsTitle, body: fr.landing.kindsBody },
-          { title: fr.landing.privacyTitle, body: fr.landing.privacyBody },
+          { title: landing.monthTitle, body: landing.monthBody },
+          { title: landing.splitTitle, body: landing.splitBody },
+          { title: landing.kindsTitle, body: landing.kindsBody },
+          { title: landing.privacyTitle, body: landing.privacyBody },
         ].map((item) => (
           <div key={item.title} className="flex max-w-prose flex-col gap-2">
             <h3 className="t-body font-semibold">{item.title}</h3>
@@ -203,17 +239,17 @@ function LandingPrinciples() {
 function LandingDoors() {
   return (
     <section className="flex flex-col gap-5">
-      <h2 className="t-section">{fr.landing.doors}</h2>
+      <h2 className="t-section">{landing.doors}</h2>
       <div className="grid gap-4 lg:grid-cols-2">
         <Tile className="gap-3">
-          <Eyebrow icon={DataIcon}>{fr.landing.importTitle}</Eyebrow>
-          <p className="t-label">{fr.landing.importHint}</p>
+          <Eyebrow icon={DataIcon}>{landing.importTitle}</Eyebrow>
+          <p className="t-label">{landing.importHint}</p>
           <ImportControl />
         </Tile>
 
         <Tile className="gap-3">
-          <Eyebrow icon={RecurrencesIcon}>{fr.landing.schemaTitle}</Eyebrow>
-          <p className="t-label">{fr.landing.schemaHint}</p>
+          <Eyebrow icon={RecurrencesIcon}>{landing.schemaTitle}</Eyebrow>
+          <p className="t-label">{landing.schemaHint}</p>
           <SchemaControl />
         </Tile>
       </div>

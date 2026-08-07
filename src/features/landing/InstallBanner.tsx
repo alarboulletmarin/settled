@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { fr } from '@/i18n/fr'
+import { landing } from '@/i18n/landing'
 import { canInstall, promptInstall, subscribeInstall } from '@/lib/install'
 import { isOffline, subscribeOnline } from '@/lib/online'
 import { Button } from '@/ui/Button'
@@ -43,8 +43,8 @@ export function InstallBanner() {
            même mise en page que le rappel d'export, pour la même raison. */
         <div className="tile flex w-full flex-col gap-3 p-4 sm:flex-row sm:items-center">
           <div className="flex min-w-0 flex-1 flex-col">
-            <p className="t-body font-semibold">{fr.landing.installTitle}</p>
-            <p className="t-label">{fr.landing.installBody}</p>
+            <p className="t-body font-semibold">{landing.installTitle}</p>
+            <p className="t-label">{landing.installBody}</p>
           </div>
           <Button
             className="shrink-0 self-end sm:self-auto"
@@ -52,7 +52,7 @@ export function InstallBanner() {
               void promptInstall()
             }}
           >
-            {fr.landing.installAction}
+            {landing.installAction}
           </Button>
         </div>
       )}
@@ -64,7 +64,7 @@ export function InstallBanner() {
           `status` et non `alert` : c'est une nouvelle rassurante, elle n'a pas à
           couper ce qu'un lecteur d'écran est en train de dire. */}
       <div role="status" className="empty:hidden">
-        {offline && <Chip>{fr.landing.offline}</Chip>}
+        {offline && <Chip>{landing.offline}</Chip>}
       </div>
     </>
   )
