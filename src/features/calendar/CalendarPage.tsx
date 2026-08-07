@@ -125,10 +125,12 @@ export function CalendarPage() {
           une charge commune tombe en entier et n'est à personne. */}
       <MonthHeader />
       <div className="flex max-w-2xl flex-col gap-4">
-        {/* Pleine largeur sous 404px, cadre annulé : c'est la seule façon de
-            tenir la case de 44px du DS §8 sur un téléphone — le calcul est dans
-            `CalendarGrid`. Au-dessus du seuil, la tuile est une tuile. */}
-        <Tile className="max-[404px]:-mx-4 max-[404px]:rounded-none max-[404px]:border-x-0 max-[404px]:p-1">
+        {/* La tuile reste une tuile à toutes les largeurs — coins, cadre, ombre,
+            et la marge de la page de chaque côté. Elle resserre seulement son
+            propre cadre sous 480px, à la valeur qu'une tuile plate utilise déjà :
+            c'est ce qui rend seize pixels à chaque colonne sans que la carte
+            cesse d'en être une. Le calcul complet est dans `CalendarGrid`. */}
+        <Tile className="max-[479px]:p-4">
           <CalendarGrid
             month={ym}
             window={grid}
@@ -141,9 +143,7 @@ export function CalendarPage() {
             today={now}
           />
           {somewhereElse && (
-            // Le cadre horizontal rend au bouton celui que la tuile abandonne
-            // sous 404px : sans lui il toucherait le bord de l'écran.
-            <div className="flex justify-end pt-2 max-[404px]:px-2">
+            <div className="flex justify-end pt-2">
               <Button
                 size="sm"
                 variant="ghost"

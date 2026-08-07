@@ -311,6 +311,8 @@ Une erreur dit ce qui s'est passé et quoi faire, sans s'excuser. Un écran vide
 
 Contraste AA sur tout texte. Focus clavier visible sur tout élément interactif, anneau 2px `--accent-2` avec 2px de décalage. Cible tactile minimale 44px. Chaque graphique est doublé d'une lecture accessible aux lecteurs d'écran. Les deux thèmes sont testés sur chaque écran avant de considérer l'écran terminé.
 
+Deux écarts à la cible de 44px, et pas un de plus. Ils ont en commun d'être **mesurés, écrits à côté du code, et compensés sur l'autre axe** : une largeur d'écran ne se négocie pas, et un composant qui divise cette largeur par sept ou par douze finit par tomber en dessous. Le curseur d'un graphique donne seize pixels par mois sur un téléphone de 320, et la lecture existe aussi au clavier et dans le doublon accessible. Une case de calendrier tombe à 37px de large sous 375px de fenêtre, et garde ses 44px de haut. Ce qui n'est jamais négociable, en revanche, c'est la hauteur : une cible aplatie n'a plus rien pour être visée.
+
 ---
 
 ## 9. Icônes

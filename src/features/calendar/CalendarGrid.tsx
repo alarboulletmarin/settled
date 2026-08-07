@@ -224,7 +224,7 @@ export function CalendarGrid({
     <div>
       {/* Les deux rangées portent la même gouttière : sans quoi le nom du jour
           cesse de tomber au-dessus de sa colonne dès que la grille en a une. */}
-      <div className="mb-1 grid grid-cols-7 gap-1 max-[404px]:gap-0" aria-hidden="true">
+      <div className="mb-1 grid grid-cols-7 gap-1 max-[479px]:gap-x-0" aria-hidden="true">
         {weekdays().map((day) => (
           // Le nom complet en clé : les initiales ne sont pas uniques en
           // français — mardi et mercredi donnent tous deux « M ».
@@ -234,18 +234,27 @@ export function CalendarGrid({
         ))}
       </div>
 
-      {/* Sept colonnes de 44px demandent 308px, et le cadre de la page (16px),
-          celui de la tuile (20px) et les six gouttières (4px) en prennent 96 de
-          plus : en dessous de 404px de fenêtre, la case tombe à 32px de large —
-          la moitié des téléphones en portrait, pour une cible que le DS §8 fixe
-          à 44px partout.
+      {/* Sept colonnes de 44px demandent 308px, et sur un téléphone il n'y en a
+          pas 308 : à 375px, le cadre de la page (2 × 16) et celui de la tuile
+          (2 × 16) en laissent 311 — soit 44,4px par colonne, et seulement si les
+          six gouttières valent zéro.
 
-          La grille passe donc à bord perdu sous ce seuil et abandonne ses
-          gouttières : le motif est celui du bandeau du mois, et il rend 312px
-          pour sept cases, soit 44,5px. Le jour ouvert se distingue à la pilule
-          derrière son chiffre, jamais à la gouttière — c'est elle qu'on
-          sacrifie, pas la cible. Le bord perdu est posé sur la tuile et non ici :
-          c'est son cadre qu'il faut reprendre autant que celui de la page.
+          Ce qu'on abandonne est donc la gouttière, et **jamais le cadre**. La
+          grille est partie un temps à bord perdu pour tenir 44px de large
+          partout ; ça rendait quelques pixels et ça coûtait la carte — une bande
+          d'un bord à l'autre de l'écran, sans coin ni ombre, qui ne se lit plus
+          comme une surface posée sur la page. Sous 480px, la tuile resserre donc
+          son cadre à 16px, comme le fait déjà une tuile plate, et les colonnes
+          se joignent :
+
+            320px → 36,6px      375px → 44,4px      414px → 50,0px
+
+          En dessous de 375px, la cible perd en largeur ce qu'elle garde en
+          hauteur : la case tient ses 44px de haut par son `min-h-11`, et l'écart
+          est du même ordre que celui, mesuré et assumé, du curseur des
+          graphiques. Sept cases jointives de 37px valent mieux que sept cases de
+          33px séparées par du vide — et le jour ouvert se distingue à la pilule
+          derrière son chiffre, jamais à la gouttière.
 
           `items-start` est indispensable au carré : un élément de grille est
           étiré par sa rangée, et un ratio posé sur une case étirée est ignoré.
@@ -256,7 +265,7 @@ export function CalendarGrid({
         aria-label={tpl(fr.calendar.gridLabel, de(formatYearMonth(month)))}
         aria-describedby={hintId}
         onKeyDown={onKeyDown}
-        className="grid grid-cols-7 items-start gap-1 max-[404px]:gap-0"
+        className="grid grid-cols-7 items-start gap-1 max-[479px]:gap-x-0"
       >
         {grid.cells.map((cell) =>
           reachable(cell.date) ? (

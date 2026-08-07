@@ -47,6 +47,13 @@ catégorie 1 disparaissait purement sur le jour qu'on venait d'ouvrir.
   d'insertion du document : un loyer pouvait tomber dans le « +3 » derrière
   trois cafés. Confirmé avant prévu, puis du plus gros au plus petit — et la
   feuille du jour se lit dans l'ordre exact des pastilles de sa case.
+- **La carte reste une carte sur téléphone.** La grille partait à bord perdu
+  sous 404px pour tenir 44px de large : ça rendait quelques pixels et ça coûtait
+  la carte — une bande d'un bord à l'autre de l'écran, sans coin ni ombre, qui
+  ne se lit plus comme une surface posée sur la page. C'est la gouttière qu'on
+  abandonne maintenant, jamais le cadre, et la tuile resserre le sien à 16px
+  sous 480px : 44,4px par colonne à 375px, 37 à 320 — où la cible garde ses
+  44px de haut, écart mesuré et inscrit au DS §8.
 - **Le jour s'ouvre en feuille**, avec le total de la journée, son compte
   d'échéances et ses trois portes de saisie. Il était une tuile posée sous la
   grille, qui devait réécrire à la main ce qu'un `<dialog>` donne : Échap, le
