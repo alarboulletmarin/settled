@@ -105,50 +105,77 @@ function missingIncomes(unknown: readonly Member[], unpriced: number, zero: numb
   }
 }
 
+/**
+ * Une part, et le calcul qui la produit.
+ *
+ * Le résultat vient en dernier, après les termes qui le donnent : c'est l'ordre
+ * dans lequel le calcul se fait, et le seul qui permette de le suivre. Annoncé
+ * d'abord, « À verser » se croit sur parole, et les lignes en dessous ne sont
+ * plus qu'une justification qu'on ne lit pas.
+ */
 function ShareRow({ share, previousYm }: { share: MemberShare; previousYm: YearMonth }) {
   const members = useMemberMap()
   const currency = useCurrency()
   const member = members.get(share.memberId)
 
   return (
-    <Tile className="gap-3">
-      <div className="flex items-center gap-3">
+    <li className="flex flex-col gap-1 border-t border-border py-3">
+      <div className="flex items-center gap-2">
         <Dot color={member?.color ?? 'var(--cat-rest)'} />
         <span className="t-body min-w-0 flex-1 truncate font-medium">{member?.name ?? ''}</span>
+        {/* Le prorata, à côté du revenu dont il sort : le pourcentage seul est
+            ce que la tuile du tableau de bord montrait déjà, et il ne dit pas
+            d'où il vient. */}
         <span className="t-axis tnum shrink-0">{formatPercent(share.shareBp / 10_000, 1)}</span>
       </div>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-t border-border pt-3">
+
+      {/* Le membre seul porte 100 % sans qu'aucun revenu soit exigé : le sien
+          peut valoir zéro ici, et « Revenu 0,00 € » se lirait comme une donnée
+          quand c'est une absence. */}
+      {share.income > 0 && (
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="t-axis min-w-0">{fr.split.income}</span>
+          <span className="t-axis tnum shrink-0">{formatMoney(share.income, currency, false)}</span>
+        </div>
+      )}
+
+      {/* Sans report, ces deux lignes ne disent rien : « Sa part du mois »
+          recopierait à l'identique le « À verser » juste dessous, et une
+          régularisation à zéro laisserait croire à un rattrapage là où les
+          comptes tombaient justes. */}
+      {share.adjustment !== 0 && (
+        <>
+          {/* Avec ses centimes, contrairement au revenu : c'est le premier
+              terme de la soustraction qu'on lit juste en dessous, et arrondi il
+              ne tombe plus juste — « 521 € − 45,60 € » ne fait pas 475,20 €.
+              Ces trois lignes n'existent que pour être vérifiables. */}
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="t-axis min-w-0">{fr.split.settlementShare}</span>
+            <span className="t-axis tnum shrink-0">{formatMoney(share.due, currency)}</span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            {/* Le libellé passe à la ligne, il ne se tronque pas : c'est lui qui
+                porte l'argument de la carte, et « Régularisation de sep… » ne
+                porte plus rien. Le DS §5 tranche le cas — c'est au format d'être
+                choisi pour le libellé, jamais au libellé d'être raboté. */}
+            <span className="t-axis min-w-0">
+              {tpl(fr.split.settlement, de(formatYearMonth(previousYm)))}
+            </span>
+            {/* Signé, et sans `direction` : ce n'est pas un flux dont on lirait
+                la valeur absolue, c'est un écart dont le signe est toute la
+                lecture — la règle qu'applique déjà `SettlementTile`. */}
+            <span className="t-axis tnum shrink-0">
+              {formatSignedMoney(share.adjustment, currency)}
+            </span>
+          </div>
+        </>
+      )}
+
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3">
         <span className="t-label">{fr.split.due}</span>
-        <Amount value={share.toPay} size="tile" direction="out" />
-        {/* Sans report, la tuile est celle de toujours : une ligne à zéro ne
-            dirait rien qu'on ne sache déjà, et elle laisserait croire à une
-            régularisation là où les comptes tombaient justes. */}
-        {share.adjustment !== 0 && (
-          <ul className="flex w-full flex-col">
-            <li className="flex items-baseline justify-between gap-3">
-              <span className="t-axis">{fr.split.settlementShare}</span>
-              <span className="t-axis tnum">{formatMoney(share.due, currency, false)}</span>
-            </li>
-            <li className="flex items-baseline justify-between gap-3">
-              <span className="t-axis min-w-0 truncate">
-                {tpl(fr.split.settlement, de(formatYearMonth(previousYm)))}
-              </span>
-              <span className="t-axis tnum shrink-0">
-                {formatSignedMoney(share.adjustment, currency)}
-              </span>
-            </li>
-          </ul>
-        )}
-        {/* Le membre seul porte 100 % sans qu'aucun revenu soit exigé : son
-            revenu peut valoir zéro ici, et « Revenu 0,00 € » se lirait comme
-            une donnée quand c'est une absence. */}
-        {share.income > 0 && (
-          <span className="t-axis w-full">
-            {`${fr.split.income} ${formatMoney(share.income, currency, false)}`}
-          </span>
-        )}
+        <Amount value={share.toPay} size="body" direction="out" />
       </div>
-    </Tile>
+    </li>
   )
 }
 
@@ -171,6 +198,11 @@ export function SplitPage() {
   const currency = useCurrency()
   const navigate = useNavigate()
   const settlement = shares?.some((share) => share.adjustment !== 0) ?? false
+
+  /* Nommé une fois, rendu à deux endroits : il ouvre la carte des parts quand
+     il y en a, et tient seul le mois sans charge commune — où il n'y a pas de
+     carte pour le porter. */
+  const subtitle = members.length === 1 ? fr.split.subtitleSolo : fr.split.subtitle
 
   /* Les clés disent ce qui est **rendu**, pas ce que l'écran sait faire : la
      section du report n'existe que sur un mois qui en porte un. Figées à deux,
@@ -262,10 +294,6 @@ export function SplitPage() {
       <MonthHeader withMemberFilter={false} />
 
       <div className="flex max-w-3xl flex-col gap-4">
-        <p className="t-label">
-          {members.length === 1 ? fr.split.subtitleSolo : fr.split.subtitle}
-        </p>
-
         <Tile variant="accent">
           <Eyebrow icon={SplitIcon}>{fr.split.total}</Eyebrow>
           <Amount value={total} size="tile" className="mt-3" />
@@ -273,14 +301,46 @@ export function SplitPage() {
         </Tile>
 
         {total <= 0 ? (
-          <p className="t-label">{fr.split.nothing}</p>
+          <>
+            <p className="t-label">{subtitle}</p>
+            <p className="t-label">{fr.split.nothing}</p>
+          </>
         ) : (
           <>
-            <div className="flex flex-col gap-3">
-              {shares.map((share) => (
-                <ShareRow key={share.memberId} share={share} previousYm={previousYm} />
-              ))}
-            </div>
+            {/* La carte qu'on lit d'un trait, et non une tuile par membre.
+                Le partage se vérifie ligne à ligne : ce qui le prouve, c'est de
+                voir les parts et leur somme sans quitter le même cadre. Éclatée
+                en une tuile chacun avec la vérification trois blocs plus bas,
+                elle demandait de retenir deux chiffres pour constater qu'ils
+                tombent — c'est-à-dire de la croire sur parole, exactement ce
+                qu'un partage entre deux personnes ne fait pas.
+                Hors grille bento, et c'est ce qui l'autorise : le DS §5 y
+                plafonne une tuile à quatre éléments, quand celle-ci prend la
+                hauteur que la liste demande. La page de présentation montre la
+                même, pour la même raison.
+                Sans eyebrow : le titre de l'écran dit déjà « Répartition », et
+                une étiquette qui le répète deux blocs plus bas n'est plus un
+                repère. C'est le sous-titre qui ouvre la carte — sans lui, le
+                filet de la première part flotterait en tête de tuile sans rien
+                séparer. */}
+            <Tile className="gap-3">
+              <p className="t-label">{subtitle}</p>
+
+              <ul className="flex flex-col">
+                {shares.map((share) => (
+                  <ShareRow key={share.memberId} share={share} previousYm={previousYm} />
+                ))}
+              </ul>
+
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 border-t border-border pt-3">
+                <span className="t-body">{fr.split.checkTotal}</span>
+                {/* Ce que chacun verse, report compris : les régularisations
+                    s'annulent d'un membre à l'autre, et la vérification reste
+                    donc vraie au centime — c'est ce qu'elle sert à montrer. */}
+                <Amount value={totalToPay(shares)} size="body" direction="out" />
+              </div>
+              <p className="t-label">{fr.split.checkHint}</p>
+            </Tile>
 
             {/* Le geste des trois autres écrans à listes repliables, au même
                 bouton et au même libellé qui bascule (DS §6). Sans lui, chaque
@@ -383,16 +443,6 @@ export function SplitPage() {
               </Disclosure>
             </Tile>
 
-            <Tile className="gap-2">
-              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                <span className="t-body">{fr.split.checkTotal}</span>
-                {/* Ce que chacun verse, report compris : les régularisations
-                    s'annulent d'un membre à l'autre, et la vérification reste
-                    donc vraie au centime — c'est ce qu'elle sert à montrer. */}
-                <Amount value={totalToPay(shares)} size="body" direction="out" />
-              </div>
-              <p className="t-label">{fr.split.checkHint}</p>
-            </Tile>
           </>
         )}
 
