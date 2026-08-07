@@ -163,6 +163,18 @@ export function formatDate(iso: ISODate): string {
   return `${d === 1 ? '1er' : String(d)} ${monthName(m)} ${String(y)}`
 }
 
+/**
+ * « mardi 12 juillet 2026 » — le nom complet d'une case de calendrier.
+ *
+ * Le jour de la semaine se dit en toutes lettres parce que la grille, elle, ne
+ * le dit qu'à l'œil : ses sept en-têtes sont `aria-hidden`, et « L M M J V S D »
+ * annoncé sept fois ne vaudrait pas la colonne dans laquelle on se trouve.
+ */
+export function formatWeekdayDate(iso: ISODate): string {
+  const weekday = fr.calendarNames.weekdays[dayOfWeek(iso) - 1] ?? ''
+  return `${weekday} ${formatDate(iso)}`
+}
+
 /** « 12 juil. » */
 export function formatDayMonthShort(iso: ISODate): string {
   const { m, d } = parseISO(iso)

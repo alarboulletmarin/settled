@@ -2,119 +2,90 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { entryNewPath, entryPath } from '@/app/routes'
-import type { Entry } from '@/domain/types'
+import { type ISODate, currentYm, today, ymOf } from '@/domain/date'
 import { fr } from '@/i18n/fr'
-import { formatDate } from '@/i18n/format'
-import { useCategoryMap, useMemberMap } from '@/store/selectors'
-import { Amount } from '@/ui/Amount'
-import { Button, IconButton } from '@/ui/Button'
+import { formatDate, tpl } from '@/i18n/format'
+import { useCurrentYm, useMonthBounds } from '@/store/selectors'
+import { useStore } from '@/store/store'
+import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
-import { Eyebrow } from '@/ui/Eyebrow'
-import { Close, Plus } from '@/ui/Icons'
-import { ListRow } from '@/ui/ListRow'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
-import { useHotkeys } from '@/ui/useHotkeys'
 import { CalendarGrid } from './CalendarGrid'
-import { useCalendarDays } from './useCalendarDays'
-
-/** Les entrées du jour sélectionné. */
-function DayPanel({
-  entries,
-  date,
-  onOpen,
-  onAdd,
-  onClose,
-}: {
-  entries: Entry[]
-  date: string
-  onOpen: (e: Entry) => void
-  onAdd: (nature: 'in' | 'out' | 'saving') => void
-  onClose: () => void
-}) {
-  const categories = useCategoryMap()
-  const members = useMemberMap()
-
-  return (
-    <Tile className="flex flex-col gap-3">
-      {/* Le panneau se referme, et pas seulement en ouvrant un autre jour : la
-          grille n'avait aucun geste pour revenir à la vue du mois. La croix
-          double le re-clic sur la case, qui promet déjà la bascule par son
-          `aria-pressed` — le geste naturel se découvre mal, la croix se voit. */}
-      <div className="flex items-center justify-between gap-2">
-        <Eyebrow>{formatDate(date)}</Eyebrow>
-        <IconButton label={fr.calendar.closeDay} onClick={onClose}>
-          <Close size={18} />
-        </IconButton>
-      </div>
-      {entries.length === 0 ? (
-        <p className="t-label">{fr.calendar.emptyDay}</p>
-      ) : (
-        <ul className="flex flex-col">
-          {entries.map((entry) => {
-            const name = entry.memberId === undefined ? undefined : members.get(entry.memberId)?.name
-            return (
-              <li key={entry.id}>
-                <ListRow
-                  color={categories.get(entry.categoryId)?.color ?? 'var(--cat-rest)'}
-                  label={entry.label}
-                  {...(name === undefined ? {} : { meta: name })}
-                  planned={entry.status === 'planned'}
-                  trailing={<Amount value={entry.amount} direction={entry.direction} />}
-                  onClick={() => { onOpen(entry) }}
-                />
-              </li>
-            )
-          })}
-        </ul>
-      )}
-      {/* Le jour choisi est déjà la réponse à « quelle date ? » : la saisie
-          s'ouvre dessus plutôt que de la redemander. Et la nature se choisit
-          ici, pas dans un formulaire intitulé « dépense » — l'épargne a sa
-          porte, comme sur le mois et le bouton flottant : on ne met pas de
-          côté par « Dépense ». */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            onAdd('out')
-          }}
-        >
-          <Plus size={16} />
-          {fr.entry.newOut}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            onAdd('in')
-          }}
-        >
-          <Plus size={16} />
-          {fr.entry.newIn}
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            onAdd('saving')
-          }}
-        >
-          <Plus size={16} />
-          {fr.entry.newSaving}
-        </Button>
-      </div>
-    </Tile>
-  )
-}
+import { DaySheet } from './DaySheet'
+import { defaultAnchor, isInGrid } from './grid'
+import { entriesOn, useCalendarWindow } from './useCalendarWindow'
 
 export function CalendarPage() {
-  const month = useCalendarDays()
+  const ym = useCurrentYm()
+  const setYm = useStore((s) => s.setYm)
+  const bounds = useMonthBounds()
+  const grid = useCalendarWindow()
   const navigate = useNavigate()
-  const [selected, setSelected] = useState<string | null>(null)
 
-  const create = (nature: 'in' | 'out' | 'saving', date?: string): void => {
+  const [opened, setOpened] = useState<ISODate | null>(null)
+  const [anchor, setAnchor] = useState<ISODate | null>(null)
+  const [focusOn, setFocusOn] = useState<{ date: ISODate } | null>(null)
+
+  /* Lu au rendu et non mémorisé : un onglet laissé ouvert la nuit du 31 doit
+     désigner le jour qu'on est le lendemain, pas celui qu'on était en
+     l'ouvrant. C'est déjà la règle du bandeau du mois et de tous les sélecteurs
+     voisins, qui appellent tous `today()` au calcul. */
+  const now = today()
+
+  /* Deux états dérivés plutôt que synchronisés, pour la même raison : un jour
+     d'un autre mois ne se retrouve simplement pas dans la fenêtre, sans effet
+     ni remise à zéro. Changer de mois referme donc la feuille et rend l'ancre
+     au jour d'arrivée, sans qu'aucun code n'ait à s'en occuper. */
+  const day = opened !== null && ymOf(opened) === ym ? opened : null
+  const active = anchor !== null && isInGrid(ym, anchor) ? anchor : defaultAnchor(ym, now)
+
+  /* Les jours de débord mènent à leur mois, comme un chevron. Ceux dont le mois
+     sort des bornes n'y mènent pas : `useMonthBounds` refuse déjà de proposer
+     un mois que le store n'ouvrirait pas — c'est-à-dire un mois vide sans
+     explication. */
+  const reachable = (date: ISODate): boolean => {
+    const month = ymOf(date)
+    return month >= bounds.min && month <= bounds.max
+  }
+
+  /* Un jour voisin change de mois en s'ouvrant : la fenêtre de six semaines les
+     montre, c'est donc qu'on peut les atteindre, et le mois suit le jour qu'on
+     a demandé. Les mois voisins n'affichent que ce qui est déjà écrit — ouvrir
+     un mois grave toutes ses échéances prévues dans le document, et une lecture
+     n'écrit pas douze lignes en passant. Toucher la case est justement le geste
+     qui l'ouvre. */
+  const goTo = (date: ISODate): void => {
+    if (ymOf(date) !== ym) setYm(ymOf(date))
+    setAnchor(date)
+  }
+
+  /* Le clavier déplace le focus autant que l'ancre : sans ça l'arrêt de
+     tabulation avancerait pendant que le focus resterait sur la case de départ,
+     et la flèche suivante repartirait d'un endroit qu'on ne voit pas.
+     Une flèche ne change de mois qu'en sortant de la fenêtre — un jour voisin
+     déjà affiché se rejoint sans que la grille bascule sous les doigts. */
+  const move = (date: ISODate, paging: boolean): void => {
+    if (ymOf(date) !== ym && (paging || !isInGrid(ym, date))) setYm(ymOf(date))
+    setAnchor(date)
+    setFocusOn({ date })
+  }
+
+  const open = (date: ISODate): void => {
+    goTo(date)
+    setOpened(date)
+  }
+
+  /* La feuille rend le focus à la case d'où elle vient. `<dialog>` le fait tout
+     seul quand cette case existe encore — mais ouvrir un jour voisin change de
+     mois, et la case cliquée est démontée avant la fermeture. On le repose donc
+     nous-mêmes, dans les deux cas. */
+  const close = (): void => {
+    if (day !== null) setFocusOn({ date: day })
+    setOpened(null)
+  }
+
+  const create = (nature: 'in' | 'out' | 'saving', date?: ISODate): void => {
     // L'épargne part en « je place » : c'est le geste le plus courant, et le
     // formulaire porte la bascule pour reprendre.
     const options =
@@ -122,29 +93,27 @@ export function CalendarPage() {
     void navigate(entryNewPath(date === undefined ? options : { ...options, date }))
   }
 
-  const hasAny = month.days.some((day) => day.entries.length > 0)
-  // La sélection est dérivée, pas synchronisée : un jour d'un autre mois ne se
-  // retrouve simplement pas dans la grille, sans effet ni remise à zéro.
-  const day = month.days.find((d) => d.date === selected)
+  /* « Aujourd'hui » et non « ce mois-ci » : celui-ci ramène vraiment au jour —
+     il rouvre le mois courant, ouvre la date du jour et y repose le focus. Le
+     DS §6 refusait le mot au bandeau parce que le bouton du bandeau ne bouge
+     que le mois ; ici la promesse est tenue.
 
-  /* Une bascule, pas une affectation : la case porte `aria-pressed`, elle doit
-     donc se relâcher. Sans ça, un jour ouvert ne se refermait jamais — on ne
-     pouvait qu'en ouvrir un autre, et la vue du mois seule était perdue. */
-  const toggle = (date: string): void => {
-    setSelected((current) => (current === date ? null : date))
+     Il n'existe que lorsqu'il fait quelque chose, comme les repères d'action du
+     DS §6 : un bouton qui ne bouge rien apprend à ignorer ceux qui bougent
+     quelque chose. */
+  const onToday = (): void => {
+    setYm(currentYm())
+    setAnchor(now)
+    setOpened(now)
   }
+  /* Une seule condition suffit, parce que l'ancre suit tout : elle vaut le 1er
+     d'un autre mois, le jour qu'on ouvre, et celui vers lequel une flèche
+     déplace le focus. Elle ne vaut donc aujourd'hui que sur le mois courant,
+     sans être parti nulle part — et c'est exactement le cas où ce bouton ne
+     ferait rien. */
+  const somewhereElse = active !== now
 
-  /* Le panneau du jour n'est pas une feuille — il s'ouvre sous la grille, sans
-     couche par-dessus —, donc rien ne lui donnait la touche que `<dialog>`
-     offre gratuitement à toutes les autres. C'est pourtant le même geste :
-     refermer ce qu'on vient d'ouvrir. Le raccourci ne fait rien quand aucun
-     jour n'est ouvert, plutôt que d'être posé sous condition — un écouteur qui
-     apparaît et disparaît sous les doigts se comporte moins bien. */
-  useHotkeys({
-    Escape: () => {
-      setSelected(null)
-    },
-  })
+  const hasAny = grid.cells.some((cell) => cell.inMonth && entriesOn(grid, cell.date).length > 0)
 
   return (
     <>
@@ -152,63 +121,85 @@ export function CalendarPage() {
           d'écran, et son bandeau ne dit que le mois. Comme celui du mois, il ne
           s'affiche pas — le nom de l'écran est déjà dans la navigation. */}
       <PageTitle title={fr.nav.calendar} hidden />
+      {/* Sans note de lecture : le calendrier montre les échéances réelles, où
+          une charge commune tombe en entier et n'est à personne. */}
       <MonthHeader />
       <div className="flex max-w-2xl flex-col gap-4">
         {/* Pleine largeur sous 404px, cadre annulé : c'est la seule façon de
             tenir la case de 44px du DS §8 sur un téléphone — le calcul est dans
             `CalendarGrid`. Au-dessus du seuil, la tuile est une tuile. */}
         <Tile className="max-[404px]:-mx-4 max-[404px]:rounded-none max-[404px]:border-x-0 max-[404px]:p-1">
-          <CalendarGrid month={month} selected={day?.date ?? null} onSelect={toggle} />
+          <CalendarGrid
+            month={ym}
+            window={grid}
+            opened={day}
+            anchor={active}
+            onAnchor={move}
+            onOpen={open}
+            reachable={reachable}
+            focusOn={focusOn}
+            today={now}
+          />
+          {somewhereElse && (
+            // Le cadre horizontal rend au bouton celui que la tuile abandonne
+            // sous 404px : sans lui il toucherait le bord de l'écran.
+            <div className="flex justify-end pt-2 max-[404px]:px-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                title={tpl(fr.calendar.backToTodayTitle, formatDate(now))}
+                onClick={onToday}
+              >
+                {fr.calendar.today}
+              </Button>
+            </div>
+          )}
         </Tile>
 
-        {day !== undefined ? (
-          <DayPanel
-            entries={day.entries}
-            date={day.date}
-            onOpen={(entry) => {
-              void navigate(entryPath(entry.id))
-            }}
-            onAdd={(nature) => {
-              create(nature, day.date)
-            }}
-            onClose={() => {
-              setSelected(null)
-            }}
-          />
-        ) : (
-          // L'invitation portait une action — « ouvre le mois » — que cet écran
-          // n'offre pas. Elle porte maintenant celle qu'il sait faire.
-          !hasAny && (
-            <EmptyState message={fr.calendar.empty}>
-              <div className="flex flex-wrap justify-center gap-2">
-                <Button
-                  onClick={() => {
-                    create('out')
-                  }}
-                >
-                  {fr.entry.addOut}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    create('in')
-                  }}
-                >
-                  {fr.entry.addIn}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    create('saving')
-                  }}
-                >
-                  {fr.entry.addSaving}
-                </Button>
-              </div>
-            </EmptyState>
-          )
+        {/* L'invitation portait une action — « ouvre le mois » — que cet écran
+            n'offre pas. Elle porte maintenant celle qu'il sait faire. */}
+        {!hasAny && (
+          <EmptyState message={fr.calendar.empty}>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button
+                onClick={() => {
+                  create('out')
+                }}
+              >
+                {fr.entry.addOut}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  create('in')
+                }}
+              >
+                {fr.entry.addIn}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  create('saving')
+                }}
+              >
+                {fr.entry.addSaving}
+              </Button>
+            </div>
+          </EmptyState>
         )}
       </div>
+
+      <DaySheet
+        date={day}
+        entries={day === null ? [] : entriesOn(grid, day)}
+        onOpen={(entry) => {
+          void navigate(entryPath(entry.id))
+        }}
+        onAdd={(nature) => {
+          if (day !== null) create(nature, day)
+        }}
+        onClose={close}
+      />
     </>
   )
 }

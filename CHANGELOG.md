@@ -12,6 +12,50 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — le calendrier devient un calendrier
+
+Il en avait la forme et rien d'autre. Sa grille ne calculait que les cases
+d'avant le 1er, jamais celles d'après le dernier jour : elle faisait cinq ou six
+rangées selon le mois, et la tuile changeait donc de hauteur sous le pouce à
+chaque balayage. Aucune touche n'y déplaçait le jour. Et le jour choisi peignait
+sa case entière en lime, alors que `--cat-1` **est** le lime : la pastille d'une
+catégorie 1 disparaissait purement sur le jour qu'on venait d'ouvrir.
+
+- **Une fenêtre de six semaines, toujours.** Quarante-deux cases, les jours des
+  mois voisins compris, avec leurs échéances. La tuile ne bouge plus d'un mois à
+  l'autre, et le loyer qui tombe le 1er du mois suivant se voit depuis celui-ci.
+  Un jour voisin mène à son mois, comme un chevron. Il montre ce qui est déjà
+  écrit et rien de plus : ouvrir un mois grave toutes ses échéances prévues dans
+  le document, et une lecture n'écrit pas douze lignes en passant — toucher la
+  case est justement le geste qui l'ouvre.
+- **La logique quitte le rendu.** `features/calendar/grid.ts` ne connaît ni
+  React ni le DOM et ne construit jamais de `Date` : il découpe le mois, déplace
+  le focus d'une touche, décide combien de pastilles tiennent et ordonne les
+  échéances d'un jour. Son test vérifie qu'un février fait quarante-deux cases
+  sans monter de navigateur — et le calendrier avait, jusqu'ici, zéro test.
+- **Le clavier, enfin.** Un seul arrêt de tabulation pour quarante-deux cases,
+  les flèches déplacent le jour, Origine et Fin mènent aux bords de la semaine,
+  Page précédente et suivante changent de mois. La grille consomme la frappe,
+  faute de quoi une flèche déplacerait le jour *et* changerait le mois, à deux
+  étages — c'est le contrat que le curseur des graphiques posait déjà.
+- **Deux formes, jamais deux teintes.** Aujourd'hui porte son quantième dans un
+  contour, le jour ouvert dans une pilule pleine. Les pastilles restent sur la
+  surface de la tuile quoi qu'il arrive, ce qui supprime le lime sur lime au
+  lieu de le rattraper. Et le nom accessible d'une case dit tout en mots — le
+  jour de la semaine, le compte, « aujourd'hui », « hors du mois affiché ».
+- **Les pastilles ne sont plus tirées au hasard.** Elles suivaient l'ordre
+  d'insertion du document : un loyer pouvait tomber dans le « +3 » derrière
+  trois cafés. Confirmé avant prévu, puis du plus gros au plus petit — et la
+  feuille du jour se lit dans l'ordre exact des pastilles de sa case.
+- **Le jour s'ouvre en feuille**, avec le total de la journée, son compte
+  d'échéances et ses trois portes de saisie. Il était une tuile posée sous la
+  grille, qui devait réécrire à la main ce qu'un `<dialog>` donne : Échap, le
+  clic à côté, le piège de focus, le retour du focus à la case d'origine.
+- **« Aujourd'hui » revient au jour**, dans la carte, et n'apparaît que lorsque
+  l'on est parti. Le design system §6 est amendé des deux décisions : le bandeau
+  garde « ce mois-ci » parce qu'il ne bouge que le mois, et la lecture courte et
+  refermable rejoint la question fermée parmi ce qui a droit à la feuille.
+
 ### Ajouté — le premier geste après les deux questions
 
 Les deux questions du premier lancement étaient irréprochables. Le trou était

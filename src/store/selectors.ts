@@ -22,6 +22,7 @@ import {
   type RecurrenceTotals,
   type Upcoming,
   breakdownByFamily,
+  entriesInRange,
   entriesOfMonth,
   incomeFlow,
   monthProgress,
@@ -364,6 +365,33 @@ function scopeEntries(
 }
 
 /**
+ * La règle de lecture d'une **liste** sous un filtre — pas celle des chiffres,
+ * qui proratisent (`useMonthScope`).
+ *
+ * Elle vivait dans `useMonthEntries` ; elle en sort parce que la fenêtre du
+ * calendrier fait six semaines et déborde sur deux mois voisins, donc ne se lit
+ * pas au mois. Deux copies de la même règle finiraient par ne plus rendre les
+ * mêmes lignes, et l'écart se verrait d'un écran à l'autre sans qu'on sache
+ * lequel des deux a raison.
+ */
+function scopeList(
+  entries: Entry[],
+  filter: MonthFilter,
+  kindOf: KindOf,
+  memberCount: number,
+): Entry[] {
+  // Sur le commun, la liste garde les lignes entières : c'est le pot qu'on
+  // regarde, et une charge commune y tombe pour son montant, à personne.
+  if (filter.kind === 'common') return entries.filter((entry) => isCommon(entry, kindOf))
+  // Seul du foyer, le filtre sur le membre ne retranche rien aux listes :
+  // tout lui revient, le loyer compris — les tuiles au-dessus le comptent
+  // déjà, et une liste qui le tairait contredirait leur total.
+  if (filter.kind !== 'member' || memberCount <= 1) return entries
+  const { memberId } = filter
+  return entries.filter((entry) => entry.memberId === memberId)
+}
+
+/**
  * Les entrées réelles du mois affiché, filtrées sur le membre sélectionné.
  *
  * Ce sont celles des listes sur lesquelles on agit : une échéance se confirme
@@ -377,19 +405,28 @@ export function useMonthEntries(ym?: YearMonth): Entry[] {
   const kindOf = useKindOf()
   const members = useMembers()
   const month = ym ?? current
-  return useMemo(() => {
-    // Sur le commun, la liste garde les lignes entières : c'est le pot qu'on
-    // regarde, et une charge commune y tombe pour son montant, à personne.
-    if (filter.kind === 'common') {
-      return entriesOfMonth(entries, month).filter((entry) => isCommon(entry, kindOf))
-    }
-    // Seul du foyer, le filtre sur le membre ne retranche rien aux listes :
-    // tout lui revient, le loyer compris — les tuiles au-dessus le comptent
-    // déjà, et une liste qui le tairait contredirait leur total.
-    const member =
-      filter.kind === 'member' && members.length > 1 ? filter.memberId : undefined
-    return entriesOfMonth(entries, month, member)
-  }, [entries, month, filter, kindOf, members])
+  return useMemo(
+    () => scopeList(entriesOfMonth(entries, month), filter, kindOf, members.length),
+    [entries, month, filter, kindOf, members],
+  )
+}
+
+/**
+ * Les mêmes règles, sur une fenêtre de dates — voir `useMonthEntries`.
+ *
+ * Le calendrier lit six semaines, dont les premières et les dernières
+ * appartiennent aux mois voisins : un filtre au mois y laisserait les jours de
+ * débord vides sans que rien ne le dise.
+ */
+export function useRangeEntries(from: ISODate, to: ISODate): Entry[] {
+  const entries = useEntries()
+  const filter = useMonthFilter()
+  const kindOf = useKindOf()
+  const members = useMembers()
+  return useMemo(
+    () => scopeList(entriesInRange(entries, from, to), filter, kindOf, members.length),
+    [entries, from, to, filter, kindOf, members],
+  )
 }
 
 /** Les entrées du mois affiché, à la portée de lecture courante. */
