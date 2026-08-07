@@ -12,6 +12,49 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — la présentation montre le calcul, et répond aux objections
+
+La page d'arrivée démontrait un seul écran : le mois. Ce qui distingue vraiment
+l'app — la répartition au prorata, la régularisation du mois suivant, la cascade
+de la capacité d'épargne — n'y existait qu'en prose, juste au-dessus de la
+grille qui ne le montrait pas. C'est le meilleur argument du produit, et il était
+raconté au lieu d'être montré.
+
+- **« Le calcul, en entier »** pose deux tuiles sous les principes, avec les
+  composants et le vocabulaire des vrais écrans : le pot commun découpé au
+  prorata des revenus, le report du mois précédent qui rattrape ce qu'une seule
+  personne a avancé, la ligne « Total des parts » posée à côté du total des
+  charges — égale au centime, report compris —, et la cascade
+  `revenus − charges − crédits` qui produit la capacité d'épargne. Aucune
+  capture : le DS §1 interdit l'illustration, une page qui présente l'app doit
+  *être* l'app.
+- **Les chiffres du foyer d'exemple se recomposent d'un bout à l'autre de la
+  page**, et un test le tient désormais. Montrer un calcul dont les termes ne
+  retombent pas sur leurs pieds démentirait à l'écran ce que la page promet.
+- **Le modèle économique est énoncé**, sous la promesse de confidentialité :
+  gratuit, sans publicité, sans revente — rien à vendre puisque rien n'est
+  collecté, rien à financer puisqu'il n'y a pas de serveur. Le raisonnement était
+  écrit dans le README et n'avait jamais atteint la page qui en a besoin.
+- **Quatre questions, et leurs réponses en clair** : et si je change de
+  téléphone, et si je vide mon navigateur, c'est gratuit donc où est le piège,
+  qui es-tu. Les deux premières tenaient en une demi-phrase dans le bandeau
+  d'installation, les deux autres n'étaient nulle part. Ouvertes plutôt que
+  repliées : quelqu'un de méfiant n'a pas à cliquer pour obtenir la réponse qui
+  lèverait sa méfiance. La gratuité se répond désormais par l'AGPL — ce qui part
+  d'ici reste ouvert, et ça se vérifie au lieu de se promettre.
+- **Le cahier des charges et le design system sont atteignables depuis la
+  présentation.** Ils ne l'étaient que depuis « à propos » — pas depuis la page
+  que voit un visiteur qui ne crée aucun foyer, et qui est souvent la seule qu'il
+  verra.
+- **« Juste voir à quoi ça ressemble ? »** s'affiche enfin sous les deux boutons
+  d'arrivée. La phrase était écrite depuis le début et branchée nulle part, si
+  bien que « Charger l'exemple » disait le geste sans dire pourquoi le faire.
+
+Le premier chargement **baisse** de 196,3 à 195,4 Kio malgré ces trois sections :
+la prose de la présentation quitte `i18n/fr.ts`, que tous les écrans importent,
+pour `i18n/landing.ts`, qui voyage avec la page — la règle que `i18n/legal.ts`
+appliquait déjà.
+
 ### Ajouté — le navigateur refuse maintenant ce que l'app ne faisait déjà pas
 
 L'app ne demande rien à l'extérieur : aucun `fetch`, aucune ressource tierce,

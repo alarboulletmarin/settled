@@ -1,6 +1,7 @@
 import { DONUT_SIZE, DONUT_THICKNESS } from '@/features/dashboard/donut'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
+import { landing } from '@/i18n/landing'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -57,14 +58,14 @@ export function LandingTiles() {
   return (
     <BentoGrid>
       {/* Prévu, puis confirmé — l'anneau signature en jauge, comme sur le mois. */}
-      <Tile span="4x2" label={fr.landing.monthTitle}>
-        <Eyebrow icon={ForecastIcon}>{fr.landing.monthTitle}</Eyebrow>
+      <Tile span="4x2" label={landing.monthTitle}>
+        <Eyebrow icon={ForecastIcon}>{landing.monthTitle}</Eyebrow>
         <div className="flex min-w-0 flex-1 items-center gap-4">
           <Ring
             size={96}
             value={SAMPLE.monthRatio}
-            label={fr.landing.monthRing}
-            srText={fr.landing.monthRingRead}
+            label={landing.monthRing}
+            srText={landing.monthRingRead}
             className="shrink-0"
           >
             <span className="t-num-body tnum">{formatPercent(SAMPLE.monthRatio)}</span>
@@ -72,12 +73,12 @@ export function LandingTiles() {
           <div className="flex min-w-0 flex-col gap-1">
             <span className="t-num-body tnum">
               {tpl(
-                fr.landing.monthOf,
+                landing.monthOf,
                 formatMoney(SAMPLE.monthConfirmed, currency, false),
                 formatMoney(SAMPLE.monthForecast, currency, false),
               )}
             </span>
-            <span className="t-label">{fr.landing.monthHint}</span>
+            <span className="t-label">{landing.monthHint}</span>
           </div>
         </div>
       </Tile>
@@ -137,7 +138,7 @@ export function LandingTiles() {
         <Eyebrow icon={IncomeIcon}>{fr.dashboard.income}</Eyebrow>
         <div className="flex flex-wrap items-baseline gap-x-2">
           <Amount value={SAMPLE.income} size="tile-fit" direction="in" withCents={false} />
-          <span className="t-label max-lg:sr-only">{fr.landing.incomeHint}</span>
+          <span className="t-label max-lg:sr-only">{landing.incomeHint}</span>
         </div>
       </Tile>
 
@@ -146,13 +147,13 @@ export function LandingTiles() {
           En bandeau d'une rangée et non en carré de deux : une phrase de six
           mots laissait la moitié du lime sans rien, et un aplat vide de cette
           taille ne se lit plus comme une marque mais comme un oubli. */}
-      <Tile span="4x1" variant="accent" className="justify-between" label={fr.landing.privacyTitle}>
-        <Eyebrow icon={DataIcon}>{fr.landing.privacyTitle}</Eyebrow>
+      <Tile span="4x1" variant="accent" className="justify-between" label={landing.privacyTitle}>
+        <Eyebrow icon={DataIcon}>{landing.privacyTitle}</Eyebrow>
         {/* `t-body` et non `t-section` : une 4×1 n'offre que 56px utiles, soit
             l'eyebrow et une ligne — la même règle que le chiffre des autres
             tuiles plates. À 20px la phrase passait à la ligne et se faisait
             couper par le bas. */}
-        <p className="t-body">{fr.landing.privacyShort}</p>
+        <p className="t-body">{landing.privacyShort}</p>
       </Tile>
     </BentoGrid>
   )
