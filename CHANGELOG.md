@@ -12,6 +12,55 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — le premier geste après les deux questions
+
+Les deux questions du premier lancement étaient irréprochables. Le trou était
+juste après : on cliquait « Commencer » et on arrivait sur un tableau de bord
+entièrement à zéro, dont le seul viatique était « Ce mois est encore vide,
+ajoute une dépense ». Or l'app ne vaut rien tant que les récurrences ne sont pas
+posées — c'est toute sa thèse, et la première phrase de la présentation le dit
+— et rien, à aucun moment, n'y conduisait. Une dépense ponctuelle n'amorce
+aucune prévision.
+
+- **Une troisième étape, facultative : « Ce qui revient chaque mois ».** Un
+  montant de salaire par personne, un montant de loyer. Chaque montant saisi
+  pose une récurrence mensuelle ; un champ vide ne pose rien, et « Je le ferai
+  plus tard » est un bouton aussi visible que le principal. Le cahier §4.1 tient
+  : rien n'y est exigé, et l'app reste utilisable sans elle. Mais « ne rien
+  exiger » et « ne rien proposer » sont deux choses différentes.
+- **Les deux lignes ne sont pas choisies au hasard.** Le revenu d'une personne
+  ne se déclare nulle part : il se lit sur ses récurrences de ressources. Un
+  salaire par membre est donc le seul chiffre qui fasse parler le prorata, et le
+  loyer la première charge qui rende le partage lisible. Le mois s'ouvre ensuite
+  avec ses échéances **à confirmer** — jamais confirmées d'office : l'app ne
+  sait pas si le loyer de ce mois-ci a déjà été payé.
+- **Le jour ne se demande pas.** Un champ de plus par ligne aurait fait de cette
+  étape le questionnaire de configuration que le cahier refuse. Les récurrences
+  sont posées au 1er, mensuelles — et l'étape le dit, parce qu'une valeur
+  choisie à la place de quelqu'un et jamais annoncée se découvre au premier mois
+  faux.
+- **L'aperçu de la troisième étape calcule le prorata au lieu de le promettre.**
+  À deux revenus et un loyer, la part de chacun s'affiche, avec la fonction du
+  domaine qui la calcule sur tous les autres écrans. C'est le meilleur argument
+  du produit, montré à l'instant où l'on décide de s'en servir.
+- **`MembersStep` dit enfin où se posent les revenus.** L'aperçu promettait « une
+  fois leurs revenus posés, les charges communes se partagent au prorata » sans
+  dire *où* : quelqu'un qui ajoutait deux prénoms en attendant deux champs de
+  salaire ne trouvait rien, et le prorata restait muet sans qu'il sache
+  pourquoi.
+- **L'état vide du mois mène au bon geste.** Tant qu'aucune récurrence n'existe,
+  il propose d'abord d'en poser une. Dès qu'il en existe une, le mois vide
+  redevient un mois ordinaire et les deux portes de saisie reprennent leur rang
+  — il n'insiste pas sur un geste déjà fait.
+- **L'export est nommé à la dernière étape**, sous la promesse de
+  confidentialité. La contrepartie du local-first ne se découvrait qu'au bout de
+  trente jours, par un bandeau ; elle coûtait une ligne au moment où la promesse
+  est faite.
+
+Le premier chargement passe de 195,4 à 196,7 Kio : les questions du premier
+lancement ne sont pas chargées à la demande, et ne peuvent pas l'être — elles
+sont le premier écran. Il reste 3,3 Kio de marge sous le budget.
+
 ### Ajouté — la présentation montre le calcul, et répond aux objections
 
 La page d'arrivée démontrait un seul écran : le mois. Ce qui distingue vraiment

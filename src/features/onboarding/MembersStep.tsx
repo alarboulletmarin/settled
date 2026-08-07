@@ -15,13 +15,13 @@ export function MembersStep({
   onAdd,
   onRename,
   onRemove,
-  onDone,
+  onNext,
 }: {
   members: readonly Member[]
   onAdd: (name: string) => void
   onRename: (id: string, name: string) => void
   onRemove: (id: string) => void
-  onDone: () => void
+  onNext: () => void
 }) {
   const [name, setName] = useState('')
   const [removing, setRemoving] = useState<Member | null>(null)
@@ -97,8 +97,12 @@ export function MembersStep({
         </ul>
       )}
 
-      <Button onClick={onDone} full>
-        {members.length === 0 ? fr.onboarding.solo : fr.onboarding.start}
+      {/* « Je suis seul·e » plutôt que « Continuer » quand personne n'est
+          nommé : le bouton dit alors ce qu'on répond, et non ce qu'il fait. Il
+          n'ouvre plus l'app pour autant — il mène à l'étape où se posent les
+          revenus, qui existent aussi en solo. */}
+      <Button onClick={onNext} full>
+        {members.length === 0 ? fr.onboarding.solo : fr.common.next}
       </Button>
 
       <ConfirmDialog

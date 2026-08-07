@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import { entryNewPath, entryPath } from '@/app/routes'
+import { RECURRENCE_NEW_PATH, entryNewPath, entryPath } from '@/app/routes'
 import { Dashboard } from '@/features/dashboard/Dashboard'
 import { fr } from '@/i18n/fr'
 import { useScopedMonthEntries } from '@/store/selectors'
+import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { Plus } from '@/ui/Icons'
@@ -16,6 +17,10 @@ export function MonthPage() {
   /* Le mois d'un membre n'est pas vide parce qu'il n'a rien saisi à son nom :
      sa part des charges communes en fait partie. */
   const entries = useScopedMonthEntries()
+  /* Un mois vide n'a pas la même cause selon qu'une règle existe ou non : sans
+     aucune récurrence, c'est un foyer qui n'a pas encore démarré, et le geste
+     qui le démarre n'est pas une dépense. Voir l'état vide plus bas. */
+  const hasRecurrence = useStore((s) => s.data.recurrences.length > 0)
   const navigate = useNavigate()
 
   /* La nature montrée se pilote de deux endroits — les pilules de la liste, et
@@ -109,10 +114,30 @@ export function MonthPage() {
         </div>
       )}
 
+      {/* Le mois vide d'un foyer sans aucune récurrence conduisait au mauvais
+          geste : « Ajoute ta première dépense » n'amorce aucune prévision,
+          alors que toute la thèse de l'app est qu'on écrit une fois ce qui
+          revient. La porte des récurrences passe donc devant tant qu'il n'y en
+          a aucune — après, le mois vide n'est plus un problème d'amorçage et
+          les deux portes de saisie reprennent leur rang.
+
+          Les trois restent offertes dans les deux cas : au-delà de 1024px, la
+          rangée en flux est masquée sur un mois vide, et cet état-ci est alors
+          la seule porte de saisie de l'écran. */}
       {isEmpty ? (
-        <EmptyState message={fr.month.empty}>
+        <EmptyState message={hasRecurrence ? fr.month.empty : fr.month.emptyStart}>
           <div className="flex flex-wrap justify-center gap-2">
+            {!hasRecurrence && (
+              <Button
+                onClick={() => {
+                  void navigate(RECURRENCE_NEW_PATH)
+                }}
+              >
+                {fr.recurrences.add}
+              </Button>
+            )}
             <Button
+              variant={hasRecurrence ? 'primary' : 'secondary'}
               onClick={() => {
                 create('out')
               }}

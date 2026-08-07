@@ -717,6 +717,12 @@ export const fr = {
     unconfirmedAll: 'Mois remis à confirmer',
     entries: 'Ce mois',
     empty: 'Rien pour ce mois. Ajoute ta première dépense.',
+    /* Le mois vide d'un foyer qui n'a encore posé aucune récurrence n'est pas
+       le mois vide de tout le monde : c'est un amorçage, et le geste qui
+       l'amorce n'est pas une dépense. Une dépense ponctuelle ne prévoit rien —
+       ce qui fait qu'un mois s'écrit tout seul est ce qui revient. */
+    emptyStart:
+      'Rien pour ce mois. Écris une fois ce qui revient chaque mois, et il se remplira tout seul.',
     groupBy: 'Regrouper par',
     byDay: 'Jour',
     byCategory: 'Catégorie',
@@ -1249,15 +1255,20 @@ export const fr = {
   },
 
   onboarding: {
-    step: 'Étape %s sur 2',
+    step: 'Étape %s sur 3',
     householdTitle: 'Comment s’appelle ton foyer ?',
     householdHint: 'Tu pourras le changer plus tard.',
     householdLabel: 'Nom du foyer',
     householdPlaceholder: 'Maison',
     householdEmpty: 'Donne un nom à ton foyer pour continuer.',
     membersTitle: 'Qui vit ici ?',
+    /* Le hint disait le mécanisme — « les membres servent d'étiquette » — et
+       l'aperçu promettait le prorata « une fois leurs revenus posés », sans que
+       rien ne dise *où* on les pose. Quelqu'un qui ajoutait deux prénoms en
+       attendant deux champs de salaire ne trouvait rien, et le prorata restait
+       muet sans qu'il sache pourquoi. La réponse tient en une proposition. */
     membersHint:
-      'Les membres servent d’étiquette sur les dépenses. Tu peux passer et rester en solo.',
+      'Les membres servent d’étiquette sur les dépenses. Leurs revenus se posent à l’étape suivante. Tu peux passer et rester en solo.',
     membersLabel: 'Prénom',
     membersPlaceholder: 'Alix',
     membersAdd: 'Ajouter',
@@ -1271,12 +1282,45 @@ export const fr = {
     solo: 'Je suis seul·e',
     start: 'Commencer',
     privacy: 'Tes données restent sur cet appareil. Rien n’est envoyé nulle part.',
+    /* La contrepartie, dite au moment où la promesse est faite et non trente
+       jours plus tard par un bandeau : « rien ne sort d'ici » et « rien ne
+       revient si tu vides ce navigateur » sont la même phrase, et n'en garder
+       qu'une moitié se paie un jour. */
+    backup:
+      'C’est aussi la contrepartie : vider ce navigateur les efface. Exporte un fichier de temps en temps, depuis les réglages.',
+
+    /* Troisième étape, facultative. Le cahier §4.1 refuse le questionnaire de
+       configuration, et il a raison — mais « ne rien exiger » et « ne rien
+       proposer » sont deux choses différentes. L'app ne vaut rien tant que les
+       récurrences ne sont pas posées : c'est sa thèse, et rien n'y conduisait.
+       D'où une étape qui propose les deux lignes qui la démontrent, et qui se
+       saute d'un bouton visible. */
+    starterTitle: 'Ce qui revient chaque mois',
+    starterHint:
+      'Une seule ligne suffit à faire parler l’app : elle pose les échéances des mois à venir et en tire le prévisionnel. Rien n’est obligatoire ici.',
+    starterSalaryOf: 'Salaire de %s',
+    starterSalarySolo: 'Ton salaire',
+    starterRent: 'Loyer, ou crédit immobilier',
+    /* Ce que la récurrence portera comme nom, et qui n'est pas celui du champ :
+       « Salaire de Alix » redirait sur la ligne ce que sa pastille de membre
+       dit déjà, et le libellé de la catégorie — « Salaires, retraites ou
+       indemnités » — décrit un tiroir du catalogue, pas une ligne de budget.
+       Ce sont les mots du jeu d'exemple et de la documentation du schéma. */
+    starterSalaryLabel: 'Salaire',
+    starterRentLabel: 'Loyer',
+    /* Le jour ne se demande pas : un champ de plus par ligne aurait fait de
+       cette étape le questionnaire que le cahier refuse. Il se pose donc au
+       1er — mais il se *dit*, parce qu'une valeur choisie à la place de
+       quelqu'un et jamais annoncée se découvre au premier mois faux. */
+    starterDayNote:
+      'Posées au 1er de chaque mois. Le jour, le libellé et la catégorie s’ajustent ensuite depuis Récurrences.',
+    starterSkip: 'Je le ferai plus tard',
 
     /* En PWA installée il n'y a pas de bouton retour du navigateur : chaque
        étape porte le sien, sans quoi on n'a plus qu'à répondre ou à fermer. */
     backToLanding: 'Revenir à la présentation',
-    backToStep: 'Revenir à l’étape 1',
-    progress: 'Progression : étape %s sur 2',
+    backToStep: 'Revenir à l’étape %s',
+    progress: 'Progression : étape %s sur 3',
 
     /* L'aperçu montre la réponse à son emplacement réel plutôt que de la
        décrire : ce qu'on tape à l'étape 1 est ce qu'on lira en haut de chaque
@@ -1285,7 +1329,14 @@ export const fr = {
     previewMembersEmpty:
       'Sans personne ici, tout t’est attribué — le foyer fonctionne très bien en solo.',
     previewMembers:
-      'Une fois leurs revenus posés, les charges communes se partagent entre eux au prorata.',
+      'Leurs revenus se posent à l’étape suivante. Une fois là, les charges communes se partagent entre eux au prorata.',
+    previewStarterEmpty:
+      'Sans rien ici, le mois s’ouvre à zéro et tout reste à saisir ligne par ligne. Un salaire suffit à ce qu’il s’écrive tout seul.',
+    /* L'aperçu de l'étape 3 ne promet pas le prorata : il le calcule, avec la
+       fonction du domaine qui le calcule partout ailleurs. C'est la thèse de
+       l'app, montrée à l'instant où elle se décide. */
+    previewStarterMonth: 'Ce que ton mois affichera',
+    previewStarterShare: 'La part de chacun sur le loyer, au prorata des revenus',
   },
 
   about: {
