@@ -12,6 +12,38 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — la répartition se lit d'un trait, comme la page qui la présente
+
+La présentation montre le partage dans une seule carte qu'on lit sans lever les
+yeux : les parts sous un même filet, et la vérification qui la ferme. L'écran
+disait la même chose, éclaté en une tuile par personne, avec la ligne qui prouve
+que la somme des parts vaut le total reléguée après deux sections repliables —
+à deux écrans de défilement des chiffres qu'elle vérifie. Il fallait en retenir
+deux pour constater qu'ils tombent, c'est-à-dire croire l'écran sur parole. Un
+partage entre deux personnes ne se croit pas sur parole : c'est toute la raison
+d'être de cette page.
+
+- **Une seule carte pour tout le monde, vérification comprise.** Les parts
+  deviennent les lignes d'une même liste, et « Total des parts » la referme,
+  contre les chiffres qu'il additionne.
+- **Le versement passe après le calcul qui le produit.** L'ordre était inverse :
+  « À verser » en tête, puis les raisons en dessous, en plus petit. On lit
+  désormais qui, ce qu'il gagne, ce que le mois lui coûte, ce que le mois
+  précédent rattrape — et enfin ce qu'il verse.
+- **Le revenu redevient une ligne comme les autres.** Il s'écrivait « Revenu
+  2 890 € » d'un seul tenant, collé en bas de tuile ; il s'aligne maintenant à
+  droite avec les autres montants, où l'œil les compare.
+- **« Sa part du mois » cesse d'être arrondie à l'euro.** C'est le premier terme
+  d'une soustraction qu'on lit juste en dessous, et arrondie elle ne tombait
+  plus juste : « 1 963 € + 176,44 € » ne fait pas 2 138,99 €. Ces lignes-là
+  n'existent que pour être vérifiables.
+- **Les parts forment enfin une liste** pour un lecteur d'écran, là où c'était
+  une pile de sections sans nom : « liste, 2 éléments », puis chaque part lue
+  d'un trait.
+
+Ce que le mois affiche ne change pas d'un centime : les parts, le prorata et les
+reports sont calculés comme avant.
+
 ### Ajouté — le premier geste après les deux questions
 
 Les deux questions du premier lancement étaient irréprochables. Le trou était
