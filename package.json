@@ -43,8 +43,11 @@
     "//licences": "Les notices des paquets qui voyagent dans le build, dont deux fontes sous OFL 1.1 — qui exige d'être distribuée avec elles.",
     "licences": "node scripts/licences.mjs",
     "licences:check": "node scripts/licences.mjs --check",
-    "//verify": "La porte de sortie, que la CI rejoue à l'identique. La taille vient après la construction, qui produit ce qu'elle mesure ; les licences avant, parce qu'un fichier en retard se corrige sans rien reconstruire.",
-    "verify": "npm run typecheck && npm run lint && npm run licences:check && npm run test && npm run build && npm run size"
+    "//csp": "Les en-têtes de sécurité de vercel.json, dont le hash sha256 du script anti-FOUC d'index.html — calculé depuis dist/, jamais recopié à la main. Le mode --check audite en plus ce qui est servi contre la politique écrite, pour qu'une CSP trop stricte casse la construction et non un écran en production.",
+    "csp": "node scripts/csp.mjs",
+    "csp:check": "node scripts/csp.mjs --check",
+    "//verify": "La porte de sortie, que la CI rejoue à l'identique. La taille et la CSP viennent après la construction — l'une mesure ce qu'elle produit, l'autre décrit ce qu'elle sert ; les licences avant, parce qu'un fichier en retard se corrige sans rien reconstruire.",
+    "verify": "npm run typecheck && npm run lint && npm run licences:check && npm run test && npm run build && npm run size && npm run csp:check"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
