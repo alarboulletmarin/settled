@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
+import { cn } from '@/lib/cn'
 import { useHouseholdName } from '@/store/selectors'
 import { ScreenEntryProvider } from '@/ui/ScreenEntryProvider'
 import { ScreenTitleProvider } from '@/ui/ScreenTitleProvider'
@@ -76,7 +77,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           /* Focalisable au script, jamais à la tabulation : le contenu n'est pas
              une étape du parcours clavier, c'est là qu'on le dépose. */
           tabIndex={-1}
-          className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 lg:pb-10"
+          /* Le cadre du bas dégage le bouton flottant, et pas seulement la barre
+             d'onglets. Il valait 96px quand le disque en occupe 129 depuis le
+             bas — barre, gouttière et ses 56px de diamètre : les trente
+             derniers pixels de chaque écran vivaient sous lui, à droite. On ne
+             le voyait pas tant que les écrans finissaient par une tuile ou un
+             bouton centré ; la légende du calendrier, elle, est du texte qui
+             file jusqu'au bord droit, et sa dernière ligne y disparaissait.
+             La mesure est celle de `QuickEntry`, aux mêmes tokens, plus une
+             gouttière — un cadre écrit en dur se décalerait le jour où le
+             bouton bouge. */
+          className={cn(
+            'view-enter min-w-0 flex-1 px-4 pt-4 md:px-8 md:pt-8',
+            'pb-[calc(var(--nav-h)+5.5rem+env(safe-area-inset-bottom))] lg:pb-10',
+          )}
         >
           {/* Celui-ci ne connaît pas `isFocusScreen` : un écran de saisie est
               précisément l'endroit où l'on est en train de perdre du travail. */}
