@@ -16,13 +16,24 @@ export type DisclosureGroup = {
  * `null` tant que personne n'a rien touché : le défaut s'applique, et changer
  * d'axe de regroupement y revient sans avoir à recalculer quoi que ce soit.
  * `keys` doit être stable d'un rendu à l'autre — un `useMemo` suffit.
+ *
+ * `defaultOpen` accepte un booléen — tout ou rien — ou **la liste de ce qui
+ * s'ouvre**. La liste existe pour la liste du mois : « tout ouvert » lui
+ * coûtait deux mille pixels de défilement, « tout replié » lui retirait le seul
+ * groupe qu'on vient lire. Elle doit être stable au même titre que `keys`.
  */
 export function useDisclosureGroup(
   keys: readonly string[],
-  defaultOpen: boolean,
+  defaultOpen: boolean | readonly string[],
 ): DisclosureGroup {
   const [opened, setOpened] = useState<ReadonlySet<string> | null>(null)
-  const byDefault = useMemo(() => new Set(defaultOpen ? keys : []), [defaultOpen, keys])
+  const byDefault = useMemo(
+    () =>
+      new Set(
+        typeof defaultOpen === 'boolean' ? (defaultOpen ? keys : []) : defaultOpen,
+      ),
+    [defaultOpen, keys],
+  )
   const effective = opened ?? byDefault
   const anyOpen = keys.some((key) => effective.has(key))
 

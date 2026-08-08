@@ -81,7 +81,7 @@ export const SAMPLE = {
       adjustment: ADJUSTMENT,
     },
   ],
-  /** Le total au centre de l'anneau, comme `SplitTile` le pose. */
+  /** Le total au centre de l'anneau, comme `SplitPage` le pose. */
   shared: money(84_000),
   advanced: ADVANCED,
 

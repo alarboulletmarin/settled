@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeCategory, makeData, makeEntry, makeFamily, makeMember } from '@/domain/fixtures'
 import { type Money, money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { ALL_FILTER, useStore } from '@/store/store'
-import { SavingTile } from './SavingTile'
+import { SituationSection } from './SituationSection'
 
 /* Un salaire, un loyer, un livret : le minimum pour que la capacité existe et
    que les versements aient où aller. */
@@ -69,15 +69,21 @@ const euros = (value: Money) => formatMoney(value, 'EUR')
    passage, aucune assertion sur un montant ne retrouverait jamais son texte. */
 const said = (text: string): string => text.replace(/\s+/g, ' ').trim()
 
-function renderTile() {
+/** Ce que la rangée dit sous « Capacité d'épargne » : les deux clauses, jointes. */
+const savingLine = (placed: string | null, left: Money): string => {
+  const rest = tpl(fr.dashboard.savingLeft, euros(left))
+  return said(placed === null ? rest : `${placed} · ${rest}`)
+}
+
+function renderSection() {
   return render(
     <MemoryRouter>
-      <SavingTile />
+      <SituationSection onExplain={vi.fn()} />
     </MemoryRouter>,
   )
 }
 
-describe('« Capacité d’épargne » — ce que le mois verse', () => {
+describe('« Situation » — ce que le mois verse', () => {
   beforeEach(() => {
     useStore.setState({ filter: ALL_FILTER })
   })
@@ -87,30 +93,30 @@ describe('« Capacité d’épargne » — ce que le mois verse', () => {
      300 € lisait un mois où il n'avait fait que dépenser. */
   it('dit ce qui est versé sans filtre par membre', () => {
     setUp([saving({ amount: money(30000) })])
-    renderTile()
+    renderSection()
 
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingPlaced, euros(money(30000))))),
+      screen.getByText(
+        savingLine(tpl(fr.dashboard.savingPlaced, euros(money(30000))), money(80000)),
+      ),
     ).toBeInTheDocument()
   })
 
-  /* L'invariant de la tuile, et la raison pour laquelle le versement se compte
+  /* L'invariant de la rangée, et la raison pour laquelle le versement se compte
      sur le mois entier plutôt qu'au seul confirmé : les deux clauses sont les
      deux moitiés du chiffre qu'elles accompagnent, et doivent le redonner.
      Un virement encore prévu compte donc dans les deux, sans quoi il manquerait
-     à l'addition et la tuile se lirait comme une erreur de calcul. */
+     à l'addition et la rangée se lirait comme une erreur de calcul. */
   it('compte un versement encore prévu, et redonne la capacité', () => {
     setUp([saving({ amount: money(30000), status: 'planned' })])
-    renderTile()
+    renderSection()
 
+    // 300 versés + 800 restants = 1 100 de capacité, annoncés sur la même ligne.
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingPlaced, euros(money(30000))))),
+      screen.getByText(
+        savingLine(tpl(fr.dashboard.savingPlaced, euros(money(30000))), money(80000)),
+      ),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(said(tpl(fr.dashboard.savingLeft, euros(money(80000))))),
-    ).toBeInTheDocument()
-    // 300 versés + 800 restants = 1 100 de capacité. Le nom accessible du
-    // chiffre porte le montant entier ; l'affichage le découpe en parties.
     expect(screen.getByText(said(euros(money(110000))))).toBeInTheDocument()
   })
 
@@ -121,25 +127,25 @@ describe('« Capacité d’épargne » — ce que le mois verse', () => {
       saving({ amount: money(9000) }),
       saving({ amount: money(60000), direction: 'in' }),
     ])
-    renderTile()
+    renderSection()
 
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingWithdrawn, euros(money(51000))))),
+      screen.getByText(
+        savingLine(tpl(fr.dashboard.savingWithdrawn, euros(money(51000))), money(161000)),
+      ),
     ).toBeInTheDocument()
-    expect(screen.queryByText(/€ versé/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/versé sur le mois/)).not.toBeInTheDocument()
   })
 
   /* Une lecture qui n'a pas de réponse vaut mieux absente que fausse : rien
-     n'a bougé, la clause n'existe pas. */
+     n'a bougé, la clause n'existe pas et la rangée n'annonce que le reste. */
   it('ne dit rien quand le mois n’a bougé aucune épargne', () => {
     setUp([])
-    renderTile()
+    renderSection()
 
-    expect(screen.queryByText(/€ versé/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/versé sur le mois/)).not.toBeInTheDocument()
     expect(screen.queryByText(/repris de l’épargne/)).not.toBeInTheDocument()
-    expect(
-      screen.getByText(said(tpl(fr.dashboard.savingLeft, euros(money(110000))))),
-    ).toBeInTheDocument()
+    expect(screen.getByText(savingLine(null, money(110000)))).toBeInTheDocument()
   })
 
   /* Sous filtre, le chiffre reste celui de la personne — `useKindTotals` passe
@@ -147,10 +153,24 @@ describe('« Capacité d’épargne » — ce que le mois verse', () => {
   it('reste individuel sous un filtre par membre', () => {
     setUp([saving({ amount: money(30000), memberId: 'm1' })])
     useStore.setState({ filter: { kind: 'member', memberId: 'm1' } })
-    renderTile()
+    renderSection()
 
     expect(
-      screen.getByText(said(tpl(fr.dashboard.savingPlaced, euros(money(30000))))),
+      screen.getByText(
+        savingLine(tpl(fr.dashboard.savingPlaced, euros(money(30000))), money(80000)),
+      ),
     ).toBeInTheDocument()
+  })
+
+  /* Le commun n'a aucun revenu : les trois lectures y vaudraient toutes les
+     charges, au signe près. La section entière s'efface plutôt que de les
+     annoncer — c'est la règle que les tuiles tenaient une par une. */
+  it('s’efface entière sur le pot commun', () => {
+    setUp([saving({ amount: money(30000) })])
+    useStore.setState({ filter: { kind: 'common' } })
+    const { container } = renderSection()
+
+    expect(container).toBeEmptyDOMElement()
+    expect(screen.queryByText(fr.dashboard.capacity)).not.toBeInTheDocument()
   })
 })

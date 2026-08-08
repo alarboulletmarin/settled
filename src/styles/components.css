@@ -150,24 +150,26 @@
 
      Ce que ça donne sur la boîte de contenu, aux largeurs qui existent :
 
-       320px   2×1 : 104   flux pleine largeur : 254   → masquée, masquée
-       390px   2×1 : 139   flux pleine largeur : 324   → masquée, AFFICHÉE
-       768px   2×1 : 132   flux demi-largeur   : 311   → masquée, AFFICHÉE
-       1024px  2×1 : 201                                → affichée
-       1280px  2×1 : 286                                → affichée
+       320px   flux pleine largeur : 254   → masquée
+       360px   flux pleine largeur : 294   → masquée
+       390px   flux pleine largeur : 324   → AFFICHÉE
+       768px   flux demi-largeur   : 311   → AFFICHÉE
+       1024px                                → affichée
+       1280px                                → affichée
 
-     À 320px la lecture reste donc masquée, comme avant : ni la largeur ni la
-     hauteur ne la portent, et une ligne tranchée en deux vaut moins qu'une
-     ligne absente. C'est le seul écran où le trou de l'audit subsiste.
+     La boîte de contenu d'une tuile pleine largeur vaut la fenêtre moins 66px,
+     si bien que le seuil tombe à 366px de fenêtre : **de 320 à 365px, la
+     lecture reste masquée**. C'est assumé, et c'est le seul trou qui subsiste :
+     ni la largeur ni la hauteur ne la portent, et une ligne tranchée en deux
+     vaut moins qu'une ligne absente — descendre le seuil ne la ferait pas
+     tenir, il la ferait couper. Elle reste lue par un lecteur d'écran, et un
+     téléphone de 360px la retrouve en tournant l'appareil.
 
-     Les `4x1` gardent leur `max-lg:sr-only` pour ce qui, chez elles, est une
-     phrase (« les versements dépassent la capacité de 57 € ») : plus longue que
-     celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à voir avec
-     celui-là. Ce n'est donc pas le format qui décide, c'est la longueur — et
-     `SavingTile` a scindé sa seconde lecture pour cette raison : le versement
-     (« 300 € versé », trois mots) passe ici, le reste à placer demeure là-bas.
-     Réunies, les deux ne s'affichaient nulle part sous 1024px, ce qui est mot
-     pour mot le trou trouvé sur les tuiles de flux. */
+     Ce seuil-ci ne sert plus qu'aux deux tuiles de flux. Le prévisionnel, le
+     reste à vivre et la capacité d'épargne le partageaient ; ils sont passés en
+     rangées (`SituationSection`), où une `description` passe à la ligne et
+     s'affiche donc à toutes les largeurs. C'est la seule façon connue de tenir
+     la promesse, et elle demandait de sortir de la tuile plate. */
   .tile-hint {
     position: absolute;
     width: 1px;

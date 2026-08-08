@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { today } from '@/domain/date'
 import { type GroupBy, NO_MEMBER, groupEntries } from '@/domain/grouping'
 import { money, sum } from '@/domain/money'
 import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDayFull, tpl } from '@/i18n/format'
+import { cn } from '@/lib/cn'
 import { reveal } from '@/lib/reveal'
 import {
   useCategoryMap,
@@ -83,11 +85,29 @@ function rowMeta(
 }
 
 /**
- * Groupé par jour, la liste se lit dans l'ordre où les choses ont eu lieu :
- * elle s'ouvre. Groupée par poste ou par personne, c'est un résumé dans lequel
- * on entre — elle se replie, et l'en-tête porte déjà la réponse.
+ * Ce qui est ouvert à l'arrivée : **un groupe, et un seul**.
+ *
+ * Par jour, la liste s'ouvrait en entier — c'est l'ordre de la lecture, et
+ * c'était juste tant qu'on ne comptait pas la hauteur. Un mois ordinaire tient
+ * une dizaine de jours et une quarantaine de lignes, soit près de deux mille
+ * pixels dépliés d'office, tout en bas d'une page qui en faisait déjà quatre
+ * mille. Tout replier n'est pas la réponse non plus : la section devient un
+ * accordéon mort, et le jour qu'on vient lire demande un clic de plus.
+ *
+ * Le jour courant s'ouvre donc seul, et à défaut le premier groupe — le plus
+ * récent, la liste étant triée du plus récent au plus ancien. Sur un mois passé
+ * ou à venir, « aujourd'hui » n'y est pas, et c'est bien le dernier jour
+ * mouvementé qu'on vient voir.
+ *
+ * Par poste ou par personne, rien ne s'ouvre : c'est un résumé dans lequel on
+ * entre, et l'en-tête porte déjà la réponse.
  */
-const OPEN_BY_DEFAULT: Record<GroupBy, boolean> = { day: true, category: false, member: false }
+function defaultOpenKeys(by: GroupBy, keys: readonly string[]): readonly string[] {
+  if (by !== 'day') return []
+  const now = today()
+  if (keys.includes(now)) return [now]
+  return keys.length === 0 ? [] : [keys[0] as string]
+}
 
 /**
  * Les entrées confirmées du mois, rangées sur un axe et filtrées par nature.
@@ -145,7 +165,8 @@ export function EntriesSection({
   }, [confirmed, nature, kindOf, family, familyOf])
   const groups = useMemo(() => groupEntries(entries, by), [entries, by])
   const keys = useMemo(() => groups.map((g) => g.key), [groups])
-  const disclosure = useDisclosureGroup(keys, OPEN_BY_DEFAULT[by])
+  const open = useMemo(() => defaultOpenKeys(by, keys), [by, keys])
+  const disclosure = useDisclosureGroup(keys, open)
 
   // Une demande venue d'une tuile : la section vient sous les yeux.
   useEffect(() => {
@@ -163,6 +184,11 @@ export function EntriesSection({
   }
 
   if (confirmed.length === 0) return null
+
+  /* Lu au rendu et non mémorisé : un onglet laissé ouvert la nuit du 31 doit
+     marquer le jour qu'on est le lendemain. C'est déjà la règle du bandeau du
+     mois et de tous les sélecteurs voisins, qui appellent `today()` au calcul. */
+  const now = today()
 
   const titleOf = (key: string): string => {
     if (by === 'day') return formatDayFull(key)
@@ -192,28 +218,45 @@ export function EntriesSection({
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Segmented
-            options={axes}
-            value={by}
-            onChange={(next) => {
-              setBy(next)
-              disclosure.reset()
-            }}
-            label={fr.month.groupBy}
-          />
-          <div role="group" aria-label={fr.month.show} className="flex flex-wrap gap-2">
-            {NATURES.map((option) => (
-              <Chip
-                key={option.label}
-                active={option.value === nature}
-                onClick={() => {
-                  onNature(option.value)
-                }}
-              >
-                {option.label}
-              </Chip>
-            ))}
+        {/* Trois commandes de trois natures différentes, et donc trois poids.
+            Elles se partageaient une rangée sans un mot : la bascule range, les
+            pilules retirent, le bouton agit — trois gestes qu'on ne distingue
+            pas d'un coup d'œil quand rien ne les nomme, d'autant que `Segmented`
+            ne rend son `label` qu'en nom accessible. Chacune porte donc le sien
+            à l'œil, sur sa propre rangée ; l'action, elle, reste seule dans
+            l'en-tête, en `ghost`, là où on ne la confond avec aucun état.
+            Les pilules passent à la ligne plutôt que de défiler : la piste
+            défilante du DS §6 est celle du bandeau collant, à bord perdu, et
+            dans une tuile de largeur contrainte un `overflow` rognerait leur
+            anneau de focus — c'est l'objection que `Segmented` écrit déjà. */}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="t-axis">{fr.month.groupBy}</span>
+            <Segmented
+              options={axes}
+              value={by}
+              onChange={(next) => {
+                setBy(next)
+                disclosure.reset()
+              }}
+              label={fr.month.groupBy}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="t-axis">{fr.month.show}</span>
+            <div role="group" aria-label={fr.month.show} className="flex flex-wrap gap-2">
+              {NATURES.map((option) => (
+                <Chip
+                  key={option.label}
+                  active={option.value === nature}
+                  onClick={() => {
+                    onNature(option.value)
+                  }}
+                >
+                  {option.label}
+                </Chip>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -280,10 +323,35 @@ export function EntriesSection({
                 disclosure.setOpen(group.key, open)
               }}
               title={
-                <span className="flex min-w-0 items-baseline gap-2">
-                  <span className={by === 'day' ? 't-axis truncate' : 't-body truncate'}>
+                /* Par jour, l'en-tête passe à la ligne plutôt que de tronquer :
+                   un quantième est court et borné, alors qu'un nom de poste ne
+                   l'est pas — c'est la même règle qu'une rangée, où le libellé
+                   se tronque et la seconde lecture passe à la ligne. Sans quoi
+                   le jour courant, seul à porter trois éléments, voyait sa date
+                   écrasée à « sam. … » par le mot qui l'accompagne : le libellé
+                   est ce qu'on sacrifie en dernier, et jamais. */
+                <span
+                  className={cn(
+                    'flex min-w-0 items-baseline gap-x-2 gap-y-0.5',
+                    by === 'day' && 'flex-wrap',
+                  )}
+                >
+                  {/* Le jour courant passe en encre pleine et se nomme. Une
+                      accentuation légère, comme le veut la règle — mais jamais
+                      la nuance seule : le DS §8 demande qu'une forme ou une
+                      couleur ne porte pas à elle seule ce qu'elle dit, et
+                      « le jour un peu plus foncé » n'arrive à personne. */}
+                  <span
+                    className={cn(
+                      'truncate',
+                      by === 'day' && group.key !== now ? 't-axis' : 't-body',
+                    )}
+                  >
                     {titleOf(group.key)}
                   </span>
+                  {by === 'day' && group.key === now && (
+                    <span className="t-axis shrink-0">{fr.month.today}</span>
+                  )}
                   <span className="t-axis shrink-0">
                     {tpl(
                       group.entries.length > 1 ? fr.month.groupCount : fr.month.groupCountOne,

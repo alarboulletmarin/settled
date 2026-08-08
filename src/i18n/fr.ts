@@ -580,11 +580,23 @@ export const fr = {
     chargesLeft: 'reste %s à payer',
     chargesAllPaid: 'tout est payé',
     chargesNone: 'rien à payer ce mois-ci',
+    /* Les trois lectures dérivées, dans un seul cadre : elles répondent à la
+       même question — où le mois atterrit — à trois horizons différents, et
+       une tuile chacune leur donnait le poids des deux flux dont elles
+       sortent. */
+    situation: 'Situation',
     forecast: 'Prévisionnel',
-    forecastHint: 'échéances prévues comprises',
+    /* Ces deux phrases-là ne décrivent plus le calcul, elles disent l'horizon :
+       c'est le seul chose qui sépare le prévisionnel du reste à vivre, et sans
+       rentrée d'argent en vue les deux chiffres sont rigoureusement égaux. Les
+       lire côte à côte sans savoir jusqu'où chacun va, c'est lire deux fois le
+       même montant sous deux noms. En rangée, la phrase passe à la ligne et
+       s'affiche donc à toutes les largeurs — ce qu'une tuile plate ne pouvait
+       pas promettre. */
+    forecastHint: 'solde attendu en fin de mois, échéances prévues comprises',
     remaining: 'Reste à vivre',
-    remainingHint: 'jusqu’à la prochaine rentrée d’argent',
-    remainingNoIncome: 'jusqu’à la fin du mois',
+    remainingHint: 'disponible jusqu’à la prochaine rentrée d’argent',
+    remainingNoIncome: 'disponible jusqu’à la fin du mois',
     breakdown: 'Répartition',
     upcoming: 'Prochaines échéances',
     inflow: 'Entrées',
@@ -620,7 +632,11 @@ export const fr = {
        Deux versions, parce que l'épargne se compte en net : le mois où une
        avance est posée, le livret rend plus qu'il ne reçoit, et « −510 € versé »
        ne se lit pas — c'est une reprise, elle se nomme. */
-    savingPlaced: '%s versé',
+    /* « sur le mois » n'est pas un ornement : le chiffre compte les échéances
+       encore prévues, et « 400 € versé » posé seul se lit comme un virement
+       déjà parti. La clause dit l'horizon, comme celles du prévisionnel et du
+       reste à vivre juste au-dessus. */
+    savingPlaced: '%s versé sur le mois',
     savingWithdrawn: '%s repris de l’épargne',
     showSavings: 'Voir où placer %s',
     spending: 'Où part l’argent',
@@ -784,7 +800,18 @@ export const fr = {
     confirmAll: 'Confirmer le mois',
     confirmedAll: 'Mois confirmé',
     confirmOne: 'Confirmer',
+    /* Le nom accessible d'un bouton de confirmation, qui nomme son échéance :
+       treize boutons « Confirmer » se listent treize fois à l'identique dans
+       les contrôles d'un lecteur d'écran, et rien ne dit lequel on vise. Le
+       libellé visible reste la coche seule — c'est la colonne qui l'aligne. */
+    confirmEntry: 'Confirmer %s',
     confirmedOne: 'Échéance confirmée',
+    /* La liste ne s'affiche pas en entier : un mois ordinaire en compte une
+       douzaine, et treize lignes de 56px repoussaient le détail du mois d'un
+       écran entier. Les mots sont ceux de la recherche de l'historique, qui
+       coupe déjà de la même façon — une coupe annoncée, et qui se lève. */
+    pendingMore: '… et %s autres à confirmer.',
+    pendingShowAll: 'Tout afficher',
     /* Sur la ligne elle-même, à côté du champ : une explication en tête de
        section est oubliée le temps d'arriver au champ qu'elle décrit. */
     toFill: 'à saisir',
@@ -838,6 +865,11 @@ export const fr = {
     showEmptySaving: 'Aucun mouvement d’épargne confirmé ce mois-ci.',
     groupCountOne: '%s ligne',
     groupCount: '%s lignes',
+    /* Sur l'en-tête du groupe du jour, quand le mois affiché est le mois
+       courant. Un mot, et non un traitement visuel : le DS §8 demande qu'une
+       nuance ne porte jamais seule ce qu'elle dit, et « le jour un peu plus
+       foncé » n'arrive à personne. */
+    today: 'aujourd’hui',
     collapseAll: 'Tout replier',
     expandAll: 'Tout déplier',
     balance: 'Solde',

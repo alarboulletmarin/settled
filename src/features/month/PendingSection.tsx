@@ -7,7 +7,12 @@ import { fr } from '@/i18n/fr'
 import { formatDateCompact, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import { confirmEntries, confirmEntry, unconfirmEntries, undoable } from '@/store/actions'
-import { useCategoryMap, useMonthPending, useMonthUnconfirmable } from '@/store/selectors'
+import {
+  useCategoryMap,
+  useCurrentYm,
+  useMonthPending,
+  useMonthUnconfirmable,
+} from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -72,12 +77,27 @@ function AmountCell({ children }: { children: ReactNode }) {
 
 /* L'étiquette passe par `aria-label` et non par un `sr-only` adjacent : le
    `gap-2` du bouton espacerait ce dernier comme un vrai contenu, et lui ferait
-   coûter neuf pixels de large qui manquent au libellé. */
-function ConfirmButton({ onConfirm, disabled }: { onConfirm: () => void; disabled?: boolean }) {
+   coûter neuf pixels de large qui manquent au libellé.
+ *
+ * Elle **nomme l'échéance**. Douze boutons « Confirmer » se listent douze fois
+ * à l'identique dans les contrôles d'un lecteur d'écran, et rien n'y dit lequel
+ * on vise : c'est le même défaut que sept parts d'anneau qui s'annonceraient
+ * toutes « Voir les lignes », et la légende de « Où part l'argent » le corrige
+ * déjà de la même façon. À l'œil, la coche seule suffit — la ligne d'à côté
+ * porte le libellé. */
+function ConfirmButton({
+  label,
+  onConfirm,
+  disabled,
+}: {
+  label: string
+  onConfirm: () => void
+  disabled?: boolean
+}) {
   return (
     <Button
       size="sm"
-      aria-label={fr.month.confirmOne}
+      aria-label={tpl(fr.month.confirmEntry, label)}
       className="shrink-0"
       {...(disabled === undefined ? {} : { disabled })}
       onClick={onConfirm}
@@ -96,6 +116,7 @@ function FixedRow({ entry, color, onOpen }: { entry: Entry; color: string; onOpe
         <Amount value={entry.amount} direction={entry.direction} />
       </AmountCell>
       <ConfirmButton
+        label={entry.label}
         onConfirm={() => {
           confirmEntry(entry.id)
           toast(fr.month.confirmedOne)
@@ -147,6 +168,7 @@ function VariableRow({
         />
       </AmountCell>
       <ConfirmButton
+        label={entry.label}
         disabled={!ready}
         onConfirm={() => {
           if (parsed === null) return
@@ -159,12 +181,37 @@ function VariableRow({
 }
 
 /**
+ * Combien de lignes s'affichent avant qu'on demande le reste, et à partir de
+ * quel reliquat la coupe vaut la peine.
+ *
+ * Cinq, comme les prochaines échéances : c'est ce qu'on lit sans défiler, et
+ * ce que la section doit rendre pour laisser la place au détail du mois. Un
+ * mois ordinaire en compte une douzaine, et douze lignes de 56px repoussaient
+ * « Ce mois » d'un écran entier.
+ *
+ * Le seuil est à deux et non à un : cacher une seule ligne derrière un bouton
+ * n'économise pas sa hauteur, il l'échange contre celle du bouton, et demande
+ * un geste pour rien.
+ */
+const PREVIEW = 5
+const WORTH_HIDING = 2
+
+/**
  * Les échéances prévues du mois, en une seule liste par date.
  *
  * Une seule, et non deux : les montants à saisir étaient rangés dans un
  * encadré séparé, ce qui les faisait passer pour autre chose que ce qu'ils
  * sont — des échéances à confirmer, comme les autres, à ceci près qu'il faut
  * d'abord dire combien.
+ *
+ * **La liste se coupe et se lève.** Elle s'affichait en entier, ce qui est la
+ * bonne chose à faire pour trois lignes et la mauvaise pour treize : la section
+ * est une tâche, pas un inventaire, et on la traite par le haut — les plus
+ * proches d'abord, la liste étant triée par date. Ce qui reste est **compté et
+ * annoncé**, jamais tu, et se montre d'un bouton : c'est la coupe de la
+ * recherche de l'historique, avec ses mots. La section garde sa place dans la
+ * page plutôt que de partir sur un écran à elle — une tâche qu'il faut aller
+ * chercher est une tâche qu'on oublie, et le routage n'y gagnerait rien.
  */
 export function PendingSection() {
   const { fixed, variable } = useMonthPending()
@@ -172,6 +219,20 @@ export function PendingSection() {
   const navigate = useNavigate()
   const unconfirmable = useMonthUnconfirmable()
   const [undoing, setUndoing] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+
+  /* Se referme au changement de mois, et à celui-là seulement : la liste
+     dépliée d'août n'a pas été demandée pour septembre. Pas sur `all`, qui
+     change à chaque confirmation — replier sous le doigt de qui vient de
+     cocher une ligne serait pire que de ne rien replier du tout. Ajusté au
+     rendu, comme l'axe de `EntriesSection` : React relance aussitôt, rien ne
+     s'affiche entre les deux. */
+  const ym = useCurrentYm()
+  const [shownYm, setShownYm] = useState(ym)
+  if (shownYm !== ym) {
+    setShownYm(ym)
+    setShowAll(false)
+  }
 
   const all = useMemo(
     () =>
@@ -179,6 +240,10 @@ export function PendingSection() {
     [fixed, variable],
   )
   const toFill = useMemo(() => new Set(variable.map((e) => e.id)), [variable])
+
+  const hidden = all.length - PREVIEW
+  const cut = !showAll && hidden >= WORTH_HIDING
+  const shown = cut ? all.slice(0, PREVIEW) : all
 
   const undo = (
     <ConfirmDialog
@@ -254,7 +319,7 @@ export function PendingSection() {
       )}
 
       <ul className="flex flex-col gap-1">
-        {all.map((entry) =>
+        {shown.map((entry) =>
           toFill.has(entry.id) ? (
             <VariableRow
               key={entry.id}
@@ -276,6 +341,25 @@ export function PendingSection() {
           ),
         )}
       </ul>
+
+      {/* Une coupe annoncée, et qui se lève : la même que celle des résultats
+          de recherche de l'historique, avec ses deux morceaux — ce qui reste
+          se compte, et un bouton le montre. Sans le compte, une liste tronquée
+          se lit comme une liste complète et l'on croit avoir tout confirmé. */}
+      {cut && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="t-label">{tpl(fr.month.pendingMore, hidden)}</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setShowAll(true)
+            }}
+          >
+            {fr.month.pendingShowAll}
+          </Button>
+        </div>
+      )}
 
       {/* Le retour en arrière reste atteignable tant qu'il reste quelque chose
           à ramener, y compris quand le mois n'est confirmé qu'à moitié. */}
