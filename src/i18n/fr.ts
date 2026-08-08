@@ -92,6 +92,41 @@ export const fr = {
     stay: 'Continuer la saisie',
   },
 
+  /* La notice du premier lancement (cahier §4.1). Ici et non dans un module
+     chargé à la demande, contrairement à la prose de la présentation et des
+     pages juridiques : elle est montée sur toute l'app, donc elle voyage de
+     toute façon dans le graphe initial — l'y différer ne ferait que la faire
+     arriver après l'écran qu'elle est censée couvrir.
+
+     Aucune de ces phrases ne dit « 0 traitement de données ». Servir la page
+     laisse une trace dans les journaux de l'hébergeur, la page de
+     confidentialité le dit en clair, et une notice faite pour être crue ne peut
+     pas se faire prendre sur la seule ligne qu'on peut vérifier. Les quatre
+     portent donc sur ce que devient *ce qu'on écrit*, ce qui reste vrai. */
+  notice: {
+    /* Les mots d'un bandeau cookies, dans l'autre sens. L'en-tête de la feuille
+       tronque : sept syllabes, pas une phrase. */
+    title: 'Aucun cookie, aucun serveur',
+    lead: 'Un bandeau cookies te fait accepter ce qu’on prend. Celui-ci ne demande rien : il dit ce qu’il n’y a pas.',
+    noAccount: 'Aucun compte — ni e-mail, ni mot de passe, ni identifiant.',
+    noTracking: 'Aucun cookie, aucun traceur, aucune mesure d’audience, aucune publicité.',
+    noServer:
+      'Aucun serveur — rien de ce que tu saisis ne quitte cet appareil, parce qu’il n’existe nulle part où l’envoyer.',
+    /* La quatrième est la seule qui parle de quelqu'un plutôt que d'une
+       technique, et c'est la question réellement posée : « qui va lire ça ? ». */
+    noReader:
+      'Personne ne lit tes données — ni l’auteur de l’app, ni un tiers : il n’en existe aucune copie ailleurs à lire.',
+    verify: 'Le code est ouvert, précisément pour que tout ça se lise au lieu de se croire.',
+    /* La case est là pour qu'on lise, pas pour qu'on réponde : rien n'est
+       enregistré de ce qu'elle vaut, et son seul effet est d'allumer le bouton.
+       D'où l'aide, qui dit ce qu'elle fait — un bouton éteint sans raison se lit
+       comme une panne, et un `disabled` ne prend pas le focus pour l'expliquer
+       lui-même. */
+    check: 'J’ai lu',
+    checkHint: 'Le bouton s’active quand la case est cochée.',
+    action: 'J’ai compris',
+  },
+
   direction: {
     in: 'Entrée',
     out: 'Sortie',

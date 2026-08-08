@@ -533,6 +533,17 @@ prétendrait avoir été sauvegardé à l'instant. Le refus du rappel y vit pour
 même raison, et sous la même forme : une date, pas un booléen, pour qu'un refus
 vaille un cycle de trente jours et non l'éternité.
 
+**L'accusé de lecture de la notice y vit aussi, et se sépare des deux sur un
+point.** `resetAll` efface les deux dates — elles décrivent des données qui ne
+sont plus là, et l'app repartirait de zéro en annonçant la sauvegarde d'un
+document disparu. Le drapeau de la notice, lui, traverse l'effacement, comme le
+thème et la palette : il décrit ce qu'on a lu, pas l'état des données. C'est la
+ligne de partage de tout ce qui vit en `localStorage` ici — décrire le document,
+ou décrire l'appareil et la personne devant lui. Il est lu de façon **synchrone
+au premier rendu**, ce qui est sa seconde raison d'y vivre : la notice doit
+répondre avant qu'IndexedDB n'ait dit quoi que ce soit, faute de quoi elle
+s'afficherait une frame chez quelqu'un qui l'a déjà fermée.
+
 ## Responsive
 
 Mobile d'abord : le style non préfixé vise le téléphone, les variantes `md:` et

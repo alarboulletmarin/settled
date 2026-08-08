@@ -56,6 +56,20 @@ function open(props: Partial<Parameters<typeof Sheet>[0]> = {}, phone = true) {
   return { onClose, dialog }
 }
 
+/**
+ * Ce que la touche Échap envoie à un `<dialog>` ouvert.
+ *
+ * Construit à la main : `createEvent` n'a pas de fabrique `cancel`, et jsdom
+ * n'émet rien sur une vraie touche puisque son `showModal()` est un bouchon. Il
+ * faut l'objet lui-même et non le booléen de `fireEvent` — c'est
+ * `defaultPrevented` qui dit que la feuille a refusé de se fermer.
+ */
+function pressEscape(node: Element): Event {
+  const event = new Event('cancel', { bubbles: false, cancelable: true })
+  fireEvent(node, event)
+  return event
+}
+
 /** La zone de prise : la poignée et l'en-tête, réunis sous un même parent. */
 function band(): HTMLElement {
   const header = screen.getByRole('heading', { name: 'Le jour' }).closest('header')
@@ -174,6 +188,49 @@ describe('Sheet — tirer vers le bas', () => {
     pointer('pointerUp', zone, { y: 400 })
 
     expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+describe('Sheet — la feuille qu’on ne referme pas', () => {
+  /* Les trois sorties sans mot, une par une. Elles restent en place par défaut :
+     le dernier cas de ce bloc est là pour que retirer la garde se voie. */
+  it('ignore Échap', () => {
+    const { onClose, dialog } = open({ dismissible: false })
+    expect(pressEscape(dialog).defaultPrevented).toBe(true)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('ignore le clic sur le fond', () => {
+    const { onClose, dialog } = open({ dismissible: false })
+    fireEvent.click(dialog)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('ne rend pas de croix', () => {
+    open({ dismissible: false })
+    expect(screen.queryByRole('button', { name: fr.common.close })).not.toBeInTheDocument()
+  })
+
+  it('laisse les trois sorties en place par défaut', () => {
+    const { onClose, dialog } = open()
+
+    pressEscape(dialog)
+    expect(onClose).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(dialog)
+    expect(onClose).toHaveBeenCalledTimes(2)
+
+    expect(screen.getByRole('button', { name: fr.common.close })).toBeInTheDocument()
+  })
+
+  it('désigne son texte quand on le lui demande', () => {
+    const { dialog } = open({ describedBy: 'le-corps' })
+    expect(dialog).toHaveAttribute('aria-describedby', 'le-corps')
+  })
+
+  it('ne désigne rien sans qu’on le demande', () => {
+    const { dialog } = open()
+    expect(dialog).not.toHaveAttribute('aria-describedby')
   })
 })
 

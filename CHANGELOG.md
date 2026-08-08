@@ -12,6 +12,63 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — la promesse se lit avant la première saisie, pas dans les pages qu'on ne lit pas
+
+« Pas de compte, pas de serveur » était écrit quatre fois : sur la présentation,
+à la dernière étape de l'onboarding, sur « à propos », et en détail sur la page
+de confidentialité. Toutes se lisent, et c'était exactement le problème —
+quelqu'un qui arrive méfiant devant une app de finances saisissait ses revenus
+sans en avoir croisé une ligne. La promesse était partout sauf devant lui.
+
+- **Une notice bloquante au premier lancement**, une seule fois par navigateur et
+  pour tout le monde, quel que soit l'écran d'arrivée. Elle dit les quatre choses
+  que l'app ne fait pas de ce qu'on y écrit — aucun compte, aucun cookie ni
+  traceur, aucun serveur, personne qui lise les données — et mène à la page de
+  confidentialité. C'est un bandeau cookies retourné, et la forme est empruntée
+  exprès : là où l'un fait accepter ce qui est pris, celle-ci dit ce qui n'est
+  pas pris. Elle bloque pour la seule raison qui rend un bandeau cookies
+  efficace, c'est-à-dire qu'on ne peut pas ne pas le voir.
+- **La case est là pour qu'on lise, pas pour qu'on réponde.** Elle allume le
+  bouton « J'ai compris », et c'est tout ce qu'elle fait : rien n'est enregistré
+  de ce qu'elle vaut. C'est ce qui distingue la notice d'une question, et ce qui
+  laisse intact le « rien à configurer pour démarrer » du cahier §1 — elle ne
+  configure rien et ne demande aucune information sur qui la lit. Le nom du foyer
+  reste supprimé pour la raison inverse : il exigeait une réponse sur soi, et
+  pour une décoration.
+- **Aucune des quatre lignes ne dit « aucun traitement de données ».** Servir la
+  page laisse une trace dans les journaux de l'hébergeur, la page de
+  confidentialité le dit depuis toujours, et une notice faite pour être crue ne
+  peut pas se faire prendre sur la seule ligne qu'on puisse vérifier. Les quatre
+  portent donc sur ce que devient *ce qu'on saisit*, ce qui reste vrai ; la
+  nuance se lit sur la page, à un lien de là.
+- **« Pourquoi il n'y a pas de bandeau cookies » devient « Pourquoi il y a une
+  notice, et pas un bandeau de consentement ».** La section disait qu'un bandeau
+  n'aurait rien à faire consentir et ferait cliquer pour rien : c'est toujours
+  vrai d'un bandeau de *consentement*, et la page le dit maintenant dans ces
+  mots-là. Ce qui s'ajoute est une notice d'information — elle ne demande pas
+  d'accepter, ne propose pas de refuser, et la fermer ne change rien à ce que
+  l'app fait.
+- **L'énumération du stockage local est corrigée**, et c'est plus qu'un détail :
+  toute la crédibilité d'une notice qui affirme ne rien collecter repose sur
+  l'exactitude de la liste de ce qui est écrit. Elle annonçait trois réglages
+  quand il y en avait quatre — la palette manquait — et il y en a cinq
+  maintenant, tous nommés.
+- **Ni croix, ni Échap, ni clic sur le fond** : `Sheet` accepte
+  `dismissible={false}`, et c'est le seul écran qui y a droit. Il n'y a pas de
+  « non » à offrir puisqu'il n'y a rien à accepter, et une sortie sans mot ferait
+  passer pour un refus le fait d'avoir cliqué de travers. Ce n'est pas un piège
+  au sens de WCAG 2.1.2 : la case répond à la barre d'espace, le bouton à
+  Entrée — la sortie existe au clavier, elle est simplement nommée.
+- **Le texte de la feuille est désigné**, et pas seulement affiché.
+  `showModal()` place le focus sur le premier élément focusable : sans
+  `aria-describedby`, un lecteur d'écran annonçait le titre puis
+  « Confidentialité, lien », et rien des quatre lignes entre les deux.
+- **Fermer la notice survit à « Tout effacer ».** Le drapeau vit hors du document,
+  comme le thème et la palette, et pour la même raison : il décrit ce qu'on a lu,
+  pas l'état des données. Les deux dates d'export, elles, partent à l'effacement
+  parce qu'elles décrivent des données qui ne sont plus là. Rouvrir une modale
+  bloquante devant quelqu'un qui vient de tout effacer serait une punition.
+
 ### Ajouté — l'export peut partir vers un autre appareil
 
 L'export n'avait qu'une sortie : le dossier des téléchargements. Sur un

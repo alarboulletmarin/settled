@@ -35,6 +35,31 @@ export type SheetProps = {
    * « tire-moi ».
    */
   pullToClose?: boolean
+  /**
+   * Une feuille qu'aucun geste ne referme : ni croix, ni Échap, ni clic sur le
+   * fond. Un seul bouton nommé la referme, et c'est celui du pied.
+   *
+   * C'est l'inverse exact de ce que le DS §6 demande partout ailleurs, et ça
+   * n'est permis qu'à la notice du premier lancement (cahier §4.1). L'argument
+   * est qu'elle ne pose aucune question : il n'y a pas de « non » à offrir
+   * puisqu'il n'y a rien à accepter, et une sortie sans mot — la touche Échap,
+   * un doigt à côté — ferait passer pour un refus le fait d'avoir cliqué de
+   * travers.
+   *
+   * Ce n'est pas un piège au sens de WCAG 2.1.2 : le piège de focus reste celui
+   * du navigateur, et la sortie existe au clavier comme au doigt.
+   */
+  dismissible?: boolean
+  /**
+   * L'`id` de ce que la feuille dit, posé en `aria-describedby`.
+   *
+   * `showModal()` place le focus sur le premier élément focusable du contenu.
+   * Une feuille dont le texte *est* le propos — et non le décor d'un
+   * formulaire — le ferait donc traverser sans être lu : un lecteur d'écran
+   * annoncerait le nom de la feuille puis le premier lien, et rien entre les
+   * deux. Là où le contenu doit être entendu, il se désigne.
+   */
+  describedBy?: string
 }
 
 /**
@@ -45,6 +70,9 @@ export type SheetProps = {
  * Le mouvement d'entrée et de sortie vit dans la feuille de style, sur la
  * classe `.sheet` : `showModal()` n'anime rien, et une feuille montante qui
  * apparaît d'un coup ne dit pas d'où elle vient.
+ *
+ * `dismissible={false}` retire les trois sorties sans mot — croix, Échap, clic
+ * sur le fond — et n'est permis qu'à un seul écran de l'app. Voir la prop.
  */
 export function Sheet({
   open,
@@ -54,6 +82,8 @@ export function Sheet({
   footer,
   footerLead,
   pullToClose = false,
+  dismissible = true,
+  describedBy,
 }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const drag = useSheetDrag({ open, onClose, enabled: pullToClose })
@@ -69,13 +99,18 @@ export function Sheet({
     <dialog
       ref={ref}
       aria-label={title}
+      aria-describedby={describedBy}
+      /* `preventDefault` dans les deux cas, et pour deux raisons différentes :
+         une feuille ordinaire referme elle-même par son `open` plutôt que de
+         laisser le navigateur le faire dans son dos ; une feuille non
+         refermable, elle, ne referme pas du tout. */
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        if (dismissible) onClose()
       }}
       onClick={(event) => {
         // Un clic sur le fond ferme ; un clic dans la feuille ne remonte pas.
-        if (event.target === ref.current) onClose()
+        if (dismissible && event.target === ref.current) onClose()
       }}
       className={cn(
         // `.sheet` porte l'entrée, la sortie et la couleur du fond. Le fond ne
@@ -139,11 +174,17 @@ export function Sheet({
             />
           )}
 
+          {/* La croix n'apparaît que là où le geste existe — la même règle que
+              la poignée, et que les repères d'action du DS §6. Un bouton
+              « Fermer » sur une feuille qui ne se ferme pas serait la pire des
+              deux : il promettrait la sortie et ne la donnerait pas. */}
           <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
             <h2 className="t-section min-w-0 truncate">{title}</h2>
-            <IconButton label={fr.common.close} onClick={onClose}>
-              <Close />
-            </IconButton>
+            {dismissible && (
+              <IconButton label={fr.common.close} onClick={onClose}>
+                <Close />
+              </IconButton>
+            )}
           </header>
         </div>
 

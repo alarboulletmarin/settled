@@ -167,7 +167,17 @@ type MonthState = {
 
 ### 4.1 Premier lancement
 
-Deux étapes, et **aucune n'exige de réponse** ; **rien à configurer pour démarrer** reste la règle.
+**Avant les deux étapes : la notice.** Une modale bloquante s'affiche au premier chargement, une seule fois par navigateur et pour tout le monde — y compris qui utilise déjà l'app. Elle dit les quatre choses que l'app ne fait pas de ce qu'on y écrit : aucun compte, aucun cookie ni traceur, aucun serveur, et personne qui lise les données. Elle porte le lien vers la page de confidentialité, et se ferme par un seul bouton « J'ai compris », qu'une case « J'ai lu » active. Ni croix, ni Échap, ni clic sur le fond.
+
+Elle est bloquante parce qu'aucune autre forme ne l'est. La promesse est déjà écrite sur la présentation, à la dernière étape de l'onboarding, sur « à propos » et sur la page de confidentialité — c'est-à-dire partout où il faut lire. Quelqu'un qui arrive méfiant devant une app de finances et qui ne lit pas saisit ses revenus sans en avoir croisé une ligne : la promesse était partout sauf devant lui. La forme est celle d'un bandeau cookies, retournée — là où l'un fait accepter ce qui est pris, celle-ci dit ce qui n'est pas pris.
+
+**Ce n'est pas une question, et c'est ce qui la réconcilie avec le §1.** « Rien à configurer pour démarrer » tient toujours : elle ne configure rien, ne demande aucune information *sur qui la lit*, et l'app se comporte exactement pareil avant et après. Rien n'est enregistré de ce que vaut la case — elle allume le bouton, et c'est tout ce qu'elle fait ; elle est là pour qu'on lise, pas pour qu'on réponde. Le nom du foyer, lui, reste supprimé pour la raison inverse : il exigeait une réponse sur soi, et pour une décoration.
+
+**Aucune des quatre lignes ne dit « aucun traitement de données ».** Servir la page laisse une trace dans les journaux de l'hébergeur, la page de confidentialité le dit en clair, et une notice faite pour être crue ne peut pas se faire prendre sur la seule ligne vérifiable. Les quatre portent donc sur ce que devient *ce qu'on saisit*, ce qui reste vrai — et la nuance se lit sur la page, à un lien de là.
+
+Le fait qu'elle a été fermée vit dans le stockage local, hors du document : il décrit ce navigateur-ci, pas le foyer. « Tout effacer » (§4.8) ne le remet donc pas à zéro — l'effacement porte sur les données, pas sur ce qu'on a lu, et rouvrir une modale bloquante devant quelqu'un qui vient de tout effacer serait une punition.
+
+Puis les deux étapes, et **aucune n'exige de réponse** ; **rien à configurer pour démarrer** reste la règle.
 
 1. Personnes. « Avec qui tu partages des dépenses ? » L'utilisateur peut passer directement (usage solo) ou ajouter des personnes, prénom uniquement.
 2. **Ce qui revient chaque mois — facultative.** Un montant de salaire par personne (ou un seul, sans propriétaire, quand personne n'est nommé) et ce qu'on verse pour se loger. Chaque montant saisi pose une récurrence mensuelle ; un champ laissé vide ne pose rien, et un bouton « Je le ferai plus tard », aussi visible que le principal, ouvre l'app sans rien poser.
