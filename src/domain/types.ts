@@ -81,11 +81,74 @@ export type Period = {
   anchorDay: number
 }
 
+/**
+ * Un support d'épargne — le livret, le plan, le contrat : **où** l'argent est
+ * placé, et **à qui** il est.
+ *
+ * C'est la seule réponse de l'app à « où va l'argent ». La catégorie répondait
+ * jusqu'ici aux deux questions à la fois : « Livrets » disait la nature du
+ * mouvement *et* tenait lieu de support, si bien que le livret d'Andrea et
+ * celui de Marie étaient le même objet. Elles se séparent ici — la catégorie
+ * dit de quelle **nature** est ce qu'on place (un livret, un plan, une
+ * assurance-vie), le support dit **lequel** et **à qui**.
+ *
+ * `categoryId` porte donc le classement, et il n'y a pas de second champ
+ * `type` à côté : le catalogue de catégories fait déjà ce travail — il a un
+ * libellé, une teinte, une famille, et l'utilisateur peut l'étendre. Un
+ * énuméré parallèle serait une seconde classification à tenir d'accord avec la
+ * première.
+ *
+ * Aucun rendement, aucun objectif, aucune échéance : le stock se photographie
+ * (`SavingValuation`), il ne se projette pas encore.
+ */
+export type SavingSupport = {
+  id: string
+  /** Libre, et c'est le champ qui compte : « Livret A », « PEA Boursorama ». */
+  label: string
+  /**
+   * Jamais facultatif : une épargne est toujours à quelqu'un, exactement comme
+   * pour une `Advance`. L'épargne ne se répartit pas comme une charge — il n'y
+   * a donc pas de support « commun ».
+   */
+  memberId: string
+  /** La catégorie de nature `saving` sous laquelle ses mouvements se rangent. */
+  categoryId: string
+  /** Fermé, mais conservé : ses valorisations et ses mouvements restent. */
+  archived: boolean
+  note?: string
+}
+
+/**
+ * Ce que vaut un support à une date — une **photographie du stock**, jamais un
+ * mouvement.
+ *
+ * « PEA, 18 320 € le 1er août » ne dit pas qu'une opération de 18 320 € a eu
+ * lieu ce jour-là : c'est une observation de valeur. Elle n'entre donc dans
+ * aucun total du mois — ni solde, ni revenus, ni charges, ni capacité, ni
+ * versements. Ceux-là se lisent sur les `Entry`, et sur elles seules.
+ *
+ * Les valorisations s'empilent plutôt que de s'écraser : le capital courant est
+ * la plus récente, et les précédentes font l'historique — sans quoi la courbe,
+ * et plus tard la comparaison d'une projection au réel, n'auraient rien à lire.
+ */
+export type SavingValuation = {
+  id: string
+  supportId: string
+  amount: Money
+  date: ISODate
+}
+
 export type Recurrence = {
   id: string
   label: string
   categoryId: string
   memberId?: string
+  /**
+   * Le support alimenté ou repris, sur une règle de nature `saving`. Absent
+   * ailleurs, et absent aussi sur une règle d'épargne d'avant les supports :
+   * le lien se coupe comme celui d'un membre plutôt que d'écarter la ligne.
+   */
+  savingSupportId?: string
   direction: Direction
   /** null = montant à saisir à chaque échéance. */
   amount: Money | null
@@ -119,6 +182,12 @@ export type Entry = {
   label: string
   categoryId: string
   memberId?: string
+  /**
+   * Le support versé ou repris, sur un mouvement de nature `saving`. C'est le
+   * lien par **identifiant** qui remplace la déduction par catégorie : une
+   * échéance ne cherche plus son support par libellé ni par poste.
+   */
+  savingSupportId?: string
   direction: Direction
   amount: Money
   date: ISODate
@@ -193,6 +262,16 @@ export type Advance = {
    * sur le livret de personne.
    */
   memberId: string
+  /**
+   * Le support repris, puis reconstitué. La reprise du jour du paiement et
+   * chaque mensualité pointent vers lui — c'est la même épargne, désignée par
+   * le même identifiant, de l'avance jusqu'à la dernière échéance.
+   *
+   * Facultatif au modèle seulement : une avance d'avant les supports n'en
+   * désigne aucun tant que la migration n'a pas su le déduire, et son lien se
+   * coupe plutôt que de la faire disparaître.
+   */
+  savingSupportId?: string
   /** Ce qui a été payé, en une fois. */
   amount: Money
   /** Le jour du paiement — celui où l'épargne a été reprise. */
@@ -288,6 +367,10 @@ export type Data = {
   entries: Entry[]
   debts: Debt[]
   advances: Advance[]
+  /** Où l'épargne est placée, et à qui elle est. */
+  savingSupports: SavingSupport[]
+  /** Ce que chaque support valait, aux dates où on l'a relevé. */
+  savingValuations: SavingValuation[]
   months: MonthState[]
   settings: Settings
 }
@@ -357,6 +440,13 @@ export function findMember(members: readonly Member[], id: string): Member | und
 
 export function findFamily(families: readonly Family[], id: string): Family | undefined {
   return families.find((f) => f.id === id)
+}
+
+export function findSavingSupport(
+  supports: readonly SavingSupport[],
+  id: string | undefined,
+): SavingSupport | undefined {
+  return id === undefined ? undefined : supports.find((s) => s.id === id)
 }
 
 /**

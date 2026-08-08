@@ -8,12 +8,13 @@ import { useCategoryMap, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Tile } from '@/ui/Tile'
 import { MembersStep } from './MembersStep'
+import { SavingsPreview, SavingsStep } from './SavingsStep'
 import { StarterStep } from './StarterStep'
 import { StepProgress } from './StepProgress'
 import { MembersPreview, StarterPreview } from './StepPreview'
 import { starterLines, starterRecurrences } from './starter'
 
-const LAST_STEP = 2
+const LAST_STEP = 3
 
 /**
  * Une question, une proposition, puis l'app est utilisable. Le jeu de
@@ -42,7 +43,7 @@ const LAST_STEP = 2
  * tâche, et c'est elle qui doit tomber sous le pouce.
  */
 export function OnboardingPage() {
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const members = useMembers()
   const categories = useCategoryMap()
   const finishOnboarding = useStore((s) => s.finishOnboarding)
@@ -71,14 +72,22 @@ export function OnboardingPage() {
      échéance. C'est `finishOnboarding` qui ouvre le mois courant, et c'est là
      que leurs échéances naissent — à confirmer, comme n'importe quel mois qui
      s'ouvre. */
-  const startWith = (): void => {
-    for (const payload of starterRecurrences(
-      lines,
-      amounts,
-      (id) => categories.has(id),
-      currentYm(),
-    )) {
-      addRecurrence(payload)
+  /* Ce que la deuxième étape a décidé, retenu jusqu'à la fin plutôt que posé
+     tout de suite : revenir en arrière depuis la troisième étape et repartir
+     poserait sinon les mêmes récurrences une seconde fois. La réponse voyage,
+     l'écriture n'a lieu qu'une fois. */
+  const [keepStarter, setKeepStarter] = useState(false)
+
+  const finish = (): void => {
+    if (keepStarter) {
+      for (const payload of starterRecurrences(
+        lines,
+        amounts,
+        (id) => categories.has(id),
+        currentYm(),
+      )) {
+        addRecurrence(payload)
+      }
     }
     open()
   }
@@ -95,7 +104,7 @@ export function OnboardingPage() {
           ? {}
           : {
               onBack: () => {
-                setStep(1)
+                setStep(step === 3 ? 2 : 1)
               },
             })}
       />
@@ -122,14 +131,22 @@ export function OnboardingPage() {
               onAmount={(key, value) => {
                 setAmounts((current) => ({ ...current, [key]: value }))
               }}
-              onSubmit={startWith}
-              onSkip={open}
+              onSubmit={() => {
+                setKeepStarter(true)
+                setStep(3)
+              }}
+              onSkip={() => {
+                setKeepStarter(false)
+                setStep(3)
+              }}
             />
           )}
+          {step === 3 && <SavingsStep onSubmit={finish} onSkip={finish} />}
         </Tile>
 
         {step === 1 && <MembersPreview members={members} />}
         {step === 2 && <StarterPreview lines={lines} amounts={amounts} members={members} />}
+        {step === 3 && <SavingsPreview />}
       </div>
 
       <div className="flex flex-col gap-1">

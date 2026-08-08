@@ -8,25 +8,32 @@ import {
   makeEntry,
   makeMember,
   makeRecurrence,
+  makeSavingSupport,
+  makeSavingValuation,
   sequentialIds,
 } from './fixtures'
 import {
   addEntry,
   addMember,
+  addSavingValuation,
   archiveCategory,
+  archiveSavingSupport,
   confirmEntries,
   confirmEntry,
   confirmOccurrence,
   createAdvance,
+  createSavingSupport,
   openMonth,
   removeMember,
   removeRecurrence,
+  removeSavingSupport,
   renameMember,
   replaceEntry,
   replaceRecurrence,
   resumeRecurrence,
   setHouseholdName,
   stopRecurrence,
+  stopSupportRecurrences,
   syncRecurrenceEntries,
   unconfirmEntries,
   updateRecurrence,
@@ -158,10 +165,12 @@ describe('échéance payée d’avance', () => {
 })
 
 describe('poser une avance', () => {
+  const support = makeSavingSupport({ id: 's-livret', memberId: 'm1', categoryId: 'passbook' })
+  const base = makeData({ savingSupports: [support] })
   const input = {
     label: 'Assurance auto',
     categoryId: 'car-insurance',
-    savingCategoryId: 'livret',
+    savingSupportId: 's-livret',
     memberId: 'm1',
     amount: eur(60000),
     paidOn: '2026-01-15',
@@ -170,11 +179,30 @@ describe('poser une avance', () => {
   }
 
   it('pose la reprise, la récurrence qui la rend, et l’avance', () => {
-    const { data, advance } = createAdvance(makeData(), input, sequentialIds(), '2026-01-15')
+    const { data, advance } = createAdvance(base, input, sequentialIds(), '2026-01-15')
     expect(data.advances).toEqual([advance])
     expect(data.recurrences).toHaveLength(1)
     // La reprise part confirmée : l'argent est déjà sorti du livret.
     expect(data.entries.some((e) => e.direction === 'in' && e.status === 'confirmed')).toBe(true)
+  })
+
+  /* Tout ce que l'avance produit pointe vers le même compte, par identifiant :
+     la reprise, la récurrence de reconstitution et l'avance elle-même. C'est
+     l'invariant qui empêche une avance de vider un livret et d'en remplir un
+     autre. */
+  it('relie la reprise, la récurrence et l’avance au même support', () => {
+    const { data, advance } = createAdvance(base, input, sequentialIds(), '2026-01-15')
+    expect(advance.savingSupportId).toBe('s-livret')
+    expect(data.recurrences[0]?.savingSupportId).toBe('s-livret')
+    expect(data.entries.every((e) => e.savingSupportId === 's-livret')).toBe(true)
+  })
+
+  /* La catégorie du mouvement se lit sur le support, elle ne se saisit pas :
+     deux réponses pour un seul fait finiraient par se contredire. */
+  it('prend la catégorie du support pour la reprise et les mensualités', () => {
+    const { data } = createAdvance(base, input, sequentialIds(), '2026-01-15')
+    expect(data.recurrences[0]?.categoryId).toBe('passbook')
+    expect(data.entries.every((e) => e.categoryId === 'passbook')).toBe(true)
   })
 
   /* Une période à l'envers pose une récurrence qui s'arrête avant sa première
@@ -183,18 +211,129 @@ describe('poser une avance', () => {
      refusait déjà, mais il n'est plus le seul appelant. */
   it('refuse une période qui se termine avant de commencer', () => {
     expect(() =>
-      createAdvance(makeData(), { ...input, from: '2026-12', to: '2026-01' }, sequentialIds()),
+      createAdvance(base, { ...input, from: '2026-12', to: '2026-01' }, sequentialIds()),
+    ).toThrow(RangeError)
+  })
+
+  it('refuse un support qui n’existe pas', () => {
+    expect(() =>
+      createAdvance(base, { ...input, savingSupportId: 's-fantome' }, sequentialIds()),
     ).toThrow(RangeError)
   })
 
   it('accepte une avance d’un seul mois, bornes confondues', () => {
     const { advance } = createAdvance(
-      makeData(),
+      base,
       { ...input, from: '2026-03', to: '2026-03' },
       sequentialIds(),
       '2026-03-15',
     )
     expect(advance.to).toBe('2026-03')
+  })
+})
+
+describe('supports d’épargne', () => {
+  const base = makeData({ household: { name: '', members: [makeMember({ id: 'm1' })] } })
+
+  /* Le montant ne s'écrit jamais sur le support : il n'existe que comme
+     valorisation. Un `currentAmount` mutable à côté serait une seconde vérité,
+     et la première mise à jour les ferait diverger. */
+  it('pose le support et sa première valorisation, jamais le montant deux fois', () => {
+    const { data, support, valuation } = createSavingSupport(
+      base,
+      {
+        label: 'Livret A',
+        memberId: 'm1',
+        categoryId: 'passbook',
+        value: { amount: eur(1245000), date: '2026-08-08' },
+      },
+      sequentialIds(),
+    )
+    expect(data.savingSupports).toEqual([support])
+    expect(data.savingValuations).toEqual([valuation])
+    expect(valuation?.amount).toBe(1245000)
+    expect(Object.keys(support)).not.toContain('amount')
+  })
+
+  /* Sans montant, pas de valorisation : un capital inconnu n'est pas un capital
+     à zéro, et poser un relevé à zéro dirait « ce livret est vide ». */
+  it('ne pose aucune valorisation quand la valeur n’est pas connue', () => {
+    const { data, valuation } = createSavingSupport(
+      base,
+      { label: 'PEA', memberId: 'm1', categoryId: 'plans' },
+      sequentialIds(),
+    )
+    expect(valuation).toBeNull()
+    expect(data.savingValuations).toEqual([])
+  })
+
+  it('empile les relevés plutôt que d’écraser le précédent', () => {
+    const { data } = createSavingSupport(
+      base,
+      {
+        label: 'Livret A',
+        memberId: 'm1',
+        categoryId: 'passbook',
+        value: { amount: eur(1000000), date: '2026-07-08' },
+      },
+      sequentialIds(),
+    )
+    const after = addSavingValuation(data, {
+      id: 'v2',
+      supportId: data.savingSupports[0]?.id ?? '',
+      amount: eur(1065000),
+      date: '2026-08-08',
+    })
+    expect(after.savingValuations).toHaveLength(2)
+  })
+
+  /* Un support supprimé ne laisse derrière lui ni relevé orphelin ni lien mort :
+     les mouvements restent, détachés — c'est le geste de `removeRecurrence`. */
+  it('emporte ses valorisations et coupe les liens, sans toucher aux montants', () => {
+    const support = makeSavingSupport({ id: 's1', memberId: 'm1' })
+    const before = makeData({
+      savingSupports: [support],
+      savingValuations: [makeSavingValuation({ id: 'v1', supportId: 's1' })],
+      entries: [makeEntry({ id: 'e1', savingSupportId: 's1', date: '2026-08-01', amount: eur(30000) })],
+    })
+    const after = removeSavingSupport(before, 's1')
+    expect(after.savingSupports).toEqual([])
+    expect(after.savingValuations).toEqual([])
+    expect(after.entries[0]?.amount).toBe(30000)
+    expect(after.entries[0]?.savingSupportId).toBeUndefined()
+  })
+
+  it('archive sans rien perdre', () => {
+    const before = makeData({ savingSupports: [makeSavingSupport({ id: 's1', memberId: 'm1' })] })
+    const after = archiveSavingSupport(before, 's1')
+    expect(after.savingSupports[0]?.archived).toBe(true)
+  })
+
+  /* Un compte archivé qui continue de recevoir un virement chaque mois est
+     l'état incohérent qu'on refuse de créer. */
+  it('arrête les règles encore actives d’un support', () => {
+    const before = makeData({
+      savingSupports: [makeSavingSupport({ id: 's1', memberId: 'm1' })],
+      recurrences: [
+        makeRecurrence({
+          id: 'r1',
+          savingSupportId: 's1',
+          period: { unit: 'month', every: 1, anchorDay: 1 },
+        }),
+      ],
+      entries: [
+        makeEntry({
+          id: 'e1',
+          recurrenceId: 'r1',
+          savingSupportId: 's1',
+          date: '2026-09-01',
+          status: 'planned',
+        }),
+      ],
+    })
+    const after = stopSupportRecurrences(before, 's1', '2026-08-08')
+    expect(after.recurrences[0]?.endedOn).toBe('2026-08-08')
+    expect(after.entries).toEqual([])
   })
 })
 

@@ -37,13 +37,24 @@ import {
 } from '@/domain/date'
 import { money } from '@/domain/money'
 import { clampToMonth } from '@/domain/recurrence'
-import type { Category, Data, Debt, Direction, Entry, Family, Recurrence } from '@/domain/types'
+import type {
+  Category,
+  Data,
+  Debt,
+  Direction,
+  Entry,
+  Family,
+  Recurrence,
+  SavingSupport,
+} from '@/domain/types'
 import {
   addCategory,
   addDebt,
   addFamily,
   addMember,
   addEntry,
+  addSavingSupport,
+  addSavingValuation,
   archiveCategory,
   confirmEntries,
   createAdvance,
@@ -71,6 +82,14 @@ const ALIX = 'ex-alix'
 const CAMILLE = 'ex-camille'
 const PETS_FAMILY = 'ex-fam-pets'
 const PETS_CATEGORY = 'ex-cat-pets'
+
+/* Les supports d'épargne. Chacun est à quelqu'un, et deux d'entre eux relèvent
+   du même poste — c'est précisément ce que la catégorie seule ne savait pas
+   dire : le livret d'Alix et celui de Camille ne sont pas le même compte. */
+const LIVRET_ALIX = 'ex-s-livret-alix'
+const LIVRET_CAMILLE = 'ex-s-livret-camille'
+const PEL_ALIX = 'ex-s-pel-alix'
+const ASSURANCE_VIE = 'ex-s-assurance-vie'
 
 /** Compteur d'identifiants — séquentiel, pour que le document soit comparable. */
 function counter(): () => string {
@@ -346,6 +365,7 @@ const RECURRENCES: RecurrenceSeed[] = [
     label: 'Virement livret',
     categoryId: 'passbook',
     memberId: ALIX,
+    savingSupportId: LIVRET_ALIX,
     direction: 'out',
     amount: money(30000),
     period: { unit: 'month', every: 1, anchorDay: 31 },
@@ -356,6 +376,7 @@ const RECURRENCES: RecurrenceSeed[] = [
     label: 'Virement livret',
     categoryId: 'passbook',
     memberId: CAMILLE,
+    savingSupportId: LIVRET_CAMILLE,
     direction: 'out',
     amount: money(25000),
     period: { unit: 'month', every: 1, anchorDay: 31 },
@@ -366,11 +387,15 @@ const RECURRENCES: RecurrenceSeed[] = [
     label: 'PEL',
     categoryId: 'plans',
     memberId: ALIX,
+    savingSupportId: PEL_ALIX,
     direction: 'out',
     amount: money(15000),
     period: { unit: 'month', every: 1, anchorDay: 5 },
     from: 0,
   },
+  /* Un support sans versement régulier : il vaut ce qu'il vaut, et c'est tout
+     ce qu'on en sait. C'est le cas que la v1 ne pouvait pas représenter — une
+     épargne existe même les mois où l'on n'y touche pas. */
 ]
 
 /**
@@ -405,6 +430,8 @@ type AdHocSeed = {
   label: string
   categoryId: string
   memberId?: string
+  /** Sur un mouvement d'épargne : le compte versé ou repris. */
+  savingSupportId?: string
   direction: Direction
   /** Repris en boucle sur les mois : chaque mois a les siens, et ils diffèrent. */
   amounts: number[]
@@ -494,6 +521,7 @@ const ONE_OFFS: (AdHocSeed & { at: number })[] = [
     label: 'Reprise livret',
     categoryId: 'passbook',
     memberId: CAMILLE,
+    savingSupportId: LIVRET_CAMILLE,
     direction: 'in',
     amounts: [62000],
     note: 'Le lave-linge a rendu l’âme. L’épargne se compte en net : ceci s’en retranche.',
@@ -549,8 +577,10 @@ export function exampleData(on: ISODate = today()): Data {
   data = addMember(data, { id: CAMILLE, name: 'Camille', color: memberColorAt(1) })
 
   data = withCatalogue(data)
+  data = withSupports(data)
   data = withRules(data, first)
   data = withDebts(data, first)
+  data = withValuations(data, anchor, ids)
   data = withAdvances(data, anchor, ids)
 
   months.forEach((ym, index) => {
@@ -581,6 +611,97 @@ function withCatalogue(data: Data): Data {
   /* Archiver n'efface rien et se défait : la location longue durée n'a jamais
      servi ici, elle sort des listes de saisie sans quitter le document. */
   return archiveCategory(addCategory(addFamily(data, family), category), 'leasing')
+}
+
+/**
+ * Les quatre supports d'épargne — où l'argent est placé, et à qui.
+ *
+ * Deux d'entre eux relèvent du même poste (« Livrets ») et appartiennent à deux
+ * personnes : c'est exactement ce qu'une catégorie seule ne savait pas dire, et
+ * la raison d'être de cette entité. Le quatrième ne reçoit aucun versement
+ * régulier — une épargne existe aussi les mois où l'on n'y touche pas.
+ *
+ * Aucun capital n'est écrit ici : il vit dans les valorisations, et nulle part
+ * ailleurs.
+ */
+function withSupports(data: Data): Data {
+  const supports: SavingSupport[] = [
+    {
+      id: LIVRET_ALIX,
+      label: 'Livret A',
+      memberId: ALIX,
+      categoryId: 'passbook',
+      archived: false,
+    },
+    {
+      id: LIVRET_CAMILLE,
+      label: 'Livret A',
+      memberId: CAMILLE,
+      categoryId: 'passbook',
+      archived: false,
+      note: 'C’est lui qui encaisse les coups durs : l’avance des lunettes en vient.',
+    },
+    { id: PEL_ALIX, label: 'PEL', memberId: ALIX, categoryId: 'plans', archived: false },
+    {
+      id: ASSURANCE_VIE,
+      label: 'Assurance-vie',
+      memberId: CAMILLE,
+      categoryId: 'life-insurance',
+      archived: false,
+      note: 'Aucun versement programmé : sa valeur bouge avec les marchés.',
+    },
+  ]
+  return supports.reduce(addSavingSupport, data)
+}
+
+/**
+ * L'historique de valeur : ce que chaque support valait, aux dates relevées.
+ *
+ * Trois relevés espacés de trois mois, plus celui du jour : de quoi une courbe,
+ * et de quoi voir la différence entre la valeur **renseignée** et la valeur
+ * **estimée** — l'assurance-vie ne reçoit aucun versement et progresse quand
+ * même, le livret progresse de ce qu'on y verse. Les deux se lisent au même
+ * endroit, sans que le second écrase jamais le premier.
+ *
+ * Les montants sont des paliers écrits en dur, jamais dérivés des versements :
+ * un capital relevé est une observation, pas un calcul — le déduire des `Entry`
+ * reviendrait à effacer la distinction que ce jeu d'exemple existe pour montrer.
+ */
+const VALUATIONS: { supportId: string; at: number; amount: number }[] = [
+  { supportId: LIVRET_ALIX, at: -9, amount: 980000 },
+  { supportId: LIVRET_ALIX, at: -6, amount: 1070000 },
+  { supportId: LIVRET_ALIX, at: -3, amount: 1160000 },
+  { supportId: LIVRET_ALIX, at: 0, amount: 1245000 },
+
+  { supportId: LIVRET_CAMILLE, at: -9, amount: 640000 },
+  { supportId: LIVRET_CAMILLE, at: -6, amount: 715000 },
+  { supportId: LIVRET_CAMILLE, at: -3, amount: 728000 },
+  { supportId: LIVRET_CAMILLE, at: 0, amount: 803000 },
+
+  { supportId: PEL_ALIX, at: -6, amount: 1740000 },
+  { supportId: PEL_ALIX, at: -3, amount: 1786000 },
+  { supportId: PEL_ALIX, at: 0, amount: 1832000 },
+
+  /* Sans versement, et pourtant en mouvement : le seul support dont la valeur
+     ne s'explique que par le marché. Il recule une fois — une courbe qui ne
+     ferait que monter ne dirait pas ce qu'est un placement. */
+  { supportId: ASSURANCE_VIE, at: -9, amount: 960000 },
+  { supportId: ASSURANCE_VIE, at: -6, amount: 1005000 },
+  { supportId: ASSURANCE_VIE, at: -3, amount: 988000 },
+  { supportId: ASSURANCE_VIE, at: 0, amount: 1020000 },
+]
+
+function withValuations(data: Data, anchor: YearMonth, ids: () => string): Data {
+  return VALUATIONS.reduce(
+    (acc, seed) =>
+      addSavingValuation(acc, {
+        id: ids(),
+        supportId: seed.supportId,
+        amount: money(seed.amount),
+        date: dayOf(addMonthsToYm(anchor, seed.at), 8),
+      }),
+    data,
+  )
 }
 
 function withRules(data: Data, first: YearMonth): Data {
@@ -664,7 +785,7 @@ function withAdvances(data: Data, anchor: YearMonth, ids: () => string): Data {
       paidOn: dayOf(car, 14),
       from: car,
       to: addMonthsToYm(car, 11),
-      savingCategoryId: 'passbook',
+      savingSupportId: LIVRET_ALIX,
       shared: true,
       note: 'Réglée en une fois depuis le livret, remise 56 € par mois.',
     },
@@ -682,7 +803,7 @@ function withAdvances(data: Data, anchor: YearMonth, ids: () => string): Data {
       paidOn: dayOf(glasses, 6),
       from: glasses,
       to: addMonthsToYm(glasses, 9),
-      savingCategoryId: 'passbook',
+      savingSupportId: LIVRET_CAMILLE,
     },
     ids,
     startOfMonth(glasses),
@@ -741,6 +862,9 @@ function withAdHoc(
       label: seed.label,
       categoryId: seed.categoryId,
       ...(seed.memberId === undefined ? {} : { memberId: seed.memberId }),
+      ...(seed.savingSupportId === undefined
+        ? {}
+        : { savingSupportId: seed.savingSupportId }),
       direction: seed.direction,
       amount: money(amount),
       date,

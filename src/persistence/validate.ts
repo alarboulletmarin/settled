@@ -31,6 +31,8 @@ import type {
   Period,
   PeriodUnit,
   Recurrence,
+  SavingSupport,
+  SavingValuation,
   Settings,
   ThemeSetting,
 } from '@/domain/types'
@@ -49,6 +51,8 @@ export type ImportCollection =
   | 'entries'
   | 'debts'
   | 'advances'
+  | 'savingSupports'
+  | 'savingValuations'
   | 'months'
 
 /**
@@ -82,6 +86,8 @@ export type ImportReason =
   | 'unknownMember'
   /** Désigne une récurrence qui n'existe pas. */
   | 'unknownRecurrence'
+  /** Désigne un support d'épargne qui n'existe pas. */
+  | 'unknownSupport'
 
 export type ImportNotice = {
   /** Écartée : la ligne n'est plus là. Réparée : elle est là, autrement. */
@@ -205,12 +211,59 @@ function debt(raw: unknown, index: number): Read<Debt> {
  * Le membre, lui, ne peut pas manquer : une épargne est toujours à quelqu'un.
  * Faute de savoir à qui, on écarte plutôt que d'inventer un porteur.
  */
+/**
+ * Un support sans porteur est écarté, comme une avance : une épargne est
+ * toujours à quelqu'un, et lui en inventer un attribuerait à une personne un
+ * compte qui n'est pas le sien.
+ *
+ * Le capital, lui, n'est pas ici : il vit dans les valorisations, et un support
+ * sans relevé est un support dont on ne connaît pas la valeur — ce qui n'est
+ * pas la même chose qu'un support à zéro.
+ */
+function savingSupport(raw: unknown, index: number): Read<SavingSupport> {
+  if (!isRecord(raw)) return 'shape'
+  const memberId = optionalStr(raw['memberId'])
+  if (memberId === undefined) return 'noMember'
+  const note = optionalStr(raw['note'])
+  return {
+    id: str(raw['id'], `saving-support-${String(index)}`),
+    label: str(raw['label'], '—'),
+    memberId,
+    categoryId: str(raw['categoryId'], ''),
+    archived: bool(raw['archived'], false),
+    ...(note === undefined ? {} : { note }),
+  }
+}
+
+/**
+ * Une valorisation sans montant lisible, sans date ou sans support n'est pas une
+ * observation : c'est tout ce qu'elle porte.
+ *
+ * Le montant peut valoir zéro — un livret vidé est une information —, mais il
+ * doit être là : l'absence de relevé et un relevé à zéro ne disent pas la même
+ * chose, et les confondre ferait entrer une inconnue dans un total.
+ */
+function savingValuation(raw: unknown, index: number): Read<SavingValuation> {
+  if (!isRecord(raw)) return 'shape'
+  if (!isMoney(raw['amount'])) return 'amount'
+  if (typeof raw['date'] !== 'string' || !isValidISO(raw['date'])) return 'date'
+  const supportId = optionalStr(raw['supportId'])
+  if (supportId === undefined) return 'unknownSupport'
+  return {
+    id: str(raw['id'], `saving-valuation-${String(index)}`),
+    supportId,
+    amount: raw['amount'],
+    date: raw['date'],
+  }
+}
+
 function advance(raw: unknown, index: number): Read<Advance> {
   if (!isRecord(raw)) return 'shape'
   if (!isMoney(raw['amount'])) return 'amount'
   const memberId = optionalStr(raw['memberId'])
   if (memberId === undefined) return 'noMember'
   const recurrenceId = optionalStr(raw['recurrenceId'])
+  const savingSupportId = optionalStr(raw['savingSupportId'])
   const note = optionalStr(raw['note'])
   const paidOn = isoDate(raw['paidOn'], today())
   const from = yearMonth(raw['from'], ymOf(paidOn))
@@ -225,6 +278,7 @@ function advance(raw: unknown, index: number): Read<Advance> {
     label: str(raw['label'], '—'),
     categoryId: str(raw['categoryId'], ''),
     memberId,
+    ...(savingSupportId === undefined ? {} : { savingSupportId }),
     amount: raw['amount'],
     paidOn,
     from,
@@ -253,6 +307,7 @@ function recurrence(raw: unknown, index: number): Read<Recurrence> {
     ? raw['endedOn']
     : undefined
   const memberId = optionalStr(raw['memberId'])
+  const savingSupportId = optionalStr(raw['savingSupportId'])
   const shared = optionalBool(raw['shared'])
   const note = optionalStr(raw['note'])
   const amount = moneyOrNull(raw['amount'])
@@ -264,6 +319,7 @@ function recurrence(raw: unknown, index: number): Read<Recurrence> {
     label: str(raw['label'], '—'),
     categoryId: str(raw['categoryId'], ''),
     ...(memberId === undefined ? {} : { memberId }),
+    ...(savingSupportId === undefined ? {} : { savingSupportId }),
     direction: direction(raw['direction']),
     amount,
     ...(estimate === null || estimate <= 0 ? {} : { estimate }),
@@ -283,6 +339,7 @@ function entry(raw: unknown, index: number): Read<Entry> {
 
   const recurrenceId = optionalStr(raw['recurrenceId'])
   const memberId = optionalStr(raw['memberId'])
+  const savingSupportId = optionalStr(raw['savingSupportId'])
   const shared = optionalBool(raw['shared'])
   const note = optionalStr(raw['note'])
   return {
@@ -291,6 +348,7 @@ function entry(raw: unknown, index: number): Read<Entry> {
     label: str(raw['label'], '—'),
     categoryId: str(raw['categoryId'], ''),
     ...(memberId === undefined ? {} : { memberId }),
+    ...(savingSupportId === undefined ? {} : { savingSupportId }),
     direction: direction(raw['direction']),
     amount: raw['amount'],
     date: raw['date'],
@@ -396,6 +454,18 @@ export function normalizeDocument(raw: unknown): NormalizedDocument {
     entries: compact(array(source['entries']), 'entries', entry, notices),
     debts: compact(array(source['debts']), 'debts', debt, notices),
     advances: compact(array(source['advances']), 'advances', advance, notices),
+    savingSupports: compact(
+      array(source['savingSupports']),
+      'savingSupports',
+      savingSupport,
+      notices,
+    ),
+    savingValuations: compact(
+      array(source['savingValuations']),
+      'savingValuations',
+      savingValuation,
+      notices,
+    ),
     months: compact(array(source['months']), 'months', monthState, notices),
     settings: settings(source['settings']),
   }
@@ -471,6 +541,8 @@ function repairReferences(data: Data, notices: ImportNotice[]): Data {
   const entries = dedupeIds(data.entries, 'entries', notices)
   const debts = dedupeIds(data.debts, 'debts', notices)
   const advances = dedupeIds(data.advances, 'advances', notices)
+  const supports = dedupeIds(data.savingSupports, 'savingSupports', notices)
+  const valuations = dedupeIds(data.savingValuations, 'savingValuations', notices)
 
   const memberIds = new Set(members.map((m) => m.id))
   const familyIds = new Set(families.map((f) => f.id))
@@ -509,8 +581,91 @@ function repairReferences(data: Data, notices: ImportNotice[]): Data {
     return { ...category, familyId: fallbackFamilyId(category.direction) }
   })
 
-  /** Les deux liens que portent une entrée comme une récurrence. */
-  const relink = <T extends { categoryId: string; memberId?: string; direction: Direction }>(
+  /* Les supports d'épargne. Un porteur inconnu **écarte** le support — son
+     `memberId` n'est pas facultatif, exactement comme sur une avance, et lui en
+     inventer un attribuerait à quelqu'un un compte qui n'est pas le sien. Une
+     catégorie inconnue — ou qui n'est pas d'épargne — se **répare** en revanche :
+     le support est un compte, sa catégorie n'en dit que la nature, et la perdre
+     ne justifie pas de perdre le compte. Faute de la moindre catégorie
+     d'épargne dans le document, il n'y a rien vers quoi rediriger : le support
+     part alors, et ses valorisations avec lui. */
+  const familyKinds = new Map(families.map((f) => [f.id, f.kind]))
+  const isSavingCategory = (id: string): boolean => {
+    const category = repairedFamilies.find((one) => one.id === id)
+    return category !== undefined && familyKinds.get(category.familyId) === 'saving'
+  }
+  const savingHome = repairedFamilies.find((category) => isSavingCategory(category.id))
+
+  const keptSupports: SavingSupport[] = []
+  supports.forEach((support, index) => {
+    if (!memberIds.has(support.memberId)) {
+      notices.push({
+        kind: 'discarded',
+        collection: 'savingSupports',
+        index,
+        reason: 'unknownMember',
+        label: support.label,
+      })
+      return
+    }
+    if (isSavingCategory(support.categoryId)) {
+      keptSupports.push(support)
+      return
+    }
+    if (savingHome === undefined) {
+      notices.push({
+        kind: 'discarded',
+        collection: 'savingSupports',
+        index,
+        reason: 'unknownCategory',
+        label: support.label,
+      })
+      return
+    }
+    note('savingSupports', index, 'unknownCategory', support.label)
+    keptSupports.push({ ...support, categoryId: savingHome.id })
+  })
+
+  const supportIds = new Set(keptSupports.map((support) => support.id))
+
+  /* Une valorisation orpheline ne décrit rien : le compte qu'elle photographie
+     n'existe pas, et rien ne permettrait de la rattacher à un autre. */
+  const keptValuations: SavingValuation[] = []
+  valuations.forEach((valuation, index) => {
+    if (supportIds.has(valuation.supportId)) {
+      keptValuations.push(valuation)
+      return
+    }
+    notices.push({
+      kind: 'discarded',
+      collection: 'savingValuations',
+      index,
+      reason: 'unknownSupport',
+    })
+  })
+
+  /** Un lien de support mort se coupe, comme celui d'un membre ou d'une règle. */
+  const unlinkSupport = <T extends { savingSupportId?: string }>(
+    item: T,
+    collection: ImportCollection,
+    index: number,
+    label: string,
+  ): T => {
+    if (item.savingSupportId === undefined || supportIds.has(item.savingSupportId)) return item
+    note(collection, index, 'unknownSupport', label)
+    const { savingSupportId: _dropped, ...rest } = item
+    return rest as T
+  }
+
+  /** Les trois liens que portent une entrée comme une récurrence. */
+  const relink = <
+    T extends {
+      categoryId: string
+      memberId?: string
+      savingSupportId?: string
+      direction: Direction
+    },
+  >(
     item: T,
     collection: ImportCollection,
     index: number,
@@ -526,7 +681,7 @@ function repairReferences(data: Data, notices: ImportNotice[]): Data {
       const { memberId: _dropped, ...rest } = next
       next = rest as T
     }
-    return next
+    return unlinkSupport(next, collection, index, label)
   }
 
   const repairedRecurrences = recurrences.map((item, index) =>
@@ -583,7 +738,7 @@ function repairReferences(data: Data, notices: ImportNotice[]): Data {
       const { recurrenceId: _dropped, ...rest } = next
       next = rest
     }
-    repairedAdvances.push(next)
+    repairedAdvances.push(unlinkSupport(next, 'advances', index, next.label))
   })
 
   /* Un mois ouvert deux fois est une redite, pas une donnée : personne ne l'a
@@ -608,6 +763,8 @@ function repairReferences(data: Data, notices: ImportNotice[]): Data {
     entries: repairedEntries,
     debts: repairedDebts,
     advances: repairedAdvances,
+    savingSupports: keptSupports,
+    savingValuations: keptValuations,
     months,
   }
 }

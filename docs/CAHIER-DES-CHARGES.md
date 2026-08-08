@@ -7,9 +7,10 @@ App de suivi de finances personnelles, seul ou à plusieurs. Full frontend, sans
 ## 1. Principes
 
 1. **Aucun backend.** Les données vivent dans le navigateur. Rien ne sort de l'appareil.
-2. **Quatre natures, un seul flux.** L'app suit des entrées et des sorties d'argent, rangées en Ressources, Charges, Crédits et Versements. Le sens dit si l'argent entre ou sort ; la nature dit ce qu'il devient. Pas de comptes bancaires, pas de bilan patrimonial.
-3. **Prévu, puis confirmé.** Chaque mois est d'abord une prévision générée depuis les récurrences, que l'utilisateur valide au fil de l'eau.
-4. **Rien à configurer pour démarrer.** Deux questions à l'ouverture, puis l'app est utilisable.
+2. **Quatre natures, un seul flux.** L'app suit des entrées et des sorties d'argent, rangées en Ressources, Charges, Crédits et Versements. Le sens dit si l'argent entre ou sort ; la nature dit ce qu'il devient. Pas de comptes bancaires, pas d'import de relevés.
+3. **Un stock, et un seul : l'épargne.** La v1 disait « pas de bilan patrimonial », et cette règle-ci en est l'assouplissement borné. L'app sait désormais répondre à « combien j'ai mis de côté, et où », parce que la question suit immédiatement celle qu'elle savait déjà traiter — « combien puis-je mettre de côté ce mois-ci » — et qu'y répondre par les seuls flux demanderait de saisir toute l'histoire d'un livret. Elle ne suit **que** l'épargne : ni immobilier, ni véhicules, ni dettes hors crédits suivis, ni valeur nette. Le stock se **relève**, il ne se calcule pas, et il n'entre dans aucun chiffre du mois (§3, §4.6 bis).
+4. **Prévu, puis confirmé.** Chaque mois est d'abord une prévision générée depuis les récurrences, que l'utilisateur valide au fil de l'eau.
+5. **Rien à configurer pour démarrer.** Trois questions à l'ouverture, toutes sautables, puis l'app est utilisable.
 
 ---
 
@@ -30,13 +31,17 @@ App de suivi de finances personnelles, seul ou à plusieurs. Full frontend, sans
 - Répartition des charges communes entre membres, au prorata des revenus
 - Régularisation d'un mois sur le suivant, quand une charge commune a été avancée par une seule personne
 - Capacité d'épargne, ventilation par support et reste à placer, par personne
+- Supports d'épargne : où l'épargne est placée, à qui elle est, et ce qu'elle vaut
+- Valorisations : ce qu'un support valait aux dates relevées, et son historique
 - Avances : une charge payée en une fois depuis l'épargne, remboursée mois par mois
 - Export / import du fichier de données
 - Schéma de données à copier ou télécharger, pour faire transcrire des notes déjà écrites
 - Jeu d'exemple complet, chargeable en un clic
 - Thème clair et sombre, et devise d'affichage
 
-**Hors v1** — objectifs d'épargne datés, comptes bancaires multiples, import de relevés bancaires, budgets par enveloppe, multi-devise, solde roulant entre membres (une dette entre personnes qui court de mois en mois jusqu'à ce qu'un geste la solde ; la régularisation, elle, corrige le mois suivant et s'arrête là).
+**Hors périmètre** — objectifs d'épargne datés, plans et projections d'épargne, rendement attendu, intérêts composés, scénarios prudent/central/optimiste, allocation de portefeuille, conseil d'investissement, données de marché, comptes bancaires multiples, import de relevés bancaires, synchronisation bancaire, budgets par enveloppe, multi-devise, patrimoine hors épargne, solde roulant entre membres (une dette entre personnes qui court de mois en mois jusqu'à ce qu'un geste la solde ; la régularisation, elle, corrige le mois suivant et s'arrête là).
+
+Les cinq premiers font un chantier à part — **plans et projections** —, et le modèle les accueille sans les implémenter : un plan viserait un ou plusieurs `SavingSupport`, partirait de leur dernière valorisation, ajouterait les versements déjà déclarés, appliquerait une hypothèse de rendement, et comparerait la projection aux valorisations réelles. Rien de tout cela n'est codé, et **aucun champ n'est posé « au cas où »** : un `expectedReturn` inutilisé sur un support serait une promesse dans le modèle, lue par un assistant et par la documentation comme un réglage qui fait quelque chose.
 
 ---
 
@@ -56,6 +61,8 @@ type Data = {
   entries: Entry[]
   debts: Debt[]
   advances: Advance[]
+  savingSupports: SavingSupport[]
+  savingValuations: SavingValuation[]
   months: MonthState[]
   settings: { theme: 'light' | 'dark' | 'system'; currency: string; monthStartsOn: number }
 }
@@ -99,6 +106,7 @@ type Advance = {
   label: string
   categoryId: string            // la nature de la charge avancée
   memberId: string              // jamais facultatif : une épargne est à quelqu'un
+  savingSupportId?: string      // le support repris, puis reconstitué
   amount: Money                 // ce qui a été payé, en une fois
   paidOn: string                // le jour de la reprise sur le livret
   from: string                  // "2026-08" — premier mois couvert
@@ -107,11 +115,34 @@ type Advance = {
   note?: string
 }
 
+// Où l'épargne est placée, et à qui elle est. La catégorie dit la *nature* du
+// mouvement (livret, plan, assurance-vie) ; le support dit *lequel* et *à qui* :
+// deux personnes peuvent avoir chacune leur « Livret A ». Aucun capital ici — il
+// vit dans les valorisations, et nulle part ailleurs.
+type SavingSupport = {
+  id: string
+  label: string                 // libre, et c'est le champ qui compte
+  memberId: string              // jamais facultatif : une épargne est à quelqu'un
+  categoryId: string            // une catégorie de nature `saving`
+  archived: boolean             // sort des formulaires, reste dans les lectures
+  note?: string
+}
+
+// Ce qu'un support valait à une date — une observation, jamais une opération.
+// Les relevés s'empilent : le plus récent est la valeur courante.
+type SavingValuation = {
+  id: string
+  supportId: string
+  amount: Money
+  date: string                  // ISO date
+}
+
 type Recurrence = {
   id: string
   label: string
   categoryId: string
   memberId?: string
+  savingSupportId?: string      // sur une règle de nature `saving` seulement
   direction: 'in' | 'out'
   amount: Money | null          // null = montant à saisir à chaque échéance
   estimate?: Money              // montant habituel d'un variable, tant qu'aucune échéance n'est chiffrée
@@ -128,6 +159,7 @@ type Entry = {
   label: string
   categoryId: string
   memberId?: string
+  savingSupportId?: string      // sur un mouvement de nature `saving` seulement
   direction: 'in' | 'out'
   amount: Money
   date: string                  // ISO date
@@ -159,6 +191,14 @@ type MonthState = {
 - Le revenu d'un membre est **dérivé de ses récurrences** de nature `resource`, ramenées au mois — jamais stocké à côté. Le déclarer en plus en ferait une seconde vérité, et la première augmentation les ferait diverger. C'est aussi ce qui donne au coefficient sa stabilité : une récurrence est une règle, une prime est une `Entry` ponctuelle — elle a lieu, mais elle ne dit rien de ce qu'on gagne.
 - Un `Advance` ne produit aucun chiffre de trésorerie non plus : la reprise du jour du paiement et les mensualités qui la reconstituent sont des `Entry`. Il n'ajoute que ce qui a été avancé, donc ce qu'il reste à se rendre.
 - **L'épargne se compte en net**, seule des quatre natures : les versements moins les reprises. Une reprise est une `Entry` de sens `in` sur une catégorie `saving` — sans quoi le mois où l'on vide 600 € d'un livret se lirait comme un mois où l'on a mis 600 € de côté.
+- **Stock et flux ne se mélangent jamais.** Une `Entry` est un mouvement : elle compte dans le solde, dans la capacité, dans le versé du mois. Un `SavingValuation` est une observation de valeur : « PEA, 18 320 € le 1er août » ne dit pas qu'un virement de 18 320 € a eu lieu ce jour-là, et il n'entre dans **aucun** total du mois. Symétriquement, aucun mouvement ne réécrit un relevé — sur un placement, la valeur bouge aussi avec le marché.
+- **Un support est une entité, pas une catégorie.** La catégorie répond à « quelle est la nature de ce mouvement », le support à « où va l'argent, et à qui il est ». Avant la v8, la catégorie faisait les deux : « Livrets » confondait le livret d'Andrea et celui de Marie, et aucun capital ne pouvait s'y attacher. Le support porte donc `categoryId` — c'est sa nature, et le catalogue existant fait déjà ce classement —, et il n'y a **pas** de second champ `type` à côté : deux classifications parallèles finiraient par diverger.
+- **`SavingSupport.memberId` n'est jamais facultatif**, comme sur une avance : une épargne est toujours à quelqu'un, et il n'existe pas de support « commun » — l'épargne ne se répartit pas comme une charge. Sans personne au foyer, aucun support ne peut exister : l'écran le dit plutôt que d'inventer un porteur.
+- **Le capital ne se pose jamais sur le support.** Il vit dans les `savingValuations`, qui s'empilent plutôt que de s'écraser : la valeur courante est le relevé le plus récent, les précédents font l'historique. Un `currentAmount` mutable serait une seconde vérité, et la première mise à jour perdrait la courbe.
+- **Une valeur inconnue n'est pas zéro.** Un support jamais relevé ne vaut rien de connu ; un livret vidé vaut zéro, et c'est une information. Les totaux ne les confondent pas : ils additionnent ce qui est relevé et **comptent à part** ce qui ne l'est pas.
+- **La valeur estimée est dérivée, jamais enregistrée** : dernier relevé + mouvements confirmés depuis. Elle s'affiche **qualifiée comme telle** ou pas du tout — elle ignore les variations de marché, et « valeur actuelle : 18 620 € » serait une fausse précision. Le même moteur pour tous les supports, livrets compris : deux façons de calculer un capital donneraient deux vérités à tenir d'accord.
+- **Un mouvement d'épargne désigne son support par identifiant**, jamais par libellé ni par catégorie : `Entry.savingSupportId`, `Recurrence.savingSupportId`, `Advance.savingSupportId`. Une échéance générée hérite du support de sa règle. Le champ est facultatif au modèle — un document d'avant la v8 en porte qui n'en désignent aucun —, et un lien mort se **coupe** à l'import comme celui d'un membre, il ne fait pas disparaître la ligne.
+- **Un support s'archive plutôt qu'il ne s'efface** dès qu'il a une histoire — un relevé, un mouvement, une règle, une avance. La suppression pure n'est offerte que sur un support qui ne retient rien, et elle coupe alors les liens qui pourraient rester. C'est la règle des catégories, qui ne s'effacent jamais non plus.
 - `shared` est une **exception** à la règle de partage, jamais sa copie. Absent, la règle tranche — et c'est ce qui permet à tout ce qui a déjà été saisi de rester exploitable sans être requalifié.
 
 ---
@@ -181,10 +221,11 @@ Le fait qu'elle a été fermée vit dans le stockage local, hors du document : i
 
 Elle ne porte pas la contrepartie du local-first, à savoir que vider le navigateur efface tout et que l'export est le seul recours. Celle-ci reste à la dernière étape de l'onboarding, où elle est déjà nommée : ce sont deux sujets, et un avis qui dirait les deux cesserait d'être lu.
 
-Puis les deux étapes, et **aucune n'exige de réponse** ; **rien à configurer pour démarrer** reste la règle.
+Puis les trois étapes, et **aucune n'exige de réponse** ; **rien à configurer pour démarrer** reste la règle.
 
 1. Personnes. « Avec qui tu partages des dépenses ? » L'utilisateur peut passer directement (usage solo) ou ajouter des personnes, prénom uniquement.
 2. **Ce qui revient chaque mois — facultative.** Un montant de salaire par personne (ou un seul, sans propriétaire, quand personne n'est nommé) et ce qu'on verse pour se loger. Chaque montant saisi pose une récurrence mensuelle ; un champ laissé vide ne pose rien, et un bouton « Je le ferai plus tard », aussi visible que le principal, ouvre l'app sans rien poser.
+3. **Ton épargne actuelle — facultative.** Un support par ligne : un nom, un propriétaire, un type, et le montant qu'il vaut aujourd'hui. Elle répond à « combien j'ai et où », et à rien d'autre : **ni taux, ni objectif, ni durée, ni allocation, ni scénario**. Un champ de versement mensuel s'y ajoute, facultatif lui aussi : il pose une récurrence reliée au support, pas un montant recopié dessus. Le bouton qui saute est aussi visible que le principal, et l'épargne s'ajoute à tout moment depuis l'écran Épargne.
 
 **Le nom ne se demande plus.** Il ouvrait l'onboarding — « Comment s'appelle ton foyer ? », pré-rempli « Maison » — et il était la *seule* réponse exigée de toute l'app. Ce qu'il achetait : une ligne de texte en tête de la colonne latérale, qui affiche déjà le nom de l'app au-dessus et se passe très bien d'une seconde. Une question bloquante pour une décoration ne tient pas, et celle-ci demandait en plus à qui vit chez ses parents ou en coloc de nommer un foyer qui n'est pas le sien. Le nom vit désormais dans les réglages, **facultatif** : vide, la ligne ne s'affiche pas, et il n'y a aucun repli à inventer.
 
@@ -274,6 +315,8 @@ Une bascule **Nature** y siège en tête : **Dépense**, **Revenu**, **Épargne*
 
 En **Épargne**, une seconde bascule dit le mouvement : **Je place** (l'argent quitte le compte pour un support) ou **Je reprends** (il en revient). Le second n'existait nulle part : le sens « entrée » ne proposait que des ressources, et un retrait de livret n'en est pas une. C'est la même écriture que la reprise d'une avance — une `Entry` de sens `in` sur une catégorie `saving` — et l'épargne se comptant en net, elle s'y retranche des versements.
 
+En **Épargne** toujours, le champ central n'est pas la catégorie mais le **support** : la question de ce geste-là est « où va l'argent », et le support y répond seul — il porte le poste sous lequel le mouvement se range *et* la personne à qui il est. Les deux se **dérivent** de lui : les redemander donnerait trois réponses pour un seul fait, dont deux peuvent se contredire — un versement sur le PEA d'Andrea, rangé en « Livrets », au nom de Marie. Quand aucun support n'existe encore, l'écran en propose la **création sur place**, dans une feuille : partir vers l'écran Épargne perdrait le montant et la date déjà saisis, et le support créé revient présélectionné. Sans personne au foyer, aucun support ne peut exister, et la saisie retombe sur la catégorie — tout ce qu'on peut alors savoir du mouvement.
+
 La case « à partager » ne s'affiche qu'en Dépense, et seulement sur une catégorie de nature `charge` ou `debt` : un versement d'épargne sort du compte mais reste à qui le fait, et un revenu ne se répartit pas davantage — on compare ce que chacun gagne, on ne se le redistribue pas. Ailleurs, la case ne pouvait qu'afficher « non » et proposer un « oui » que le calcul aurait ignoré. Sur « en commun », elle est cochée et verrouillée (§4.7 ter).
 
 La bascule **Ponctuel / Récurrence** n'existe qu'à la création. En récurrence, l'écran ne pose plus un fait mais une règle : une `Recurrence` est créée à la place de l'`Entry`. En reprise, la bascule disparaît — convertir après coup une dépense passée en récurrence, ou l'inverse, réécrirait un historique.
@@ -351,12 +394,41 @@ Même exigence sur « versé », en seconde lecture de la capacité d'épargne :
 - **Le commun** montre le pot seul, à son **montant plein** : aucune part n'y est calculée. C'est l'exact inverse de la lecture par membre, qui découpe ces mêmes lignes en parts. Il répond à ce qu'aucun écran ne savait dire — où part l'argent qu'on paie ensemble, quand ses échéances tombent, et ce qu'il coûtait le mois d'avant.
 - Sous cette lecture, cinq tuiles s'effacent au lieu d'annoncer un zéro : un revenu ne se partage jamais, donc le pot n'en a aucun, et les quatre lectures qui soustraient des charges à des ressources — solde, prévisionnel, reste à vivre, capacité d'épargne — vaudraient toutes les charges au signe près. L'épargne s'en va pour la même raison qui l'exclut de « Où part l'argent ». Restent les charges, le suivi du mois — le pot a ses propres échéances à confirmer, et elles se comptent —, la répartition par famille, les prochaines échéances et la Répartition entre membres.
 - **« Tout le monde » n'est pas « en commun ».** Le premier est une lecture — tout ce qui a eu lieu ; le second est ce que vaut une ligne que personne ne porte, donc commune. Les deux ont porté la même étiquette — « tout le foyer » —, à un écran d'écart, en voulant dire le contraire. La saisie dit désormais « en commun », le mot du filtre voisin, et la collision tombe.
-- L'épargne n'a pas de lecture commune : elle ne se partage jamais, et la proposer ne rendrait que des zéros.
+- L'épargne n'a ni lecture commune ni lecture d'ensemble : elle ne se partage jamais, et une somme de comptes individuels ne se décide nulle part. Son écran ne propose donc que les personnes (§4.6 bis) — c'est le seul de l'app dans ce cas.
 - **Le commun se propose dès la première personne.** Seule, sa vue vaut « tout le monde » au centime (§4.7 ter) : le pot est alors la seule lecture qui distingue encore les charges communes de ses lignes perso — la retirer au motif qu'il n'y a personne avec qui partager retirerait précisément la distinction qui reste.
 
 Tous les dashboards acceptent ce filtre. Filtrer sur quelqu'un ne se réduit pas à ne garder que ses lignes : une charge commune n'appartient à personne, donc aucune ne passerait le filtre, et chacun se lirait comme s'il vivait sans loyer ni électricité — capacité d'épargne à peine inférieure au salaire, « aucune sortie ce mois-ci » sur la répartition. Un membre voit donc **ses lignes et sa part de chaque charge commune**, au prorata des revenus (§4.7 ter). L'en-tête le dit là où le filtre se choisit, et nomme ce qui manque quand le prorata ne se calcule pas — on retombe alors sur ses seules lignes, faute de mieux, mais on le sait. Ce repli ne concerne que le cas à plusieurs : seule, une personne voit son prorata se calculer toujours, et sa vue est celle de l'ensemble, lignes de personne comprises — jusqu'aux listes, qui n'ont alors rien à retrancher.
 
 Les **listes** ne suivent pas cette règle : à confirmer, entrées du mois, calendrier montrent les échéances réelles, en entier. On confirme une échéance, jamais une part.
+
+**Le tableau de bord reste un tableau de bord de flux.** Ce que l'épargne *vaut* n'y figure pas, et c'est délibéré : le patrimoine ne bouge pas au rythme des échéances, et une seconde grosse section patrimoniale ferait lire deux chiffres sans rapport sous la même grille. La tuile Capacité d'épargne mène à l'écran qui en parle, et son « versé » vient des mêmes `Entry` que la ventilation par support — au centime, sous filtre comme sans.
+
+### 4.6 bis Épargne — le stock et le flux
+
+L'écran de l'épargne répond à quatre questions, dans cet ordre : **combien j'ai**, **où c'est placé**, **à qui c'est**, et **ce que le mois y a mis**. Les deux premières sont nouvelles ; la dernière est celle que la v1 savait déjà traiter, et elle ne bouge pas.
+
+**Le stock.**
+
+- **Un total nommé, et ce qui lui manque.** L'écran additionne les **dernières valorisations connues** des supports de la personne lue — « Épargne d'Andrea » —, et annonce à côté combien n'en ont aucune : « 32 450 € · 1 support sans valeur renseignée ». Une inconnue n'est pas un zéro, et un patrimoine présenté comme exact alors qu'il ne l'est pas est pire que pas de chiffre.
+- **Et ce qui a bougé depuis ces relevés**, quand il y a quelque chose : « valeur estimée 11 200 € · versé depuis les derniers relevés +1 200 € ». Verser 200 € par mois pendant six mois sans jamais relever sa valeur laissait un total figé au chiffre de départ, alors que l'app connaît les 1 200 € partis dessus : les taire n'est pas de la prudence, c'est cacher ce qu'on sait. Le relevé reste le chiffre principal — c'est le fait, et il porte sa date ; l'estimation se lit sous lui, nommée, avec la réserve qui vaut partout : elle ignore ce que le marché a pu faire. C'est le même calcul que la fiche d'un support, par la même fonction, si bien que le total et le détail ne peuvent pas diverger d'un centime.
+- **Un support par tuile** : son nom, sa dernière valeur avec la date du relevé, son propriétaire, et ce que le mois y a mis en net. Sans relevé, la tuile dit « Valeur non renseignée » — jamais « 0 € ».
+- **Une fiche par support**, qui ouvre l'histoire : la valeur renseignée et sa date, la valeur **estimée** quand des mouvements sont tombés depuis, les versements et reprises du mois, l'historique des relevés avec sa courbe, et la liste des mouvements liés.
+- **Mettre à jour la valeur pose un nouveau relevé**, il n'écrase jamais le précédent : c'est ce qui fait exister la courbe, et ce qui permettra plus tard de comparer une projection au réel. Un relevé mal saisi se corrige ou se supprime, ligne à ligne, avec la même question et le même retour arrière que partout ailleurs (§4.8). Deux relevés d'un même jour — une saisie et sa correction — se départagent par leur **ordre d'arrivée**, le dernier posé faisant foi.
+- **Relever tous ses supports d'un coup**, depuis l'écran : une date, un champ par support de la personne, et une case vide n'enregistre rien. C'est le geste réel — un relevé de banque donne tous les chiffres en même temps, et les poser demandait d'ouvrir chaque fiche, de mettre à jour, de revenir. Un seul geste, donc une seule écriture et un seul retour arrière. Chaque champ rappelle le dernier chiffre connu avec sa date et, quand des mouvements sont tombés depuis, l'estimation que la banque va confirmer ou corriger. L'action est portée par la **section**, jamais par les tuiles : une tuile actionnable est un bouton, qui n'admet pas de bouton, et une tuile à lien étendu ne contient plus rien d'actionnable (DS §6). Corriger un seul chiffre à une autre date reste sur la fiche du support, où l'on ne parle que de lui.
+- **La valeur estimée est qualifiée comme telle, ou tue.** Dernier relevé + mouvements confirmés depuis : elle ignore ce que le marché a fait, et l'annoncer comme « valeur actuelle » serait une fausse précision. Le même moteur pour tous les supports, livrets compris — deux façons de calculer un capital donneraient deux vérités à tenir d'accord.
+- **Une courbe ne trace que les points relevés.** Le trait qui les relie est une représentation, pas une donnée : entre deux relevés, personne ne sait ce que le support valait. L'échelle part du minimum relevé et non de zéro, faute de quoi un capital qui progresse de 6 % serait une ligne plate.
+
+**Le flux**, inchangé : capacité d'épargne, ce qui est versé, ce qu'il reste à placer, et la lecture par personne hors filtre. Ce qui change est **où** ça se ventile : par support et non plus par catégorie — la catégorie confondait le livret d'Andrea et celui de Marie. Les lignes de la ventilation sont **exactement** les `Entry` que compte le versé du tableau de bord.
+
+**Les deux ne s'additionnent jamais.** Un relevé n'entre dans aucun total du mois ; un versement ne réécrit aucun relevé. C'est la règle qui fait exister ce §, et la seule façon de se tromper ici est de la perdre de vue.
+
+**Gestes.** Un support se crée depuis l'écran Épargne, depuis l'onboarding, ou depuis la saisie d'un versement quand il n'en existe pas encore — trois portes, **un seul formulaire et une seule mutation**. Un support créé pendant une saisie y revient présélectionné. Un support s'archive dès qu'il a une histoire, et l'archivage propose d'arrêter les récurrences qui l'alimentent encore : un compte invisible qui grossit tout seul serait un état incohérent. La suppression pure n'est offerte que sur un support qui ne retient rien.
+
+**La lecture est individuelle, et elle n'a pas d'autre forme.** C'est le seul écran de l'app dont le bandeau ne propose ni « Tout le monde » ni « Commun », seulement les personnes — et une est toujours active. Les deux lectures absentes ne manquent pas, elles n'existent pas : « Commun » ne rendrait que des zéros, puisque l'épargne ne se partage jamais ; et « Tout le monde » rendrait pire qu'un zéro, une **somme**. Deux personnes qui ont 12 000 € et 8 000 € de côté n'ont pas « 20 000 € », et deux qui dégagent 300 € et 900 € n'ont pas « 1 200 € à placer » : elles ont deux comptes, deux capacités et deux décisions, dont aucune ne se prend sur un total. Le stock et le flux suivent la même personne, par le même filtre — celui du bandeau, qui applique déjà le prorata des charges communes. Le total **nomme** cette personne : un chiffre de cette taille sans propriétaire à côté se lirait comme la somme qu'on refuse d'afficher.
+
+Arriver sur l'écran sans personne filtrée en **pose une** — la première du foyer. Une rangée de pilules dont aucune n'est active laisserait croire à une lecture qui n'existe pas, et le choix se change d'une pilule. Seul·e du foyer, il n'y a personne entre qui choisir, mais le total porte quand même son nom : c'est son épargne, pas celle d'un foyer. Sans personne du tout, il n'y a rien à filtrer et rien à posséder — l'écran demande quelqu'un avant de parler d'épargne.
+
+**Un versement laissé « en commun » se signale**, et il se signale désormais toujours : il n'est à personne, il n'entre donc dans la lecture d'aucune, et sans cette phrase il n'apparaîtrait plus nulle part. C'est le pendant du salaire non attribué de la répartition (§4.7 ter).
 
 ### 4.7 Historique et comparatifs
 
@@ -397,6 +469,7 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 - Et il nomme **laquelle des deux raisons** c'est : aucune récurrence de ressource, ou bien une récurrence variable pas encore chiffrée. Les deux n'appellent pas le même geste — envoyer créer un revenu qui existe déjà fait ajouter un doublon là où il ne manque qu'un montant.
 - Lecture : une tuile sur l'écran du mois, et un écran plein `/repartition` qui montre le calcul. La tuile s'efface sans revenus complets, sous un filtre par membre — une charge commune n'appartient à personne, aucune ne passerait le filtre — et quand une seule personne est nommée, où un anneau à 100 % n'apprendrait rien. Sous le filtre, c'est la tuile **Part du commun** (§4.6) qui prend le relais : la même règle, lue du point de vue d'une seule personne, et le même écran de détail au bout — qui reste debout seul·e, avec une seule ligne à 100 % : c'est là que le pot se vérifie.
 - Le total **s'ouvre** sur la liste de ce qu'il compte, de la plus lourde à la plus légère. Un chiffre de répartition qu'on ne peut pas vérifier ne se vérifie pas, et une dépense qui n'a rien à faire dans le pot commun ne se repère qu'en la voyant.
+- **Retirer une personne emporte ce qui ne peut appartenir à personne d'autre**, et rien de plus : ses avances et ses supports d'épargne, avec l'historique de valeur de ces derniers — leur `memberId` n'est pas facultatif, et un livret que personne ne porte n'est le livret de personne. Le reste est **libéré**, pas effacé : ses entrées et ses récurrences repassent en commun, et les mouvements d'épargne gardent leur montant et leur date, seul leur lien vers le support disparu étant coupé — exactement comme une échéance se détache de la récurrence qu'on supprime. La question posée avant le dit, en nommant les deux pertes ; l'écran propose de **réattribuer** les supports avant, ce qui est le même geste que changer leur propriétaire depuis leur fiche ; et le retour arrière repose le document entier.
 - **À quelqu'un, ou à tout le monde.** Une ligne sans propriétaire et hors partage sort du compte sans apparaître dans le mois de personne : la somme des soldes individuels cesse alors de valoir le solde total, sans que rien ne le dise. C'est le cas d'un versement d'épargne que personne ne revendique — l'épargne ne se partage jamais —, d'une dépense dont on a décoché « à partager » sans dire à qui elle est, et de toute entrée d'argent, qui ne se partage pas davantage. La saisie exige donc le membre dans ces cas-là, et seulement dans ces cas-là : ailleurs, la règle de partage sait déjà où ranger la ligne. C'est une contrainte de saisie, pas une validation d'import : un document plus ancien garde ses lignes telles quelles, et les corriger se fait en les rouvrant.
 - **Une charge commune avancée par une seule personne se régularise le mois suivant.** Elle a réglé une dépense dont chacun portait sa part : sans rien pour la rattraper, l'écart reste entre les deux et l'app le tait. Le mois suivant, celui qui n'a pas payé verse un peu plus, celui qui a avancé un peu moins. Ce que chacun a avancé moins ce qui lui en revenait, au prorata **du mois d'origine** : l'écart s'est creusé sous ses revenus à lui, et le rattraper au coefficient d'aujourd'hui rendrait une somme que personne n'a avancée.
 - **Seules les charges communes qui portent un membre entrent dans le report.** Celles que personne ne s'est attribuées ont été réglées par le pot : elles n'avancent rien à personne, et elles sont donc hors du calcul des deux côtés à la fois. C'est cette symétrie qui fait que la somme des reports vaut **exactement zéro**, et donc que la somme des versements du mois suivant vaut encore, au centime, ses charges communes. La ligne de vérification continue de le montrer.
@@ -410,7 +483,7 @@ Un crédit se déclare avec son capital emprunté, ses dates de première et der
 
 Une **avance** est une charge payée en une fois depuis l'épargne, et remboursée à soi-même mois par mois. L'assurance auto se règle en un versement de 600 € qui couvre douze mois : la payer depuis un livret et se reverser 50 € chaque mois est le montage le plus courant quand on n'encaisse pas un tel coup sur un seul mois.
 
-Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la charge, le support d'épargne repris, qui a avancé, et la période couverte — deux mois, bornes comprises.
+Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la charge, le **support d'épargne** repris, et la période couverte — deux mois, bornes comprises. Qui a avancé ne se demande plus : le support porte son propriétaire, et un second champ pourrait le contredire — l'avance de Camille se reconstituerait alors sur le livret d'Alix.
 
 - **La mensualité n'est pas une charge.** La charge a eu lieu, une fois. Ce qui se passe ensuite est un retour d'épargne : on remet sur le livret ce qu'on lui a pris. Elle est donc de nature `saving`, ne pèse pas dans les charges du mois, et réduit le reste à placer plutôt que la capacité d'épargne.
 - **La mensualité se déduit, elle ne se saisit pas.** Répartie aux plus forts restes sur les mois couverts : sept mois à 85,71 € laisseraient trois centimes qu'aucune mensualité ne rendrait jamais. Deux chiffres saisis séparément finiraient de toute façon par ne plus se répondre.
@@ -419,18 +492,20 @@ Elle se déclare avec ce qui a été payé, la date du paiement, la nature de la
 - **L'épargne se compte donc en net**, seule des quatre natures : ce qu'on y met moins ce qu'on y reprend. Sans quoi le mois où l'on vide 600 € d'un livret se lirait comme un mois où l'on a mis 600 € de côté. Les trois autres natures n'ont qu'un sens possible, il n'y a rien à y compenser.
 - **Ce qui reste à remettre est dérivé**, jamais saisi : le montant avancé moins les échéances **effectivement confirmées**, à leur montant à elles, et jamais négatif. Même raison qu'un crédit — on peut se rembourser plus vite, sauter un mois, corriger un montant, et rejouer le passé au montant d'aujourd'hui inventerait un historique. Une échéance antérieure au paiement ne compte pas.
 - Cochée « à partager », la mensualité entre dans les charges communes : chacun en porte sa part au prorata, et celui qui a avancé se retrouve remboursé.
-- Le membre n'est **jamais facultatif** : une épargne est toujours à quelqu'un, et une avance que personne ne porte ne se reconstituerait sur le livret de personne.
+- Le membre n'est **jamais facultatif** : une épargne est toujours à quelqu'un, et une avance que personne ne porte ne se reconstituerait sur le livret de personne. Il se lit sur le support.
+- **Tout pointe vers le même support, par identifiant** : la reprise du jour du paiement, chaque mensualité de reconstitution, et l'avance elle-même. C'est ce qui interdit de vider un livret et d'en remplir un autre. Sans support d'épargne au document, l'écran ne propose pas de poser une avance : il dit ce qui manque.
 - **Pas d'écran de reprise** : une avance décrit un paiement qui a eu lieu, une fois. La corriger, c'est la retirer et la reposer. Le retrait emporte la mensualité à venir — une avance qu'on ne suit plus n'a plus de raison de se reverser — mais jamais ce qui est déjà revenu sur le livret.
 
 ### 4.8 Données
 
-- **Export** : un fichier `.json` contenant le document complet et son `schemaVersion`. Nom du fichier horodaté.
+- **Export** : un fichier `.json` contenant le document complet et son `schemaVersion` — supports d'épargne, valorisations et liens compris. Un aller-retour export / import rend exactement le même document, relations comprises.
+- **Migrations** : chaque changement de forme incrémente `schemaVersion` et ajoute une étape déterministe. Un export ancien reste importable. La migration v8 sépare le support de la catégorie : elle crée **un support par paire (catégorie d'épargne, personne) réellement employée** — pas un de plus —, relie chaque `Entry`, `Recurrence` et `Advance` d'épargne au sien, et **n'invente aucun capital** : les supports naissent sans valorisation, parce que rien dans un document v7 ne dit ce que le livret valait, et que zéro serait une information financière réelle. Ce qui n'est à personne reste sans support : un support est toujours à quelqu'un, et lui inventer un porteur attribuerait à quelqu'un une épargne qu'il n'a pas faite.
 - **Import** : remplace intégralement les données, après **double** confirmation — c'est un effacement déguisé, le fichier arrive et tout le reste part. Le fichier est lu et validé avant qu'on demande quoi que ce soit : on ne fait pas confirmer un remplacement par un fichier illisible. Un import d'un `schemaVersion` antérieur passe par les migrations.
 - **Schéma de données** : le modèle complet, en Markdown, à copier ou à télécharger. C'est le pendant de l'import, et il existe pour la même raison que lui : beaucoup de gens ont déjà tout écrit ailleurs — un carnet, une note, un tableur — et ressaisir vingt formulaires pour retrouver ce qu'on a sous les yeux décourage avant la première récurrence. Le document se donne à un assistant avec ces notes, et revient en fichier importable. Il porte les types, les règles qu'aucun type n'exprime — centimes entiers, dates ISO, taux en points de base, sens déduit de la nature —, le catalogue de catégories avec ses identifiants, et un document minimal qui s'importe tel quel. Il est **dérivé du code**, jamais recopié à côté : le bloc de types est le source de l'app, le catalogue est lu sur le jeu par défaut. Une seconde description du modèle finirait par diverger de lui, ce qui est exactement l'erreur que ce document existe pour éviter chez son lecteur.
 - **Jeu d'exemple** : un document complet — deux personnes aux revenus inégaux, trois crédits, deux avances, plus d'un an d'historique — chargeable en un clic. Une app neuve n'a rien à montrer : pas de courbe, pas de répartition, pas de capital restant dû, et tout ce qui fait son intérêt demande des mois de données que personne ne saisit pour décider s'il va s'en servir. Le jeu est **construit à la date du jour**, jamais figé : le mois courant a ses échéances, l'historique remonte derrière, les comparatifs ont leurs deux années. Il remplace les données comme un import, donc **double** confirmation — sauf au premier lancement, où rien n'a encore été enregistré et où faire confirmer la perte de rien n'apprendrait qu'une chose, que les questions de cette app ne veulent rien dire.
 - Le schéma et l'exemple sont aussi accessibles **au premier lancement**, à côté de l'import : les deux personnes qu'ils servent — celle qui a déjà tout écrit, celle qui veut seulement voir — sont précisément celles qui n'ont encore rien créé, et les envoyer en créer un pour trouver de quoi s'en passer serait l'inverse du service rendu.
 - **Réinitialisation** : efface tout, **triple** confirmation. Trois questions différentes — ce qui part, le fait qu'il n'y a pas de retour, la dernière chance d'exporter : trois fois la même phrase ne se lit plus, elle se clique.
-- **Toute suppression demande confirmation**, et par la même boîte : supprimer une entrée, une récurrence, un crédit, une avance, retirer un membre, arrêter une récurrence, remettre le mois à confirmer. Le nombre de questions fait la gravité — une pour une ligne, deux pour un import, trois pour l'effacement. Chacune dit ce qui est perdu, jamais « êtes-vous sûr ». Archiver une catégorie n'en demande pas : rien n'y est supprimé, et l'archivage se défait.
+- **Toute suppression demande confirmation**, et par la même boîte : supprimer une entrée, une récurrence, un crédit, une avance, un support d'épargne ou un relevé de valeur, retirer un membre, arrêter une récurrence, archiver un support, remettre le mois à confirmer. Le nombre de questions fait la gravité — une pour une ligne, deux pour un import, trois pour l'effacement. Chacune dit ce qui est perdu, jamais « êtes-vous sûr ». Archiver une catégorie n'en demande pas : rien n'y est supprimé, et l'archivage se défait.
 - **Et toute suppression se défait**, le temps que son message reste à l'écran. Le retour arrière ne remplace pas la question : celle-ci se pose avant, celui-là rattrape le oui donné trop vite. Il ne survit à aucune modification faite depuis — il remettrait l'état d'avant par-dessus, et l'emporterait avec lui — si bien qu'un seul geste est défaisable à la fois, le dernier.
 - **Une saisie en cours ne se jette pas sans un mot.** Quitter un formulaire modifié, par « Annuler » comme par le retour, demande confirmation en une question. Un formulaire ouvert puis quitté sans rien changer n'en demande aucune : ponctuer ce geste-là d'une question apprendrait à cliquer sans lire.
 - **Aucun indicateur de sauvegarde permanent.** L'écriture est débouncée et regroupée : un témoin qui suivrait son état clignoterait pour annoncer ce qui n'a jamais échoué. Ce qu'il faut savoir est l'anomalie, et elle a son bandeau.

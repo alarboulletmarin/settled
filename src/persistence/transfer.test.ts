@@ -636,3 +636,183 @@ describe('palette d’apparence (v7)', () => {
     expect(data.settings).toMatchObject({ theme: 'light', palette: 'vive' })
   })
 })
+
+/* ============================================================================
+ * La migration qui sépare le support de la catégorie (v8).
+ *
+ * Jusqu'à la v7, « Livrets » disait à la fois la nature du mouvement et
+ * l'endroit où l'argent allait : le livret d'Alix et celui de Camille étaient le
+ * même objet, et aucun capital ne pouvait s'y attacher. La v8 crée un support
+ * par paire (catégorie d'épargne, personne) réellement employée — pas un de
+ * plus — et relie chaque ligne au sien.
+ * ==========================================================================*/
+describe('supports d’épargne (v8)', () => {
+  const v7 = (over: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      schemaVersion: 7,
+      household: {
+        name: 'Maison',
+        members: [
+          { id: 'm1', name: 'Alix', color: 'var(--member-1)' },
+          { id: 'm2', name: 'Camille', color: 'var(--member-2)' },
+        ],
+      },
+      families: [
+        { id: 'fam-savings', label: 'Épargne', kind: 'saving' },
+        { id: 'fam-leisure', label: 'Loisirs', kind: 'charge' },
+      ],
+      categories: [
+        makeCategory({ id: 'passbook', familyId: 'fam-savings' }),
+        makeCategory({ id: 'plans', familyId: 'fam-savings' }),
+        makeCategory({ id: 'outings', familyId: 'fam-leisure' }),
+      ],
+      recurrences: [
+        {
+          id: 'r-livret-alix',
+          label: 'Virement livret',
+          categoryId: 'passbook',
+          memberId: 'm1',
+          direction: 'out',
+          amount: 30_000,
+          period: { unit: 'month', every: 1, anchorDay: 31 },
+          startedOn: '2026-01-31',
+        },
+        {
+          id: 'r-livret-camille',
+          label: 'Virement livret',
+          categoryId: 'passbook',
+          memberId: 'm2',
+          direction: 'out',
+          amount: 25_000,
+          period: { unit: 'month', every: 1, anchorDay: 31 },
+          startedOn: '2026-01-31',
+        },
+      ],
+      entries: [
+        {
+          id: 'e1',
+          recurrenceId: 'r-livret-alix',
+          label: 'Virement livret',
+          categoryId: 'passbook',
+          memberId: 'm1',
+          direction: 'out',
+          amount: 30_000,
+          date: '2026-01-31',
+          status: 'confirmed',
+        },
+        {
+          id: 'e2',
+          label: 'Restaurant',
+          categoryId: 'outings',
+          memberId: 'm1',
+          direction: 'out',
+          amount: 4_200,
+          date: '2026-01-12',
+          status: 'confirmed',
+        },
+      ],
+      advances: [],
+      months: [{ ym: '2026-01', openedAt: '2026-01-01', closed: false }],
+      ...over,
+    })
+
+  /* Deux personnes, un même poste : c'est exactement ce que la catégorie seule
+     ne pouvait pas dire, et le premier chiffre que la migration doit rendre. */
+  it('crée un support par paire (catégorie, personne) réellement employée', () => {
+    const { savingSupports } = parseImport(v7()).data
+    expect(savingSupports).toHaveLength(2)
+    expect(savingSupports.map((s) => s.memberId).sort()).toEqual(['m1', 'm2'])
+    expect(savingSupports.every((s) => s.categoryId === 'passbook')).toBe(true)
+  })
+
+  /* L'invariant du chantier : pas de doublon. La paire d'Alix est rencontrée
+     par sa récurrence *et* par son échéance, et ne doit produire qu'un support. */
+  it('ne duplique aucun support, même vu par plusieurs lignes', () => {
+    const { savingSupports, recurrences, entries } = parseImport(v7()).data
+    const alix = savingSupports.filter((s) => s.memberId === 'm1')
+    expect(alix).toHaveLength(1)
+    const support = alix[0]?.id
+    expect(recurrences.find((r) => r.id === 'r-livret-alix')?.savingSupportId).toBe(support)
+    expect(entries.find((e) => e.id === 'e1')?.savingSupportId).toBe(support)
+  })
+
+  it('ne touche pas aux lignes qui ne sont pas de l’épargne', () => {
+    const entry = parseImport(v7()).data.entries.find((e) => e.id === 'e2')
+    expect(entry?.savingSupportId).toBeUndefined()
+    expect(entry?.amount).toBe(4_200)
+  })
+
+  /* « Ne pas inventer de capital actuel » : zéro est une information
+     financière réelle, et rien dans un document v7 ne dit ce que le livret
+     valait. */
+  it('n’invente aucune valorisation', () => {
+    expect(parseImport(v7()).data.savingValuations).toEqual([])
+  })
+
+  /* Un versement laissé « en commun » n'est à personne, et un support est
+     toujours à quelqu'un : lui inventer un porteur attribuerait à quelqu'un une
+     épargne qu'il n'a pas faite. */
+  it('laisse sans support ce qui n’est à personne', () => {
+    const orphan = JSON.parse(v7()) as Record<string, unknown>
+    const entries = orphan['entries'] as Record<string, unknown>[]
+    entries.push({
+      id: 'e3',
+      label: 'Virement',
+      categoryId: 'passbook',
+      direction: 'out',
+      amount: 10_000,
+      date: '2026-01-20',
+      status: 'confirmed',
+    })
+    const { data } = parseImport(JSON.stringify(orphan))
+    expect(data.entries.find((e) => e.id === 'e3')?.savingSupportId).toBeUndefined()
+    expect(data.savingSupports).toHaveLength(2)
+  })
+
+  /* L'avance désigne son support par la catégorie de la récurrence qui la
+     reconstitue : tout doit pointer vers le même compte. */
+  it('fait passer une avance par le support de sa récurrence', () => {
+    const { data } = parseImport(
+      v7({
+        advances: [
+          {
+            id: 'av1',
+            label: 'Assurance auto',
+            categoryId: 'outings',
+            memberId: 'm1',
+            amount: 60_000,
+            paidOn: '2026-01-15',
+            from: '2026-01',
+            to: '2026-12',
+            recurrenceId: 'r-livret-alix',
+          },
+        ],
+      }),
+    )
+    const support = data.savingSupports.find((s) => s.memberId === 'm1')?.id
+    expect(data.advances[0]?.savingSupportId).toBe(support)
+  })
+
+  /* Aucun montant ne bouge, aucune ligne ne disparaît : une migration qui
+     réécrirait l'historique financier serait pire que pas de migration. */
+  it('préserve les montants, les entrées, les règles et les mois', () => {
+    const before = JSON.parse(v7()) as { entries: { amount: number }[] }
+    const { data } = parseImport(v7())
+    expect(data.entries.map((e) => e.amount)).toEqual(before.entries.map((e) => e.amount))
+    expect(data.recurrences).toHaveLength(2)
+    expect(data.months.map((m) => m.ym)).toEqual(['2026-01'])
+  })
+
+  /* Déterministe : deux lectures du même fichier donnent le même document, ce
+     qui est la condition pour qu'un export réimporté ne dérive pas. */
+  it('rend le même document à chaque lecture', () => {
+    expect(parseImport(v7()).data).toStrictEqual(parseImport(v7()).data)
+  })
+
+  /* Le tour complet : un document migré ressort à l'identique d'un
+     export / import, sans qu'une seconde migration ne s'intercale. */
+  it('survit ensuite à l’aller-retour sans rien changer', () => {
+    const migrated = parseImport(v7()).data
+    expect(parseImport(serializeData(migrated)).data).toStrictEqual(migrated)
+  })
+})

@@ -12,7 +12,7 @@ import type { Data } from '@/domain/types'
 import { defaultCategories, defaultFamilies, fallbackFamilyId, memberColorAt } from './defaults'
 import { type ImportNotice, normalizeDocument } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 7
+export const CURRENT_SCHEMA_VERSION = 8
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
@@ -175,6 +175,113 @@ function toVersion7(doc: RawDocument): RawDocument {
   return { ...doc, schemaVersion: 7 }
 }
 
+const asRecords = (value: unknown): RawDocument[] =>
+  Array.isArray(value) ? value.filter(isRecord) : []
+
+const text = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.length > 0 ? value : undefined
+
+/**
+ * Les supports d'épargne, et la fin d'une confusion : jusqu'ici la **catégorie**
+ * tenait lieu de support.
+ *
+ * « Livrets » disait à la fois la nature du mouvement et l'endroit où l'argent
+ * allait, si bien que le livret d'Andrea et celui de Marie étaient le même
+ * objet — deux personnes ne pouvaient pas avoir chacune le sien, et aucun
+ * capital ne pouvait s'y attacher. La v8 sépare les deux : la catégorie garde la
+ * nature, le support porte le compte et son propriétaire.
+ *
+ * **Un support par paire (catégorie d'épargne, personne) réellement employée**,
+ * et pas un de plus : c'est la seule lecture qui ne duplique rien et n'invente
+ * rien. Chaque `Entry`, chaque `Recurrence` et chaque `Advance` d'épargne reçoit
+ * ensuite l'identifiant du sien — par référence, jamais par libellé.
+ *
+ * Ce qui n'est **à personne reste sans support** : un versement laissé « en
+ * commun » n'appartient à aucun membre, et un support est toujours à quelqu'un.
+ * Lui inventer un porteur attribuerait à quelqu'un une épargne qu'il n'a pas
+ * faite ; l'écran d'épargne les montre à part, et un geste les rattache.
+ *
+ * **Aucun capital n'est inventé** : les supports naissent sans valorisation.
+ * Zéro serait une information financière — un livret vide —, et rien dans un
+ * document v7 ne dit ce que le livret valait.
+ *
+ * Les identifiants sont dérivés de la paire, donc **déterministes** : deux
+ * lectures du même fichier donnent le même document, ce que le test compare.
+ */
+function toVersion8(doc: RawDocument): RawDocument {
+  const families = asRecords(doc['families'])
+  const categories = asRecords(doc['categories'])
+  const recurrences = asRecords(doc['recurrences'])
+  const entries = asRecords(doc['entries'])
+  const advances = asRecords(doc['advances'])
+
+  const savingFamilies = new Set(
+    families.flatMap((family) => (family['kind'] === 'saving' ? [text(family['id']) ?? ''] : [])),
+  )
+  const savingCategories = new Map(
+    categories
+      .filter((category) => savingFamilies.has(text(category['familyId']) ?? ''))
+      .map((category) => [text(category['id']) ?? '', text(category['label']) ?? '—']),
+  )
+  if (savingCategories.size === 0) {
+    return { ...doc, savingSupports: [], savingValuations: [], schemaVersion: 8 }
+  }
+
+  const supports: RawDocument[] = []
+  const known = new Map<string, string>()
+
+  /** L'identifiant du support d'une paire, créé à la première rencontre. */
+  const supportFor = (categoryId: string | undefined, memberId: string | undefined): string | undefined => {
+    if (categoryId === undefined || memberId === undefined) return undefined
+    const label = savingCategories.get(categoryId)
+    if (label === undefined) return undefined
+    const key = `${categoryId} ${memberId}`
+    const seen = known.get(key)
+    if (seen !== undefined) return seen
+    const id = `sav-${categoryId}-${memberId}`
+    known.set(key, id)
+    supports.push({ id, label, memberId, categoryId, archived: false })
+    return id
+  }
+
+  const link = (item: RawDocument, categoryId: string | undefined, memberId: string | undefined): RawDocument => {
+    const supportId = supportFor(categoryId, memberId)
+    return supportId === undefined ? item : { ...item, savingSupportId: supportId }
+  }
+
+  /* Les règles d'abord : une avance désigne son support par la catégorie de la
+     récurrence qui la reconstitue, et une échéance hérite du sien. Les parcourir
+     dans cet ordre fait que la même paire retombe toujours sur le même support,
+     quel que soit celui des trois qui la rencontre en premier. */
+  const nextRecurrences = recurrences.map((recurrence) =>
+    link(recurrence, text(recurrence['categoryId']), text(recurrence['memberId'])),
+  )
+  const categoryOfRecurrence = new Map(
+    recurrences.map((recurrence) => [text(recurrence['id']) ?? '', text(recurrence['categoryId'])]),
+  )
+
+  const nextEntries = entries.map((entry) =>
+    link(entry, text(entry['categoryId']), text(entry['memberId'])),
+  )
+
+  const nextAdvances = advances.map((advance) => {
+    const recurrenceId = text(advance['recurrenceId'])
+    const categoryId =
+      recurrenceId === undefined ? undefined : categoryOfRecurrence.get(recurrenceId)
+    return link(advance, categoryId, text(advance['memberId']))
+  })
+
+  return {
+    ...doc,
+    recurrences: nextRecurrences,
+    entries: nextEntries,
+    advances: nextAdvances,
+    savingSupports: supports,
+    savingValuations: [],
+    schemaVersion: 8,
+  }
+}
+
 export const MIGRATIONS: Migration[] = [
   { to: 1, migrate: toVersion1 },
   { to: 2, migrate: toVersion2 },
@@ -183,6 +290,7 @@ export const MIGRATIONS: Migration[] = [
   { to: 5, migrate: toVersion5 },
   { to: 6, migrate: toVersion6 },
   { to: 7, migrate: toVersion7 },
+  { to: 8, migrate: toVersion8 },
 ]
 
 export class ImportError extends Error {

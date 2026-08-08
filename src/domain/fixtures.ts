@@ -12,6 +12,8 @@ import type {
   Member,
   Period,
   Recurrence,
+  SavingSupport,
+  SavingValuation,
 } from './types'
 
 export function makeMember(over: Partial<Member> & { id: string }): Member {
@@ -84,6 +86,24 @@ export function makeAdvance(over: Partial<Advance> & { id: string }): Advance {
   }
 }
 
+export function makeSavingSupport(
+  over: Partial<SavingSupport> & { id: string },
+): SavingSupport {
+  return {
+    label: 'Livret A',
+    memberId: 'm1',
+    categoryId: 'passbook',
+    archived: false,
+    ...over,
+  }
+}
+
+export function makeSavingValuation(
+  over: Partial<SavingValuation> & { id: string; supportId: string },
+): SavingValuation {
+  return { amount: money(1000000), date: '2026-01-01', ...over }
+}
+
 export function makeData(over: Partial<Data> = {}): Data {
   return {
     /* La version courante du document : un aller-retour export / import doit
@@ -98,6 +118,8 @@ export function makeData(over: Partial<Data> = {}): Data {
     entries: [],
     debts: [],
     advances: [],
+    savingSupports: [],
+    savingValuations: [],
     months: [],
     settings: { theme: 'system', palette: 'classique', currency: 'EUR', monthStartsOn: 1 },
     ...over,

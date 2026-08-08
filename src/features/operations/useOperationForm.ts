@@ -13,7 +13,7 @@ import { memberRequired } from '@/domain/split'
 import type { Direction, Entry, Recurrence } from '@/domain/types'
 import type { EntryNature } from '@/ui/categoryKinds'
 import { fr } from '@/i18n/fr'
-import { useKindOf, useMembers } from '@/store/selectors'
+import { useActiveSavingSupports, useKindOf, useMembers } from '@/store/selectors'
 import { type PeriodDraft, defaultsFrom, kindOf, monthlyDraftFrom, periodOf } from '@/features/recurrences/period'
 
 /**
@@ -59,6 +59,13 @@ export type OperationDraft = PeriodDraft & {
   amountText: string
   /** Règle dont le montant se saisit à chaque échéance. Ignoré en ponctuel. */
   variable: boolean
+  /**
+   * Le support versé ou repris, en nature `saving` — et la question centrale de
+   * cette saisie-là : « où va l'argent ». La catégorie s'en **déduit**, elle ne
+   * se saisit pas : le support porte déjà le poste sous lequel ses mouvements se
+   * rangent, et redemander les deux donnerait deux réponses à tenir d'accord.
+   */
+  savingSupportId: string
   categoryId: string
   label: string
   memberId: string
@@ -67,7 +74,9 @@ export type OperationDraft = PeriodDraft & {
   note: string
 }
 
-export type DraftErrors = Partial<Record<'amount' | 'category' | 'label' | 'member', string>>
+export type DraftErrors = Partial<
+  Record<'amount' | 'category' | 'support' | 'label' | 'member', string>
+>
 
 /**
  * Ce que `build` rend à l'écran : le payload, et ce qu'il faut en faire.
@@ -113,6 +122,7 @@ function draftFrom(
       recurring: defaults.recurring,
       amountText: '',
       variable: false,
+      savingSupportId: '',
       categoryId: '',
       label: '',
       memberId: '',
@@ -130,6 +140,7 @@ function draftFrom(
       recurring: false,
       amountText: toAmountInput(entry.amount),
       variable: false,
+      savingSupportId: entry.savingSupportId ?? '',
       categoryId: entry.categoryId,
       label: entry.label,
       memberId: entry.memberId ?? '',
@@ -164,6 +175,7 @@ function draftFrom(
           : toAmountInput(recurrence.estimate)
         : toAmountInput(recurrence.amount),
     variable: recurrence.amount === null,
+    savingSupportId: recurrence.savingSupportId ?? '',
     categoryId: recurrence.categoryId,
     label: recurrence.label,
     memberId: recurrence.memberId ?? '',
@@ -175,10 +187,26 @@ function draftFrom(
 export function useOperationForm(operation: Operation | null, defaults: OperationDefaults) {
   const members = useMembers()
   const kindOf = useKindOf()
+  const supports = useActiveSavingSupports()
   const [draft, setDraft] = useState<OperationDraft>(() =>
     draftFrom(operation, defaults, (id) => kindOf(id) === 'saving'),
   )
   const [showErrors, setShowErrors] = useState(false)
+
+  /**
+   * La saisie d'épargne demande **le support**, pas la catégorie.
+   *
+   * « Où va l'argent » est la question de ce geste-là, et le support y répond
+   * seul : il porte le poste sous lequel le mouvement se range et la personne à
+   * qui il est. Demander les trois laisserait poser un versement sur le PEA
+   * d'Andrea, rangé en « Livrets », au nom de Marie — trois réponses pour un
+   * seul fait, dont deux peuvent se contredire.
+   *
+   * Sans personne au foyer, aucun support ne peut exister — une épargne est
+   * toujours à quelqu'un, c'est déjà la règle des avances. La saisie retombe
+   * alors sur la catégorie, qui reste tout ce qu'on peut savoir du mouvement.
+   */
+  const supportMode = draft.nature === 'saving' && members.length > 0
 
   /* Le montant n'est facultatif que sur une règle à montant variable, où il ne
      chiffre plus l'opération mais l'ordre de grandeur qu'on lui prête. Partout
@@ -196,7 +224,10 @@ export function useOperationForm(operation: Operation | null, defaults: Operatio
     if ((typedAmount || !optionalAmount) && (amount === null || amount <= 0)) {
       found.amount = fr.entry.amountRequired
     }
-    if (draft.categoryId === '') found.category = fr.entry.categoryRequired
+    if (supportMode && draft.savingSupportId === '') found.support = fr.savings.supportRequired
+    // En mode support, la catégorie est dérivée : l'exiger poserait deux fois
+    // la même question, et son message désignerait un champ qui n'est pas là.
+    if (!supportMode && draft.categoryId === '') found.category = fr.entry.categoryRequired
     if (draft.label.trim() === '') {
       found.label = draft.recurring ? fr.entry.labelRequiredRecurring : fr.entry.labelRequired
     }
@@ -215,6 +246,8 @@ export function useOperationForm(operation: Operation | null, defaults: Operatio
     amount,
     typedAmount,
     optionalAmount,
+    supportMode,
+    draft.savingSupportId,
     draft.categoryId,
     draft.label,
     draft.recurring,
@@ -227,6 +260,29 @@ export function useOperationForm(operation: Operation | null, defaults: Operatio
 
   const patch = (next: Partial<OperationDraft>): void => {
     setDraft((current) => {
+      /* Changer de nature vide la catégorie **et** le support : les listes ne
+         se recouvrent pas, et un support resté en place sur une saisie de
+         dépense laisserait derrière lui une catégorie vidée par le même geste.
+         Repasser en épargne redemande donc où va l'argent, ce qui est la
+         question de cette nature-là. */
+      if (next.nature !== undefined && next.nature !== current.nature) {
+        return { ...current, ...next, categoryId: '', savingSupportId: '' }
+      }
+      /* Choisir un support répond à trois questions d'un coup : où va l'argent,
+         sous quel poste il se range, et à qui il est. Les deux dernières se
+         **dérivent** — les redemander à l'écran, c'est se donner deux réponses
+         qui peuvent se contredire, et le document n'en garderait qu'une. */
+      if (next.savingSupportId !== undefined && next.savingSupportId !== '') {
+        const support = supports.find((one) => one.id === next.savingSupportId)
+        if (support !== undefined) {
+          return {
+            ...current,
+            ...next,
+            categoryId: support.categoryId,
+            memberId: support.memberId,
+          }
+        }
+      }
       /* Changer la date réaligne le jour du mois et le jour de la semaine :
          « première échéance le 1er mars » répond déjà à « quel jour du mois »,
          et la redemander serait poser deux fois la même question. Les deux
@@ -252,6 +308,13 @@ export function useOperationForm(operation: Operation | null, defaults: Operatio
       label: draft.label.trim(),
       categoryId: draft.categoryId,
       ...(draft.memberId === '' ? {} : { memberId: draft.memberId }),
+      /* Le lien vers le support voyage par identifiant, sur l'échéance comme
+         sur la règle : une `Entry` générée ne cherche jamais son support par
+         libellé ni par catégorie. Il ne se pose que sur un mouvement
+         d'épargne — ailleurs, il n'aurait rien à désigner. */
+      ...(draft.nature === 'saving' && draft.savingSupportId !== ''
+        ? { savingSupportId: draft.savingSupportId }
+        : {}),
       direction: draft.direction,
       ...(draft.shared === undefined ? {} : { shared: draft.shared }),
       ...(draft.note.trim() === '' ? {} : { note: draft.note.trim() }),
@@ -298,6 +361,8 @@ export function useOperationForm(operation: Operation | null, defaults: Operatio
     errors: showErrors ? errors : {},
     needsMember: errors.member !== undefined,
     optionalAmount,
+    /** La saisie demande un support plutôt qu'une catégorie et un membre. */
+    supportMode,
     firstDuePaid,
     build,
   }

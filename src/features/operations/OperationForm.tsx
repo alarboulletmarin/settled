@@ -3,7 +3,9 @@ import { fr } from '@/i18n/fr'
 import { memberPatch } from '@/features/split/memberDraft'
 import { SharedField } from '@/features/split/SharedField'
 import { PeriodFields } from '@/features/recurrences/PeriodFields'
-import { useMembers } from '@/store/selectors'
+import { SupportCreateSheet, SupportSelect } from '@/features/savings/SupportSelect'
+import { useSupportCreateSheet } from '@/features/savings/supportDraft'
+import { useActiveSavingSupports, useMembers } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -109,9 +111,15 @@ export function OperationForm({
   footer,
 }: OperationFormProps) {
   const members = useMembers()
-  const { draft, patch, errors, needsMember, optionalAmount, firstDuePaid, build } =
+  const supports = useActiveSavingSupports()
+  const { draft, patch, errors, needsMember, optionalAmount, supportMode, firstDuePaid, build } =
     useOperationForm(operation, defaults)
   const guard = useLeaveGuard(draft, onDone)
+  /* Le support créé revient présélectionné : c'est la seule façon que la
+     création inline ne coûte pas une seconde manipulation. */
+  const sheet = useSupportCreateSheet((savingSupportId) => {
+    patch({ savingSupportId })
+  })
 
   const submit = (): void => {
     const built = build()
@@ -145,16 +153,12 @@ export function OperationForm({
               options={NATURES}
               value={draft.nature}
               onChange={(nature) => {
-                /* Changer de nature vide la catégorie : les listes ne se
-                   recouvrent pas, et une catégorie de charge restée en place
-                   sur une saisie d'épargne serait enregistrée telle quelle.
-                   L'épargne arrive en versement — c'est le geste courant ; on
-                   n'y reprend qu'exceptionnellement. */
-                patch({
-                  nature,
-                  direction: nature === 'income' ? 'in' : 'out',
-                  categoryId: '',
-                })
+                /* Le brouillon vide seul la catégorie et le support — voir
+                   `patch` : une catégorie de charge restée en place sur une
+                   saisie d'épargne serait enregistrée telle quelle. L'épargne
+                   arrive en versement, c'est le geste courant ; on n'y reprend
+                   qu'exceptionnellement. */
+                patch({ nature, direction: nature === 'income' ? 'in' : 'out' })
               }}
               label={fr.entry.nature}
             />
@@ -220,20 +224,63 @@ export function OperationForm({
             )}
           </Field>
 
-          <Field label={fr.entry.category} required {...(errors.category ? { error: errors.category } : {})}>
-            {(id, describedBy) => (
-              <CategorySelect
-                id={id}
-                aria-describedby={describedBy}
-                direction={draft.direction}
-                kinds={kindsOfNature(draft.nature)}
-                value={draft.categoryId}
-                onChange={(e) => {
-                  patch({ categoryId: e.target.value })
-                }}
-              />
-            )}
-          </Field>
+          {/* En épargne, la question est « où va l'argent » et le support y
+              répond seul : il porte le poste et la personne. Ailleurs, c'est la
+              catégorie qui dit la nature du mouvement. Jamais les deux. */}
+          {supportMode ? (
+            supports.length === 0 ? (
+              <Field label={fr.savings.support} required>
+                {() => (
+                  <div className="flex flex-col items-start gap-2">
+                    <p className="t-label">{fr.savings.supportNone}</p>
+                    <Button type="button" variant="secondary" size="sm" onClick={sheet.open}>
+                      {fr.savings.supportCreateFirst}
+                    </Button>
+                  </div>
+                )}
+              </Field>
+            ) : (
+              <Field
+                label={fr.savings.support}
+                required
+                {...(errors.support ? { error: errors.support } : {})}
+              >
+                {(id, describedBy) => (
+                  <div className="flex flex-col items-start gap-2">
+                    <SupportSelect
+                      id={id}
+                      aria-describedby={describedBy}
+                      value={draft.savingSupportId}
+                      invalid={Boolean(errors.support)}
+                      onChange={(e) => {
+                        patch({ savingSupportId: e.target.value })
+                      }}
+                    />
+                    {/* Créer sans quitter la saisie : partir vers la page
+                        Épargne perdrait le montant et la date déjà tapés. */}
+                    <Button type="button" variant="ghost" size="sm" onClick={sheet.open}>
+                      {fr.savings.supportCreateFirst}
+                    </Button>
+                  </div>
+                )}
+              </Field>
+            )
+          ) : (
+            <Field label={fr.entry.category} required {...(errors.category ? { error: errors.category } : {})}>
+              {(id, describedBy) => (
+                <CategorySelect
+                  id={id}
+                  aria-describedby={describedBy}
+                  direction={draft.direction}
+                  kinds={kindsOfNature(draft.nature)}
+                  value={draft.categoryId}
+                  onChange={(e) => {
+                    patch({ categoryId: e.target.value })
+                  }}
+                />
+              )}
+            </Field>
+          )}
 
           {/* Un seul champ de date, dont le libellé suit le rythme : en
               récurrence, la date saisie est la première échéance. C'est elle
@@ -279,7 +326,10 @@ export function OperationForm({
             )}
           </Field>
 
-          {members.length > 0 && (
+          {/* Le propriétaire ne se demande pas en épargne : il vient du
+              support, et un second champ laisserait poser un versement sur le
+              livret d'Andrea au nom de Marie. */}
+          {members.length > 0 && !supportMode && (
             /* La phrase sert d'aide tant qu'on n'a pas essayé d'enregistrer,
                puis d'erreur : c'est la même, et elle dit pourquoi ce champ,
                facultatif ailleurs, ne l'est pas ici. */
@@ -368,6 +418,10 @@ export function OperationForm({
 
       {footer}
 
+      {/* Montée seulement là où elle peut s'ouvrir : une saisie de dépense n'a
+          aucun support à créer, et une feuille fermée reste un formulaire posé
+          dans la page. */}
+      {supportMode && <SupportCreateSheet {...sheet.props} />}
       <ConfirmDialog {...guard.dialog} />
     </div>
   )

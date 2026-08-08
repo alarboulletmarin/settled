@@ -470,6 +470,21 @@ export const fr = {
       'Ses entrées et ses récurrences repassent en commun. Son avance, elle, ne peut appartenir à personne : elle est supprimée, ses mensualités déjà versées restent. Retirer %s ?',
     memberRemoveConfirmAdvances:
       'Ses entrées et ses récurrences repassent en commun. Ses %s avances, elles, ne peuvent appartenir à personne : elles sont supprimées, leurs mensualités déjà versées restent. Retirer %s ?',
+    /* Un support d'épargne est toujours à quelqu'un, comme une avance : il ne
+       peut pas repasser en commun, donc il part avec ses relevés. Les
+       mouvements, eux, restent — ils ont eu lieu, et seul leur lien se coupe.
+       C'est la même règle que la suppression d'une récurrence, qui détache ses
+       échéances sans les effacer. */
+    memberRemoveSupportOne:
+      'Il possède 1 support d’épargne : il sera supprimé, avec son historique de valeur. Les versements déjà enregistrés restent, sans rattachement.',
+    memberRemoveSupports:
+      'Il possède %s supports d’épargne : ils seront supprimés, avec leur historique de valeur. Les versements déjà enregistrés restent, sans rattachement.',
+    /* Réattribuer plutôt que perdre : c'est le même geste que changer le
+       propriétaire depuis la fiche du support, et il vaut mieux le proposer
+       avant que de le regretter après. */
+    memberSupportsReassign:
+      'Tu peux d’abord les réattribuer à quelqu’un d’autre depuis l’écran Épargne.',
+    memberSupportsGo: 'Voir ses supports d’épargne',
     /* Personne n'est le cas par défaut, pas une dérogation : la phrase dit ce
        qui se passe alors, sans concéder que ça « fonctionne quand même ». */
     membersEmpty:
@@ -606,6 +621,8 @@ export const fr = {
       entries: 'Entrée',
       debts: 'Crédit',
       advances: 'Avance',
+      savingSupports: 'Support d’épargne',
+      savingValuations: 'Valorisation',
       months: 'Mois',
     },
     reportReason: {
@@ -621,6 +638,7 @@ export const fr = {
       unknownFamily: 'famille introuvable',
       unknownMember: 'membre introuvable, rendue en commun',
       unknownRecurrence: 'récurrence introuvable, lien retiré',
+      unknownSupport: 'support d’épargne introuvable, lien retiré',
     },
 
     /* Le pendant de l'import : le seul moyen d'obtenir un fichier importable
@@ -1432,11 +1450,13 @@ export const fr = {
     paidOn: 'Payé le',
     category: 'Nature de la charge',
     categoryRequired: 'Dis de quelle charge il s’agit.',
-    /* Le support est une catégorie d'épargne, et pas n'importe laquelle : c'est
-       celui qu'on a vidé, donc celui qu'on remplit. */
-    savingCategory: 'Repris sur',
-    savingCategoryHint: 'Le livret ou le plan qui a payé, et qu’on reconstitue.',
-    savingCategoryRequired: 'Dis sur quel support tu as pris l’argent.',
+    /* Le support est désigné par identifiant, et c'est le même objet que sur
+       la page Épargne : celui qu'on a vidé, donc celui qu'on remplit. La
+       reprise, les mensualités et le capital pointent tous vers lui. */
+    savingSupport: 'Repris sur',
+    savingSupportHint: 'Le livret ou le plan qui a payé, et qu’on reconstitue.',
+    savingSupportRequired: 'Dis sur quel support tu as pris l’argent.',
+    savingSupportNone: 'Ajoute un support d’épargne pour enregistrer une avance.',
     member: 'Avancé par',
     memberRequired: 'Dis qui a avancé : une épargne est toujours à quelqu’un.',
     memberNone: 'Ajoute une personne pour enregistrer une avance.',
@@ -1472,7 +1492,153 @@ export const fr = {
 
   savings: {
     title: 'Épargne',
-    subtitle: 'Ce que le mois dégage, et où ça se place.',
+    subtitle: 'Ce que tu possèdes, où c’est placé, et ce que le mois y ajoute.',
+
+    /* --- Le stock : ce que valent les supports ------------------------------
+       Deux lectures qui ne se confondent jamais. La valeur **renseignée** est
+       un fait, relevé à une date. La valeur **estimée** ajoute les mouvements
+       depuis ce relevé, et elle est toujours nommée comme telle : sur un
+       placement, la valeur bouge aussi avec le marché. */
+    total: 'Épargne renseignée',
+    /* L'épargne est individuelle, et le total le dit : un chiffre de cette
+       taille sans propriétaire à côté se lit comme une somme du foyer — celle
+       que cet écran existe précisément pour ne pas montrer.
+       Le gabarit reçoit déjà « d'Andrea » ou « de Marie » : l'élision dépend du
+       prénom, donc de `format.de`, et un gabarit ne peut pas la décider. */
+    totalOf: 'Épargne %s',
+    totalHint: 'somme des dernières valeurs relevées',
+    totalNone: 'Aucune valeur renseignée pour l’instant.',
+    /* Une inconnue n'est pas un zéro : le total ne peut pas se présenter comme
+       exact tant qu'un support n'a jamais été relevé. */
+    totalMissingOne: '1 support sans valeur renseignée',
+    totalMissing: '%s supports sans valeur renseignée',
+    netMonth: 'Mouvements nets ce mois-ci',
+
+    supports: 'Où c’est placé',
+    supportsEmpty:
+      'Aucun support d’épargne. Ajoute ton livret ou ton plan pour suivre ce que tu possèdes.',
+    supportsNoMember:
+      'Ajoute une personne pour suivre ton épargne : un support est toujours à quelqu’un.',
+    supportAdd: 'Ajouter un support',
+    supportNew: 'Nouveau support d’épargne',
+    supportEdit: 'Modifier le support',
+    supportAdded: 'Support ajouté',
+    supportUpdated: 'Support modifié',
+    supportRemoved: 'Support supprimé',
+    supportArchived: 'Support archivé',
+    supportUnarchived: 'Support rouvert',
+    supportOpen: 'Ouvrir le support %s',
+
+    /* Le formulaire. Le nom et le propriétaire sont les deux seules réponses
+       exigées : la valeur peut très bien n'être pas connue le jour où l'on
+       crée le compte, et l'inventer serait pire que de l'ignorer. */
+    supportLabel: 'Nom du support',
+    supportLabelPlaceholder: 'Livret A',
+    supportLabelRequired: 'Donne un nom à ce support.',
+    supportOwner: 'À qui il est',
+    supportOwnerRequired: 'Dis à qui est cette épargne : elle est toujours à quelqu’un.',
+    supportKind: 'Type',
+    supportKindHint: 'Sert à ranger et à colorer, jamais à calculer.',
+    supportKindRequired: 'Choisis un type.',
+    supportNote: 'Note',
+    supportNotePlaceholder: 'Épargne de sécurité, trois mois de charges',
+
+    /* --- Les valorisations -------------------------------------------------*/
+    value: 'Valeur actuelle',
+    valueHint: 'Facultatif : laisse vide si tu ne la connais pas.',
+    valueDate: 'Date de cette valeur',
+    valueUnknown: 'Valeur non renseignée',
+    valueKnown: 'Valeur renseignée',
+    valueOn: 'relevée le %s',
+    valueUpdate: 'Mettre à jour la valeur',
+    valueEdit: 'Corriger cette valeur',
+    valueAdded: 'Valeur enregistrée',
+    valueUpdated: 'Valeur corrigée',
+    valueRemoved: 'Valeur supprimée',
+    valueRequired: 'Indique la valeur du support.',
+    valueRemove: 'Supprimer ce relevé',
+    valueRemoveConfirm:
+      'Ce relevé disparaît de l’historique. Les mouvements du support ne bougent pas. Supprimer ?',
+    /* Un relevé n'est pas une opération, et l'écran doit le dire une fois :
+       sinon « 18 320 € le 8 août » se lit comme un virement de 18 320 €. */
+    valueMethod:
+      'Un relevé de valeur n’est pas un mouvement d’argent : il ne compte ni dans le solde du mois, ni dans les versements, ni dans la capacité d’épargne.',
+    history: 'Historique de valeur',
+    historyEmpty: 'Aucune valeur relevée. Renseigne-la pour suivre son évolution.',
+    historyOne: 'Un seul relevé pour l’instant — la courbe démarre au deuxième.',
+
+    /* --- Relever plusieurs supports d'un coup ------------------------------*/
+    /* On ne relève pas ses comptes un par un : les chiffres arrivent ensemble,
+       sur un relevé de fin de mois. D'où un écran qui les prend tous, et un
+       vocabulaire au pluriel pour ne pas le confondre avec la fiche d'un
+       support — où l'on ne parle que de lui. */
+    valuesUpdate: 'Mettre à jour les valeurs',
+    valuesHint:
+      'Reporte ce que disent tes comptes aujourd’hui. Laisse vide ce que tu ne sais pas : une case vide n’enregistre rien.',
+    valuesDateHint: 'La date du relevé que tu as sous les yeux — la même pour tous.',
+    valuesNone: 'Renseigne au moins une valeur, ou reviens en arrière.',
+    valuesAdded: '%s valeurs enregistrées',
+    /* Le chiffre que la banque va confirmer ou corriger : c'est lui qu'on
+       compare au relevé, pas la dernière valeur connue. */
+    valuesDrift: 'estimée à %s',
+
+    /* --- La valeur estimée -------------------------------------------------*/
+    estimated: 'Valeur estimée',
+    estimatedHint: 'dernière valeur renseignée + mouvements depuis',
+    /* Jamais « valeur actuelle » tout court : ce calcul ignore les variations
+       de marché, et le présenter comme un fait serait une fausse précision. */
+    estimatedWarning:
+      'Estimation : elle ne tient pas compte de ce que le marché a pu faire depuis. Mets la valeur à jour pour la remplacer par un chiffre relevé.',
+    movedSince: 'Mouvements depuis',
+    /* Le même chiffre, mais au pluriel des supports : sur un total, « depuis »
+       ne désigne pas un relevé mais autant qu'il y a de comptes. */
+    movedSinceTotal: 'Versé depuis les derniers relevés',
+
+    /* --- La fiche d'un support --------------------------------------------*/
+    monthFlows: 'Ce mois-ci',
+    contributions: 'Versements',
+    withdrawals: 'Reprises',
+    net: 'Net',
+    movements: 'Mouvements',
+    movementsEmpty: 'Aucun mouvement sur ce support.',
+    movementsMore: 'et %s de plus',
+    archived: 'Archivé',
+    archivedHint:
+      'Un support archivé ne s’affiche plus dans les formulaires. Ses relevés et ses mouvements restent.',
+    archive: 'Archiver le support',
+    archiveConfirm:
+      'Il disparaît des formulaires de saisie. Ses relevés, ses mouvements et ses récurrences confirmées restent. Archiver ?',
+    /* Le cas incohérent qu'on refuse de créer : un compte invisible qui
+       continue de recevoir un virement chaque mois. */
+    archiveRunningOne: 'Ce support reçoit encore une récurrence active.',
+    archiveRunning: 'Ce support reçoit encore %s récurrences actives.',
+    archiveAndStop: 'Arrêter la récurrence et archiver',
+    archiveAndStopMany: 'Arrêter les récurrences et archiver',
+    unarchive: 'Rouvrir le support',
+    remove: 'Supprimer le support',
+    removeConfirm:
+      'Ce support n’a ni relevé, ni mouvement, ni récurrence : il disparaît sans rien emporter. Supprimer ?',
+    /* Pourquoi le bouton dit « Archiver » et pas « Supprimer » : la règle se
+       lit, elle ne se devine pas. */
+    removeBlocked:
+      'Ce support a une histoire — des relevés, des mouvements ou une récurrence. Il s’archive plutôt qu’il ne s’efface.',
+
+    /* --- Le rattachement des mouvements ------------------------------------*/
+    support: 'Support',
+    supportRequired: 'Dis sur quel support ce mouvement passe.',
+    supportNone: 'Aucun support d’épargne.',
+    supportCreateFirst: 'Créer un support',
+    unlinked: 'Non rattaché',
+    unlinkedHint:
+      'Ces mouvements d’épargne ne désignent aucun support : ils comptent dans le mois, mais ne disent pas où l’argent est allé. Ouvre-les pour les rattacher.',
+    /* Le versement régulier — un flux, à côté du capital et jamais dedans. Il
+       produit une récurrence reliée au support, pas un champ posé dessus. */
+    contribution: 'Versement chaque mois',
+    contributionHint: 'Facultatif : pose une récurrence mensuelle sur ce support.',
+    contributionLabel: 'Versement %s',
+
+    srSupport: '%s, à %s : %s',
+    srHistory: 'Évolution de la valeur, de %s le %s à %s le %s.',
 
     /* La cascade, terme par terme. Le résultat seul se croit sur parole ; les
        trois lignes qui le produisent se vérifient, et disent surtout *quoi
@@ -1509,11 +1675,6 @@ export const fr = {
        négatif au-dessus se lit comme une erreur. */
     withdrawn: 'Plus repris que placé ce mois-ci — une avance est passée par là.',
 
-    /* Chacun décide sur son compte : une somme des capacités ne se place nulle
-       part. Hors filtre, l'écran montre donc les colonnes plutôt qu'un total. */
-    byMember: 'Chacun de son côté',
-    byMemberHint: 'L’épargne ne se partage pas : chacun place ce qu’il dégage.',
-
     method: 'Comment c’est calculé',
     methodFormula: 'Capacité = revenus − charges − crédits.',
     methodExcluded:
@@ -1524,7 +1685,6 @@ export const fr = {
       'Le solde du mois, lui, compte le versement comme une sortie : c’est exact en trésorerie, et c’est pour ça que les deux chiffres diffèrent.',
 
     empty: 'Rien à placer tant que le mois n’a ni revenu ni charge.',
-    srMemberSaving: '%s dégage %s, en place %s, il lui reste %s.',
   },
 
   credits: {
@@ -1567,7 +1727,7 @@ export const fr = {
   },
 
   onboarding: {
-    step: 'Étape %s sur 2',
+    step: 'Étape %s sur 3',
     /* « Qui vit ici ? » supposait la cohabitation, que le calcul n'utilise
        jamais : le prorata marche aussi bien pour deux personnes à deux
        adresses. La question porte donc sur ce dont l'app se sert — le partage
@@ -1640,11 +1800,22 @@ export const fr = {
       'Posées au 1er de chaque mois. Le jour, le libellé et la catégorie s’ajustent ensuite depuis Récurrences.',
     starterSkip: 'Je le ferai plus tard',
 
+    /* Troisième étape, facultative elle aussi. Elle répond à « combien j'ai et
+       où », et à rien d'autre : ni taux, ni objectif, ni durée, ni allocation.
+       Un questionnaire patrimonial n'aurait pas sa place au premier lancement,
+       et le cahier §4.1 continue de refuser toute réponse exigée. */
+    savingsTitle: 'Ton épargne actuelle',
+    savingsHint:
+      'Tu peux indiquer où se trouve ton épargne pour commencer à la suivre. Rien n’est obligatoire ici, et ça s’ajoute à tout moment depuis l’écran Épargne.',
+    savingsSkip: 'Je le ferai plus tard',
+    previewSavingsEmpty:
+      'Sans support ici, l’app suit ce que tu mets de côté chaque mois, mais pas ce que tu possèdes. Un livret suffit à ce que les deux se lisent.',
+
     /* En PWA installée il n'y a pas de bouton retour du navigateur : chaque
        étape porte le sien, sans quoi on n'a plus qu'à répondre ou à fermer. */
     backToLanding: 'Revenir à la présentation',
     backToStep: 'Revenir à l’étape %s',
-    progress: 'Progression : étape %s sur 2',
+    progress: 'Progression : étape %s sur 3',
 
     /* L'aperçu montre ce que la réponse change plutôt que de le promettre.
        Sans personne, il ne concède pas que « ça marche quand même » : c'est un

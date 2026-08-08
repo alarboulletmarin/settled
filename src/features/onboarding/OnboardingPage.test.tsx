@@ -57,7 +57,19 @@ const fill = async (label: string, amount: string): Promise<void> => {
    chaînes se compareraient sur deux caractères d'espace différents. */
 const spoken = (cents: number): string => formatMoney(money(cents), 'EUR').replace(/\s/g, ' ')
 
-describe('les deux étapes du premier lancement', () => {
+/** Quitte la seconde étape, puis la troisième, et ouvre l'app. */
+async function finishFrom(step: 2 | 3, keep: boolean): Promise<void> {
+  if (step === 2) {
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: keep ? fr.common.next : fr.onboarding.starterSkip,
+      }),
+    )
+  }
+  await userEvent.click(screen.getByRole('button', { name: fr.onboarding.savingsSkip }))
+}
+
+describe('les trois étapes du premier lancement', () => {
   beforeEach(firstLaunch)
 
   afterEach(() => {
@@ -71,7 +83,7 @@ describe('les deux étapes du premier lancement', () => {
     await fill(tpl(fr.onboarding.starterSalaryOf, 'Alix'), '2400')
     await fill(tpl(fr.onboarding.starterSalaryOf, 'Camille'), '1850')
     await fill(fr.onboarding.starterRent, '980')
-    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.start }))
+    await finishFrom(2, true)
 
     const { data, status } = state()
     expect(status).toBe('ready')
@@ -118,7 +130,7 @@ describe('les deux étapes du premier lancement', () => {
     await answerFirst([])
 
     await fill(fr.onboarding.starterSalarySolo, '1700')
-    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.start }))
+    await finishFrom(2, true)
 
     const { data, status } = state()
     expect(status).toBe('ready')
@@ -130,13 +142,14 @@ describe('les deux étapes du premier lancement', () => {
   /* Le cahier §4.1 ne cède pas : l'app reste utilisable sans cette étape, et le
      bouton qui la saute est visible. Sans ce test, « facultative » ne serait
      qu'une intention écrite dans un commentaire. */
-  it('s’ouvre quand même quand on saute l’étape', async () => {
+  it('s’ouvre quand même quand on saute les deux étapes', async () => {
     await answerFirst(['Alix'])
 
-    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
+    await finishFrom(2, false)
 
     expect(state().status).toBe('ready')
     expect(state().data.recurrences).toStrictEqual([])
+    expect(state().data.savingSupports).toStrictEqual([])
   })
 
   it('ignore un champ vide sans retenir les autres', async () => {
@@ -144,10 +157,69 @@ describe('les deux étapes du premier lancement', () => {
 
     // Le loyer reste vide, et le salaire passe quand même.
     await fill(tpl(fr.onboarding.starterSalaryOf, 'Alix'), '2400')
-    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.start }))
+    await finishFrom(2, true)
 
     expect(state().data.recurrences).toHaveLength(1)
     expect(state().data.recurrences[0]?.categoryId).toBe('salary')
+  })
+
+  /* Scénario A du chantier : une personne, un livret à 10 000 €, un versement
+     mensuel de 200 €. Ce qui compte est ce qui *ne* doit pas exister — un
+     second support, une seconde valorisation, un montant recopié. */
+  it('pose le support, sa valeur et le versement qui l’alimente, sans doublon', async () => {
+    await answerFirst(['Andrea'])
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
+
+    await userEvent.type(screen.getByLabelText(new RegExp(fr.savings.supportLabel)), 'Livret A')
+    await userEvent.selectOptions(
+      screen.getByLabelText(new RegExp(fr.savings.supportKind)),
+      'passbook',
+    )
+    await userEvent.type(screen.getByLabelText(new RegExp(fr.savings.value)), '10000')
+    await userEvent.type(screen.getByLabelText(new RegExp(fr.savings.contribution)), '200')
+    await userEvent.click(screen.getByRole('button', { name: fr.savings.supportAdd }))
+
+    const { data } = state()
+    const [member] = data.household.members
+    const [support] = data.savingSupports
+    expect(data.savingSupports).toHaveLength(1)
+    expect(support?.label).toBe('Livret A')
+    expect(support?.memberId).toBe(member?.id)
+
+    /* Le capital vit dans la valorisation, et **nulle part** sur le support :
+       c'est la règle qui interdit qu'ils divergent. */
+    expect(data.savingValuations).toHaveLength(1)
+    expect(data.savingValuations[0]?.amount).toBe(1_000_000)
+    expect(data.savingValuations[0]?.supportId).toBe(support?.id)
+    expect(JSON.stringify(support)).not.toContain('1000000')
+
+    /* Le versement mensuel est une récurrence reliée au support, pas un champ
+       posé dessus : c'est elle qui produira les `Entry`. */
+    expect(data.recurrences).toHaveLength(1)
+    expect(data.recurrences[0]?.savingSupportId).toBe(support?.id)
+    expect(data.recurrences[0]?.amount).toBe(20_000)
+    expect(data.recurrences[0]?.direction).toBe('out')
+    expect(data.recurrences[0]?.categoryId).toBe('passbook')
+
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.start }))
+    expect(state().status).toBe('ready')
+  })
+
+  /* L'épargne est toujours à quelqu'un : sans personne, l'étape n'a rien à
+     proposer, et elle le dit plutôt que d'inventer un porteur. */
+  it('n’enregistre aucun support quand personne n’a été ajouté', async () => {
+    await answerFirst([])
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
+
+    await userEvent.type(screen.getByLabelText(new RegExp(fr.savings.supportLabel)), 'Livret A')
+    await userEvent.selectOptions(
+      screen.getByLabelText(new RegExp(fr.savings.supportKind)),
+      'passbook',
+    )
+    await userEvent.click(screen.getByRole('button', { name: fr.savings.supportAdd }))
+
+    expect(state().data.savingSupports).toStrictEqual([])
+    expect(screen.getByText(fr.savings.supportOwnerRequired)).toBeInTheDocument()
   })
 
   it('montre la part de chacun dès que deux revenus et un loyer sont posés', async () => {
@@ -179,7 +251,9 @@ describe('les deux étapes du premier lancement', () => {
     expect(screen.queryByText(fr.onboarding.backup)).not.toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: fr.onboarding.solo }))
+    expect(screen.queryByText(fr.onboarding.backup)).not.toBeInTheDocument()
 
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
     expect(screen.getByText(fr.onboarding.backup)).toBeInTheDocument()
   })
 
@@ -195,6 +269,8 @@ describe('les deux étapes du premier lancement', () => {
       </MemoryRouter>,
     )
     await userEvent.click(screen.getByRole('button', { name: fr.onboarding.solo }))
+    // La phrase vit à la dernière étape, qui est la troisième depuis l'épargne.
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
     expect(screen.getByText(fr.onboarding.backup)).toBeInTheDocument()
 
     act(() => {

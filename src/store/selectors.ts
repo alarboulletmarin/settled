@@ -30,9 +30,6 @@ import {
   recurrenceTotals,
   recurrenceTotalsOfKinds,
   restToLive,
-  savingCapacity,
-  savingLeft,
-  savingsByCategory,
   spendingFlow,
   totalsByKind,
   upcomingDue,
@@ -40,6 +37,22 @@ import {
 } from '@/domain/stats'
 import { type AdvanceStatus, advanceStatus } from '@/domain/advance'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
+import {
+  type SavingSlice,
+  type SavingTotal,
+  type SupportFlows,
+  type SupportUsage,
+  type SupportValue,
+  activeSupports,
+  isSupportEmpty,
+  savingTotal,
+  savingsBySupport,
+  supportEntries,
+  supportMonthFlows,
+  supportUsage,
+  supportValue,
+  valuationsOf,
+} from '@/domain/saving'
 import {
   type MemberCharges,
   type MemberIncome,
@@ -49,7 +62,6 @@ import {
   memberShares,
   isCommon,
   scopeToMember,
-  scopeToMembers,
   sharedEntries,
   unassignedIncomes,
 } from '@/domain/split'
@@ -69,6 +81,8 @@ import {
   type Family,
   type Member,
   type Recurrence,
+  type SavingSupport,
+  type SavingValuation,
   isSpending,
 } from '@/domain/types'
 import { type MonthFilter, useStore } from './store'
@@ -109,6 +123,9 @@ export const useCategories = (): Category[] => useStore((s) => s.data.categories
 export const useFamilies = (): Family[] => useStore((s) => s.data.families)
 export const useDebts = (): Debt[] => useStore((s) => s.data.debts)
 export const useAdvances = (): Advance[] => useStore((s) => s.data.advances)
+export const useSavingSupports = (): SavingSupport[] => useStore((s) => s.data.savingSupports)
+export const useSavingValuations = (): SavingValuation[] =>
+  useStore((s) => s.data.savingValuations)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
@@ -761,16 +778,139 @@ export function useMemberCharges(): MemberChargesWithSettlement | null {
 
 /* --- Épargne --------------------------------------------------------------*/
 
-/** Où va l'épargne du mois affiché, à la portée de lecture courante. */
-export function useSavingsByCategory(limit?: number): CategorySlice[] {
+/**
+ * Où va l'épargne du mois affiché, **par support**, à la portée de lecture
+ * courante.
+ *
+ * Les mêmes `Entry` que celles de `useKindTotals` — donc que la capacité, le
+ * reste à placer et la tuile du mois : c'est ce qui garantit qu'un chiffre
+ * annoncé ici et là ne peut pas différer.
+ */
+export function useSavingsBySupport(limit?: number): SavingSlice[] {
   const { entries } = useMonthScope()
   const month = useCurrentYm()
   const kindOf = useKindOf()
   return useMemo(
-    () => savingsByCategory(entries, month, kindOf, undefined, limit),
+    () => savingsBySupport(entries, month, kindOf, undefined, limit),
     [entries, month, kindOf, limit],
   )
 }
+
+/** Les supports encore proposés à la saisie, archivés exclus. */
+export function useActiveSavingSupports(): SavingSupport[] {
+  const supports = useSavingSupports()
+  return useMemo(() => activeSupports(supports), [supports])
+}
+
+export function useSavingSupportMap(): Map<string, SavingSupport> {
+  const supports = useSavingSupports()
+  return useMemo(() => new Map(supports.map((support) => [support.id, support])), [supports])
+}
+
+/** Un support par son identifiant. `null` s'il n'existe pas (ou plus). */
+export function useSavingSupport(id: string | undefined): SavingSupport | null {
+  const supports = useSavingSupports()
+  return useMemo(
+    () => (id === undefined ? null : (supports.find((one) => one.id === id) ?? null)),
+    [supports, id],
+  )
+}
+
+/**
+ * Ce que valent les supports de la lecture courante : ce qui est relevé, ce qui
+ * a bougé depuis, et combien n'ont aucune valeur.
+ *
+ * Sous filtre par membre, seuls ses supports comptent — et l'écran d'épargne
+ * n'a pas d'autre lecture : deux personnes n'ont pas un livret commun, elles
+ * ont chacune le leur.
+ *
+ * Les `Entry` entrent dans le calcul parce que l'estimation en dépend : le
+ * total et la fiche d'un support passent par la **même** fonction, et ne
+ * peuvent donc pas diverger d'un centime.
+ */
+export function useSavingTotal(): SavingTotal {
+  const supports = useScopedSavingSupports()
+  const valuations = useSavingValuations()
+  const entries = useEntries()
+  return useMemo(
+    () => savingTotal(supports, valuations, entries),
+    [supports, valuations, entries],
+  )
+}
+
+/**
+ * Les supports de la lecture courante — ceux du membre filtré, ou tous.
+ *
+ * « Commun » n'en montre aucun, et c'est la règle du cahier : l'épargne ne se
+ * répartit pas comme une charge, il n'existe donc pas de support commun.
+ */
+export function useScopedSavingSupports(): SavingSupport[] {
+  const supports = useSavingSupports()
+  const filter = useMonthFilter()
+  return useMemo(() => {
+    if (filter.kind === 'all') return supports
+    if (filter.kind === 'common') return []
+    return supports.filter((support) => support.memberId === filter.memberId)
+  }, [supports, filter])
+}
+
+/** Ce qu'on sait du capital d'un support, et ce qu'on en déduit. */
+export function useSupportValue(supportId: string | undefined): SupportValue | null {
+  const valuations = useSavingValuations()
+  const entries = useEntries()
+  return useMemo(
+    () => (supportId === undefined ? null : supportValue(supportId, valuations, entries)),
+    [supportId, valuations, entries],
+  )
+}
+
+/** L'historique de valeur d'un support, du plus récent au plus ancien. */
+export function useSupportValuations(supportId: string | undefined): SavingValuation[] {
+  const valuations = useSavingValuations()
+  return useMemo(
+    () => (supportId === undefined ? [] : valuationsOf(valuations, supportId)),
+    [valuations, supportId],
+  )
+}
+
+/** Les mouvements d'un support sur le mois affiché — versements et reprises. */
+export function useSupportMonthFlows(supportId: string | undefined): SupportFlows {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  return useMemo(
+    () =>
+      supportId === undefined
+        ? { contributions: 0 as Money, withdrawals: 0 as Money, net: 0 as Money }
+        : supportMonthFlows(entries, supportId, month),
+    [entries, supportId, month],
+  )
+}
+
+/** Les mouvements d'un support, du plus récent au plus ancien. */
+export function useSupportEntries(supportId: string | undefined): Entry[] {
+  const entries = useEntries()
+  return useMemo(
+    () => (supportId === undefined ? [] : supportEntries(entries, supportId)),
+    [entries, supportId],
+  )
+}
+
+/** Ce qu'un support retient derrière lui — ce qui décide archive ou suppression. */
+export function useSupportUsage(supportId: string | undefined): SupportUsage {
+  const data = useStore((s) => s.data)
+  return useMemo(
+    () =>
+      supportUsage(supportId ?? '', {
+        savingValuations: data.savingValuations,
+        entries: data.entries,
+        recurrences: data.recurrences,
+        advances: data.advances,
+      }),
+    [data, supportId],
+  )
+}
+
+export { isSupportEmpty }
 
 /**
  * Les versements du mois que personne ne porte.
@@ -794,62 +934,32 @@ export function useUnassignedSavings(): Entry[] {
   )
 }
 
-/** Ce qu'un membre dégage, ce qu'il place, et ce qu'il lui reste à placer. */
-export type MemberSaving = {
-  memberId: string
-  /** Ressources − charges − crédits, sa part du pot commun comprise. */
-  capacity: Money
-  /** Ce qu'il a déjà versé sur ses supports. */
-  saved: Money
-  /** La différence. Négative, il verse plus qu'il ne dégage. */
-  left: Money
-}
-
 /**
- * La même lecture pour chaque membre, sans avoir à passer d'un filtre à l'autre.
+ * Les mouvements d'épargne du mois qu'aucun support ne porte.
  *
- * L'épargne est le seul chiffre du mois qui n'a aucun sens au foyer : deux
- * personnes qui dégagent 300 € et 900 € n'ont pas « 1 200 € à placer », elles
- * ont deux décisions séparées à prendre, sur deux comptes séparés. Hors filtre,
- * l'écran montre donc les deux colonnes plutôt qu'une somme qui ne se décide
- * nulle part.
- *
- * `scopeToMember` fait tout le travail — les lignes du membre, plus sa part de
- * chaque charge commune : la capacité tient compte du loyer qu'il porte, sans
- * qu'aucun prorata soit recalculé ici.
+ * Un document d'avant les supports en a : ses versements désignaient un poste,
+ * pas un compte. Ils comptent dans la capacité et dans le net du mois — ce sont
+ * des `Entry` comme les autres — mais ils ne disent pas *où* l'argent est allé,
+ * et l'écran le dit plutôt que de les faire disparaître de la ventilation.
  */
-export function useMemberSavings(): MemberSaving[] {
-  const members = useMembers()
-  const entries = useEntries()
+export function useUnlinkedSavings(): Entry[] {
+  const { entries } = useMonthScope()
   const month = useCurrentYm()
   const kindOf = useKindOf()
-  const incomes = useMemberIncomes()
-
-  return useMemo(() => {
-    /* Un seul balayage pour tout le foyer, là où c'en était un par membre — et
-       un découpage par charge commune au lieu d'un par charge et par membre.
-       C'est le plus lourd des sélecteurs, et le seul qui multipliait son coût
-       par le nombre de personnes. */
-    const scoped = scopeToMembers(entries, kindOf, incomes)
-    // Prorata incalculable : une capacité qui ignorerait le loyer vaudrait
-    // moins qu'une ligne absente. L'écran dit déjà ce qui manque.
-    if (scoped === null) return []
-
-    return members.flatMap((member) => {
-      const own = scoped.get(member.id)
-      if (own === undefined) return []
-      const totals = totalsByKind(own, month, kindOf, undefined, true)
-      return [
-        {
-          memberId: member.id,
-          capacity: savingCapacity(totals),
-          saved: totals.saving,
-          left: savingLeft(totals),
-        },
-      ]
-    })
-  }, [members, entries, month, kindOf, incomes])
+  return useMemo(
+    () =>
+      entriesOfMonth(entries, month).filter(
+        (entry) => entry.savingSupportId === undefined && kindOf(entry.categoryId) === 'saving',
+      ),
+    [entries, month, kindOf],
+  )
 }
+
+/* `useMemberSavings` vivait ici — la même lecture pour chaque membre, en
+   colonnes, sur l'écran d'épargne hors filtre. Cet écran-là n'a plus de lecture
+   « hors filtre » : l'épargne est individuelle, son bandeau ne propose que des
+   personnes, et une pilule fait désormais la comparaison que la section
+   proposait. Un sélecteur que plus aucun écran ne lit est du poids mort. */
 
 /**
  * Où en est chaque avance, la plus lourde à reconstituer d'abord.

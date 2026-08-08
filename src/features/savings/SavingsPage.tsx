@@ -1,21 +1,26 @@
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import { entryNewPath } from '@/app/routes'
+import { SUPPORT_NEW_PATH, VALUATIONS_PATH, entryNewPath, supportPath } from '@/app/routes'
 import { type Money, ZERO, abs, add } from '@/domain/money'
+import { UNLINKED_SUPPORT } from '@/domain/saving'
 import { savingCapacity, savingLeft, savingRate } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
-import { formatMoney, formatPercent, tpl } from '@/i18n/format'
+import { de, formatDate, formatMoney, formatPercent, tpl } from '@/i18n/format'
 import {
-  type MemberSaving,
   useCategoryMap,
   useKindTotals,
-  useMemberFilter,
   useMemberMap,
-  useMemberSavings,
   useMembers,
-  useSavingsByCategory,
+  useSavingTotal,
+  useSavingValuations,
+  useSavingsBySupport,
+  useSavingSupportMap,
+  useScopedSavingSupports,
   useUnassignedSavings,
+  useUnlinkedSavings,
 } from '@/store/selectors'
+import { latestValuation } from '@/domain/saving'
+import { useIndividualScope } from './individualScope'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
@@ -24,7 +29,7 @@ import { Eyebrow } from '@/ui/Eyebrow'
 import { Plus, SavingsIcon } from '@/ui/Icons'
 import { ListRow } from '@/ui/ListRow'
 import { PageTitle } from '@/ui/PageTitle'
-import { Tile } from '@/ui/Tile'
+import { BentoGrid, Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 
 /** Une ligne de la cascade : son terme, et ce qu'il pèse. */
@@ -39,6 +44,179 @@ function Term({ label, value, direction }: { label: string; value: Money; direct
         {...(direction === undefined ? {} : { direction })}
       />
     </li>
+  )
+}
+
+/**
+ * Ce que l'épargne vaut — le **stock**, et rien d'autre.
+ *
+ * Le total ne porte que sur les supports dont une valeur a été relevée, et il
+ * dit combien n'en ont pas : additionner une inconnue comme un zéro donnerait
+ * un patrimoine faux annoncé comme exact, ce qui est pire que pas de chiffre.
+ *
+ * **Il nomme la personne**, toujours. C'est une épargne individuelle — jamais
+ * celle du foyer —, et un chiffre de cette taille sans propriétaire à côté se
+ * lit comme une somme. L'écran ne propose d'ailleurs pas d'autre lecture (voir
+ * `useIndividualScope`), mais un total muet ne le dirait pas.
+ *
+ * Le net du mois est posé à côté, jamais dedans : ce sont deux questions — ce
+ * que je possède, et ce que le mois y a ajouté — et les additionner reviendrait
+ * à compter deux fois ce que la dernière valorisation contient déjà.
+ *
+ * **Et ce qui a bougé depuis les relevés, quand il y a quelque chose.** Verser
+ * 200 € par mois pendant six mois sans jamais relever sa valeur laissait un
+ * total figé à son chiffre de départ, alors que l'app connaît les 1 200 € partis
+ * dessus : les taire n'est pas de la prudence, c'est cacher ce qu'on sait. Le
+ * chiffre s'affiche donc — nommé « estimée », avec sa réserve, et **sous** le
+ * relevé qui reste le fait. C'est exactement ce que dit la fiche d'un support,
+ * par la même fonction.
+ */
+function Total({ net, owner }: { net: Money; owner: string | null }) {
+  const total = useSavingTotal()
+
+  return (
+    <Tile variant="accent" className="gap-2">
+      <Eyebrow icon={SavingsIcon}>
+        {owner === null ? fr.savings.total : tpl(fr.savings.totalOf, de(owner))}
+      </Eyebrow>
+      {total.valued === 0 ? (
+        <p className="t-body">{fr.savings.totalNone}</p>
+      ) : (
+        <>
+          <Amount value={total.known} size="hero-fit" />
+          <span className="t-label">{fr.savings.totalHint}</span>
+        </>
+      )}
+      {/* Jamais fondu dans le total : l'écran doit pouvoir dire « 32 450 € sur
+          les supports renseignés » sans laisser croire que c'est tout. */}
+      {total.unvalued > 0 && (
+        <span className="t-label">
+          {total.unvalued === 1
+            ? fr.savings.totalMissingOne
+            : tpl(fr.savings.totalMissing, total.unvalued)}
+        </span>
+      )}
+
+      {/* Le cumul de ce qui est parti depuis les relevés. Il ne remplace pas le
+          chiffre du dessus — celui-là est un fait, daté ; celui-ci ne connaît
+          pas ce que le marché a fait. */}
+      {total.movedSince !== ZERO && (
+        <div className="mt-1 flex flex-col gap-1 border-t border-border pt-3">
+          <div className="flex items-baseline gap-3">
+            <span className="t-label min-w-0 flex-1 truncate">{fr.savings.estimated}</span>
+            <Amount value={total.estimated} size="body" className="shrink-0" />
+          </div>
+          <div className="flex items-baseline gap-3">
+            <span className="t-label min-w-0 flex-1 truncate">{fr.savings.movedSinceTotal}</span>
+            <Amount value={total.movedSince} size="body" signed className="shrink-0" />
+          </div>
+          <p className="t-label mt-1">{fr.savings.estimatedWarning}</p>
+        </div>
+      )}
+
+      <div className="mt-1 flex items-baseline gap-3 border-t border-border pt-3">
+        <span className="t-label min-w-0 flex-1 truncate">{fr.savings.netMonth}</span>
+        <Amount value={net} size="body" signed className="shrink-0" />
+      </div>
+    </Tile>
+  )
+}
+
+/**
+ * Les supports, un par tuile — où l'argent est placé, à qui il est, et ce que
+ * le mois y a mis.
+ *
+ * Le mouvement du mois vient des mêmes `Entry` que la capacité et que la tuile
+ * du tableau de bord : c'est le même objet et la même source, d'un écran à
+ * l'autre. Un support sans valeur relevée le dit, il n'affiche pas zéro.
+ */
+function Supports() {
+  const navigate = useNavigate()
+  const supports = useScopedSavingSupports()
+  const valuations = useSavingValuations()
+  const categories = useCategoryMap()
+  const members = useMemberMap()
+  const currency = useCurrency()
+  const slices = useSavingsBySupport()
+  const netOf = new Map(slices.map((slice) => [slice.supportId, slice.total]))
+
+  /* Un support archivé sort des formulaires, pas de la lecture : il reste
+     visible tant qu'il a une valeur ou un mouvement dans le mois. */
+  const shown = supports.filter(
+    (support) =>
+      !support.archived ||
+      latestValuation(valuations, support.id) !== null ||
+      netOf.has(support.id),
+  )
+  if (shown.length === 0) return null
+
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow>{fr.savings.supports}</Eyebrow>
+        {/* Relever ses comptes sans ouvrir quatre fiches.
+            L'action est sur la **section**, et pas dans les tuiles, parce
+            qu'elle ne peut pas y être : une tuile actionnable est un `<button>`,
+            qui n'admet pas de bouton, et une tuile à lien étendu ne contient
+            plus rien d'actionnable (DS §6). Elle y gagne d'ailleurs — un relevé
+            de banque donne tous les chiffres en même temps, donc le geste réel
+            est « je mets tout à jour », pas « je mets à jour le Livret A ».
+            Corriger un seul chiffre reste sur la fiche du support. */}
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            void navigate(VALUATIONS_PATH)
+          }}
+        >
+          {fr.savings.valuesUpdate}
+        </Button>
+      </div>
+      <BentoGrid>
+        {shown.map((support) => {
+          const latest = latestValuation(valuations, support.id)
+          const net = netOf.get(support.id) ?? ZERO
+          const member = members.get(support.memberId)
+          const color = categories.get(support.categoryId)?.color ?? 'var(--cat-rest)'
+
+          return (
+            <Tile
+              key={support.id}
+              span="2x2"
+              className="justify-between gap-2"
+              onClick={() => {
+                void navigate(supportPath(support.id))
+              }}
+              label={tpl(fr.savings.supportOpen, support.label)}
+              affordance={{ kind: 'navigate' }}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <Dot color={color} />
+                <span className="t-body min-w-0 flex-1 truncate font-medium">{support.label}</span>
+              </div>
+              {/* « Valeur non renseignée », jamais « 0 € » : zéro est une
+                  information financière réelle, l'inconnu n'en est pas une. */}
+              {latest === null ? (
+                <span className="t-label">{fr.savings.valueUnknown}</span>
+              ) : (
+                <div className="flex flex-col gap-0.5">
+                  <Amount value={latest.amount} size="tile-fit" />
+                  <span className="t-axis truncate">{formatDate(latest.date)}</span>
+                </div>
+              )}
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                <span className="t-label min-w-0 truncate">{member?.name ?? ''}</span>
+                {net !== ZERO && (
+                  <span className="t-label tnum">
+                    {`${net > ZERO ? '+' : '−'}${formatMoney(abs(net), currency, false)}`}
+                  </span>
+                )}
+              </div>
+            </Tile>
+          )
+        })}
+      </BentoGrid>
+    </section>
   )
 }
 
@@ -58,7 +236,7 @@ function Capacity({ capacity }: { capacity: Money }) {
   const totals = useKindTotals(true)
 
   return (
-    <Tile variant="accent" className="gap-3">
+    <Tile className="gap-3">
       <Eyebrow icon={SavingsIcon}>{fr.savings.capacity}</Eyebrow>
       <Amount value={capacity} size="tile" tone={capacity < 0 ? 'danger' : 'default'} />
       <span className="t-label">{fr.savings.capacityHint}</span>
@@ -81,17 +259,23 @@ function Capacity({ capacity }: { capacity: Money }) {
 /**
  * Où l'épargne du mois se place, du plus gros support au plus petit.
  *
+ * Ces lignes sont **exactement** les `Entry` que compte le « versé ce mois » du
+ * tableau de bord : c'est la même fonction, la même portée de lecture et le même
+ * mois. Deux écrans qui recompteraient chacun de leur côté finiraient par
+ * annoncer deux chiffres sous le même mot.
+ *
  * Les montants sont signés, et c'est indispensable : une avance reprend 600 €
  * sur un livret le mois où elle est posée, et un support qui rend plus qu'il ne
- * reçoit afficherait sinon « 510 € » là où il faut lire « −510 € ». Le « + »
- * n'est pas décoratif non plus — il dit ce qui entre sur le support, en regard
- * de ce qui en sort.
+ * reçoit afficherait sinon « 510 € » là où il faut lire « −510 € ».
  */
 function Placed({ saved }: { saved: Money }) {
-  const slices = useSavingsByCategory()
+  const navigate = useNavigate()
+  const slices = useSavingsBySupport()
+  const supports = useSavingSupportMap()
   const categories = useCategoryMap()
+  const members = useMemberMap()
   const unassigned = useUnassignedSavings()
-  const filter = useMemberFilter()
+  const unlinked = useUnlinkedSavings()
 
   /* Une part n'a de sens qu'entre des mouvements de même signe : sur un mois
      où l'on reprend plus qu'on ne place, « −24 % » ne veut rien dire, et le
@@ -109,16 +293,41 @@ function Placed({ saved }: { saved: Money }) {
         <p className="t-label">{fr.savings.placedEmpty}</p>
       ) : (
         <ul className="flex flex-col">
-          {slices.map((slice) => (
-            <li key={slice.categoryId}>
-              <ListRow
-                color={categories.get(slice.categoryId)?.color ?? 'var(--cat-rest)'}
-                label={categories.get(slice.categoryId)?.label ?? fr.common.other}
-                {...(shares ? { meta: formatPercent(slice.share) } : {})}
-                trailing={<Amount value={slice.total} signed />}
-              />
-            </li>
-          ))}
+          {slices.map((slice) => {
+            const support = supports.get(slice.supportId)
+            const color =
+              support === undefined
+                ? 'var(--cat-rest)'
+                : (categories.get(support.categoryId)?.color ?? 'var(--cat-rest)')
+
+            /* Le propriétaire sur la ligne, et pas seulement la part : deux
+               personnes peuvent avoir chacune leur « Livret A », et c'est
+               justement ce que le support existe pour distinguer — deux lignes
+               au même nom sans rien pour les départager reliraient la confusion
+               que la catégorie entretenait. */
+            const owner = support === undefined ? undefined : members.get(support.memberId)?.name
+            const meta = [owner, shares ? formatPercent(slice.share) : undefined]
+              .filter((part) => part !== undefined && part !== '')
+              .join(' · ')
+
+            return (
+              <li key={slice.supportId}>
+                <ListRow
+                  color={color}
+                  label={support?.label ?? fr.savings.unlinked}
+                  {...(meta === '' ? {} : { meta })}
+                  trailing={<Amount value={slice.total} signed />}
+                  {...(support === undefined
+                    ? {}
+                    : {
+                        onClick: () => {
+                          void navigate(supportPath(support.id))
+                        },
+                      })}
+                />
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -126,12 +335,22 @@ function Placed({ saved }: { saved: Money }) {
           reçu, et le chiffre négatif au-dessus paraîtrait faux sans ça. */}
       {saved < ZERO && <p className="t-label">{fr.savings.withdrawn}</p>}
 
-      {/* Un versement resté « en commun » n'est à personne, et l'épargne ne
-          se partage pas : il ne compte dans la capacité de personne, et rien
-          nulle part ne le disait. C'est le pendant du salaire non attribué de
-          l'écran Répartition. Dit une seule fois, hors filtre : sous filtre, il
-          n'est de toute façon pas dans la liste qu'on regarde. */}
-      {filter === undefined && unassigned.length > 0 && (
+      {/* Des mouvements d'épargne qui ne disent pas où l'argent est allé. Ils
+          comptent bien dans le mois — ce sont des `Entry` comme les autres —,
+          mais la ventilation ne peut pas les placer. */}
+      {unlinked.length > 0 && slices.some((slice) => slice.supportId === UNLINKED_SUPPORT) && (
+        <p className="t-label border-t border-border pt-3">{fr.savings.unlinkedHint}</p>
+      )}
+
+      {/* Un versement resté « en commun » n'est à personne, et l'épargne ne se
+          partage pas : il ne compte dans la capacité de personne. La phrase se
+          disait hors filtre — la lecture qui n'existe plus —, et elle vaut
+          justement davantage maintenant : sous une lecture individuelle, ces
+          versements ne s'affichent nulle part, et rien ne dirait qu'ils
+          existent. `useUnassignedSavings` regarde le mois entier, filtre ou
+          non. C'est le pendant du salaire non attribué de l'écran
+          Répartition. */}
+      {unassigned.length > 0 && (
         <p className="t-label border-t border-border pt-3">{fr.savings.placedUnassigned}</p>
       )}
     </Tile>
@@ -172,92 +391,66 @@ function Left({ left, rate }: { left: Money; rate: number | null }) {
   )
 }
 
-/** La lecture d'un membre, hors filtre : chacun décide sur son compte. */
-function MemberRow({ saving }: { saving: MemberSaving }) {
-  const members = useMemberMap()
-  const currency = useCurrency()
-  const member = members.get(saving.memberId)
-  const over = saving.left < 0
-
-  return (
-    <Tile
-      className="gap-3"
-      label={tpl(
-        fr.savings.srMemberSaving,
-        member?.name ?? '',
-        formatMoney(saving.capacity, currency),
-        formatMoney(saving.saved, currency),
-        formatMoney(saving.left, currency),
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <Dot color={member?.color ?? 'var(--cat-rest)'} />
-        <span className="t-body min-w-0 flex-1 truncate font-medium">{member?.name ?? ''}</span>
-      </div>
-      <ul className="flex flex-col gap-1.5 border-t border-border pt-3">
-        <Term label={fr.savings.capacity} value={saving.capacity} />
-        {/* Signé, comme la ventilation : un mois de reprise rend un versé
-            négatif, et le montrer positif serait un chiffre faux. */}
-        <li className="flex items-baseline gap-3">
-          <span className="t-label min-w-0 flex-1 truncate">{fr.savings.placedTotal}</span>
-          <Amount value={saving.saved} size="body" signed className="shrink-0" />
-        </li>
-        <li className="flex items-baseline gap-3">
-          <span className="t-label min-w-0 flex-1 truncate">
-            {over ? fr.savings.over : fr.savings.left}
-          </span>
-          <Amount
-            value={abs(saving.left)}
-            size="body"
-            tone={over ? 'danger' : 'default'}
-            className="shrink-0"
-          />
-        </li>
-      </ul>
-    </Tile>
-  )
-}
-
 /**
  * L'écran de l'épargne — celui qu'ouvre la tuile Capacité du mois.
  *
- * Le mois répond « combien peux-tu mettre de côté » et s'arrête là. La question
- * suivante — où le placer, et combien reste-t-il à répartir entre les supports —
- * n'avait aucun écran : les versements se noyaient dans les sorties du mois, et
- * le seul chiffre qui les mentionnait était une note sous un donut.
+ * Il répond désormais à deux questions qui ne se confondent pas, dans cet
+ * ordre : **combien j'ai, et où** (le stock, relevé support par support), puis
+ * **ce que le mois y met** (le flux, lu sur les `Entry`). La v1 ne savait dire
+ * que le second, et le cahier assumait de n'avoir « pas de bilan patrimonial » ;
+ * la lecture reste bornée à l'épargne, mais elle existe.
  *
- * La lecture est individuelle par construction. L'épargne est le seul chiffre du
- * mois qui n'a aucun sens au foyer : deux personnes qui dégagent 300 € et 900 €
- * n'ont pas « 1 200 € à placer », elles ont deux décisions à prendre sur deux
- * comptes. Sous filtre, l'écran répond pour la personne, sa part des charges
- * communes comprise ; hors filtre, il pose les colonnes côte à côte plutôt
- * qu'une somme qui ne se décide nulle part.
+ * Les deux ne s'additionnent jamais. Une valorisation n'est pas une opération —
+ * elle n'entre ni dans le solde du mois, ni dans la capacité, ni dans le versé —
+ * et un versement n'écrase aucune valorisation : sur un placement, la valeur
+ * bouge aussi avec le marché.
+ *
+ * **La lecture est individuelle, et elle n'a pas d'autre forme.** L'épargne est
+ * le seul chiffre de l'app qui n'a aucun sens au foyer : deux personnes qui ont
+ * 12 000 € et 8 000 € de côté n'ont pas « 20 000 € », et deux qui dégagent 300 €
+ * et 900 € n'ont pas « 1 200 € à placer » — elles ont deux comptes, deux
+ * capacités et deux décisions, dont aucune ne se prend sur une somme. L'écran ne
+ * propose donc ni « Tout le monde » ni « Commun », seulement les personnes, et
+ * il s'assure qu'une est choisie (`useIndividualScope`). Le stock et le flux
+ * suivent la même personne, par le même filtre.
  */
 export function SavingsPage() {
   const navigate = useNavigate()
   const totals = useKindTotals(true)
-  const filter = useMemberFilter()
   const members = useMembers()
-  const perMember = useMemberSavings()
+  const memberMap = useMemberMap()
+  const supports = useScopedSavingSupports()
+  /* Pose une personne quand aucune ne l'est : une rangée de pilules dont aucune
+     n'est active laisserait croire à une lecture qui n'existe pas. */
+  const owner = useIndividualScope()
 
   const capacity = savingCapacity(totals)
   const left = savingLeft(totals)
   const rate = savingRate(totals)
-  const nothing = add(totals.resource, add(totals.charge, add(totals.debt, totals.saving))) === ZERO
+  const noFlow = add(totals.resource, add(totals.charge, add(totals.debt, totals.saving))) === ZERO
+  const nothing = noFlow && supports.length === 0
 
   return (
     <>
-      {/* Les deux gestes de l'écran, là où la question se pose : il disait ce
-          qu'on pouvait placer sans offrir de le faire, et reprendre sur un
-          livret n'existait nulle part. */}
+      {/* Les trois gestes de l'écran, là où la question se pose. Le support
+          d'abord : sans lui, les deux autres n'ont pas de destination. */}
       <PageTitle title={fr.savings.title}>
         <Button
           size="sm"
           onClick={() => {
-            void navigate(entryNewPath({ direction: 'out', saving: true }))
+            void navigate(SUPPORT_NEW_PATH)
           }}
         >
           <Plus size={18} />
+          {fr.savings.supportAdd}
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            void navigate(entryNewPath({ direction: 'out', saving: true }))
+          }}
+        >
           {fr.entry.savingIn}
         </Button>
         <Button
@@ -270,31 +463,33 @@ export function SavingsPage() {
           {fr.entry.savingOut}
         </Button>
       </PageTitle>
-      <MonthHeader prorataNote withCommon={false} />
+      <MonthHeader prorataNote personsOnly />
 
       {nothing ? (
-        <EmptyState message={fr.savings.empty} />
+        <EmptyState
+          message={members.length === 0 ? fr.savings.supportsNoMember : fr.savings.supportsEmpty}
+          {...(members.length === 0
+            ? {}
+            : {
+                actionLabel: fr.savings.supportAdd,
+                onAction: () => {
+                  void navigate(SUPPORT_NEW_PATH)
+                },
+              })}
+        />
       ) : (
         <div className="flex max-w-3xl flex-col gap-4">
           <p className="t-label">{fr.savings.subtitle}</p>
 
+          {/* Le stock d'abord : c'est la question qu'on se pose en arrivant. */}
+          <Total net={totals.saving} owner={owner === null ? null : (memberMap.get(owner)?.name ?? null)} />
+          <Supports />
+
+          {/* Puis le flux du mois, inchangé — la capacité, ce qui est placé, ce
+              qu'il reste à placer. */}
           <Capacity capacity={capacity} />
           <Placed saved={totals.saving} />
           <Left left={left} rate={rate} />
-
-          {/* Hors filtre et à plusieurs : les deux lectures côte à côte, pour
-              ne pas avoir à passer d'une pastille à l'autre pour comparer. */}
-          {filter === undefined && members.length > 1 && perMember.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <Eyebrow>{fr.savings.byMember}</Eyebrow>
-                <p className="t-label">{fr.savings.byMemberHint}</p>
-              </div>
-              {perMember.map((saving) => (
-                <MemberRow key={saving.memberId} saving={saving} />
-              ))}
-            </section>
-          )}
 
           <Tile className="gap-2">
             <Eyebrow>{fr.savings.method}</Eyebrow>
@@ -302,6 +497,9 @@ export function SavingsPage() {
             <p className="t-label">{fr.savings.methodExcluded}</p>
             <p className="t-label">{fr.savings.methodShared}</p>
             <p className="t-label">{fr.savings.methodBalance}</p>
+            {/* La règle qui fait exister cet écran : un relevé n'est pas un
+                mouvement. Dite ici, où les deux lectures se touchent. */}
+            <p className="t-label">{fr.savings.valueMethod}</p>
           </Tile>
         </div>
       )}

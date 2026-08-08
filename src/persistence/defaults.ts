@@ -227,6 +227,8 @@ export function emptyData(): Data {
     entries: [],
     debts: [],
     advances: [],
+    savingSupports: [],
+    savingValuations: [],
     months: [],
     settings: { theme: 'system', palette: DEFAULT_PALETTE, currency: 'EUR', monthStartsOn: 1 },
   }
