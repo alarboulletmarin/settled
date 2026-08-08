@@ -106,7 +106,15 @@ function Cell({
         // gouttières et cadre = 50px). En dessous, un ratio ne changerait rien :
         // la taille minimale du contenu gagne, ce qui est bien ce qu'on veut.
         'min-[448px]:aspect-square',
-        'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2',
+        /* Le pressé, que le DS §6 exige sur tout ce qu'on peut actionner et
+           que la grille n'avait pas : quarante-deux cases visées au doigt, sur
+           un écran qui n'a pas de curseur, ne répondaient rien du tout.
+           `scale` et non `transform` — Tailwind 4 pose `scale-*` sur la
+           propriété du même nom, et une transition déclarée sur `transform` ne
+           la verrait pas. Le retrait de 4 % tient dans la gouttière de la
+           grille : une case ne peut pas chevaucher sa voisine. */
+        'transition-[background-color,scale] duration-[var(--dur)] ease-ds',
+        'hover:bg-surface-2 active:scale-[0.96] active:bg-surface-2',
       )}
     >
       {/* Deux formes sur la même pilule, jamais deux teintes (DS §8) :

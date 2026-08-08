@@ -13,12 +13,17 @@ export type ButtonProps = {
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'>
 
 /* Lime et violet ne sont jamais une `color` : ils remplissent le fond, et le
-   texte prend --accent-fg / --accent-2-fg. */
+   texte prend --accent-fg / --accent-2-fg.
+
+   L'état pressé n'était nulle part, alors que le DS §6 l'exige sur tout ce
+   qu'on peut actionner : « la moitié des écrans n'a pas de curseur », et un
+   bouton qui n'a qu'un survol ne répond pas au doigt. Le fond s'assombrit là où
+   il y en a un ; là où il n'y en a pas, le fond *est* le pressé. */
 const VARIANT: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-accent-fg hover:brightness-95',
-  secondary: 'bg-surface-2 text-text hover:brightness-[0.97]',
-  ghost: 'bg-transparent text-text hover:bg-surface-2',
-  danger: 'bg-danger-fill text-danger-fg hover:brightness-95',
+  primary: 'bg-accent text-accent-fg hover:brightness-95 active:brightness-90',
+  secondary: 'bg-surface-2 text-text hover:brightness-[0.97] active:brightness-[0.94]',
+  ghost: 'bg-transparent text-text hover:bg-surface-2 active:bg-surface-2',
+  danger: 'bg-danger-fill text-danger-fg hover:brightness-95 active:brightness-90',
 }
 
 /* Les deux tailles font 44px de haut : le DS §8 impose cette cible tactile.
@@ -44,7 +49,13 @@ export function Button({
       disabled={disabled}
       className={cn(
         'inline-flex shrink-0 items-center justify-center gap-2 rounded-input font-medium',
-        'transition-[filter,background-color] duration-[var(--dur)] ease-ds',
+        /* Le retrait accompagne l'assombrissement, et il porte à lui seul le
+           pressé de la variante `secondary` en thème sombre, où `--surface-2`
+           est presque noir et où l'assombrir ne se voit pas. `scale` et non
+           `transform` : Tailwind 4 pose `scale-*` sur la propriété du même nom,
+           et une transition déclarée sur `transform` ne la verrait pas. */
+        'transition-[filter,background-color,scale] duration-[var(--dur)] ease-ds',
+        'active:scale-[0.98]',
         'disabled:pointer-events-none disabled:opacity-40',
         VARIANT[variant],
         SIZE[size],

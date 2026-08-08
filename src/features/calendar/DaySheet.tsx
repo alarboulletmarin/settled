@@ -48,20 +48,42 @@ export function DaySheet({ date, entries, onOpen, onAdd, onClose }: DaySheetProp
       open={date !== null}
       onClose={onClose}
       title={date === null ? '' : formatWeekdayDate(date)}
+      pullToClose
+      footerLead={
+        /* Le verbe, que la rangée n'a pas la place de porter trois fois.
+           `aria-hidden` parce que chaque bouton le porte déjà dans son nom
+           accessible : un lecteur d'écran l'entendrait sinon quatre fois. Et
+           `t-eyebrow` nu, pas le composant `Eyebrow` — celui-ci rend une pilule
+           `--surface-2`, qui est une étiquette de tuile et non une légende. */
+        <p aria-hidden="true" className="t-eyebrow text-muted">
+          {fr.calendar.addLead}
+        </p>
+      }
       footer={
         /* Le jour ouvert est déjà la réponse à « quelle date ? » : la saisie
            s'ouvre dessus plutôt que de la redemander. Et la nature se choisit
            ici, pas dans un formulaire intitulé « dépense » — l'épargne a sa
            porte, comme sur le mois et le bouton flottant.
 
-           Sans le « + » que portait le panneau : le pied de feuille partage sa
-           largeur en trois, ce qui laisse 93px par bouton à 320px, et le glyphe
-           s'y faisait écraser contre son libellé. Une icône qui n'aide ni à agir
-           ni à se repérer décore (DS §9), et une icône rognée fait moins que
-           décorer. */
+           Toujours sans le « + » que portait le panneau, et la mesure est plus
+           dure qu'on ne l'avait écrite : le pied partage 280px en trois, moins
+           deux gouttières, donc 88px par bouton à 320px de fenêtre. En taille
+           `md` il ne reste que 48px de texte pour « Dépense », qui en demande
+           52 — la rangée débordait déjà sans aucun glyphe. `sm` rend douze
+           pixels par bouton sans toucher aux 44px de haut du DS §8, où le glyphe
+           en réclamerait vingt-quatre de plus.
+
+           « Dépense » mène, comme sur l'état vide de cet écran et sur les portes
+           du bouton flottant : trois endroits, un seul ordre.
+
+           Le nom accessible porte le verbe et contient le libellé visible — la
+           légende au-dessus est une affordance pour l'œil, elle n'est reliée à
+           rien pour un lecteur d'écran. La relier en `aria-labelledby` dirait
+           « Ajouter Dépense », qui n'est pas du français. */
         <>
           <Button
-            variant="secondary"
+            size="sm"
+            aria-label={fr.entry.addOut}
             onClick={() => {
               onAdd('out')
             }}
@@ -69,7 +91,9 @@ export function DaySheet({ date, entries, onOpen, onAdd, onClose }: DaySheetProp
             {fr.entry.newOut}
           </Button>
           <Button
+            size="sm"
             variant="secondary"
+            aria-label={fr.entry.addIn}
             onClick={() => {
               onAdd('in')
             }}
@@ -77,7 +101,9 @@ export function DaySheet({ date, entries, onOpen, onAdd, onClose }: DaySheetProp
             {fr.entry.newIn}
           </Button>
           <Button
+            size="sm"
             variant="secondary"
+            aria-label={fr.entry.addSavingAction}
             onClick={() => {
               onAdd('saving')
             }}

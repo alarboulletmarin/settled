@@ -45,7 +45,10 @@ export function ListRow({
      la pastille en pointillés et par la couleur de texte secondaire. */
   const classes = cn(
     'flex h-14 w-full items-center gap-3 rounded-inner px-3 text-left',
-    onClick && 'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2',
+    /* Le pressé autant que le survol : le DS §6 le demande sur tout ce qu'on
+       peut actionner, et une ligne de liste est ce qu'on vise le plus au doigt. */
+    onClick &&
+      'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2 active:bg-surface-2',
     className,
   )
 

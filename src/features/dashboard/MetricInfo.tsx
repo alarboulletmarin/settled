@@ -69,7 +69,7 @@ export function MetricInfo({
   const content = metric === null ? null : CONTENT[metric.key]
 
   return (
-    <Sheet open={content !== null} onClose={onClose} title={content?.title ?? ''}>
+    <Sheet open={content !== null} onClose={onClose} title={content?.title ?? ''} pullToClose>
       {content !== null && metric !== null && (
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-baseline gap-x-3">
