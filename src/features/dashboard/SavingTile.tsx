@@ -8,6 +8,7 @@ import { useKindTotals } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { SavingsIcon } from '@/ui/Icons'
+import { Ring } from '@/ui/Ring'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 
@@ -45,6 +46,12 @@ import { useCurrency } from '@/ui/currency'
  * versements du foyer. Hors filtre et sur un téléphone, le mois ne disait donc
  * nulle part ce qu'il avait mis de côté, quand son solde comptait le versement
  * comme une dépense.
+ *
+ * Les deux clauses s'affichent désormais **toutes les deux, à toutes les
+ * largeurs**, l'une sous l'autre. Elles se partageaient la ligne du bas d'une
+ * tuile plate et n'y tenaient pas ensemble : chacune avait donc son seuil, et
+ * il existait des largeurs où l'une des deux moitiés du chiffre manquait à
+ * l'écran. Deux rangées de hauteur règlent ce que deux seuils ne réglaient pas.
  */
 export function SavingTile() {
   const totals = useKindTotals(true)
@@ -72,40 +79,66 @@ export function SavingTile() {
       ? tpl(fr.savings.overHint, formatMoney(abs(left), currency))
       : tpl(fr.dashboard.savingLeft, formatMoney(left, currency))
 
+  /* La part de la capacité déjà placée : c'est ce que l'anneau dessine, et
+     c'est la question qu'on se pose devant ce chiffre — « combien j'ai déjà
+     mis de côté sur ce que le mois dégage ». `Ring` borne lui-même entre 0 et
+     1, ce qui range aussi bien le mois où l'on place plus que la capacité que
+     celui où l'on reprend. */
+  const placedShare = capacity > 0 && totals.saving > ZERO ? totals.saving / capacity : 0
+
   return (
-    // 4×1 et non 2×1 : « CAPACITÉ D'ÉPARGNE » ne tient pas dans la centaine de
-    // pixels utiles d'une demi-colonne mobile, et c'est de toute façon un
-    // chiffre de tête de gondole, pas une valeur d'appoint.
+    /* **`2x2`, et non plus `4x1`.** Elle portait deux clauses et un chiffre
+       dans les 56px utiles d'une tuile plate, où l'étiquette et le nombre en
+       prennent déjà 52 : les deux lectures se disputaient la ligne du bas et
+       s'affichaient à tour de rôle, chacune derrière son seuil. Sur deux
+       rangées elles se posent l'une sous l'autre et se lisent toutes les deux,
+       à toutes les largeurs.
+       La hauteur se remplit parce qu'un anneau l'accompagne, comme sur les deux
+       autres `2x2` de la grille — sans lui, une tuile de cette taille qui ne
+       porte que du texte laisse un vide de quarante pixels, ce que le format
+       « crédits » démontrait juste à côté. Le gabarit est celui du solde : le
+       chiffre sur sa ligne, l'anneau de 48px sous lui avec la lecture à côté.
+       Les 80px des donuts voisins ne conviendraient pas — ils ne laissent que
+       89px de colonne à 1024px, où « 1 717,05 € » en demande 128. */
     <Tile
-      span="4x1"
+      span="2x2"
       className="justify-between"
       onClick={() => {
         void navigate(SAVINGS_PATH)
       }}
       label={tpl(fr.dashboard.showSavings, fr.dashboard.capacity)}
-      affordance={{ kind: 'navigate', destination: fr.savings.title }}
+      /* Repère nu, sans nommer l'écran d'arrivée : « CAPACITÉ D'ÉPARGNE » est
+         l'étiquette la plus longue de la grille, et une `2x2` n'offre que 185px
+         à 1024px. « Épargne › » en demandait soixante de plus et passait par
+         dessus. `SplitTile` et `SettlementTile` passent le leur nu pour la même
+         raison exactement. */
+      affordance={{ kind: 'navigate' }}
     >
       <Eyebrow icon={SavingsIcon}>{fr.dashboard.capacity}</Eyebrow>
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <Amount value={capacity} size="tile-fit" tone={capacity < 0 ? 'danger' : 'default'} />
-        {/* Deux clauses et deux seuils, parce qu'elles ne font pas la même
-            longueur. Le versement tient en trois mots et passe donc par la
-            requête de conteneur de `.tile-hint`, comme les deux tuiles de flux :
-            c'est ce qui le rend lisible sur un téléphone, où la tuile prend
-            toute la largeur. Le reste, lui, est une phrase — « les versements
-            dépassent la capacité de 57 € » — et garde le seuil de viewport,
-            faute de rangée assez haute pour une seconde ligne sous 1024px.
-            Réunis en une seule, ils ne tenaient à aucune largeur sous ce
-            seuil-là, et le versement ne s'affichait donc nulle part. Les deux
-            restent dans le DOM à toutes les largeurs : ce qui ne s'affiche pas
-            se lit quand même. */}
-        {placedHint !== null && <span className="t-label tile-hint">{placedHint}</span>}
-        {placedHint !== null && (
-          <span aria-hidden="true" className="t-label max-lg:hidden">
-            ·
-          </span>
-        )}
-        <span className="t-label max-lg:sr-only">{leftHint}</span>
+      <div className="flex flex-col gap-1">
+        {/* L'anneau contre le chiffre, et les deux clauses sur toute la largeur
+            dessous. Posées *à côté* de l'anneau elles n'avaient plus que 129px
+            à 1024px et se coupaient toutes les deux en deux lignes ; ici elles
+            disposent des 185px entiers et tiennent chacune sur la sienne.
+            L'anneau, lui, se contente des 48px qu'un chiffre laisse à côté de
+            lui — les 80px des donuts voisins ne laisseraient pas la place au
+            montant. */}
+        <div className="flex min-w-0 items-center gap-2">
+          <Ring
+            size={48}
+            thickness={8}
+            value={placedShare}
+            label={fr.dashboard.capacity}
+            className="shrink-0"
+          />
+          <Amount value={capacity} size="tile-fit" tone={capacity < 0 ? 'danger' : 'default'} />
+        </div>
+        {/* Les deux clauses, chacune sur sa ligne et sans seuil : ce sont les
+            deux moitiés de la capacité, elles doivent la redonner, et trois
+            chiffres dont deux s'affichent à tour de rôle se lisent comme une
+            erreur de calcul. C'est ce que la rangée simple ne permettait pas. */}
+        {placedHint !== null && <span className="t-label">{placedHint}</span>}
+        <span className="t-label">{leftHint}</span>
       </div>
     </Tile>
   )

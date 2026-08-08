@@ -120,8 +120,8 @@ export function Dashboard({
       <SettlementTile />
       <BreakdownTile {...(onShowFamily === undefined ? {} : { onShowFamily })} />
       <SplitTile />
-      <CreditsTile />
       {!common && <SavingTile />}
+      <CreditsTile />
     </BentoGrid>
   )
 }
