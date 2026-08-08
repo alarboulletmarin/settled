@@ -273,6 +273,18 @@ export const fr = {
     writeFailedLabel: 'Échec d’enregistrement',
     exportNow: 'Exporter maintenant',
 
+    /* L'avis de conservation : le niveau du dessous, et il se lit à sa langue.
+       Rien n'a échoué, donc rien n'est au passé ni en rouge — on constate un
+       engagement qui n'a pas été pris, pas une perte. Et surtout aucune phrase
+       ne prétend savoir *pourquoi* : « mode privé détecté » serait faux un jour
+       sur deux, et un avertissement qui se trompe sur la cause discrédite le
+       conseil qui, lui, reste bon. */
+    durabilityTitle: 'Tes données sont enregistrées sur cet appareil',
+    durabilityBody:
+      'Ce navigateur ne garantit pas leur conservation dans la durée. Un export est la seule copie qui ne dépende pas de lui.',
+    durabilityLabel: 'Conservation non garantie',
+    durabilityDismiss: 'Masquer l’avis de conservation',
+
     /* Les trois incidents de connexion. Chacun dit ce qu'il faut faire, et
        aucun ne dit « rechargez la page » sans expliquer pourquoi. */
     blocking:
@@ -336,14 +348,46 @@ export const fr = {
        la lettre du texte courant, et la prose passe en dessous. */
     stateKept: 'Tes données sont conservées',
     stateFragile: 'Rien n’est promis',
-    persisted: 'Le navigateur s’est engagé à garder tes données.',
+    /* Le troisième état, qui n'existait pas. Un navigateur sans l'API de
+       stockage ne *refuse* pas : il ne répond pas, et l'app écrivait jusqu'ici
+       « rien n'est promis » sur la foi de ce silence. Le conseil est le même,
+       l'affirmation ne l'est pas. */
+    stateUnknown: 'Ce navigateur ne dit rien',
+    persisted:
+      'Le navigateur s’est engagé à garder tes données tant que tu ne les effaces pas toi-même.',
     notPersisted:
       'Le navigateur n’a rien promis : il peut effacer tes données s’il manque de place. Un export régulier reste la vraie protection.',
+    persistUnknown:
+      'Ce navigateur ne dit pas s’il conserve tes données. Ce n’est pas un refus, mais on ne peut pas s’y fier : un export régulier reste la vraie protection.',
+    /* Ce qu'on ne pouvait pas dire tant que le fait d'avoir demandé n'était pas
+       gardé : « on n'a jamais demandé » et « on a demandé, il a refusé » ne se
+       lisaient qu'à la même phrase. */
+    persistAsked: 'La conservation lui a déjà été demandée.',
+    /* L'installation, dite là où la conservation se lit et nulle part ailleurs :
+       la présentation porte déjà le bandeau d'installation, et le répéter sur
+       le tableau de bord ferait de l'app une réclame pour elle-même. */
+    installHint:
+      'Une app installée sur l’écran d’accueil est moins exposée : iOS efface les données des sites qu’on n’a pas ouverts depuis environ une semaine.',
     persistAsk: 'Demander à les garder',
     persistGranted: 'C’est accordé.',
     persistRefused: 'Le navigateur a refusé. Rien n’est perdu — exporte plus souvent.',
+    persistSilent: 'Ce navigateur ne répond pas à la question. Rien n’est perdu — exporte plus souvent.',
     usage: '%s occupés sur %s disponibles.',
     usageUnknown: 'Ce navigateur ne dit pas la place qu’il te laisse.',
+
+    /* Le résumé de la vue des données : trois lignes, une étiquette et une
+       valeur chacune. C'est là qu'on vient comprendre où sont ses données et
+       depuis quand elles ne sont copiées nulle part — la vue « Sur cet
+       appareil » garde le détail, les chiffres et les gestes. */
+    placeLabel: 'Stockage',
+    placeValue: 'Sur cet appareil',
+    keepLabel: 'Conservation',
+    keepPersistent: 'Persistante',
+    keepFragile: 'Non garantie par ce navigateur',
+    keepUnknown: 'Non communiquée par ce navigateur',
+    lastExportLabel: 'Dernier export',
+    lastExportNever: 'Jamais',
+    statusMore: 'Détail du stockage sur cet appareil',
 
     backups: 'Sauvegardes locales',
     backupsHint:
@@ -510,8 +554,9 @@ export const fr = {
     export: 'Exporter mes données',
     exportHint: 'Un fichier .json contenant tout, à ranger où tu veux.',
     exported: 'Export téléchargé',
-    lastExport: 'Dernier export : %s',
-    neverExported: 'Jamais exporté.',
+    /* La date du dernier export ne se dit plus ici : elle a rejoint le résumé
+       de la vue, où elle se lit à côté de ce que le navigateur promet — les
+       deux faits ne veulent rien dire l'un sans l'autre. */
 
     /* L'autre sortie du même fichier : la feuille de partage du système. Le
        bouton n'existe que là où elle accepte un .json — un bouton qui ouvre
@@ -1554,6 +1599,14 @@ export const fr = {
        qu'une moitié se paie un jour. */
     backup:
       'C’est aussi la contrepartie : vider ce navigateur les efface. Exporte un fichier de temps en temps, depuis les réglages.',
+    /* La même contrepartie, quand ce navigateur a déjà répondu qu'il ne
+       s'engageait pas. Elle ne remplace la phrase ordinaire que dans ce cas-là
+       — pas sur un simple « on ne sait pas », pas avant d'avoir posé la
+       question : annoncer une conservation fragile à tout le monde ferait de la
+       phrase honnête un avertissement de plus qu'on n'écoute pas. Et elle ne
+       bloque rien : c'est une ligne de texte sous deux boutons. */
+    backupFragile:
+      'Et ce navigateur ne garantit pas de les conserver. Avant de saisir beaucoup de choses, prends l’habitude d’exporter un fichier : c’est la seule copie qui ne dépend pas de lui.',
 
     /* Seconde étape, facultative. Le cahier §4.1 refuse le questionnaire de
        configuration, et il a raison — mais « ne rien exiger » et « ne rien

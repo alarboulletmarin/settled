@@ -6,25 +6,68 @@ import { makeData } from '@/domain/fixtures'
 import { fr } from '@/i18n/fr'
 import { backupDaily, clearBackups } from '@/persistence/backups'
 import { closeDb } from '@/persistence/db'
+import { useStorageHealth } from '@/persistence/health'
 import { useStore } from '@/store/store'
 import { StorageSection } from './StorageSection'
+
+/** jsdom n'expose pas `navigator.storage` : on le pose et on le retire. */
+function withStorage(value: Partial<StorageManager> | undefined): void {
+  if (value === undefined) {
+    Reflect.deleteProperty(navigator, 'storage')
+    return
+  }
+  Object.defineProperty(navigator, 'storage', { value, configurable: true })
+}
 
 describe('StorageSection', () => {
   beforeEach(async () => {
     await clearBackups()
+    useStorageHealth.setState({
+      durable: 'unknown',
+      probed: false,
+      asked: false,
+      lastWriteAt: null,
+      lastFailureAt: null,
+    })
   })
 
   afterEach(() => {
+    withStorage(undefined)
     closeDb()
   })
 
-  it('avertit quand le navigateur n’a rien promis, et propose de demander', async () => {
-    // jsdom n'expose pas `navigator.storage` : c'est le cas d'un navigateur qui
-    // ne s'engage à rien, et c'est celui qu'il faut dire.
+  /* Trois états, trois phrases. Le navigateur muet ne *refuse* pas — l'écran
+     l'écrivait pourtant, parce que l'absence d'API et le refus arrivaient tous
+     deux sous la forme d'un `false`. */
+  it('ne prête pas un refus à un navigateur qui n’a pas l’API', async () => {
+    withStorage(undefined)
     render(<StorageSection />)
-    expect(await screen.findByText(fr.storage.notPersisted)).toBeInTheDocument()
+    expect(await screen.findByText(fr.storage.persistUnknown)).toBeInTheDocument()
+    expect(screen.queryByText(fr.storage.notPersisted)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: fr.storage.persistAsk })).toBeInTheDocument()
     expect(screen.getByText(fr.storage.usageUnknown)).toBeInTheDocument()
+  })
+
+  it('dit le refus quand le navigateur a bien refusé', async () => {
+    withStorage({ persisted: () => Promise.resolve(false) })
+    render(<StorageSection />)
+    expect(await screen.findByText(fr.storage.notPersisted)).toBeInTheDocument()
+  })
+
+  it('se tait et retire le bouton quand la conservation est acquise', async () => {
+    withStorage({ persisted: () => Promise.resolve(true) })
+    render(<StorageSection />)
+    expect(await screen.findByText(fr.storage.persisted)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: fr.storage.persistAsk })).not.toBeInTheDocument()
+  })
+
+  it('demande la conservation et rapporte ce qui a été répondu', async () => {
+    withStorage({ persisted: () => Promise.resolve(false), persist: () => Promise.resolve(true) })
+    render(<StorageSection />)
+
+    await userEvent.click(await screen.findByRole('button', { name: fr.storage.persistAsk }))
+    expect(await screen.findByText(fr.storage.persisted)).toBeInTheDocument()
+    expect(useStorageHealth.getState()).toMatchObject({ durable: true, asked: true })
   })
 
   it('dit qu’il n’y a pas encore de sauvegarde plutôt que de laisser un vide', async () => {

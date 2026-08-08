@@ -3,8 +3,9 @@ import type { ISODate } from '@/domain/date'
 import type { Data } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatBytes, formatDate, tpl } from '@/i18n/format'
-import { type StorageUsage, estimateStorage, isPersisted, requestPersistence } from '@/lib/storage'
+import { type StorageUsage, estimateStorage } from '@/lib/storage'
 import { type BackupEntry, listBackups, readBackup } from '@/persistence/backups'
+import { askDurability, probeDurability, useStorageHealth } from '@/persistence/health'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -13,9 +14,15 @@ import { DeviceIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 
-/** Ce qu'on relit après chaque geste : la vérité vient du navigateur. */
+/**
+ * Ce qu'on relit après chaque geste : la vérité vient du navigateur.
+ *
+ * La durabilité n'est plus ici. Elle vivait dans cet état local, relue par cet
+ * écran et par lui seul — si bien qu'elle n'existait nulle part ailleurs, et
+ * qu'aucun bandeau ne pouvait s'en servir. Elle est passée dans
+ * `persistence/health`, avec le reste de ce qui décrit l'appareil.
+ */
 type DeviceState = {
-  persisted: boolean
   usage: StorageUsage | null
   backups: BackupEntry[]
 }
@@ -38,24 +45,22 @@ type PendingRestore = { on: ISODate; entry: BackupEntry; data: Data }
  */
 export function StorageSection() {
   const replaceData = useStore((s) => s.replaceData)
-  const [state, setState] = useState<DeviceState>({
-    persisted: false,
-    usage: null,
-    backups: [],
-  })
+  const durable = useStorageHealth((s) => s.durable)
+  const asked = useStorageHealth((s) => s.asked)
+  const [state, setState] = useState<DeviceState>({ usage: null, backups: [] })
   const [pending, setPending] = useState<PendingRestore | null>(null)
 
   const read = useCallback(async (): Promise<DeviceState> => {
-    const [persisted, usage, backups] = await Promise.all([
-      isPersisted(),
-      estimateStorage(),
-      listBackups(),
-    ])
-    return { persisted, usage, backups }
+    const [usage, backups] = await Promise.all([estimateStorage(), listBackups()])
+    return { usage, backups }
   }, [])
 
   useEffect(() => {
     let alive = true
+    /* La durabilité se relit à l'ouverture de cet écran : elle a pu être
+       accordée depuis l'hydratation — par un import, ou par le navigateur qui
+       change d'avis en cours de session — et c'est ici qu'on vient vérifier. */
+    void probeDurability()
     void read().then((next) => {
       if (alive) setState(next)
     })
@@ -69,8 +74,17 @@ export function StorageSection() {
   }
 
   const ask = async (): Promise<void> => {
-    const granted = await requestPersistence()
-    toast(granted ? fr.storage.persistGranted : fr.storage.persistRefused)
+    const answer = await askDurability()
+    /* Trois réponses possibles, donc trois phrases. « Le navigateur a refusé »
+       sur un navigateur qui n'a pas l'API lui prêterait une décision qu'il n'a
+       pas prise. */
+    toast(
+      answer === true
+        ? fr.storage.persistGranted
+        : answer === false
+          ? fr.storage.persistRefused
+          : fr.storage.persistSilent,
+    )
     refresh()
   }
 
@@ -92,23 +106,44 @@ export function StorageSection() {
 
             L'état en premier et dans la lettre du texte courant : c'est la seule
             chose qu'on vient vérifier ici. L'explication suit, à sa place. */}
-        <p className="t-body">{state.persisted ? fr.storage.stateKept : fr.storage.stateFragile}</p>
-        <p className="t-label">{state.persisted ? fr.storage.persisted : fr.storage.notPersisted}</p>
+        <p className="t-body">
+          {durable === true
+            ? fr.storage.stateKept
+            : durable === false
+              ? fr.storage.stateFragile
+              : fr.storage.stateUnknown}
+        </p>
+        <p className="t-label">
+          {durable === true
+            ? fr.storage.persisted
+            : durable === false
+              ? fr.storage.notPersisted
+              : fr.storage.persistUnknown}
+        </p>
+        {/* Le fait d'avoir déjà demandé, quand on l'a fait et qu'on a été
+            refusé : sans lui, le bouton ci-dessous ressemble à une case qu'on
+            aurait oublié de cocher. */}
+        {durable === false && asked && (
+          <p className="t-label">{fr.storage.persistAsked}</p>
+        )}
         <p className="t-label tnum">
           {state.usage === null
             ? fr.storage.usageUnknown
             : tpl(fr.storage.usage, formatBytes(state.usage.usage), formatBytes(state.usage.quota))}
         </p>
-        {!state.persisted && (
-          <Button
-            variant="secondary"
-            className="w-fit"
-            onClick={() => {
-              void ask()
-            }}
-          >
-            {fr.storage.persistAsk}
-          </Button>
+        {durable !== true && (
+          <>
+            <p className="t-label">{fr.storage.installHint}</p>
+            <Button
+              variant="secondary"
+              className="w-fit"
+              onClick={() => {
+                void ask()
+              }}
+            >
+              {fr.storage.persistAsk}
+            </Button>
+          </>
         )}
       </Tile>
 

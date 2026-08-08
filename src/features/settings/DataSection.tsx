@@ -1,7 +1,10 @@
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { SETTINGS_STORAGE_PATH } from '@/app/routes'
 import { today } from '@/domain/date'
 import { fr } from '@/i18n/fr'
-import { formatDate, tpl } from '@/i18n/format'
+import { formatDate } from '@/i18n/format'
+import { probeDurability, useStorageHealth } from '@/persistence/health'
 import { canShareExport, downloadExport, readLastExport, shareExport } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
@@ -32,6 +35,22 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /**
+ * Une ligne du résumé : ce qu'on décrit, et ce qu'il en est.
+ *
+ * Deux colonnes plutôt qu'une phrase par ligne : trois faits qui se lisent en
+ * diagonale, sans avoir à lire trois propositions pour trouver celui qu'on
+ * était venu vérifier.
+ */
+function Status({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+      <dt className="t-label">{label}</dt>
+      <dd className="t-body">{value}</dd>
+    </div>
+  )
+}
+
+/**
  * Les données qui entrent et qui sortent, rangées par intention.
  *
  * Cinq gestes y vivaient à la file, du plus courant au plus définitif, tous
@@ -46,11 +65,19 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 export function DataSection() {
   const data = useStore((s) => s.data)
   const resetAll = useStore((s) => s.resetAll)
+  const durable = useStorageHealth((s) => s.durable)
   const [lastExport, setLastExport] = useState(readLastExport)
   const [confirming, setConfirming] = useState(false)
   /* Sondé une fois, au premier rendu : la réponse dépend du navigateur et du
      type de fichier, pas de l'état de l'écran. */
   const [canShare] = useState(canShareExport)
+
+  /* Cette vue est le premier endroit où l'on vient après avoir lu un avis de
+     conservation : elle relit donc plutôt que de se fier à ce qui a été
+     constaté à l'hydratation, qui peut dater de plusieurs heures. */
+  useEffect(() => {
+    void probeDurability()
+  }, [])
 
   const doExport = (): void => {
     const on = today()
@@ -77,6 +104,36 @@ export function DataSection() {
 
   return (
     <>
+      {/* Où vivent les données, ce qu'on en promet, et depuis quand elles sont
+          copiées ailleurs — les trois faits qui décident si l'on clique sur le
+          bouton du dessous. Ils étaient répartis entre deux vues : la
+          conservation ici invisible, l'export invisible là-bas. Ce n'est pas
+          une vue de plus, c'est le haut de celle-ci ; « Sur cet appareil »
+          garde le détail, les chiffres, les sauvegardes et le bouton qui
+          redemande, et le lien y mène. */}
+      <Tile className="gap-3">
+        <dl className="flex flex-col gap-2">
+          <Status label={fr.storage.placeLabel} value={fr.storage.placeValue} />
+          <Status
+            label={fr.storage.keepLabel}
+            value={
+              durable === true
+                ? fr.storage.keepPersistent
+                : durable === false
+                  ? fr.storage.keepFragile
+                  : fr.storage.keepUnknown
+            }
+          />
+          <Status
+            label={fr.storage.lastExportLabel}
+            value={lastExport === null ? fr.storage.lastExportNever : formatDate(lastExport)}
+          />
+        </dl>
+        <Link to={SETTINGS_STORAGE_PATH} className="t-label w-fit underline">
+          {fr.storage.statusMore}
+        </Link>
+      </Tile>
+
       <Tile className="gap-4">
         {/* Deux sorties pour un seul fichier, et chacune dit au-dessus ce
             qu'elle fait — le partage n'annonce pas dans la feuille ce qu'on
@@ -86,11 +143,9 @@ export function DataSection() {
         <Block title={fr.settings.backupGroup}>
           <p className="t-label">{fr.settings.exportHint}</p>
           {canShare && <p className="t-label">{fr.settings.shareHint}</p>}
-          <p className="t-label">
-            {lastExport === null
-              ? fr.settings.neverExported
-              : tpl(fr.settings.lastExport, formatDate(lastExport))}
-          </p>
+          {/* La date du dernier export ne se redit pas ici : elle est trois
+              centimètres au-dessus, dans le résumé, où elle a un sens à côté de
+              ce que le navigateur promet. */}
           <div className="flex flex-wrap gap-2">
             <Button onClick={doExport}>{fr.settings.export}</Button>
             {canShare && (

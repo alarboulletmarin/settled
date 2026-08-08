@@ -60,6 +60,11 @@ async function freshStore(options: {
   return { store: (await import('./store')).useStore, posted }
 }
 
+/** jsdom ne pilote pas la visibilité : on la pose à la main. */
+function setVisibility(state: DocumentVisibilityState): void {
+  Object.defineProperty(document, 'visibilityState', { value: state, configurable: true })
+}
+
 describe('store — échecs de persistance', () => {
   beforeEach(async () => {
     await clearDocument()
@@ -374,5 +379,132 @@ describe('store — l’horizon des mois', () => {
     store.getState().setYm(before)
 
     expect(opened(store)).not.toContain(before)
+  })
+})
+
+/* ============================================================================
+ * Ce que la santé du stockage retient de la chaîne complète : mutation, file,
+ * transaction, succès ou échec. Une saisie n'est pas en sécurité parce que
+ * l'écran a changé — elle l'est quand la transaction a commis, et c'est la
+ * seule chose que ces marques disent.
+ * ==========================================================================*/
+describe('store — la santé du stockage', () => {
+  beforeEach(async () => {
+    await clearDocument()
+  })
+
+  afterEach(() => {
+    vi.doUnmock('@/persistence/db')
+    vi.doUnmock('@/persistence/tabs')
+    closeDb()
+    setVisibility('visible')
+  })
+
+  it('date l’écriture qui aboutit, puis celle qui rate, puis le retour', async () => {
+    const write = vi
+      .fn<(data: Data, rev: number) => Promise<void>>()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('quota dépassé'))
+      .mockResolvedValue(undefined)
+    const { store } = await freshStore({ write })
+    const { useStorageHealth } = await import('@/persistence/health')
+
+    store.getState().finishOnboarding()
+    await store.getState().flush()
+    expect(useStorageHealth.getState().lastWriteAt).not.toBeNull()
+    expect(useStorageHealth.getState().lastFailureAt).toBeNull()
+
+    store.getState().mutate((data) => ({ ...data, household: { ...data.household, name: 'A' } }))
+    await store.getState().flush()
+    const failedAt = useStorageHealth.getState().lastFailureAt
+    expect(failedAt).not.toBeNull()
+
+    store.getState().mutate((data) => ({ ...data, household: { ...data.household, name: 'B' } }))
+    await store.getState().flush()
+    /* L'incident garde sa date — c'est `error` qui décide de ce qui s'affiche,
+       pas la santé, qui n'est qu'un relevé —, et la dernière écriture réussie
+       ne lui est plus antérieure : c'est ça, un retour à la normale. */
+    expect(useStorageHealth.getState().lastFailureAt).toBe(failedAt)
+    expect(useStorageHealth.getState().lastWriteAt ?? 0).toBeGreaterThanOrEqual(failedAt ?? 0)
+  })
+
+  /* L'anneau vit derrière l'écriture du document : le jour où celle-ci apprend
+     à échouer proprement, il faut vérifier qu'il n'est pas parti avec. Rien
+     n'est archivé sur une écriture ratée — il n'y a rien à archiver, la
+     transaction n'a pas commis — et la première qui repasse le fait. */
+  it('archive encore après un échec suivi d’une écriture qui passe', async () => {
+    await clearBackups()
+    await saveDocument(makeData({ household: { name: 'Au démarrage', members: [] } }), 1)
+    const write = vi
+      .fn((data: Data, rev: number) => saveDocument(data, rev))
+      .mockRejectedValueOnce(new Error('quota dépassé'))
+    const { store } = await freshStore({ write })
+    await store.getState().hydrate()
+
+    store.getState().mutate((data) => ({ ...data, household: { ...data.household, name: 'A' } }))
+    await store.getState().flush()
+    expect(store.getState().error?.kind).toBe('write')
+    await expect(listBackups()).resolves.toStrictEqual([])
+
+    store.getState().mutate((data) => ({ ...data, household: { ...data.household, name: 'B' } }))
+    await store.getState().flush()
+    expect(store.getState().error).toBeNull()
+
+    const [entry] = await listBackups()
+    await expect(readBackup(entry?.on ?? '2000-01-01')).resolves.toMatchObject({
+      household: { name: 'Au démarrage' },
+    })
+  })
+
+  /* Les deux événements de sortie partent souvent ensemble — un onglet fermé
+     émet `pagehide` puis passe `hidden`. Deux flush ne doivent pas produire
+     deux transactions sur la même clé : elles commettraient dans l'ordre du
+     moteur, pas dans le nôtre. */
+  it('vide la file quand la page part, une fois et une seule', async () => {
+    // L'écriture est comptée mais pas simulée : ce test-ci veut aussi vérifier
+    // que la saisie des 400 dernières millisecondes est bien sur le disque.
+    const write = vi.fn((data: Data, rev: number) => saveDocument(data, rev))
+    const { store } = await freshStore({ write })
+    const { onPageHidden } = await import('@/persistence/lifecycle')
+
+    store.getState().finishOnboarding()
+    await store.getState().flush()
+    write.mockClear()
+
+    const stop = onPageHidden(() => {
+      void store.getState().flush()
+    })
+    store.getState().mutate((data) => ({ ...data, household: { ...data.household, name: 'Parti' } }))
+
+    window.dispatchEvent(new Event('pagehide'))
+    setVisibility('hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+    await store.getState().flush()
+    stop()
+
+    expect(write).toHaveBeenCalledTimes(1)
+    expect(write.mock.calls[0]?.[0].household.name).toBe('Parti')
+    // La saisie des 400 dernières millisecondes est bien sur le disque.
+    expect((await loadDocument())?.data.household.name).toBe('Parti')
+  })
+
+  it('n’écrit rien de plus quand la page part sans rien en attente', async () => {
+    const write = vi.fn<(data: Data, rev: number) => Promise<void>>().mockResolvedValue(undefined)
+    const { store } = await freshStore({ write })
+    const { onPageHidden } = await import('@/persistence/lifecycle')
+
+    store.getState().finishOnboarding()
+    await store.getState().flush()
+    write.mockClear()
+
+    const stop = onPageHidden(() => {
+      void store.getState().flush()
+    })
+    setVisibility('hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+    await store.getState().flush()
+    stop()
+
+    expect(write).not.toHaveBeenCalled()
   })
 })

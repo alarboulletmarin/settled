@@ -14,6 +14,15 @@ import { toast } from '@/ui/toast'
  * n'enregistre plus. Il disparaît quand la première écriture repasse — c'est le
  * `onWritten` du writer qui l'éteint, jamais un clic.
  *
+ * **Les deux `kind` d'erreur y passent maintenant, et pas seulement `write`.**
+ * Un échec de lecture ouvre bien son propre écran — mais seulement quand il
+ * tombe à l'hydratation, où il bascule sur l'arrivée et ses recours. Il tombe
+ * aussi une fois l'app ouverte : une base `blocked` à la réouverture, après
+ * qu'un `terminated` a fermé la connexion sous nos pieds. Dans ce cas-là la
+ * coquille est déjà montée, l'écran d'arrivée ne viendra pas, et le bandeau
+ * était le seul endroit possible — il ne disait rien. La conséquence pratique
+ * est d'ailleurs la même des deux côtés : plus rien ne s'enregistre.
+ *
  * L'export part de la copie en mémoire, et c'est le point : c'est le disque qui
  * est en retard, l'écran est intact. L'écran de secours de l'`ErrorBoundary`
  * fait l'inverse, pour la raison inverse.
@@ -22,7 +31,7 @@ export function StorageAlert() {
   const error = useStore((s) => s.error)
   const data = useStore((s) => s.data)
 
-  if (error?.kind !== 'write') return null
+  if (error === null) return null
 
   return (
     <div
