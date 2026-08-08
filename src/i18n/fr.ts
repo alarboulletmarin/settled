@@ -580,21 +580,21 @@ export const fr = {
     chargesLeft: 'reste %s à payer',
     chargesAllPaid: 'tout est payé',
     chargesNone: 'rien à payer ce mois-ci',
+    /* Les deux soldes qui projettent le mois, dans un seul cadre : ils
+       annoncent régulièrement le même montant au centime — sans rentrée
+       d'argent en vue, le reste à vivre prend la fin du mois pour horizon,
+       donc exactement celui du prévisionnel — et la phrase qui les sépare ne
+       s'affiche sur aucune tuile plate en deçà de 1024px. En rangée, elle
+       passe à la ligne et se lit partout. */
+    situation: 'Situation',
     forecast: 'Prévisionnel',
-    /* Les deux secondes lectures disent désormais la même chose de la même
-       façon : **jusqu'où va le chiffre**. C'est la seule chose qui sépare ces
-       deux tuiles voisines, et sans rentrée d'argent en vue elles annoncent le
-       même montant au centime — le reste à vivre prend alors la fin du mois
-       pour horizon, donc exactement celui du prévisionnel. « Échéances prévues
-       comprises » décrivait un calcul et laissait cette coïncidence sans
-       explication ; deux horizons posés côte à côte la donnent, et disent
-       pourquoi les deux se rejoignent quand ils se rejoignent.
-       Elles gardent la longueur des anciennes : une tuile plate ne les affiche
-       qu'au-delà de 1024px, et la feuille d'explication les porte en dessous. */
-    forecastHint: 'jusqu’à la fin du mois, prévu compris',
+    /* Ces deux phrases-là ne décrivent plus un calcul, elles disent l'horizon :
+       c'est la seule chose qui sépare les deux lectures, et c'est donc ce
+       qu'il faut lire quand elles rendent le même chiffre. */
+    forecastHint: 'solde attendu en fin de mois, échéances prévues comprises',
     remaining: 'Reste à vivre',
-    remainingHint: 'jusqu’à la prochaine rentrée d’argent',
-    remainingNoIncome: 'jusqu’à la fin du mois, comme le prévisionnel',
+    remainingHint: 'disponible jusqu’à la prochaine rentrée d’argent',
+    remainingNoIncome: 'disponible jusqu’à la fin du mois',
     breakdown: 'Répartition',
     upcoming: 'Prochaines échéances',
     inflow: 'Entrées',
@@ -660,14 +660,6 @@ export const fr = {
        se suffit du voisinage de l'eyebrow. */
     showSplit: 'Voir le détail de la répartition',
     showMemberShare: 'Voir le détail du calcul de la part',
-    /* Le nom accessible de ces deux tuiles-là porte leurs chiffres, et non le
-       geste : une tuile cliquable est un `<button>`, dont l'`aria-label`
-       remplace le contenu — ce qui est dedans n'est pas annoncé. La
-       Répartition en a besoin depuis qu'elle est plate : l'anneau qui disait
-       les parts à voix haute n'y tient plus. `SettlementTile` prenait déjà ce
-       parti. */
-    srSplitTile: 'Répartition : %s de charges communes ce mois-ci, %s. Voir le détail.',
-    srCreditsTile: 'Crédits : %s, %s. Voir le détail.',
 
     /* La contrepartie de la tuile Répartition, sous un filtre par membre :
        celle-ci montre les parts de tout le monde, celle-là ce que la personne

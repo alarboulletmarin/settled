@@ -1,13 +1,12 @@
-import { useState } from 'react'
-import { useIsCommonFilter, useIsCurrentMonth, useKindOf, useMonthConfirmed } from '@/store/selectors'
+import { useIsCommonFilter, useKindOf, useMonthConfirmed } from '@/store/selectors'
 import { kindsOfNature } from '@/ui/categoryKinds'
 import { BentoGrid } from '@/ui/Tile'
-import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
+import { BalanceTile } from './BalanceTile'
 import { BreakdownTile, type ShowFamily } from './BreakdownTile'
 import { CreditsTile } from './CreditsTile'
 import { ChargesTile, IncomeTile, type ShowNature } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
-import { type Metric, MetricInfo } from './MetricInfo'
+import type { Metric } from './MetricInfo'
 import { SavingTile } from './SavingTile'
 import { SettlementTile } from './SettlementTile'
 import { SplitTile } from './SplitTile'
@@ -83,15 +82,15 @@ import { SplitTile } from './SplitTile'
 export function Dashboard({
   onShowNature,
   onShowFamily,
+  onExplain,
 }: {
   onShowNature?: ShowNature
   onShowFamily?: ShowFamily
+  onExplain: (metric: Metric) => void
 }) {
-  const [metric, setMetric] = useState<Metric | null>(null)
   const confirmed = useMonthConfirmed()
   const kindOf = useKindOf()
   const common = useIsCommonFilter()
-  const thisMonth = useIsCurrentMonth()
 
   const openable = (nature: 'expense' | 'income'): { onShow?: ShowNature } => {
     const kinds = kindsOfNature(nature)
@@ -102,47 +101,27 @@ export function Dashboard({
   }
 
   return (
-    <>
-      <BentoGrid>
-        {/* Sur le commun, cinq tuiles n'ont plus de quoi répondre. Un revenu ne
-            se partage jamais : le pot n'en a aucun, donc les quatre lectures
-            qui soustraient les charges à des ressources — le solde, le
-            prévisionnel, le reste à vivre, la capacité d'épargne — vaudraient
-            toutes le même chiffre, celui des charges, au signe près. Et
-            l'épargne ne rentre pas dans un partage, par la même règle qui
-            l'exclut de « Où part l'argent ».
-            Elles s'effacent plutôt que d'annoncer un zéro ou une redite —
-            c'est déjà ce que font Répartition sous un filtre par membre et
-            Part du foyer sans filtre. Reste ce que le pot sait dire : ce qu'il
-            coûte, où il part, et qui verse quoi. */}
-        {!common && <BalanceTile onExplain={setMetric} />}
-        {!common && <IncomeTile {...openable('income')} />}
-        <ChargesTile {...openable('expense')} />
-        <MemberShareTile />
-        <SettlementTile />
-        {!common && <ForecastTile onExplain={setMetric} />}
-        {/* « Reste à vivre » se lit depuis aujourd'hui, pas depuis le mois
-            affiché : c'est le prévisionnel arrêté à la prochaine rentrée
-            d'argent. Sur un mois passé l'horizon est déjà derrière, sur un
-            mois à venir il est encore devant — le chiffre se calcule dans les
-            deux cas et ne veut rien dire ni dans l'un ni dans l'autre. Il
-            s'efface donc, comme les cinq tuiles que le commun retire : une
-            lecture qui n'a pas de réponse vaut mieux absente que fausse.
-            Sa demi-rangée ne reste pas vide pour autant : `dense` y range la
-            tuile suivante, et le pavage se referme d'un cran. */}
-        {!common && thisMonth && <RemainingTile onExplain={setMetric} />}
-        <BreakdownTile {...(onShowFamily === undefined ? {} : { onShowFamily })} />
-        {!common && <SavingTile />}
-        <SplitTile />
-        <CreditsTile />
-      </BentoGrid>
-
-      <MetricInfo
-        metric={metric}
-        onClose={() => {
-          setMetric(null)
-        }}
-      />
-    </>
+    <BentoGrid>
+      {/* Sur le commun, cinq tuiles n'ont plus de quoi répondre. Un revenu ne
+          se partage jamais : le pot n'en a aucun, donc les quatre lectures
+          qui soustraient les charges à des ressources — le solde, le
+          prévisionnel, le reste à vivre, la capacité d'épargne — vaudraient
+          toutes le même chiffre, celui des charges, au signe près. Et
+          l'épargne ne rentre pas dans un partage, par la même règle qui
+          l'exclut de « Où part l'argent ».
+          Elles s'effacent plutôt que d'annoncer un zéro ou une redite —
+          c'est déjà ce que font Répartition sous un filtre par membre et
+          Part du foyer sans filtre. Reste ce que le pot sait dire : ce qu'il
+          coûte, où il part, et qui verse quoi. */}
+      {!common && <BalanceTile onExplain={onExplain} />}
+      {!common && <IncomeTile {...openable('income')} />}
+      <ChargesTile {...openable('expense')} />
+      <MemberShareTile />
+      <SettlementTile />
+      <BreakdownTile {...(onShowFamily === undefined ? {} : { onShowFamily })} />
+      <SplitTile />
+      <CreditsTile />
+      {!common && <SavingTile />}
+    </BentoGrid>
   )
 }

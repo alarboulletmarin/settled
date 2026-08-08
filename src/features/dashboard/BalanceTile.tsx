@@ -1,14 +1,12 @@
 import { daysInMonth, parseYm, today, ymOf } from '@/domain/date'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
-import { useCurrentYm, useMonthProgress, useMonthTotals, useRestToLive } from '@/store/selectors'
+import { useCurrentYm, useMonthProgress, useMonthTotals } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Eyebrow } from '@/ui/Eyebrow'
-import { BalanceIcon, ForecastIcon, RemainingIcon } from '@/ui/Icons'
+import { BalanceIcon } from '@/ui/Icons'
 import { Ring } from '@/ui/Ring'
 import { Tile } from '@/ui/Tile'
-import { nextIncomeDate } from '@/domain/stats'
-import { useMonthEntries } from '@/store/selectors'
 import type { Metric } from './MetricInfo'
 
 /**
@@ -95,59 +93,8 @@ export function BalanceTile({ onExplain }: { onExplain: (metric: Metric) => void
   )
 }
 
-/** Solde prévisionnel : en incluant les échéances encore prévues. */
-export function ForecastTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
-  const totals = useMonthTotals()
-  return (
-    <Tile
-      span="2x1"
-      className="justify-between"
-      onClick={() => {
-        onExplain({
-          key: 'forecast',
-          value: totals.forecastBalance,
-          hint: fr.dashboard.forecastHint,
-        })
-      }}
-      label={tpl(fr.dashboard.explain, fr.dashboard.forecast)}
-      affordance={{ kind: 'explain' }}
-    >
-      <Eyebrow icon={ForecastIcon}>{fr.dashboard.forecast}</Eyebrow>
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <Amount value={totals.forecastBalance} size="tile-fit" />
-        {/* Tant que la tuile est trop étroite pour la porter, la lecture
-            secondaire reste lue par un lecteur d'écran mais ne s'affiche pas —
-            et la feuille d'explication la porte alors, elle. Le seuil est celui
-            de la tuile et non celui de l'écran (voir `.tile-hint`) : aux
-            largeurs où cette tuile-ci vit, les deux disent la même chose. */}
-        <span className="t-label tile-hint">{fr.dashboard.forecastHint}</span>
-      </div>
-    </Tile>
-  )
-}
-
-/** Reste à vivre : le prévisionnel arrêté à la prochaine rentrée d'argent. */
-export function RemainingTile({ onExplain }: { onExplain: (metric: Metric) => void }) {
-  const remaining = useRestToLive()
-  const entries = useMonthEntries()
-  const hasIncome = nextIncomeDate(entries, today()) !== null
-  const hint = hasIncome ? fr.dashboard.remainingHint : fr.dashboard.remainingNoIncome
-
-  return (
-    <Tile
-      span="2x1"
-      className="justify-between"
-      onClick={() => {
-        onExplain({ key: 'remaining', value: remaining, hint })
-      }}
-      label={tpl(fr.dashboard.explain, fr.dashboard.remaining)}
-      affordance={{ kind: 'explain' }}
-    >
-      <Eyebrow icon={RemainingIcon}>{fr.dashboard.remaining}</Eyebrow>
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <Amount value={remaining} size="tile-fit" tone={remaining < 0 ? 'danger' : 'default'} />
-        <span className="t-label tile-hint">{hint}</span>
-      </div>
-    </Tile>
-  )
-}
+/* Le prévisionnel et le reste à vivre avaient leur tuile ici. Ils sont deux
+   rangées de `SituationSection`, et pour une seule raison : ils annoncent
+   régulièrement le même montant au centime, et la phrase qui les sépare ne
+   s'affiche sur aucune tuile plate en deçà de 1024px. Le calcul, lui, n'a pas
+   bougé d'une ligne. */
