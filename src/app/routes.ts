@@ -110,8 +110,26 @@ export const SPLIT_PATH = '/repartition'
 
 /* Même règle, même porte : la tuile Capacité d'épargne du mois y mène, et elle,
    ne s'efface jamais — un mois sans versement est justement celui où la
-   question « où je place » se pose. */
+   question « où je place » se pose.
+
+   L'écran porte désormais deux lectures qui ne se remplacent pas : le **stock**
+   — ce que valent les supports, et à qui ils sont — et le **flux** du mois, ce
+   qu'on y a versé ou repris. Les fiches de support s'ouvrent sous lui : un
+   support est un objet de l'épargne, pas un réglage. */
 export const SAVINGS_PATH = '/epargne'
+/* Segment fixe avant `:id`, comme partout ailleurs : React Router le classe
+   d'abord, un support ne peut donc pas éclipser le formulaire de création. */
+export const SUPPORT_NEW_PATH = `${SAVINGS_PATH}/nouveau`
+export const supportPath = (id: string): string => `${SAVINGS_PATH}/${id}`
+export const supportEditPath = (id: string): string => `${SAVINGS_PATH}/${id}/modifier`
+/* La mise à jour de valeur a son URL, comme toute saisie de l'app : c'est ce
+   qui rend le retour du navigateur et le bouton « retour » de l'écran
+   identiques au reste, plutôt qu'un état de composant qu'aucun des deux ne
+   connaît. Le second segment vise un relevé existant, pour le corriger. */
+export const valuationNewPath = (supportId: string): string =>
+  `${SAVINGS_PATH}/${supportId}/valeur`
+export const valuationEditPath = (supportId: string, valuationId: string): string =>
+  `${SAVINGS_PATH}/${supportId}/valeur/${valuationId}`
 
 /* Les avances ont leur écran, pour la raison qui donne le sien aux crédits :
    elles vivent sous les récurrences — leur mensualité en est une — mais ce
@@ -172,6 +190,10 @@ export function isFocusScreen(pathname: string): boolean {
   return (
     pathname.startsWith(ENTRY_NEW_PATH) ||
     pathname.startsWith(ADVANCE_NEW_PATH) ||
+    /* Les fiches et saisies de l'épargne, et non la page qui les liste : celle-
+       ci reste une destination pleine, avec son bouton d'ajout et son rappel
+       d'export. */
+    (pathname.startsWith(`${SAVINGS_PATH}/`) && pathname !== `${SAVINGS_PATH}/`) ||
     (pathname.startsWith(`${RECURRENCES_PATH}/`) && pathname !== `${RECURRENCES_PATH}/`) ||
     (pathname.startsWith(`${CREDITS_PATH}/`) && pathname !== `${CREDITS_PATH}/`) ||
     /* Les vues des réglages, et non la page d'entrée. Chacune n'a qu'un sujet,

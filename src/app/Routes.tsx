@@ -28,6 +28,8 @@ import {
   PRIVACY_PATH,
   RECURRENCES_PATH,
   RECURRENCE_NEW_PATH,
+  SAVINGS_PATH,
+  SUPPORT_NEW_PATH,
   SETTINGS_APPEARANCE_PATH,
   SETTINGS_CATEGORIES_PATH,
   SETTINGS_DATA_PATH,
@@ -79,6 +81,20 @@ const FamilyNewPage = lazy(async () => ({ default: (await settings()).FamilyNewP
 const CategoryNewPage = lazy(async () => ({ default: (await settings()).CategoryNewPage }))
 const StoragePage = lazy(async () => ({ default: (await settings()).StoragePage }))
 const DataPage = lazy(async () => ({ default: (await settings()).DataPage }))
+
+/**
+ * Les écrans qui s'ouvrent **sous** la page Épargne, dans un seul morceau.
+ *
+ * La page elle-même reste ici — elle s'atteint d'un geste depuis la tuile
+ * Capacité du mois, comme la Répartition et les Crédits. La fiche d'un support,
+ * ses deux formulaires et la courbe de son historique, non : ils se demandent,
+ * et ils emportent avec eux le tracé SVG dont aucun autre écran de cette route
+ * ne se sert.
+ */
+const savings = () => import('@/features/savings/pages')
+const SupportPage = lazy(async () => ({ default: (await savings()).SupportPage }))
+const SupportFormPage = lazy(async () => ({ default: (await savings()).SupportFormPage }))
+const ValuationFormPage = lazy(async () => ({ default: (await savings()).ValuationFormPage }))
 
 /**
  * Les trois pages juridiques, dans un seul morceau.
@@ -135,7 +151,17 @@ export function AppRoutes() {
           <Route path="/credits/nouveau" element={<CreditFormPage />} />
           <Route path="/credits/:id" element={<CreditFormPage />} />
           <Route path="/repartition" element={<SplitPage />} />
-          <Route path="/epargne" element={<SavingsPage />} />
+          <Route path={SAVINGS_PATH} element={<SavingsPage />} />
+          {/* Le segment fixe est classé avant `:id` par React Router : un
+              support ne peut donc pas éclipser le formulaire de création. */}
+          <Route path={SUPPORT_NEW_PATH} element={<SupportFormPage />} />
+          <Route path={`${SAVINGS_PATH}/:id`} element={<SupportPage />} />
+          <Route path={`${SAVINGS_PATH}/:id/modifier`} element={<SupportFormPage />} />
+          <Route path={`${SAVINGS_PATH}/:id/valeur`} element={<ValuationFormPage />} />
+          <Route
+            path={`${SAVINGS_PATH}/:id/valeur/:valuationId`}
+            element={<ValuationFormPage />}
+          />
           <Route path={ADVANCES_PATH} element={<AdvancesPage />} />
           <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
           <Route path="/historique" element={<HistoryPage />} />

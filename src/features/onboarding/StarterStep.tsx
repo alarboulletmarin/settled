@@ -76,9 +76,12 @@ export function StarterStep({
           condition que le cahier §4.1 met à l'existence de cette étape. Il
           reste secondaire : sauter est un choix légitime, ce n'est pas celui
           qu'on recommande. */}
+      {/* « Continuer » et non « Commencer » : l'étape n'est plus la dernière —
+          l'épargne actuelle se demande après, et un bouton qui annoncerait
+          l'ouverture de l'app mentirait d'un écran. */}
       <div className="flex flex-col gap-2">
         <Button type="submit" full>
-          {fr.onboarding.start}
+          {fr.common.next}
         </Button>
         <Button type="button" variant="ghost" full onClick={onSkip}>
           {fr.onboarding.starterSkip}

@@ -52,6 +52,15 @@ import { useCurrency } from '@/ui/currency'
  * tuile plate et n'y tenaient pas ensemble : chacune avait donc son seuil, et
  * il existait des largeurs où l'une des deux moitiés du chiffre manquait à
  * l'écran. Deux rangées de hauteur règlent ce que deux seuils ne réglaient pas.
+ *
+ * **Elle ne montre toujours aucun patrimoine, et c'est délibéré.** Le tableau de
+ * bord est un tableau de bord de *flux* : ce que le mois fait rentrer, ce qu'il
+ * fait payer, ce qu'il dégage. Ce que l'épargne *vaut* est une autre question,
+ * qui ne change pas d'un mois à l'autre au rythme des échéances — elle vit sur
+ * l'écran qu'ouvre cette tuile, et une seconde grosse section patrimoniale ici
+ * ferait lire deux chiffres sans rapport sous la même grille. Le « versé »
+ * ci-dessous vient des `Entry` liées aux supports : exactement celles que
+ * l'écran d'épargne ventile, au centime.
  */
 export function SavingTile() {
   const totals = useKindTotals(true)

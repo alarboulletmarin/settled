@@ -318,7 +318,7 @@ function topSlices(totals: Map<string, Money>, limit: number): CategorySlice[] {
  * brancher tel quel sur un écran étiqueté « Dépenses » ou « Charges » — c'est
  * exactement le camembert « Épargne 30 % à côté de Courses 12 % » que
  * `types.ts` interdit. Les écrans passent par `breakdownByFamily` (gardé par
- * `isSpending`) ou `savingsByCategory`.
+ * `isSpending`) ou `savingsBySupport` (`domain/saving.ts`).
  */
 export function breakdownByCategory(
   entries: readonly Entry[],
@@ -336,46 +336,10 @@ export function breakdownByCategory(
   return topSlices(byCategory, limit)
 }
 
-/**
- * Où va l'épargne du mois, par support.
- *
- * La répartition par sens ne sait pas séparer un virement sur un PEA d'un plein
- * d'essence : les deux sortent. La nature, elle, le sait — c'est la frontière
- * de `spendingFlow`, prise par l'autre bout.
- *
- * Le plafond est plus haut que celui des dépenses : un foyer tient une
- * quarantaine de postes de charges, dont un « Autres » sauve la lisibilité,
- * mais rarement plus de six ou sept supports d'épargne — et les regrouper sous
- * « Autres » retirerait à l'écran la seule chose qu'il a à dire, où l'argent
- * est placé.
- */
-export function savingsByCategory(
-  entries: readonly Entry[],
-  month: YearMonth,
-  kindOf: KindOf,
-  memberId?: MemberFilter,
-  limit = 8,
-): CategorySlice[] {
-  const scoped = entriesOfMonth(entries, month, memberId).filter(
-    (e) => kindOf(e.categoryId) === 'saving',
-  )
-  const byCategory = new Map<string, Money>()
-  for (const entry of scoped) {
-    // Net, comme `totalsByKind` : un livret dans lequel on a repris 600 € et
-    // remis 50 € n'a pas reçu 650 € ce mois-ci.
-    const current = byCategory.get(entry.categoryId) ?? ZERO
-    byCategory.set(
-      entry.categoryId,
-      entry.direction === 'in' ? sub(current, entry.amount) : add(current, entry.amount),
-    )
-  }
-
-  // Un support autant repris que reconstitué dans le même mois n'a rien reçu :
-  // l'afficher à zéro ajouterait une ligne qui ne dit rien.
-  for (const [id, total] of byCategory) if (total === ZERO) byCategory.delete(id)
-
-  return topSlices(byCategory, limit)
-}
+/* La ventilation de l'épargne ne vit plus ici mais dans `domain/saving.ts`, et
+   elle se fait désormais **par support** : par catégorie, elle faisait de la
+   catégorie le support — « Livrets » confondait le livret d'Andrea et celui de
+   Marie, si bien que deux personnes ne pouvaient pas avoir chacune le sien. */
 
 /* --- Prochaines échéances -------------------------------------------------*/
 

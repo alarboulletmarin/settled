@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { today } from '@/domain/date'
-import { makeCategory, makeData, makeFamily } from '@/domain/fixtures'
+import {
+  makeCategory,
+  makeData,
+  makeFamily,
+  makeMember,
+  makeSavingSupport,
+} from '@/domain/fixtures'
 import { fr } from '@/i18n/fr'
 import { ENTRY_NEW_PATH, RECURRENCE_NEW_PATH } from '@/app/routes'
 import { EntryPage } from '@/features/month/EntryPage'
@@ -267,5 +273,120 @@ describe('les mots suivent ce qu’on enregistre', () => {
     await userEvent.click(choice(fr.entry.recurring))
     expect(screen.getByText(fr.entry.labelRequiredRecurring)).toBeInTheDocument()
     expect(screen.queryByText(fr.entry.labelRequired)).not.toBeInTheDocument()
+  })
+})
+
+/* ============================================================================
+ * La saisie d'épargne demande **le support**, pas la catégorie ni le membre.
+ *
+ * « Où va l'argent » est la question de ce geste-là, et le support y répond
+ * seul : il porte le poste sous lequel le mouvement se range et la personne à
+ * qui il est. Les redemander donnerait trois réponses pour un seul fait, dont
+ * deux peuvent se contredire.
+ * ==========================================================================*/
+describe('la saisie d’un mouvement d’épargne', () => {
+  const withSupports = (): void => {
+    useStore.setState({
+      status: 'onboarding',
+      ym: TODAY.slice(0, 7),
+      data: makeData({
+        household: { name: '', members: [makeMember({ id: 'm-1', name: 'Andrea' })] },
+        families: [
+          makeFamily({ id: 'fam-home', label: 'Logement', kind: 'charge' }),
+          makeFamily({ id: 'fam-savings', label: 'Épargne', kind: 'saving' }),
+        ],
+        categories: [
+          ...CATEGORIES,
+          makeCategory({ id: 'passbook', label: 'Livrets', familyId: 'fam-savings' }),
+        ],
+        savingSupports: [
+          makeSavingSupport({ id: 's-1', label: 'Livret A', memberId: 'm-1', categoryId: 'passbook' }),
+        ],
+      }),
+    })
+  }
+
+  it('remplace la catégorie et le membre par le support', async () => {
+    withSupports()
+    fromEntryDoor()
+    await userEvent.click(choice(fr.entry.natureSaving))
+
+    expect(field(fr.savings.support)).toBeInTheDocument()
+    expect(missing(fr.entry.category)).not.toBeInTheDocument()
+    expect(missing(fr.entry.member)).not.toBeInTheDocument()
+  })
+
+  /* Le support répond aux trois questions d'un coup : le document ne garde
+     qu'une catégorie et qu'un membre, et ce sont les siens. */
+  it('en dérive la catégorie et le propriétaire à l’enregistrement', async () => {
+    withSupports()
+    fromEntryDoor()
+    await userEvent.click(choice(fr.entry.natureSaving))
+    await userEvent.type(field(fr.entry.amount), '300')
+    await userEvent.selectOptions(field(fr.savings.support), 's-1')
+    await userEvent.type(field(fr.entry.label), 'Virement livret')
+    await userEvent.click(save())
+
+    expect(entries()).toHaveLength(1)
+    expect(entries()[0]).toMatchObject({
+      savingSupportId: 's-1',
+      categoryId: 'passbook',
+      memberId: 'm-1',
+      direction: 'out',
+      amount: 30_000,
+    })
+  })
+
+  it('exige le support, et le dit', async () => {
+    withSupports()
+    fromEntryDoor()
+    await userEvent.click(choice(fr.entry.natureSaving))
+    await userEvent.type(field(fr.entry.amount), '300')
+    await userEvent.type(field(fr.entry.label), 'Virement livret')
+    await userEvent.click(save())
+
+    expect(screen.getByText(fr.savings.supportRequired)).toBeInTheDocument()
+    expect(entries()).toHaveLength(0)
+  })
+
+  /* Changer de nature vide le support en même temps que la catégorie : un
+     support resté en place sur une dépense laisserait derrière lui une
+     catégorie que le même geste vient d'effacer, et l'entrée s'enregistrerait
+     sans poste. */
+  it('oublie le support dès qu’on quitte l’épargne', async () => {
+    withSupports()
+    fromEntryDoor()
+    await userEvent.click(choice(fr.entry.natureSaving))
+    await userEvent.selectOptions(field(fr.savings.support), 's-1')
+
+    await userEvent.click(choice(fr.entry.natureExpense))
+    await userEvent.click(choice(fr.entry.natureSaving))
+
+    expect(field(fr.savings.support)).toHaveValue('')
+  })
+
+  /* Sans personne au foyer, aucun support ne peut exister — une épargne est
+     toujours à quelqu'un. La saisie retombe alors sur la catégorie, tout ce
+     qu'on peut savoir du mouvement. */
+  it('retombe sur la catégorie quand le foyer n’a personne', async () => {
+    useStore.setState({
+      status: 'onboarding',
+      ym: TODAY.slice(0, 7),
+      data: makeData({
+        families: [
+          makeFamily({ id: 'fam-home', label: 'Logement', kind: 'charge' }),
+          makeFamily({ id: 'fam-savings', label: 'Épargne', kind: 'saving' }),
+        ],
+        categories: [
+          ...CATEGORIES,
+          makeCategory({ id: 'passbook', label: 'Livrets', familyId: 'fam-savings' }),
+        ],
+      }),
+    })
+    fromEntryDoor()
+    await userEvent.click(choice(fr.entry.natureSaving))
+
+    expect(field(fr.entry.category)).toBeInTheDocument()
+    expect(missing(fr.savings.support)).not.toBeInTheDocument()
   })
 })

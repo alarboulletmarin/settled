@@ -19,6 +19,8 @@ import type {
   Family,
   Member,
   Recurrence,
+  SavingSupport,
+  SavingValuation,
   Settings,
 } from './types'
 
@@ -45,18 +47,22 @@ export function renameMember(data: Data, id: string, name: string): Data {
 /**
  * Retirer un membre libère ses entrées et récurrences plutôt que de les perdre.
  *
- * Ses **avances**, elles, partent avec lui, et c'est la seule exception :
- * `Advance.memberId` n'est pas facultatif — une épargne est toujours à
- * quelqu'un, et une avance que personne ne porte ne se reconstitue sur le
- * livret de personne. Faute de pouvoir la détacher, on la retirait de fait sans
- * le faire : l'avance gardait l'identifiant d'un membre disparu, et l'écran
- * d'épargne cherchait un porteur qu'il ne trouvait plus.
+ * Ses **avances** et ses **supports d'épargne**, eux, partent avec lui, et
+ * c'est la seule exception : leur `memberId` n'est pas facultatif — une épargne
+ * est toujours à quelqu'un, et un livret que personne ne porte n'est le livret
+ * de personne. Faute de pouvoir les détacher, on les retirait de fait sans le
+ * faire : ils gardaient l'identifiant d'un membre disparu, et l'écran d'épargne
+ * cherchait un porteur qu'il ne trouvait plus.
  *
- * Sa récurrence reste, comme après `removeAdvance` : les mensualités déjà
- * revenues sur le livret y sont revenues, et cesser de suivre ce qu'on se doit
- * ne réécrit pas ce qui est sorti du compte. Elle est simplement rendue au
- * foyer, comme toutes les autres. La confirmation le dit avant, parce que c'est
- * la seule chose que ce geste efface.
+ * Les **valorisations** partent avec leurs supports : elles décrivent un compte
+ * qui n'existe plus, et rien ne pourrait plus les rattacher.
+ *
+ * L'**historique financier ne bouge pas**. Les `Entry` restent, à leur montant
+ * et à leur date : elles perdent seulement leur lien vers le support disparu,
+ * exactement comme `removeRecurrence` détache les échéances de leur règle. Les
+ * récurrences aussi, qui redeviennent des versements sans destination plutôt
+ * que de pointer vers un compte fantôme. La confirmation annonce ce qui part —
+ * et le retour arrière repose le document entier, si l'on s'est trompé.
  */
 export function removeMember(data: Data, id: string): Data {
   const strip = <T extends { memberId?: string }>(item: T): T => {
@@ -64,12 +70,23 @@ export function removeMember(data: Data, id: string): Data {
     const { memberId: _dropped, ...rest } = item
     return rest as T
   }
+  const lost = new Set(
+    data.savingSupports.filter((s) => s.memberId === id).map((support) => support.id),
+  )
+  const unlinkSupport = <T extends { savingSupportId?: string }>(item: T): T => {
+    if (item.savingSupportId === undefined || !lost.has(item.savingSupportId)) return item
+    const { savingSupportId: _dropped, ...rest } = item
+    return rest as T
+  }
+
   return {
     ...data,
     household: { ...data.household, members: data.household.members.filter((m) => m.id !== id) },
-    recurrences: data.recurrences.map(strip),
-    entries: data.entries.map(strip),
+    recurrences: data.recurrences.map(strip).map(unlinkSupport),
+    entries: data.entries.map(strip).map(unlinkSupport),
     advances: data.advances.filter((a) => a.memberId !== id),
+    savingSupports: data.savingSupports.filter((s) => s.memberId !== id),
+    savingValuations: data.savingValuations.filter((v) => !lost.has(v.supportId)),
   }
 }
 
@@ -132,6 +149,174 @@ export function removeDebt(data: Data, id: string): Data {
   return { ...data, debts: data.debts.filter((d) => d.id !== id) }
 }
 
+/* --- Supports d'épargne ---------------------------------------------------*/
+
+export function addSavingSupport(data: Data, support: SavingSupport): Data {
+  return { ...data, savingSupports: [...data.savingSupports, support] }
+}
+
+/**
+ * Ce qu'un écran a à dire pour poser un support. Le reste s'en déduit.
+ *
+ * `value` est facultatif, et son absence a un sens : le capital est **inconnu**,
+ * ce qui n'est pas zéro. Renseigné, il ne s'écrit pas sur le support mais pose
+ * sa première valorisation — un seul endroit pour un seul chiffre.
+ */
+export type SavingSupportInput = {
+  label: string
+  memberId: string
+  categoryId: string
+  note?: string
+  /** Le capital du jour, s'il est connu, et la date à laquelle il l'est. */
+  value?: { amount: Money; date: ISODate }
+}
+
+/**
+ * Pose un support, et sa première valorisation si un montant est connu.
+ *
+ * La composition vit ici, dans le domaine, et non dans l'écran qui l'appelle :
+ * quatre portes créent des supports — la page Épargne, l'onboarding, la saisie
+ * d'un versement, le jeu d'exemple — et quatre copies de ce geste finiraient
+ * par ne plus se répondre. C'est exactement l'argument qui a déjà fait
+ * descendre `createAdvance` ici.
+ *
+ * Le montant n'est **jamais recopié sur le support** : il n'existe que comme
+ * valorisation. Un `currentAmount` mutable à côté serait une seconde vérité, et
+ * la première mise à jour les ferait diverger — en plus de perdre l'historique
+ * dont la courbe et, plus tard, les projections ont besoin.
+ */
+export function createSavingSupport(
+  data: Data,
+  input: SavingSupportInput,
+  makeId: () => string,
+): { data: Data; support: SavingSupport; valuation: SavingValuation | null } {
+  const { value, note, ...rest } = input
+  const support: SavingSupport = {
+    ...rest,
+    id: makeId(),
+    archived: false,
+    ...(note === undefined || note === '' ? {} : { note }),
+  }
+  const valuation: SavingValuation | null =
+    value === undefined
+      ? null
+      : { id: makeId(), supportId: support.id, amount: value.amount, date: value.date }
+
+  const next = addSavingSupport(data, support)
+  return {
+    data: valuation === null ? next : addSavingValuation(next, valuation),
+    support,
+    valuation,
+  }
+}
+
+/** Réécrit un support de bout en bout — même raison que `replaceRecurrence`. */
+export function replaceSavingSupport(
+  data: Data,
+  id: string,
+  next: Omit<SavingSupport, 'id'>,
+): Data {
+  return {
+    ...data,
+    savingSupports: data.savingSupports.map((s) => (s.id === id ? { ...next, id } : s)),
+  }
+}
+
+/**
+ * Archive un support : il sort des formulaires, il reste dans les lectures.
+ *
+ * C'est le geste par défaut dès qu'il a une histoire — un PEA clôturé ne doit
+ * pas emporter ses relevés ni ses versements passés. La règle des catégories,
+ * qui ne s'effacent jamais non plus.
+ */
+export function archiveSavingSupport(data: Data, id: string, archived = true): Data {
+  return {
+    ...data,
+    savingSupports: data.savingSupports.map((s) => (s.id === id ? { ...s, archived } : s)),
+  }
+}
+
+/**
+ * Arrête les règles qui alimentent encore un support.
+ *
+ * Archiver un support qui reçoit 300 € chaque mois le ferait disparaître des
+ * écrans pendant que la règle continue d'y poser des échéances : un compte
+ * invisible qui grossit tout seul est exactement l'état incohérent qu'on
+ * cherche à éviter. Le geste est proposé avec l'archivage, jamais imposé —
+ * l'écran demande, la règle est ici.
+ *
+ * `stopRecurrence` retire au passage les échéances prévues d'après la date :
+ * ce sont des projections, et une projection sur un compte fermé n'en est plus
+ * une. Les confirmées restent, elles ont eu lieu.
+ */
+export function stopSupportRecurrences(data: Data, supportId: string, on: ISODate): Data {
+  return data.recurrences
+    .filter((r) => r.savingSupportId === supportId && (r.endedOn === undefined || r.endedOn > on))
+    .reduce((acc, recurrence) => stopRecurrence(acc, recurrence.id, on), data)
+}
+
+/**
+ * Supprime un support pour de bon, ses valorisations avec lui.
+ *
+ * Réservé à ce qui n'a pas d'histoire — voir `isSupportEmpty` : un support créé
+ * par erreur se retire, un support qui porte des mouvements s'archive. La
+ * garde vit dans l'écran, qui sait ce qu'il propose ; la mutation, elle, coupe
+ * proprement les liens qui pourraient rester plutôt que de laisser pointer vers
+ * un identifiant mort — c'est le geste de `removeRecurrence`, au même endroit
+ * et pour la même raison.
+ */
+export function removeSavingSupport(data: Data, id: string): Data {
+  const unlink = <T extends { savingSupportId?: string }>(item: T): T => {
+    if (item.savingSupportId !== id) return item
+    const { savingSupportId: _dropped, ...rest } = item
+    return rest as T
+  }
+  return {
+    ...data,
+    savingSupports: data.savingSupports.filter((s) => s.id !== id),
+    savingValuations: data.savingValuations.filter((v) => v.supportId !== id),
+    entries: data.entries.map(unlink),
+    recurrences: data.recurrences.map(unlink),
+    advances: data.advances.map(unlink),
+  }
+}
+
+/* --- Valorisations --------------------------------------------------------*/
+
+/**
+ * Ajoute un relevé de valeur. Il **s'empile**, il n'écrase rien.
+ *
+ * C'est toute la différence avec un champ mutable : les valeurs d'hier restent
+ * lisibles, la courbe existe, et la future comparaison d'une projection au réel
+ * aura de quoi se faire. Un relevé n'est pas un mouvement : il n'entre dans
+ * aucun total du mois.
+ */
+export function addSavingValuation(data: Data, valuation: SavingValuation): Data {
+  return { ...data, savingValuations: [...data.savingValuations, valuation] }
+}
+
+/**
+ * Corrige un relevé, sans toucher aux autres.
+ *
+ * Un chiffre mal saisi se rattrape — sinon il reste faux pour toujours dans
+ * l'historique. Corriger celui d'aujourd'hui ne réécrit jamais celui du mois
+ * dernier : c'est une ligne, pas une série.
+ */
+export function replaceSavingValuation(
+  data: Data,
+  id: string,
+  next: Omit<SavingValuation, 'id'>,
+): Data {
+  return {
+    ...data,
+    savingValuations: data.savingValuations.map((v) => (v.id === id ? { ...next, id } : v)),
+  }
+}
+
+export function removeSavingValuation(data: Data, id: string): Data {
+  return { ...data, savingValuations: data.savingValuations.filter((v) => v.id !== id) }
+}
+
 /* --- Avances --------------------------------------------------------------*/
 
 export function addAdvance(data: Data, advance: Advance): Data {
@@ -153,9 +338,9 @@ export function removeAdvance(data: Data, id: string): Data {
 }
 
 /** Ce qu'un écran a à dire pour poser une avance. Le reste s'en déduit. */
-export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId'> & {
-  /** Le support d'épargne repris, puis reconstitué. */
-  savingCategoryId: string
+export type AdvanceInput = Omit<Advance, 'id' | 'recurrenceId' | 'savingSupportId'> & {
+  /** Le support d'épargne repris, puis reconstitué. Désigné par identifiant. */
+  savingSupportId: string
   /** La charge avancée entre-t-elle dans le pot commun du foyer ? */
   shared?: boolean
 }
@@ -193,17 +378,27 @@ export function createAdvance(
   makeId: () => string,
   on: ISODate = today(),
 ): { data: Data; advance: Advance } {
-  const { savingCategoryId, shared, ...rest } = input
+  const { savingSupportId, shared, ...rest } = input
   if (rest.to < rest.from) {
     throw new RangeError(
       `Une avance ne peut pas se terminer avant de commencer : ${rest.from} → ${rest.to}`,
     )
   }
+  /* La catégorie de la reprise et des mensualités se lit **sur le support** :
+     c'est lui qui dit sous quel poste d'épargne le mouvement se range, et le
+     redemander à l'écran donnerait deux réponses à tenir d'accord. Faute de
+     support — un document sans membre n'en a aucun —, on ne compose rien : la
+     saisie exige le support, c'est sa première question. */
+  const support = data.savingSupports.find((one) => one.id === savingSupportId)
+  if (support === undefined) {
+    throw new RangeError(`Support d'épargne inconnu : ${savingSupportId}`)
+  }
   const recurrence: Recurrence = {
     id: makeId(),
     label: rest.label,
-    categoryId: savingCategoryId,
+    categoryId: support.categoryId,
     memberId: rest.memberId,
+    savingSupportId,
     direction: 'out',
     amount: monthlyInstalment(rest),
     period: { unit: 'month', every: 1, anchorDay: parseISO(rest.paidOn).d },
@@ -211,12 +406,13 @@ export function createAdvance(
     endedOn: endOfMonth(rest.to),
     ...(shared === undefined ? {} : { shared }),
   }
-  const advance: Advance = { ...rest, id: makeId(), recurrenceId: recurrence.id }
+  const advance: Advance = { ...rest, id: makeId(), recurrenceId: recurrence.id, savingSupportId }
   const drawdown: Entry = {
     id: makeId(),
     label: rest.label,
-    categoryId: savingCategoryId,
+    categoryId: support.categoryId,
     memberId: rest.memberId,
+    savingSupportId,
     direction: 'in',
     amount: rest.amount,
     date: rest.paidOn,
@@ -268,20 +464,29 @@ export function replaceRecurrence(data: Data, id: string, next: Omit<Recurrence,
 
 /**
  * Recolle une échéance sur la règle qui l'a posée : sous quel libellé et quelle
- * catégorie elle se lit, dans quel sens, à qui elle est et si elle se partage.
+ * catégorie elle se lit, dans quel sens, à qui elle est, sur quel support elle
+ * tombe et si elle se partage.
  *
  * Tout le reste lui appartient — son montant, sa date, son statut, sa note :
  * ce sont les seuls champs qu'une échéance peut porter contre sa règle, et les
  * réécrire effacerait une saisie.
  */
 function requalify(entry: Entry, recurrence: Recurrence): Entry {
-  const { memberId: _member, shared: _shared, ...rest } = entry
+  const {
+    memberId: _member,
+    shared: _shared,
+    savingSupportId: _support,
+    ...rest
+  } = entry
   return {
     ...rest,
     label: recurrence.label,
     categoryId: recurrence.categoryId,
     direction: recurrence.direction,
     ...(recurrence.memberId === undefined ? {} : { memberId: recurrence.memberId }),
+    ...(recurrence.savingSupportId === undefined
+      ? {}
+      : { savingSupportId: recurrence.savingSupportId }),
     ...(recurrence.shared === undefined ? {} : { shared: recurrence.shared }),
   }
 }

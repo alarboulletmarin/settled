@@ -7,12 +7,13 @@ import { parseAmount } from '@/domain/money'
 import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { addAdvance } from '@/store/actions'
-import { useCategoriesByFamily, useMembers } from '@/store/selectors'
+import { SupportSelect } from '@/features/savings/SupportSelect'
+import { useActiveSavingSupports, useMembers } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { CategorySelect } from '@/ui/CategorySelect'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
-import { AmountInput, Checkbox, Field, Select, TextInput } from '@/ui/Field'
+import { AmountInput, Checkbox, Field, TextInput } from '@/ui/Field'
 import { PageTitle } from '@/ui/PageTitle'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
@@ -24,7 +25,7 @@ type Draft = {
   amountText: string
   paidOn: ISODate
   categoryId: string
-  savingCategoryId: string
+  savingSupportId: string
   memberId: string
   from: YearMonth
   to: YearMonth
@@ -44,38 +45,12 @@ function defaultDraft(): Draft {
     amountText: '',
     paidOn: today(),
     categoryId: '',
-    savingCategoryId: '',
+    savingSupportId: '',
     memberId: '',
     from: now,
     to: `${String(endYear)}-${String(endMonth).padStart(2, '0')}`,
     shared: false,
   }
-}
-
-/**
- * Le support d'épargne repris — un `select` restreint aux natures `saving`.
- *
- * `CategorySelect` range par sens, et le sens ne sait pas distinguer un livret
- * d'un plein d'essence : les deux sortent. C'est la nature qui le sait, et
- * proposer ici les trente-huit catégories de sortie ferait chercher le livret
- * parmi les courses.
- */
-function SavingSelect(props: Omit<Parameters<typeof Select>[0], 'children'>) {
-  const groups = useCategoriesByFamily(['saving'])
-  return (
-    <Select {...props}>
-      <option value="">{fr.entry.categoryPlaceholder}</option>
-      {groups.map((group) => (
-        <optgroup key={group.family.id} label={group.family.label}>
-          {group.categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.label}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </Select>
-  )
 }
 
 /**
@@ -89,6 +64,7 @@ function SavingSelect(props: Omit<Parameters<typeof Select>[0], 'children'>) {
  */
 export function AdvanceFormPage() {
   const members = useMembers()
+  const supports = useActiveSavingSupports()
   const currency = useCurrency()
   const navigate = useNavigate()
   const location = useLocation()
@@ -100,16 +76,23 @@ export function AdvanceFormPage() {
     label: draft.label.trim() === '' ? fr.advances.labelRequired : undefined,
     amount: amount === null || amount <= 0 ? fr.advances.amountRequired : undefined,
     category: draft.categoryId === '' ? fr.advances.categoryRequired : undefined,
-    saving: draft.savingCategoryId === '' ? fr.advances.savingCategoryRequired : undefined,
-    member: draft.memberId === '' ? fr.advances.memberRequired : undefined,
+    saving: draft.savingSupportId === '' ? fr.advances.savingSupportRequired : undefined,
     period: draft.to < draft.from ? fr.advances.periodInvalid : undefined,
   }
   // Le type doit rester celui de `errors` : `{}` littéral perdrait les clés, et
   // chaque champ irait chercher une propriété que TypeScript ne connaît plus.
   const shown: Partial<typeof errors> = showErrors ? errors : {}
 
+  /* Choisir le support répond aussi à « qui a avancé » : l'argent vient d'un
+     compte, et ce compte est à quelqu'un. Un second champ « Avancé par » ferait
+     une réponse de plus, qui pourrait contredire la première — l'avance de
+     Camille se reconstituerait alors sur le livret d'Alix. */
   const patch = (next: Partial<Draft>): void => {
-    setDraft((current) => ({ ...current, ...next }))
+    setDraft((current) => {
+      if (next.savingSupportId === undefined) return { ...current, ...next }
+      const support = supports.find((one) => one.id === next.savingSupportId)
+      return { ...current, ...next, memberId: support?.memberId ?? '' }
+    })
   }
 
   const back = (): void => {
@@ -130,7 +113,7 @@ export function AdvanceFormPage() {
     addAdvance({
       label: draft.label.trim(),
       categoryId: draft.categoryId,
-      savingCategoryId: draft.savingCategoryId,
+      savingSupportId: draft.savingSupportId,
       memberId: draft.memberId,
       amount,
       paidOn: draft.paidOn,
@@ -146,10 +129,13 @@ export function AdvanceFormPage() {
     <div className="flex max-w-xl flex-col gap-5">
       <PageTitle title={fr.advances.add} onBack={guard.request} />
 
-      {/* Sans membre, rien à enregistrer : une épargne est toujours à
-          quelqu'un, et l'écran le dit plutôt que de proposer un champ vide. */}
+      {/* Sans support, rien à enregistrer : une avance se prend sur une épargne
+          qui existe, et qui est à quelqu'un. L'écran le dit plutôt que de
+          proposer un champ vide — et il dit *laquelle* des deux choses manque. */}
       {members.length === 0 ? (
         <p className="t-label">{fr.advances.memberNone}</p>
+      ) : supports.length === 0 ? (
+        <p className="t-label">{fr.advances.savingSupportNone}</p>
       ) : (
         <form
           onSubmit={(event) => {
@@ -240,46 +226,21 @@ export function AdvanceFormPage() {
             </Field>
 
             <Field
-              label={fr.advances.savingCategory}
+              label={fr.advances.savingSupport}
               required
-              hint={fr.advances.savingCategoryHint}
+              hint={fr.advances.savingSupportHint}
               {...(shown.saving === undefined ? {} : { error: shown.saving })}
             >
               {(id, describedBy) => (
-                <SavingSelect
+                <SupportSelect
                   id={id}
                   aria-describedby={describedBy}
-                  value={draft.savingCategoryId}
+                  value={draft.savingSupportId}
                   invalid={shown.saving !== undefined}
                   onChange={(e) => {
-                    patch({ savingCategoryId: e.target.value })
+                    patch({ savingSupportId: e.target.value })
                   }}
                 />
-              )}
-            </Field>
-
-            <Field
-              label={fr.advances.member}
-              required
-              {...(shown.member === undefined ? {} : { error: shown.member })}
-            >
-              {(id, describedBy) => (
-                <Select
-                  id={id}
-                  aria-describedby={describedBy}
-                  value={draft.memberId}
-                  invalid={shown.member !== undefined}
-                  onChange={(e) => {
-                    patch({ memberId: e.target.value })
-                  }}
-                >
-                  <option value="">{fr.advances.member}</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </Select>
               )}
             </Field>
 

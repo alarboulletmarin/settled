@@ -8,7 +8,7 @@
 import { type ISODate, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
 import type { Money } from '@/domain/money'
-import { type Advance, type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type Settings, directionOfKind } from '@/domain/types'
+import { type Advance, type Category, type CategoryKind, type Debt, type Entry, type Family, type Member, type Recurrence, type SavingSupport, type SavingValuation, type Settings, directionOfKind } from '@/domain/types'
 import * as updates from '@/domain/updates'
 import { fr } from '@/i18n/fr'
 import { nextCategoryColor, nextMemberColor } from '@/persistence/defaults'
@@ -124,6 +124,65 @@ export function replaceDebt(id: string, next: Omit<Debt, 'id'>): void {
 
 export function removeDebt(id: string): void {
   mutate((data) => updates.removeDebt(data, id))
+}
+
+/* --- Épargne : supports et valorisations ----------------------------------*/
+
+/* La composition d'un support — le compte, et sa première valorisation quand un
+   montant est connu — est une règle, et elle vit donc dans le domaine. Quatre
+   portes créent des supports : la page Épargne, l'onboarding, la saisie d'un
+   versement et le jeu d'exemple. Elles appellent toutes celle-ci. */
+export type { SavingSupportInput } from '@/domain/updates'
+
+/** Pose un support et rend ce qui a été créé, pour que l'écran sache où aller. */
+export function addSavingSupport(input: updates.SavingSupportInput): SavingSupport {
+  const created = updates.createSavingSupport(useStore.getState().data, input, makeId)
+  mutate(() => created.data)
+  return created.support
+}
+
+export function replaceSavingSupport(id: string, next: Omit<SavingSupport, 'id'>): void {
+  mutate((data) => updates.replaceSavingSupport(data, id, next))
+}
+
+/**
+ * Archive un support, et arrête au passage les règles qui l'alimentent encore
+ * quand l'écran l'a demandé.
+ *
+ * Les deux gestes tiennent dans une seule mutation — donc un seul rendu, une
+ * seule écriture, un seul retour arrière. Les séparer laisserait un instant où
+ * le compte est invisible et continue pourtant de recevoir 300 € par mois.
+ */
+export function archiveSavingSupport(id: string, options: { stopRecurrences?: boolean } = {}): void {
+  mutate((data) => {
+    const archived = updates.archiveSavingSupport(data, id)
+    return options.stopRecurrences === true
+      ? updates.stopSupportRecurrences(archived, id, today())
+      : archived
+  })
+}
+
+export function unarchiveSavingSupport(id: string): void {
+  mutate((data) => updates.archiveSavingSupport(data, id, false))
+}
+
+/** Supprime un support pour de bon. Réservé à ce qui n'a pas d'histoire. */
+export function removeSavingSupport(id: string): void {
+  mutate((data) => updates.removeSavingSupport(data, id))
+}
+
+export function addSavingValuation(input: Omit<SavingValuation, 'id'>): SavingValuation {
+  const valuation: SavingValuation = { ...input, id: makeId() }
+  mutate((data) => updates.addSavingValuation(data, valuation))
+  return valuation
+}
+
+export function replaceSavingValuation(id: string, next: Omit<SavingValuation, 'id'>): void {
+  mutate((data) => updates.replaceSavingValuation(data, id, next))
+}
+
+export function removeSavingValuation(id: string): void {
+  mutate((data) => updates.removeSavingValuation(data, id))
 }
 
 /* --- Avances --------------------------------------------------------------*/

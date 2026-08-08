@@ -32,7 +32,6 @@ import {
   restToLive,
   savingCapacity,
   savingLeft,
-  savingsByCategory,
   spendingFlow,
   totalsByKind,
   upcomingDue,
@@ -40,6 +39,22 @@ import {
 } from '@/domain/stats'
 import { type AdvanceStatus, advanceStatus } from '@/domain/advance'
 import { type DebtStatus, debtStatus } from '@/domain/debt'
+import {
+  type SavingSlice,
+  type SavingTotal,
+  type SupportFlows,
+  type SupportUsage,
+  type SupportValue,
+  activeSupports,
+  isSupportEmpty,
+  knownSavingTotal,
+  savingsBySupport,
+  supportEntries,
+  supportMonthFlows,
+  supportUsage,
+  supportValue,
+  valuationsOf,
+} from '@/domain/saving'
 import {
   type MemberCharges,
   type MemberIncome,
@@ -69,6 +84,8 @@ import {
   type Family,
   type Member,
   type Recurrence,
+  type SavingSupport,
+  type SavingValuation,
   isSpending,
 } from '@/domain/types'
 import { type MonthFilter, useStore } from './store'
@@ -109,6 +126,9 @@ export const useCategories = (): Category[] => useStore((s) => s.data.categories
 export const useFamilies = (): Family[] => useStore((s) => s.data.families)
 export const useDebts = (): Debt[] => useStore((s) => s.data.debts)
 export const useAdvances = (): Advance[] => useStore((s) => s.data.advances)
+export const useSavingSupports = (): SavingSupport[] => useStore((s) => s.data.savingSupports)
+export const useSavingValuations = (): SavingValuation[] =>
+  useStore((s) => s.data.savingValuations)
 export const useMembers = (): Member[] => useStore((s) => s.data.household.members)
 export const useHouseholdName = (): string => useStore((s) => s.data.household.name)
 export const useCurrentYm = (): YearMonth => useStore((s) => s.ym)
@@ -761,16 +781,130 @@ export function useMemberCharges(): MemberChargesWithSettlement | null {
 
 /* --- Épargne --------------------------------------------------------------*/
 
-/** Où va l'épargne du mois affiché, à la portée de lecture courante. */
-export function useSavingsByCategory(limit?: number): CategorySlice[] {
+/**
+ * Où va l'épargne du mois affiché, **par support**, à la portée de lecture
+ * courante.
+ *
+ * Les mêmes `Entry` que celles de `useKindTotals` — donc que la capacité, le
+ * reste à placer et la tuile du mois : c'est ce qui garantit qu'un chiffre
+ * annoncé ici et là ne peut pas différer.
+ */
+export function useSavingsBySupport(limit?: number): SavingSlice[] {
   const { entries } = useMonthScope()
   const month = useCurrentYm()
   const kindOf = useKindOf()
   return useMemo(
-    () => savingsByCategory(entries, month, kindOf, undefined, limit),
+    () => savingsBySupport(entries, month, kindOf, undefined, limit),
     [entries, month, kindOf, limit],
   )
 }
+
+/** Les supports encore proposés à la saisie, archivés exclus. */
+export function useActiveSavingSupports(): SavingSupport[] {
+  const supports = useSavingSupports()
+  return useMemo(() => activeSupports(supports), [supports])
+}
+
+export function useSavingSupportMap(): Map<string, SavingSupport> {
+  const supports = useSavingSupports()
+  return useMemo(() => new Map(supports.map((support) => [support.id, support])), [supports])
+}
+
+/** Un support par son identifiant. `null` s'il n'existe pas (ou plus). */
+export function useSavingSupport(id: string | undefined): SavingSupport | null {
+  const supports = useSavingSupports()
+  return useMemo(
+    () => (id === undefined ? null : (supports.find((one) => one.id === id) ?? null)),
+    [supports, id],
+  )
+}
+
+/**
+ * Ce que valent les supports d'une lecture, et combien n'ont aucune valeur.
+ *
+ * Sous filtre par membre, seuls ses supports comptent : l'épargne est le seul
+ * chiffre du mois qui n'a aucun sens au foyer — deux personnes n'ont pas un
+ * livret commun, elles ont chacune le leur.
+ */
+export function useSavingTotal(): SavingTotal {
+  const supports = useScopedSavingSupports()
+  const valuations = useSavingValuations()
+  return useMemo(() => knownSavingTotal(supports, valuations), [supports, valuations])
+}
+
+/**
+ * Les supports de la lecture courante — ceux du membre filtré, ou tous.
+ *
+ * « Commun » n'en montre aucun, et c'est la règle du cahier : l'épargne ne se
+ * répartit pas comme une charge, il n'existe donc pas de support commun.
+ */
+export function useScopedSavingSupports(): SavingSupport[] {
+  const supports = useSavingSupports()
+  const filter = useMonthFilter()
+  return useMemo(() => {
+    if (filter.kind === 'all') return supports
+    if (filter.kind === 'common') return []
+    return supports.filter((support) => support.memberId === filter.memberId)
+  }, [supports, filter])
+}
+
+/** Ce qu'on sait du capital d'un support, et ce qu'on en déduit. */
+export function useSupportValue(supportId: string | undefined): SupportValue | null {
+  const valuations = useSavingValuations()
+  const entries = useEntries()
+  return useMemo(
+    () => (supportId === undefined ? null : supportValue(supportId, valuations, entries)),
+    [supportId, valuations, entries],
+  )
+}
+
+/** L'historique de valeur d'un support, du plus récent au plus ancien. */
+export function useSupportValuations(supportId: string | undefined): SavingValuation[] {
+  const valuations = useSavingValuations()
+  return useMemo(
+    () => (supportId === undefined ? [] : valuationsOf(valuations, supportId)),
+    [valuations, supportId],
+  )
+}
+
+/** Les mouvements d'un support sur le mois affiché — versements et reprises. */
+export function useSupportMonthFlows(supportId: string | undefined): SupportFlows {
+  const entries = useEntries()
+  const month = useCurrentYm()
+  return useMemo(
+    () =>
+      supportId === undefined
+        ? { contributions: 0 as Money, withdrawals: 0 as Money, net: 0 as Money }
+        : supportMonthFlows(entries, supportId, month),
+    [entries, supportId, month],
+  )
+}
+
+/** Les mouvements d'un support, du plus récent au plus ancien. */
+export function useSupportEntries(supportId: string | undefined): Entry[] {
+  const entries = useEntries()
+  return useMemo(
+    () => (supportId === undefined ? [] : supportEntries(entries, supportId)),
+    [entries, supportId],
+  )
+}
+
+/** Ce qu'un support retient derrière lui — ce qui décide archive ou suppression. */
+export function useSupportUsage(supportId: string | undefined): SupportUsage {
+  const data = useStore((s) => s.data)
+  return useMemo(
+    () =>
+      supportUsage(supportId ?? '', {
+        savingValuations: data.savingValuations,
+        entries: data.entries,
+        recurrences: data.recurrences,
+        advances: data.advances,
+      }),
+    [data, supportId],
+  )
+}
+
+export { isSupportEmpty }
 
 /**
  * Les versements du mois que personne ne porte.
@@ -789,6 +923,27 @@ export function useUnassignedSavings(): Entry[] {
     () =>
       entriesOfMonth(entries, month).filter(
         (entry) => entry.memberId === undefined && kindOf(entry.categoryId) === 'saving',
+      ),
+    [entries, month, kindOf],
+  )
+}
+
+/**
+ * Les mouvements d'épargne du mois qu'aucun support ne porte.
+ *
+ * Un document d'avant les supports en a : ses versements désignaient un poste,
+ * pas un compte. Ils comptent dans la capacité et dans le net du mois — ce sont
+ * des `Entry` comme les autres — mais ils ne disent pas *où* l'argent est allé,
+ * et l'écran le dit plutôt que de les faire disparaître de la ventilation.
+ */
+export function useUnlinkedSavings(): Entry[] {
+  const { entries } = useMonthScope()
+  const month = useCurrentYm()
+  const kindOf = useKindOf()
+  return useMemo(
+    () =>
+      entriesOfMonth(entries, month).filter(
+        (entry) => entry.savingSupportId === undefined && kindOf(entry.categoryId) === 'saving',
       ),
     [entries, month, kindOf],
   )

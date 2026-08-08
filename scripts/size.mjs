@@ -35,8 +35,19 @@ const DIST = 'dist'
    identités de plus sur la couche de tokens — et le reste pour le réglage qui
    les choisit, qui doit être lu avant le premier pixel. Le budget était à 200
    et l'app à 199,9 : il ne restait plus de quoi ajouter quoi que ce soit, ce qui
-   n'est pas la marge que ce chiffre est censé tenir. */
-const BUDGET_KIB = 210
+   n'est pas la marge que ce chiffre est censé tenir.
+
+   Relevé à 214 pour les **supports d'épargne**. Ce que le chantier ajoute au
+   graphe initial n'est pas un écran — la fiche d'un support, ses formulaires et
+   la courbe de son historique partent à la demande, avec le tracé SVG qu'ils
+   emportent — mais un **domaine** : le stock, à côté du flux. `domain/saving.ts`
+   et ses sélecteurs sont lus par le tableau de bord, la page Épargne et la
+   saisie ; le choix d'un support remplace celui d'une catégorie dans le
+   formulaire quotidien, et il faut donc qu'il soit là avec lui. Le reste est la
+   prose : une trentaine de chaînes d'interface, que `fr.ts` porte avant le
+   premier rendu. Quatre kibioctets de plus, dont on retrouve la marge d'usage —
+   de quoi ajouter une fonctionnalité, pas de quoi ramener un écran. */
+const BUDGET_KIB = 214
 
 const kib = (bytes) => bytes / 1024
 const format = (bytes) => `${kib(bytes).toFixed(1)} Kio`

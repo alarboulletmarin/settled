@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { RECURRENCES_PATH, SETTINGS_PEOPLE_PATH } from '@/app/routes'
+import { RECURRENCES_PATH, SAVINGS_PATH, SETTINGS_PEOPLE_PATH } from '@/app/routes'
 import type { Member } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatMoney, formatPercent, tpl } from '@/i18n/format'
@@ -10,6 +10,7 @@ import {
   useMemberIncomes,
   useMemberSharesOfIncome,
   useMembers,
+  useSavingSupports,
 } from '@/store/selectors'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
@@ -25,14 +26,27 @@ import { useCurrency } from '@/ui/currency'
  * Ce que le retrait d'un membre annonce, selon ce qu'il emporte vraiment.
  *
  * Tout ce qu'il libère est réversible — une entrée rendue au commun se
- * réattribue —, sauf ses avances : `Advance.memberId` n'est pas facultatif, une
- * épargne est toujours à quelqu'un. Une question qui annonce « rien n'est
- * effacé » ne peut donc pas les taire.
+ * réattribue —, sauf ses avances et ses supports d'épargne : leur `memberId`
+ * n'est pas facultatif, une épargne est toujours à quelqu'un. Une question qui
+ * annonce « rien n'est effacé » ne peut donc pas les taire.
+ *
+ * Les supports sont dits **en plus** et non à la place : ce sont deux pertes
+ * distinctes, et une phrase qui n'en nommerait qu'une serait fausse sur
+ * l'autre. L'historique financier, lui, ne bouge dans aucun des deux cas.
  */
-function removeQuestion(name: string, advances: number): string {
-  if (advances === 0) return tpl(fr.settings.memberRemoveConfirm, name)
-  if (advances === 1) return tpl(fr.settings.memberRemoveConfirmAdvanceOne, name)
-  return tpl(fr.settings.memberRemoveConfirmAdvances, advances, name)
+function removeQuestion(name: string, advances: number, supports: number): string {
+  const base =
+    advances === 0
+      ? tpl(fr.settings.memberRemoveConfirm, name)
+      : advances === 1
+        ? tpl(fr.settings.memberRemoveConfirmAdvanceOne, name)
+        : tpl(fr.settings.memberRemoveConfirmAdvances, advances, name)
+  if (supports === 0) return base
+  const about =
+    supports === 1
+      ? fr.settings.memberRemoveSupportOne
+      : tpl(fr.settings.memberRemoveSupports, supports)
+  return `${about} ${base}`
 }
 
 /**
@@ -71,6 +85,7 @@ function MemberView({ member }: { member?: Member }) {
   const incomes = useMemberIncomes()
   const shares = useMemberSharesOfIncome()
   const advances = useAdvances()
+  const supports = useSavingSupports()
   const currency = useCurrency()
   const [name, setName] = useState(member?.name ?? '')
   const [removing, setRemoving] = useState(false)
@@ -84,6 +99,8 @@ function MemberView({ member }: { member?: Member }) {
   const shareBp = member === undefined ? undefined : shares?.get(member.id)
   const removedAdvances =
     member === undefined ? 0 : advances.filter((advance) => advance.memberId === member.id).length
+  const ownedSupports =
+    member === undefined ? [] : supports.filter((support) => support.memberId === member.id)
 
   return (
     <div className="flex max-w-xl flex-col gap-4">
@@ -172,6 +189,20 @@ function MemberView({ member }: { member?: Member }) {
       {member !== undefined && (
         <Tile className="gap-3">
           <p className="t-label">{fr.settings.memberRemoveHint}</p>
+          {/* Réattribuer avant de retirer : c'est le même geste que changer le
+              propriétaire depuis la fiche d'un support, et il vaut mieux le
+              proposer avant qu'après. */}
+          {ownedSupports.length > 0 && (
+            <>
+              <p className="t-label">{fr.settings.memberSupportsReassign}</p>
+              <Link
+                to={SAVINGS_PATH}
+                className="t-label inline-flex min-h-11 w-fit items-center rounded-input underline underline-offset-2"
+              >
+                {fr.settings.memberSupportsGo}
+              </Link>
+            </>
+          )}
           <Button
             variant="ghost"
             className="w-fit"
@@ -189,7 +220,7 @@ function MemberView({ member }: { member?: Member }) {
         title={tpl(fr.settings.memberRemove, member?.name ?? '')}
         steps={[
           {
-            question: removeQuestion(member?.name ?? '', removedAdvances),
+            question: removeQuestion(member?.name ?? '', removedAdvances, ownedSupports.length),
             action: fr.common.delete,
           },
         ]}
@@ -202,9 +233,9 @@ function MemberView({ member }: { member?: Member }) {
           /* Le seul des six gestes qui n'annonçait rien. C'est aussi celui qui
              touche le plus d'endroits à la fois — ses entrées et ses
              récurrences rendues au commun, ses avances supprimées, le filtre du
-             mois rabattu sur « tout le monde » — et donc celui où l'instantané
-             rend le plus de service : aucun geste inverse ne les recollerait
-             un par un. */
+             mois rabattu sur « tout le monde », ses supports d'épargne et leurs
+             relevés effacés — et donc celui où l'instantané rend le plus de
+             service : aucun geste inverse ne les recollerait un par un. */
           undoable(tpl(fr.settings.memberRemoved, member.name), () => {
             removeMember(member.id)
           })

@@ -7,7 +7,16 @@
  * ==========================================================================*/
 
 import { describe, expect, it } from 'vitest'
-import { makeCategory, makeData, makeEntry, makeFamily, makeRecurrence } from '@/domain/fixtures'
+import {
+  makeAdvance,
+  makeCategory,
+  makeData,
+  makeEntry,
+  makeFamily,
+  makeRecurrence,
+  makeSavingSupport,
+  makeSavingValuation,
+} from '@/domain/fixtures'
 import { kindOfCategory } from '@/domain/types'
 import { repairedCategory } from './defaults'
 import { type ImportNotice, normalizeDocument } from './validate'
@@ -225,5 +234,163 @@ describe('identifiants en double', () => {
     expect(data.months).toHaveLength(1)
     expect(data.months[0]?.openedAt).toBe('2026-07-01')
     expect(reasons(notices)).toEqual(['duplicateId'])
+  })
+})
+
+/* ============================================================================
+ * Les supports d'épargne et leurs valorisations.
+ *
+ * Trois liens à tenir : un support pointe vers un membre et vers une catégorie
+ * d'épargne, une valorisation pointe vers un support, et une ligne d'épargne
+ * pointe vers le support qu'elle alimente. Chacun a sa réparation, et le plus
+ * doux qui règle le cas.
+ * ==========================================================================*/
+describe('les supports d’épargne', () => {
+  const savings = () =>
+    makeData({
+      household: { name: '', members: [{ id: 'm1', name: 'Alix', color: 'c' }] },
+      families: [makeFamily({ id: 'fam-savings', kind: 'saving' }), makeFamily({ id: 'fam-leisure' })],
+      categories: [
+        makeCategory({ id: 'passbook', familyId: 'fam-savings' }),
+        makeCategory({ id: 'outings', familyId: 'fam-leisure' }),
+      ],
+      savingSupports: [makeSavingSupport({ id: 's1', memberId: 'm1', categoryId: 'passbook' })],
+      savingValuations: [makeSavingValuation({ id: 'v1', supportId: 's1' })],
+    })
+
+  it('traverse la lecture sans une réparation quand tout se tient', () => {
+    const { data, notices } = normalizeDocument(raw(savings()))
+    expect(notices).toEqual([])
+    expect(data.savingSupports).toHaveLength(1)
+    expect(data.savingValuations).toHaveLength(1)
+  })
+
+  /* Une épargne est toujours à quelqu'un : lui inventer un porteur
+     attribuerait à une personne un compte qui n'est pas le sien. C'est la
+     règle des avances, au même endroit et pour la même raison. */
+  it('écarte un support dont le porteur n’existe pas, et ses relevés avec lui', () => {
+    const document = raw(
+      makeData({
+        ...savings(),
+        savingSupports: [makeSavingSupport({ id: 's1', memberId: 'fantôme' })],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+    expect(data.savingSupports).toEqual([])
+    expect(data.savingValuations).toEqual([])
+    expect(reasons(notices)).toEqual(['unknownMember', 'unknownSupport'])
+  })
+
+  it('écarte un support que personne ne porte du tout', () => {
+    const { memberId: _dropped, ...orphan } = makeSavingSupport({ id: 's1', memberId: 'm1' })
+    const document = raw(makeData(savings())) as Record<string, unknown>
+    document['savingSupports'] = [orphan]
+    const { data, notices } = normalizeDocument(document)
+    expect(data.savingSupports).toEqual([])
+    expect(reasons(notices)).toContain('noMember')
+  })
+
+  /* La catégorie ne dit que la nature du compte : la perdre ne justifie pas de
+     perdre le compte, qui porte des relevés et des mouvements. */
+  it('redirige un support vers une catégorie d’épargne quand la sienne n’en est pas une', () => {
+    const document = raw(
+      makeData({
+        ...savings(),
+        savingSupports: [makeSavingSupport({ id: 's1', memberId: 'm1', categoryId: 'outings' })],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+    expect(data.savingSupports[0]?.categoryId).toBe('passbook')
+    expect(reasons(notices)).toEqual(['unknownCategory'])
+  })
+
+  /* Une valorisation orpheline ne décrit rien : le compte qu'elle photographie
+     n'existe pas, et rien ne permettrait de la rattacher à un autre. */
+  it('écarte une valorisation qui ne désigne aucun support', () => {
+    const document = raw(
+      makeData({
+        ...savings(),
+        savingValuations: [makeSavingValuation({ id: 'v1', supportId: 's-parti' })],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+    expect(data.savingValuations).toEqual([])
+    expect(reasons(notices)).toEqual(['unknownSupport'])
+  })
+
+  /* Un montant illisible n'est pas une observation. Zéro, en revanche, en est
+     une — un livret vidé —, et il passe. */
+  it('écarte une valorisation sans montant lisible, garde un zéro', () => {
+    const document = raw(makeData(savings())) as Record<string, unknown>
+    document['savingValuations'] = [
+      { id: 'v1', supportId: 's1', amount: 'beaucoup', date: '2026-08-08' },
+      { id: 'v2', supportId: 's1', amount: 0, date: '2026-08-09' },
+    ]
+    const { data, notices } = normalizeDocument(document)
+    expect(data.savingValuations.map((v) => v.id)).toEqual(['v2'])
+    expect(reasons(notices)).toEqual(['amount'])
+  })
+
+  /* Le lien d'une ligne vers un support disparu se **coupe**, comme celui d'un
+     membre ou d'une règle : la ligne reste, à son montant et à sa date. */
+  it('coupe le lien d’une entrée vers un support absent, sans toucher au montant', () => {
+    const document = raw(
+      makeData({
+        ...savings(),
+        savingSupports: [],
+        savingValuations: [],
+        entries: [
+          makeEntry({
+            id: 'e1',
+            categoryId: 'passbook',
+            savingSupportId: 's-parti',
+            date: '2026-08-05',
+          }),
+        ],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+    expect(data.entries[0]).not.toHaveProperty('savingSupportId')
+    expect(data.entries[0]?.amount).toBe(1000)
+    expect(reasons(notices)).toEqual(['unknownSupport'])
+  })
+
+  it('coupe aussi celui d’une récurrence et d’une avance', () => {
+    const document = raw(
+      makeData({
+        ...savings(),
+        savingSupports: [],
+        savingValuations: [],
+        recurrences: [
+          makeRecurrence({
+            id: 'r1',
+            categoryId: 'passbook',
+            savingSupportId: 's-parti',
+            period: { unit: 'month', every: 1, anchorDay: 1 },
+          }),
+        ],
+        advances: [
+          makeAdvance({ id: 'av1', categoryId: 'outings', memberId: 'm1', savingSupportId: 's-parti' }),
+        ],
+      }),
+    )
+    const { data } = normalizeDocument(document)
+    expect(data.recurrences[0]).not.toHaveProperty('savingSupportId')
+    expect(data.advances[0]).not.toHaveProperty('savingSupportId')
+  })
+
+  it('renomme un support en double plutôt que d’en perdre un', () => {
+    const document = raw(
+      makeData({
+        ...savings(),
+        savingSupports: [
+          makeSavingSupport({ id: 's1', memberId: 'm1', categoryId: 'passbook' }),
+          makeSavingSupport({ id: 's1', memberId: 'm1', categoryId: 'passbook', label: 'PEA' }),
+        ],
+      }),
+    )
+    const { data, notices } = normalizeDocument(document)
+    expect(data.savingSupports.map((s) => s.id)).toEqual(['s1', 's1~2'])
+    expect(reasons(notices)).toContain('duplicateId')
   })
 })

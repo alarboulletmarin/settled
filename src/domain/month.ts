@@ -89,6 +89,12 @@ export function buildPlannedEntry(
     label: recurrence.label,
     categoryId: recurrence.categoryId,
     ...(recurrence.memberId === undefined ? {} : { memberId: recurrence.memberId }),
+    /* Le support voyage par identifiant, jamais par libellé ni par catégorie :
+       une échéance générée sait sur quel compte elle tombe parce que sa règle
+       le dit, et deux supports du même poste ne peuvent pas se confondre. */
+    ...(recurrence.savingSupportId === undefined
+      ? {}
+      : { savingSupportId: recurrence.savingSupportId }),
     direction: recurrence.direction,
     amount,
     date,

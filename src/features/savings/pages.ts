@@ -1,0 +1,18 @@
+/* ============================================================================
+ * Les écrans de l'épargne qui ne sont pas sur le chemin quotidien.
+ *
+ * La page Épargne, elle, reste dans le bundle initial : elle s'atteint d'un
+ * geste depuis la tuile Capacité du tableau de bord, comme la Répartition ou
+ * les Crédits. Ce qui s'ouvre **sous** elle — la fiche d'un support, ses deux
+ * formulaires, la courbe de son historique — se demande, et n'a donc aucune
+ * raison de peser sur le premier chargement de tout le monde.
+ *
+ * Un seul module pour les trois, comme les réglages : ouvrir une fiche amène
+ * aussi ses formulaires, et c'est exactement l'usage — on relève une valeur
+ * depuis la fiche qu'on vient d'ouvrir. Trois `import()` séparés auraient fait
+ * trois allers-retours de réseau là où l'on fait justement des allers-retours.
+ * ==========================================================================*/
+
+export { SupportPage } from './SupportPage'
+export { SupportFormPage } from './SupportFormPage'
+export { ValuationFormPage } from './ValuationFormPage'

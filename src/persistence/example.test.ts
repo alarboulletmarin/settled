@@ -4,6 +4,12 @@ import { type ISODate, addMonthsToYm, endOfMonth, ymOf } from '@/domain/date'
 import { debtStatus } from '@/domain/debt'
 import { hasDataInYear, trailingMonths } from '@/domain/history'
 import { detectPriceChange, amountOn, isCostly } from '@/domain/priceHistory'
+import {
+  knownSavingTotal,
+  latestValuation,
+  savingsBySupport,
+  supportMonthFlows,
+} from '@/domain/saving'
 import { settleMonth, settlementBalance } from '@/domain/settle'
 import { memberIncomes, memberShares, sharedEntries } from '@/domain/split'
 import {
@@ -11,7 +17,6 @@ import {
   breakdownByFamily,
   recurrenceTotals,
   savingCapacity,
-  savingsByCategory,
   totalsByKind,
 } from '@/domain/stats'
 import {
@@ -367,6 +372,57 @@ describe('ce que le domaine sait en tirer', () => {
     expect(totals.charge).toBeGreaterThan(0)
     expect(totals.debt).toBeGreaterThan(0)
     expect(savingCapacity(totals)).toBeGreaterThan(0)
-    expect(savingsByCategory(data.entries, anchor, kindOf).length).toBeGreaterThan(1)
+    expect(savingsBySupport(data.entries, anchor, kindOf).length).toBeGreaterThan(1)
+  })
+
+  /* Ce que la v1 ne pouvait pas montrer : le stock, à côté du flux. Le jeu
+     d'exemple doit le démontrer, pas seulement le rendre possible. */
+  it('possède une épargne relevée, avec son historique', () => {
+    expect(data.savingSupports.length).toBeGreaterThan(2)
+    const total = knownSavingTotal(data.savingSupports, data.savingValuations, ON)
+    expect(total.known).toBeGreaterThan(0)
+    expect(total.unvalued).toBe(0)
+    for (const support of data.savingSupports) {
+      expect(latestValuation(data.savingValuations, support.id, ON)).not.toBeNull()
+    }
+  })
+
+  /* Deux personnes, chacune son livret : c'est exactement ce qu'une catégorie
+     seule ne pouvait pas représenter. */
+  it('donne à deux personnes deux supports de même catégorie', () => {
+    const passbooks = data.savingSupports.filter((s) => s.categoryId === 'passbook')
+    expect(passbooks).toHaveLength(2)
+    expect(new Set(passbooks.map((s) => s.memberId)).size).toBe(2)
+  })
+
+  it('relie chaque mouvement d’épargne à un support existant', () => {
+    const ids = new Set(data.savingSupports.map((support) => support.id))
+    const savings = data.entries.filter((entry) => kindOf(entry.categoryId) === 'saving')
+    expect(savings.length).toBeGreaterThan(0)
+    for (const entry of savings) {
+      expect(entry.savingSupportId).toBeDefined()
+      expect(ids.has(entry.savingSupportId ?? '')).toBe(true)
+    }
+  })
+
+  it('fait passer chaque avance par le support qu’elle reprend', () => {
+    for (const advance of data.advances) {
+      expect(advance.savingSupportId).toBeDefined()
+      const recurrence = data.recurrences.find((r) => r.id === advance.recurrenceId)
+      expect(recurrence?.savingSupportId).toBe(advance.savingSupportId)
+    }
+  })
+
+  /* Un support qui bouge sans qu'on y verse rien : le seul dont la valeur ne
+     s'explique que par le marché. C'est ce qui interdit de dériver le capital
+     des versements. */
+  it('porte un support qui vaut quelque chose sans recevoir de versement', () => {
+    const untouched = data.savingSupports.filter(
+      (support) => supportMonthFlows(data.entries, support.id, anchor).net === 0,
+    )
+    expect(untouched.length).toBeGreaterThan(0)
+    const history = data.savingValuations.filter((v) => v.supportId === untouched[0]?.id)
+    expect(history.length).toBeGreaterThan(1)
+    expect(new Set(history.map((v) => v.amount)).size).toBeGreaterThan(1)
   })
 })

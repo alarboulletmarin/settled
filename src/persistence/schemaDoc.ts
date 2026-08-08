@@ -66,6 +66,11 @@ const RULES = [
   '**Le revenu d’une personne ne se déclare nulle part** : il se lit sur ses récurrences de nature `resource`. C’est ce qui répartit les charges communes au prorata — deux revenus veulent donc une récurrence de salaire *par personne*, avec son `memberId`.',
   '**Un `Debt` ou une `Advance` ne produit aucun mouvement d’argent.** Il faut lui lier la récurrence qui pose les mensualités (`recurrenceId`), sinon rien ne s’amortit. Le capital restant dû est dérivé des mensualités confirmées, jamais saisi.',
   '**`Advance.memberId` est obligatoire** — une épargne est toujours à quelqu’un. Une avance sans lui est écartée à l’import.',
+  '**Le stock et le flux ne se mélangent jamais.** Un `SavingValuation` dit ce qu’un support *vaut* à une date : c’est une observation, pas une opération. Il n’entre dans aucun total du mois — ni solde, ni revenus, ni charges, ni capacité d’épargne, ni versements. Ce qui *bouge* est une `Entry`, comme partout ailleurs.',
+  '**Un support d’épargne est une entité, pas une catégorie.** La catégorie dit la *nature* du mouvement (livret, plan, assurance-vie) ; le `SavingSupport` dit *lequel* et *à qui*. Deux personnes peuvent avoir chacune leur « Livret A » : ce sont deux supports, sous la même catégorie. `SavingSupport.categoryId` doit désigner une catégorie de nature `saving`.',
+  '**`SavingSupport.memberId` est obligatoire**, comme sur une avance : une épargne est toujours à quelqu’un, et il n’existe pas de support commun. Un support sans porteur est écarté à l’import.',
+  '**Le capital ne se pose jamais sur le support.** Il vit dans les `savingValuations`, qui s’empilent : la valeur courante est le relevé le plus récent, et les précédents font l’historique. Un support sans relevé a une valeur *inconnue* — ce qui n’est pas zéro, et ce qui ne s’additionne à rien.',
+  '**Un mouvement d’épargne désigne son support par identifiant** — `Entry.savingSupportId`, `Recurrence.savingSupportId`, `Advance.savingSupportId` — et jamais par libellé ni par catégorie. Le champ n’a de sens que sur une ligne de nature `saving` ; ailleurs, omets-le. Une échéance générée hérite du support de sa règle.',
   '**Les `id` sont des chaînes libres**, à toi de les choisir. Ils doivent être uniques dans leur tableau, et tout `categoryId`, `memberId`, `familyId` ou `recurrenceId` cité doit désigner quelque chose qui existe.',
   '**`settings.theme` et `settings.palette` sont deux réglages distincts.** Le thème dit `"light"`, `"dark"` ou `"system"` ; la palette dit avec quelles couleurs — `"classique"`, `"monochrome"`, `"douce"`, `"vive"`, `"neutre"` ou `"contrastee"`. Purement cosmétiques : ni l’un ni l’autre ne change un calcul. Une valeur inconnue retombe sur `"classique"` sans que la ligne soit écartée.',
   '**Trois champs sont réservés et sans effet en v1.** `Category.icon`, `MonthState.closed` et `settings.monthStartsOn` sont lus, validés et conservés à l’import, mais aucun écran ne s’en sert : l’icône n’est jamais rendue, un mois n’est jamais clos, et l’app raisonne en mois calendaire. Laisse-les à leur valeur par défaut — `""`, `false`, `1`. Y mettre autre chose ne casse rien et ne fait rien non plus, et ce document préfère le dire plutôt que de te laisser croire à un réglage.',
@@ -84,7 +89,8 @@ const MINIMAL = `{
   "families": [
     { "id": "fam-resources", "label": "Ressources", "kind": "resource" },
     { "id": "fam-housing", "label": "Logement", "kind": "charge" },
-    { "id": "fam-daily", "label": "Vie courante", "kind": "charge" }
+    { "id": "fam-daily", "label": "Vie courante", "kind": "charge" },
+    { "id": "fam-savings", "label": "Épargne", "kind": "saving" }
   ],
   "categories": [
     {
@@ -111,6 +117,15 @@ const MINIMAL = `{
       "familyId": "fam-daily",
       "icon": "",
       "color": "var(--cat-5)",
+      "direction": "out",
+      "archived": false
+    },
+    {
+      "id": "passbook",
+      "label": "Livrets",
+      "familyId": "fam-savings",
+      "icon": "",
+      "color": "var(--cat-6)",
       "direction": "out",
       "archived": false
     }
@@ -144,6 +159,17 @@ const MINIMAL = `{
       "amount": 95000,
       "period": { "unit": "month", "every": 1, "anchorDay": 5 },
       "startedOn": "2026-01-05"
+    },
+    {
+      "id": "r-livret-alix",
+      "label": "Virement livret",
+      "categoryId": "passbook",
+      "memberId": "m-alix",
+      "savingSupportId": "s-livret-alix",
+      "direction": "out",
+      "amount": 20000,
+      "period": { "unit": "month", "every": 1, "anchorDay": 28 },
+      "startedOn": "2026-01-28"
     }
   ],
   "entries": [
@@ -189,10 +215,40 @@ const MINIMAL = `{
       "date": "2026-01-12",
       "status": "confirmed",
       "note": "Une dépense ponctuelle n’a pas de recurrenceId."
+    },
+    {
+      "id": "e-5",
+      "recurrenceId": "r-livret-alix",
+      "label": "Virement livret",
+      "categoryId": "passbook",
+      "memberId": "m-alix",
+      "savingSupportId": "s-livret-alix",
+      "direction": "out",
+      "amount": 20000,
+      "date": "2026-01-28",
+      "status": "confirmed",
+      "note": "Un versement sort du compte : sens out, nature saving."
     }
   ],
   "debts": [],
   "advances": [],
+  "savingSupports": [
+    {
+      "id": "s-livret-alix",
+      "label": "Livret A",
+      "memberId": "m-alix",
+      "categoryId": "passbook",
+      "archived": false
+    }
+  ],
+  "savingValuations": [
+    {
+      "id": "v-1",
+      "supportId": "s-livret-alix",
+      "amount": 1245000,
+      "date": "2026-01-31"
+    }
+  ],
   "months": [{ "ym": "2026-01", "openedAt": "2026-01-01", "closed": false }],
   "settings": { "theme": "system", "palette": "classique", "currency": "EUR", "monthStartsOn": 1 }
 }`
@@ -280,6 +336,24 @@ ${NATURES}
 L'épargne se compte **en net** : un versement est une sortie, une reprise sur un
 livret est une \`Entry\` de sens \`in\` sur une catégorie \`saving\`.
 
+## Stock et flux
+
+L'épargne se lit de deux façons qui ne s'additionnent pas.
+
+- Le **flux** — ce qu'on verse et ce qu'on reprend — passe par des \`Entry\`, comme
+  tout le reste de l'app. Elles désignent leur support par \`savingSupportId\`.
+- Le **stock** — ce que le support vaut — passe par des \`SavingValuation\`, des
+  relevés datés qui s'empilent. Le plus récent est la valeur courante ; les
+  autres font l'historique.
+
+Un relevé n'est **pas** une opération : « PEA, 18 320 € le 1er août » ne dit pas
+qu'un virement de 18 320 € a eu lieu ce jour-là. Un versement ne réécrit
+symétriquement aucun relevé — sur un placement, la valeur bouge aussi avec le
+marché.
+
+Un support sans relevé vaut « inconnu », jamais zéro : l'app le compte à part
+plutôt que de l'additionner.
+
 ## Le catalogue par défaut
 
 Ces identifiants existent déjà dans une app neuve — réutilise-les plutôt que
@@ -291,8 +365,8 @@ ${catalogue()}
 
 ## Un document minimal
 
-Deux personnes, un salaire chacune, un loyer commun et une dépense ponctuelle.
-Il s'importe tel quel.
+Deux personnes, un salaire chacune, un loyer commun, une dépense ponctuelle, et
+un livret avec son versement mensuel et sa valeur relevée. Il s'importe tel quel.
 
 \`\`\`json
 ${MINIMAL}

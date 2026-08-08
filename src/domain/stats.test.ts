@@ -11,7 +11,6 @@ import {
   savingCapacity,
   savingLeft,
   savingRate,
-  savingsByCategory,
   spendingFlow,
   totalsByKind,
   entriesInRange,
@@ -587,43 +586,6 @@ describe('lecture par nature', () => {
   })
 })
 
-describe('où va l’épargne', () => {
-  const KINDS: Record<string, CategoryKind> = {
-    salaire: 'resource',
-    loyer: 'charge',
-    pea: 'saving',
-    livret: 'saving',
-  }
-  const kindOf = (id: string): CategoryKind => KINDS[id] ?? 'charge'
-
-  const month = [
-    makeEntry({ id: 'a', categoryId: 'salaire', direction: 'in', date: '2026-07-01', amount: eur(200000) }),
-    makeEntry({ id: 'b', categoryId: 'loyer', date: '2026-07-05', amount: eur(80000) }),
-    makeEntry({ id: 'c', categoryId: 'livret', date: '2026-07-10', amount: eur(15000) }),
-    makeEntry({ id: 'd', categoryId: 'pea', date: '2026-07-10', amount: eur(30000) }),
-    makeEntry({ id: 'e', categoryId: 'livret', date: '2026-07-25', amount: eur(5000) }),
-  ]
-
-  /* Le livret est saisi le premier et en deux fois : sans tri, il sortirait en
-     tête, et l'ordre d'un écran qui répond « où va l'argent » n'est pas celui
-     de la saisie. */
-  it('ne garde que les versements, du plus gros support au plus petit', () => {
-    const slices = savingsByCategory(month, '2026-07', kindOf)
-    expect(slices.map((s) => s.categoryId)).toEqual(['pea', 'livret'])
-    expect(slices.map((s) => s.total)).toEqual([30000, 20000])
-  })
-
-  it('donne à chaque support sa part du versé, pas du mois', () => {
-    const slices = savingsByCategory(month, '2026-07', kindOf)
-    expect(slices[0]?.share).toBeCloseTo(0.6, 5)
-  })
-
-  it('ne rend rien quand le mois ne place rien', () => {
-    const plain = month.filter((e) => kindOf(e.categoryId) !== 'saving')
-    expect(savingsByCategory(plain, '2026-07', kindOf)).toEqual([])
-  })
-})
-
 describe('ce qui rentre et ce qui se paie', () => {
   const KINDS: Record<string, CategoryKind> = {
     salaire: 'resource',
@@ -717,16 +679,4 @@ describe('une reprise d’épargne se retranche des versements', () => {
     expect(savingLeft(totalsByKind(month, '2026-07', kindOf))).toBe(175000)
   })
 
-  it('rend le support à son solde net, pas à la somme des mouvements', () => {
-    const slices = savingsByCategory(month, '2026-07', kindOf)
-    expect(slices).toEqual([{ categoryId: 'livret', total: -55000, share: 1 }])
-  })
-
-  it('retire un support autant repris que reconstitué : il n’a rien reçu', () => {
-    const wash = [
-      makeEntry({ id: 'x', categoryId: 'livret', date: '2026-07-10', amount: eur(60000) }),
-      makeEntry({ id: 'y', categoryId: 'livret', direction: 'in', date: '2026-07-15', amount: eur(60000) }),
-    ]
-    expect(savingsByCategory(wash, '2026-07', kindOf)).toEqual([])
-  })
 })

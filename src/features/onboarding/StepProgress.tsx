@@ -19,9 +19,9 @@ import { Ring } from '@/ui/Ring'
  * ou charger l'exemple n'a plus qu'à répondre ou à fermer.
  */
 /** Le nombre d'étapes. Vit ici parce que c'est ici que la jauge le divise. */
-const STEPS = 2
+const STEPS = 3
 
-export function StepProgress({ step, onBack }: { step: 1 | 2; onBack?: () => void }) {
+export function StepProgress({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
   const label = tpl(fr.onboarding.progress, step)
 
   return (
