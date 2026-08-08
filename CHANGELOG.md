@@ -12,6 +12,59 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — le calendrier dit enfin ce que ses pastilles veulent dire
+
+La grille montrait quatre signes et n'en nommait aucun : une pastille pleine,
+une pastille en pointillés, un quantième dans un contour, un « +4 ». La couleur
+d'une pastille dit une catégorie, un contour en pointillés dit « prévue, pas
+encore confirmée » — deux règles que le reste de l'app applique partout, et que
+le calendrier était le seul écran à ne jamais énoncer. Il n'y avait rien à
+comprendre : il fallait le savoir.
+
+- **Une légende sous la grille**, séparée d'un filet : pastille pleine
+  « Confirmée », pastille en pointillés « Prévue », quantième dans son contour
+  « Aujourd'hui », et dessous la phrase qui dit ce que la couleur fait. Les
+  pastilles d'exemple sont grises, volontairement : la légende montre la
+  **forme**, jamais la couleur — en désigner une sur les quarante-sept
+  catégories du jeu d'exemple reviendrait à en nommer une au hasard. Les
+  catégories, elles, se lisent dans la feuille du jour, où chaque ligne porte
+  son nom à côté de sa pastille.
+
+  Elle n'explique que ce qui est à l'écran : rien du tout sur une fenêtre sans
+  aucune échéance, pas de cadre du jour sur un mois qui ne le montre pas, pas de
+  phrase sur le « + » quand aucune case ne déborde. Une légende qui nomme des
+  marques absentes est du bruit.
+
+- **Le pointillé se dit aussi en mots.** Une case annonçait « 3 échéances » là
+  où l'œil voit deux pastilles pleines et une en pointillés : son nom accessible
+  dit maintenant « dont 1 prévue », dans le vocabulaire exact de la légende. Le
+  design system §8 demande qu'une forme ne porte jamais seule ce qu'elle dit ; la
+  règle valait pour le compte, le cadre du jour et le débord, et laissait
+  justement passer le seul signe que personne ne devine.
+
+- **« Aujourd'hui » est retiré de la carte.** Il n'apparaissait pas quand on
+  était parti — il apparaissait quand l'**ancre du clavier** avait quitté le
+  jour, ce qui n'est pas la même chose : l'ancre suit la dernière case touchée,
+  et rien à l'écran ne la montre. Sur le mois courant, ouvrir puis refermer un
+  jour le faisait donc surgir sans que rien n'ait bougé, et l'appuyer ne rouvrait
+  qu'une feuille sur une grille où l'on était déjà — un bouton dont la condition
+  d'apparition est invisible **et** dont l'effet ne se voit pas.
+
+  Ce qu'il promettait existe ailleurs, et se voit : « ce mois-ci » dans le
+  bandeau ramène le mois la seule fois où l'on est vraiment parti, et le jour se
+  rejoint d'un doigt sur sa case — que son cadre désigne, et que la légende
+  nomme désormais. Le design system §6 est amendé : la condition d'apparition
+  d'un repère d'action doit se voir à l'écran, et son effet aussi.
+
+- **Le bas de page dégage le bouton flottant**, sur tous les écrans. Le cadre
+  bas valait 96px quand le disque en occupe 129 depuis le bas de la fenêtre —
+  barre d'onglets, gouttière et ses 56px de diamètre : les trente derniers
+  pixels de chaque écran vivaient sous lui, à droite. Cela ne se voyait pas tant
+  qu'un écran finissait par une tuile ou un bouton centré ; la légende, qui est
+  du texte filant jusqu'au bord droit, y perdait sa dernière ligne à 390px de
+  large. La mesure suit maintenant les tokens du bouton, pour ne pas se décaler
+  le jour où il bouge.
+
 ### Modifié — l'historique répond à trois questions, et non plus à quatre cartes
 
 **La page donnait le même poids à tout.** Recherche, douze derniers mois, écart
@@ -92,14 +145,6 @@ Ce qui change :
   seuil est mesuré : une demi-tuile y laisse 65px de texte au contrôle quand
   « sept. 2026 » en demande 70, et un `<select>` fermé tronque sans le dire.
 
-### Corrigé — le bouton flottant passait sur les derniers pixels de chaque écran
-
-Le cadre bas de la coquille valait 96px quand le disque monte à 129px au-dessus
-du bord. Les trente-trois derniers pixels du contenu passaient dessous, au coin
-bas-droit — c'est-à-dire sur les montants d'une liste et sur la poignée d'un
-repli. Il se déduit maintenant de ce qu'il doit dégager, avec les jetons du
-bouton, pour que les deux ne puissent plus diverger.
-
 ### Corrigé — l'historique tombait sur un document sans le moindre mois
 
 La comparaison mensuelle calculait son mois de repli avant le garde qui explique
@@ -107,6 +152,7 @@ qu'il n'y a rien à comparer, et l'arithmétique sur un mois vide lève. Le gard
 passe devant. Dans la foulée, un couple de mois qui ne désigne plus rien — après
 un import ou un chargement du jeu d'exemple — retombe sur les deux derniers au
 lieu de laisser un sélecteur afficher une valeur absente de sa propre liste.
+
 
 ### Modifié — les réglages deviennent une section, et redeviennent lisibles
 
@@ -316,10 +362,11 @@ catégorie 1 disparaissait purement sur le jour qu'on venait d'ouvrir.
   d'échéances et ses trois portes de saisie. Il était une tuile posée sous la
   grille, qui devait réécrire à la main ce qu'un `<dialog>` donne : Échap, le
   clic à côté, le piège de focus, le retour du focus à la case d'origine.
-- **« Aujourd'hui » revient au jour**, dans la carte, et n'apparaît que lorsque
-  l'on est parti. Le design system §6 est amendé des deux décisions : le bandeau
-  garde « ce mois-ci » parce qu'il ne bouge que le mois, et la lecture courte et
-  refermable rejoint la question fermée parmi ce qui a droit à la feuille.
+- **La lecture courte et refermable rejoint la question fermée** parmi ce qui a
+  droit à la feuille : le design system §6 est amendé de cette décision. La
+  carte a un temps porté un « Aujourd'hui » en plus du « ce mois-ci » du
+  bandeau ; il est reparti avant d'être publié, et la section « le calendrier
+  dit enfin ce que ses pastilles veulent dire » raconte pourquoi.
 
 ### Modifié — la répartition se lit d'un trait, comme la page qui la présente
 

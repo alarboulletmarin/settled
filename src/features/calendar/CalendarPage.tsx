@@ -2,9 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { entryNewPath, entryPath } from '@/app/routes'
-import { type ISODate, currentYm, today, ymOf } from '@/domain/date'
+import { type ISODate, today, ymOf } from '@/domain/date'
 import { fr } from '@/i18n/fr'
-import { formatDate, tpl } from '@/i18n/format'
 import { useCurrentYm, useMonthBounds } from '@/store/selectors'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
@@ -93,25 +92,22 @@ export function CalendarPage() {
     void navigate(entryNewPath(date === undefined ? options : { ...options, date }))
   }
 
-  /* « Aujourd'hui » et non « ce mois-ci » : celui-ci ramène vraiment au jour —
-     il rouvre le mois courant, ouvre la date du jour et y repose le focus. Le
-     DS §6 refusait le mot au bandeau parce que le bouton du bandeau ne bouge
-     que le mois ; ici la promesse est tenue.
-
-     Il n'existe que lorsqu'il fait quelque chose, comme les repères d'action du
-     DS §6 : un bouton qui ne bouge rien apprend à ignorer ceux qui bougent
-     quelque chose. */
-  const onToday = (): void => {
-    setYm(currentYm())
-    setAnchor(now)
-    setOpened(now)
-  }
-  /* Une seule condition suffit, parce que l'ancre suit tout : elle vaut le 1er
-     d'un autre mois, le jour qu'on ouvre, et celui vers lequel une flèche
-     déplace le focus. Elle ne vaut donc aujourd'hui que sur le mois courant,
-     sans être parti nulle part — et c'est exactement le cas où ce bouton ne
-     ferait rien. */
-  const somewhereElse = active !== now
+  /* Il y avait ici un « Aujourd'hui », et il est parti.
+   *
+   * Il n'apparaissait pas quand on était parti — il apparaissait quand l'ancre
+   * du clavier n'était plus sur aujourd'hui, ce qui n'est *pas* la même chose :
+   * l'ancre suit la dernière case touchée, et rien à l'écran ne la montre. Sur
+   * le mois courant, ouvrir puis refermer un jour le faisait donc apparaître
+   * sans que rien n'ait bougé, et l'appuyer ne rouvrait qu'une feuille — la
+   * grille, elle, ne bougeait pas d'un pixel, puisqu'on y était déjà. Un bouton
+   * dont la condition d'apparition est invisible et dont l'effet ne se voit pas
+   * est exactement ce que le DS §6 voulait empêcher, retourné.
+   *
+   * Ce qu'il promettait existe ailleurs, et se voit : « ce mois-ci » dans le
+   * bandeau ramène le mois quand on l'a quitté — la seule fois où l'on est
+   * vraiment parti —, et le jour se rejoint d'un doigt sur sa case, que son
+   * cadre désigne et que la légende nomme désormais.
+   */
 
   const hasAny = grid.cells.some((cell) => cell.inMonth && entriesOn(grid, cell.date).length > 0)
 
@@ -142,18 +138,6 @@ export function CalendarPage() {
             focusOn={focusOn}
             today={now}
           />
-          {somewhereElse && (
-            <div className="flex justify-end pt-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                title={tpl(fr.calendar.backToTodayTitle, formatDate(now))}
-                onClick={onToday}
-              >
-                {fr.calendar.today}
-              </Button>
-            </div>
-          )}
         </Tile>
 
         {/* L'invitation portait une action — « ouvre le mois » — que cet écran

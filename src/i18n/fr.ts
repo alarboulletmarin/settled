@@ -715,12 +715,27 @@ export const fr = {
        mots qu'elle sépare : elle se range donc ici, et non dans le composant. */
     labelJoin: ', ',
 
-    /* Le retour au jour, dans la tuile. « Aujourd'hui » et non « ce mois-ci » :
-       ce bouton-ci rouvre le mois courant ET ouvre la date du jour, donc il
-       ramène vraiment au jour. C'est la condition que le DS §6 posait pour
-       refuser le mot au bandeau. */
-    today: 'Aujourd’hui',
-    backToTodayTitle: 'Revenir au %s',
+    /* Le compte des prévues d'une case, ajouté à son nom accessible : le
+       pointillé d'une pastille est une forme, et une forme ne dit rien toute
+       seule (DS §8). Les mêmes mots que la légende, pour que ce qu'on entend et
+       ce qu'on lit soient la même chose. */
+    onePlanned: 'dont 1 prévue',
+    somePlanned: 'dont %s prévues',
+
+    /* La légende de la grille, sous les six semaines. Quatre marques et pas un
+       mot pour les nommer : « pas encore confirmée » ne se devine pas derrière
+       un contour en pointillés. Les libellés sont ceux des lignes de l'app —
+       une échéance est prévue ou confirmée, et le calendrier ne va pas inventer
+       un troisième vocabulaire pour les mêmes deux états. */
+    legendDone: 'Confirmée',
+    legendPlanned: 'Prévue',
+    legendToday: 'Aujourd’hui',
+    legendDots: 'Une pastille par échéance, à la couleur de sa catégorie.',
+    /* La seconde phrase ne se dit que si un « +N » est à l'écran : trois lignes
+       de légende sous un mois qui n'en a aucun expliquent une marque qu'on ne
+       voit pas. */
+    legendMore: 'Le « + » compte celles qui ne tiennent pas dans la case.',
+
     dayTotal: 'Total du jour',
 
     /* La légende du pied de feuille. Trois pilules grises de largeur égale au

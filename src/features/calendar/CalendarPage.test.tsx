@@ -9,7 +9,7 @@ import { fr } from '@/i18n/fr'
 import { de, formatMoney, formatWeekdayDate, formatYearMonth, tpl } from '@/i18n/format'
 import { useStore } from '@/store/store'
 import { CalendarPage } from './CalendarPage'
-import { CELLS, dayNet } from './grid'
+import { CELLS, MAX_DOTS, dayNet } from './grid'
 
 const initial = useStore.getState().data
 const initialYm = useStore.getState().ym
@@ -165,7 +165,11 @@ describe('CalendarPage — le jour ouvert', () => {
         .find((cell) => named(cell).startsWith(formatWeekdayDate(jour))) as HTMLElement,
     )
 
-    const lignes = screen.getAllByRole('listitem').map((item) => item.textContent ?? '')
+    /* Dans la feuille, et non dans la page : la légende de la grille est une
+       liste elle aussi, et elle reste montée derrière le panneau. */
+    const lignes = within(screen.getByRole('dialog'))
+      .getAllByRole('listitem')
+      .map((item) => item.textContent ?? '')
     expect(lignes[0]).toContain('Salaire')
     expect(lignes[1]).toContain('Café')
     expect(lignes[2]).toContain('Loyer')
@@ -202,6 +206,18 @@ describe('CalendarPage — le jour ouvert', () => {
     ).toBeInTheDocument()
   })
 
+  /* Trois échéances dont une prévue : la case montre deux pastilles pleines et
+     une en pointillés, et son nom accessible dit la même chose en mots. */
+  it('dit le compte des prévues dans le nom de sa case', () => {
+    setup('2026-08', journee)
+    const case_ = within(grid('2026-08'))
+      .getAllByRole('button')
+      .find((cell) => named(cell).startsWith(formatWeekdayDate(jour))) as HTMLElement
+
+    expect(named(case_)).toContain(tpl(fr.calendar.someEntries, 3))
+    expect(named(case_)).toContain(fr.calendar.onePlanned)
+  })
+
   it('rend le focus à sa case en se refermant', async () => {
     setup('2026-08', journee)
     const case_ = within(grid('2026-08'))
@@ -215,27 +231,63 @@ describe('CalendarPage — le jour ouvert', () => {
   })
 })
 
-describe('CalendarPage — le retour à aujourd’hui', () => {
+describe('CalendarPage — la légende', () => {
   afterEach(() => {
     useStore.setState({ data: initial, ym: initialYm })
   })
 
-  /* La règle des repères d'action du DS §6 : un bouton qui ne bouge rien
-     apprend à ignorer ceux qui bougent quelque chose. */
-  it('n’existe pas tant qu’on n’est parti nulle part', () => {
-    setup(currentYm())
-    expect(screen.queryByRole('button', { name: fr.calendar.today })).not.toBeInTheDocument()
+  it('nomme les quatre marques que la grille montre', () => {
+    setup(currentYm(), [
+      makeEntry({ id: 'prevue', date: today(), status: 'planned' }),
+      makeEntry({ id: 'confirmee', date: today() }),
+    ])
+
+    expect(screen.getByText(fr.calendar.legendDone)).toBeInTheDocument()
+    expect(screen.getByText(fr.calendar.legendPlanned)).toBeInTheDocument()
+    expect(screen.getByText(fr.calendar.legendToday)).toBeInTheDocument()
+    expect(screen.getByText(fr.calendar.legendDots)).toBeInTheDocument()
+    // Deux échéances tiennent dans la case : rien à expliquer du « + ».
+    expect(screen.queryByText(fr.calendar.legendMore, { exact: false })).not.toBeInTheDocument()
   })
 
-  it('rétablit le mois et ouvre le jour', async () => {
+  /* Cinq échéances le même jour, quatre pastilles : le « +1 » apparaît, et la
+     phrase qui le nomme avec lui. */
+  it('explique le « + » le jour où il y en a un', () => {
+    setup(
+      currentYm(),
+      Array.from({ length: MAX_DOTS + 1 }, (_, index) =>
+        makeEntry({ id: `e-${String(index)}`, date: today(), amount: eur(100 * (index + 1)) }),
+      ),
+    )
+
+    expect(screen.getByText(fr.calendar.legendMore, { exact: false })).toBeInTheDocument()
+  })
+
+  /* Une légende qui nomme des marques absentes est du bruit : elle explique ce
+     qui est à l'écran, et rien d'autre. */
+  it('ne dit rien d’une fenêtre sans aucune pastille', () => {
+    setup(currentYm())
+    expect(screen.queryByText(fr.calendar.legendDots)).not.toBeInTheDocument()
+  })
+
+  it('ne nomme pas le cadre du jour sur un mois qui ne le montre pas', () => {
     const ym = addMonthsToYm(currentYm(), -3)
-    setup(ym)
+    setup(ym, [makeEntry({ id: 'ailleurs', date: `${ym}-15` })])
 
-    await userEvent.click(screen.getByRole('button', { name: fr.calendar.today }))
+    expect(screen.getByText(fr.calendar.legendDone)).toBeInTheDocument()
+    expect(screen.queryByText(fr.calendar.legendToday)).not.toBeInTheDocument()
+  })
 
-    expect(useStore.getState().ym).toBe(currentYm())
+  /* Le bouton qui portait ce mot est parti. Il apparaissait quand l'ancre du
+     clavier quittait aujourd'hui — une condition qu'aucun pixel ne montre — et
+     n'ouvrait qu'une feuille sur un mois où l'on était déjà. « Ce mois-ci » du
+     bandeau ramène le mois, la case ramène au jour, et la légende dit lequel. */
+  it('n’a plus de bouton derrière ce mot', () => {
+    const ym = addMonthsToYm(currentYm(), -3)
+    setup(ym, [makeEntry({ id: 'ailleurs', date: `${ym}-15` })])
+
     expect(
-      screen.getByRole('heading', { level: 2, name: formatWeekdayDate(today()) }),
-    ).toBeInTheDocument()
+      screen.queryByRole('button', { name: fr.calendar.legendToday }),
+    ).not.toBeInTheDocument()
   })
 })

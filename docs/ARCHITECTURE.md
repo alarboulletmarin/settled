@@ -365,14 +365,6 @@ que celui qu'on corrige, et l'œil voit très bien où l'année en cours s'arrê
 L'écran le dit quand même en toutes lettres — un chiffre juste qu'on ne comprend
 pas se lit comme un chiffre faux.
 
-**Le cadre bas de la coquille se déduit du bouton flottant.** Il valait 96px
-quand le disque monte à 129px au-dessus du bord — barre d'onglets, marge,
-diamètre —, si bien que les trente-trois derniers pixels de tout écran passaient
-sous lui, au coin bas-droit. C'est là que tombent les montants d'une liste et la
-poignée d'un repli. Il s'écrit maintenant avec les jetons du bouton
-(`--nav-h`, sa marge, sa hauteur) pour que les deux ne puissent plus diverger, et
-retombe à `lg:pb-10` au-delà de 1024px, où ni la barre ni le bouton n'existent.
-
 **La recherche est du calcul pur, et elle vit sur l'historique.** L'appariement
 est dans `domain/search.ts`, testé : casse et accents mis de côté — on ne tape
 pas ses accents au pouce —, en sous-chaîne, et muet en dessous de deux lettres,
