@@ -143,6 +143,34 @@ describe('QuickEntry — le bouton de saisie flottant', () => {
     expect(menu).not.toHaveAttribute('inert')
   })
 
+  /* La colonne du bouton flottant fait 168px de large sur plus de 200px de
+     haut : la hauteur des trois portes, qui restent montées repliées, plus
+     celle du bouton. Sans fond elle ne se voit pas, mais un `div` reste une
+     cible — tout ce qui passait sous ce rectangle recevait les appuis à sa
+     place, et les deux rangées du bas des récurrences y perdaient leur moitié
+     droite, chevron compris.
+
+     jsdom ne fait pas de mise en page et ne peut pas viser un pixel : ce qu'on
+     tient ici est le contrat entre le cadre, qui laisse passer, et chaque cible,
+     qui reprend les appuis pour elle seule. */
+  it('laisse passer les appuis à travers la colonne, et pas à travers ses cibles', async () => {
+    const { container } = renderAt('/')
+    const column = container.querySelector('.quick-doors')
+    const menu = container.querySelector('#portes-de-saisie')
+
+    expect(column).toHaveClass('pointer-events-none')
+    expect(trigger()).toHaveClass('pointer-events-auto')
+
+    /* Repliées, les portes ne reprennent rien non plus : trois boutons
+       transparents empilés sur la page ne doivent pas l'intercepter, quel que
+       soit le moteur — `inert` est une garantie d'accessibilité, pas de
+       géométrie. */
+    expect(menu).toHaveClass('pointer-events-none')
+
+    await userEvent.click(trigger())
+    expect(menu).toHaveClass('pointer-events-auto')
+  })
+
   /* Le calque referme aussi : toucher à côté est le geste le plus évident
      devant trois boutons qu'on n'a pas voulu ouvrir. */
   it('se replie sur un appui à côté', async () => {
