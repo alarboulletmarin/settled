@@ -29,14 +29,22 @@ const SOON_DAYS = 2
  * et c'est bien lui qu'on vient lire ici : « demain » se voit, « 01/08 » se
  * calcule. La date exacte reste dite au lecteur d'écran, et le calendrier est
  * à un lien de là.
+ *
+ * **Hors de la grille bento, et donc sans `span`.** Elle y tenait une `4x2`,
+ * c'est-à-dire 188px quoi qu'il arrive : cinq lignes s'y serraient à `py-px`
+ * sous 1024px, et une sixième n'y serait pas entrée. Ce n'est pas un chiffre
+ * qu'on lit d'un coup d'œil, c'est une liste qu'on parcourt — sa hauteur doit
+ * venir de son contenu. Elle répond en plus à une question de temps (« qu'est-ce
+ * qui va sortir »), là où la grille répond à des questions de montant, et sa
+ * place dans la page suit désormais cette distinction.
  */
-export function UpcomingTile() {
+export function UpcomingSection() {
   const upcoming = useUpcoming(5)
   const categories = useCategoryMap()
   const rows = useMemo(() => upcomingRows(upcoming), [upcoming])
 
   return (
-    <Tile span="4x2" className="gap-1">
+    <Tile className="gap-1">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow icon={UpcomingIcon}>{fr.dashboard.upcoming}</Eyebrow>
         {/* Un vrai lien, et la seule tuile du tableau de bord qui en garde un :
@@ -65,16 +73,17 @@ export function UpcomingTile() {
       {rows.length === 0 ? (
         <p className="t-label">{fr.dashboard.noUpcoming}</p>
       ) : (
-        /* `content-start` sur une liste plus haute que sa boîte : ancrée en
-           haut, un débordement éventuel se coupe par le bas, là où il ne
-           recouvre rien. Centrée, elle remonterait sur l'eyebrow. */
-        <ul className="grid min-h-0 flex-1 grid-cols-[auto_1fr_auto] content-start gap-x-3">
+        /* `content-start` : la liste s'ancre en haut, comme du temps où sa
+           boîte avait une hauteur fixe à déborder. Elle n'en a plus, mais
+           l'ancrage reste juste — une liste de cinq lignes centrée dans un
+           cadre ne se lit pas mieux qu'une liste posée sous son étiquette. */
+        <ul className="grid grid-cols-[auto_1fr_auto] content-start gap-x-3">
           {rows.map(({ entry, daysLeft, leadsDay }) => (
-            /* La tuile fait 188px jusqu'à 1024px, et son cadre passe à 24px dès
-               768 : c'est cette bande-là qui est la plus étroite, pas le
-               mobile. Les lignes s'y règlent, et ne respirent qu'une fois la
-               grille passée à 108px de rangée. */
-            <li key={entry.id} className="col-span-3 grid grid-cols-subgrid items-center py-px lg:py-1">
+            /* `py-1` à toutes les largeurs : les lignes se serraient à un pixel
+               parce que la `4x2` plafonnait à 188px et que cinq d'entre elles
+               n'y tenaient pas autrement. Hors de la grille, c'est le contenu
+               qui donne la hauteur, et la contrainte tombe. */
+            <li key={entry.id} className="col-span-3 grid grid-cols-subgrid items-center py-1">
               {/* Vide sur les suivantes du même jour : la cellule tient la
                   colonne, le délai se lit sur la ligne qui ouvre le jour. */}
               <span className={cn('t-axis tnum', daysLeft <= SOON_DAYS && 'text-text')}>

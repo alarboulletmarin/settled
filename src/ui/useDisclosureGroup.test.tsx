@@ -52,4 +52,29 @@ describe('useDisclosureGroup', () => {
 
     expect(result.current.anyOpen).toBe(false)
   })
+
+  /* Le défaut de la liste du mois : ni tout, ni rien — le jour qu'on vient
+     lire, et lui seul. */
+  it('accepte la liste de ce qui s’ouvre', () => {
+    const { result } = renderHook(() => useDisclosureGroup(KEYS, ['b']))
+
+    expect(result.current.isOpen('a')).toBe(false)
+    expect(result.current.isOpen('b')).toBe(true)
+    expect(result.current.anyOpen).toBe(true)
+  })
+
+  it('y revient après un « tout replier » puis un reset', () => {
+    const open = ['b']
+    const { result } = renderHook(() => useDisclosureGroup(KEYS, open))
+
+    act(() => {
+      result.current.toggleAll()
+    })
+    expect(result.current.anyOpen).toBe(false)
+
+    act(() => {
+      result.current.reset()
+    })
+    expect(result.current.isOpen('b')).toBe(true)
+  })
 })

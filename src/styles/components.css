@@ -130,10 +130,7 @@
      décide — pas la largeur de l'écran. La règle était `max-lg:sr-only`, donc
      un seuil de viewport pour une question de largeur de tuile : elle répondait
      juste tant qu'un format donné gardait la même largeur à un écran donné, et
-     faux dès qu'un format en changeait. C'est exactement le trou trouvé sur les
-     deux tuiles de flux — passées en pleine largeur sur téléphone, elles
-     gardaient leur seconde lecture masquée, et l'information n'était lisible
-     nulle part sous 1024px.
+     faux dès qu'un format en changeait.
      La tuile est déjà un conteneur de requête (voir plus haut), le seuil se
      pose donc sur elle.
 
@@ -150,24 +147,29 @@
 
      Ce que ça donne sur la boîte de contenu, aux largeurs qui existent :
 
-       320px   2×1 : 104   flux pleine largeur : 254   → masquée, masquée
-       390px   2×1 : 139   flux pleine largeur : 324   → masquée, AFFICHÉE
-       768px   2×1 : 132   flux demi-largeur   : 311   → masquée, AFFICHÉE
-       1024px  2×1 : 201                                → affichée
-       1280px  2×1 : 286                                → affichée
+       320px   2×1 : 104   4×1 pleine largeur : 254   → masquée, masquée
+       390px   2×1 : 139   4×1 pleine largeur : 324   → masquée, AFFICHÉE
+       768px   2×1 : 132   4×1 demi-largeur   : 311   → masquée, AFFICHÉE
+       1024px  2×1 : 201                               → affichée
+       1280px  2×1 : 286                               → affichée
 
-     À 320px la lecture reste donc masquée, comme avant : ni la largeur ni la
-     hauteur ne la portent, et une ligne tranchée en deux vaut moins qu'une
-     ligne absente. C'est le seul écran où le trou de l'audit subsiste.
+     **Une `2x1` ne l'affiche donc qu'à partir de 1024px, et c'est assumé.** Les
+     deux tuiles de flux ont pris deux colonnes sous ce seuil pour l'afficher
+     plus tôt, et ça marchait — au prix de deux rangées pleine largeur qui,
+     avec celles de leurs voisines, faisaient du tableau de bord une pile de
+     cartes plutôt qu'une grille de tuiles inégales (DS §5). Sur deux colonnes,
+     une paire côte à côte est la seule façon d'avoir un bento, et ces
+     deux-là en sont une. La lecture reste dans le DOM en dessous, et ce qu'elle
+     dit se retrouve où le clic mène : sur les lignes du mois, filtrées sur la
+     nature qu'on vient de lire.
 
      Les `4x1` gardent leur `max-lg:sr-only` pour ce qui, chez elles, est une
      phrase (« les versements dépassent la capacité de 57 € ») : plus longue que
      celles-ci, et le seuil qui la ferait tenir n'aurait plus rien à voir avec
      celui-là. Ce n'est donc pas le format qui décide, c'est la longueur — et
      `SavingTile` a scindé sa seconde lecture pour cette raison : le versement
-     (« 300 € versé », trois mots) passe ici, le reste à placer demeure là-bas.
-     Réunies, les deux ne s'affichaient nulle part sous 1024px, ce qui est mot
-     pour mot le trou trouvé sur les tuiles de flux. */
+     (« 300 € versé sur le mois ») passe ici, le reste à placer demeure là-bas.
+     Réunies, les deux ne s'affichaient nulle part sous 1024px. */
   .tile-hint {
     position: absolute;
     width: 1px;

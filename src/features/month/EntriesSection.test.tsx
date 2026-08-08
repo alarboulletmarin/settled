@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { money } from '@/domain/money'
 import {
   makeCategory,
@@ -10,6 +10,7 @@ import {
   makeMember,
 } from '@/domain/fixtures'
 import { fr } from '@/i18n/fr'
+import { formatDayFull } from '@/i18n/format'
 import { ALL_FILTER, useStore } from '@/store/store'
 import { EntriesSection } from './EntriesSection'
 
@@ -100,6 +101,72 @@ describe('la liste du mois', () => {
     it('ne s’annonce pas quand il n’y en a pas', () => {
       setup()
       expect(screen.queryByText(fr.month.familyFilter)).not.toBeInTheDocument()
+    })
+  })
+
+  /* La liste s'ouvrait en entier par jour, ce qui est juste tant qu'on ne
+     compte pas la hauteur : une quarantaine de lignes dépliées d'office, tout
+     en bas d'une page qui en faisait déjà quatre écrans. Tout replier n'est pas
+     la réponse non plus — la section devient un accordéon mort. */
+  describe('ce qui est ouvert à l’arrivée', () => {
+    /* Seule la date est feinte : `today()` ne lit qu'elle, et fausser les
+       minuteries casserait `userEvent` des tests voisins. */
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] })
+      vi.setSystemTime(new Date(2026, 7, 5, 12))
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    const groupOf = (date: string): HTMLDetailsElement => {
+      const details = screen.getByText(formatDayFull(date)).closest('details')
+      expect(details).not.toBeNull()
+      return details as HTMLDetailsElement
+    }
+
+    it('n’ouvre que le groupe du jour courant', () => {
+      setup()
+      expect(groupOf('2026-08-05').open).toBe(true)
+      expect(groupOf('2026-08-03').open).toBe(false)
+    })
+
+    /* Une accentuation légère, mais jamais portée par la seule nuance : le mot
+       dit ce que l'encre pleine laisserait deviner. */
+    it('nomme le jour courant', () => {
+      setup()
+      expect(within(groupOf('2026-08-05')).getByText(fr.month.today)).toBeInTheDocument()
+      expect(
+        within(groupOf('2026-08-03')).queryByText(fr.month.today),
+      ).not.toBeInTheDocument()
+    })
+
+    /* Sur un mois passé ou à venir, « aujourd'hui » n'y est pas — et c'est le
+       dernier jour mouvementé qu'on vient voir. */
+    it('retombe sur le jour le plus récent hors du mois courant', () => {
+      vi.setSystemTime(new Date(2026, 8, 15, 12))
+      setup()
+
+      expect(groupOf('2026-08-05').open).toBe(true)
+      expect(groupOf('2026-08-03').open).toBe(false)
+      expect(screen.queryByText(fr.month.today)).not.toBeInTheDocument()
+    })
+
+    /* Par poste, l'en-tête porte déjà la réponse : c'est un résumé dans lequel
+       on entre, il n'y a pas de groupe à ouvrir d'office. */
+    it('n’ouvre rien sur un autre axe', async () => {
+      setup()
+      vi.useRealTimers()
+
+      await userEvent.click(screen.getByRole('radio', { name: fr.month.byCategory }))
+
+      const groups = screen
+        .getAllByText(/Loyer|Courses/)
+        .map((node) => node.closest('details'))
+        .filter((node): node is HTMLDetailsElement => node !== null)
+      expect(groups.length).toBeGreaterThan(0)
+      expect(groups.every((group) => !group.open)).toBe(true)
     })
   })
 })
