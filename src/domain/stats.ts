@@ -507,6 +507,14 @@ export type RecurrenceTotals = {
  * Le sens est un paramètre parce que la liste des récurrences mêle les deux :
  * un total qui ne compterait que les sorties sans le dire décrirait mal la
  * liste qu'il surplombe.
+ *
+ * **`endedOn` est la dernière date couverte, bornes comprises** : une récurrence
+ * arrêtée aujourd'hui n'a plus d'échéance à venir, et ce total-ci dit ce qui
+ * part *chaque mois*. La borne était stricte, si bien que le total comptait
+ * pendant une journée entière une règle que la liste juste en dessous rangeait
+ * déjà sous « Arrêtée » — deux vérités à l'écran, dont l'une n'est vraie qu'à
+ * une inégalité près. C'est la borne de `useRecurrenceRows`, et il n'y en a
+ * qu'une.
  */
 export function recurrenceTotals(
   recurrences: readonly Recurrence[],
@@ -520,7 +528,7 @@ export function recurrenceTotals(
 
   for (const recurrence of recurrences) {
     if (recurrence.direction !== direction) continue
-    if (recurrence.endedOn !== undefined && recurrence.endedOn < on) continue
+    if (recurrence.endedOn !== undefined && recurrence.endedOn <= on) continue
 
     const resolved = amountOf(recurrence)
     if (resolved === null) {
@@ -563,7 +571,7 @@ export function recurrenceTotalsOfKinds(
   for (const recurrence of recurrences) {
     const kind = kindOf(recurrence.categoryId)
     if (!kinds.includes(kind)) continue
-    if (recurrence.endedOn !== undefined && recurrence.endedOn < on) continue
+    if (recurrence.endedOn !== undefined && recurrence.endedOn <= on) continue
 
     const resolved = amountOf(recurrence)
     if (resolved === null) {

@@ -16,7 +16,7 @@ import { useStore } from '@/store/store'
 import { Select } from '@/ui/Field'
 import { CategoriesIcon, DataIcon, InfoIcon, PeopleIcon, ThemeIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
-import { SettingsGroup, SettingsRow } from './SettingsRow'
+import { Row, RowGroup } from '@/ui/RowGroup'
 
 const THEME_NAME: Record<ThemeSetting, string> = {
   light: fr.theme.light,
@@ -59,7 +59,7 @@ function AppearanceRow() {
   const palette = useStore((s) => s.data.settings.palette)
 
   return (
-    <SettingsRow
+    <Row
       label={fr.appearance.title}
       description={tpl(fr.settings.appearanceSummary, THEME_NAME[theme], PALETTE_NAME[palette])}
       to={SETTINGS_APPEARANCE_PATH}
@@ -85,7 +85,7 @@ function CurrencyRow() {
   const id = useId()
 
   return (
-    <SettingsRow
+    <Row
       label={fr.settings.currency}
       labelFor={id}
       description={fr.settings.currencyHint}
@@ -159,53 +159,53 @@ export function SettingsPage() {
     <>
       <PageTitle title={fr.nav.settings} />
       <div className="flex max-w-3xl flex-col gap-4">
-        <SettingsGroup title={fr.settings.household} icon={PeopleIcon}>
-          <SettingsRow
+        <RowGroup title={fr.settings.household} icon={PeopleIcon}>
+          <Row
             label={named ? name : people}
             {...(named ? { description: people } : {})}
             to={SETTINGS_PEOPLE_PATH}
           />
-        </SettingsGroup>
+        </RowGroup>
 
         {/* Ce qui règle la présentation, et rien de plus : l'apparence mène à sa
             vue, la devise se change ici même. */}
-        <SettingsGroup title={fr.settings.preferences} icon={ThemeIcon}>
+        <RowGroup title={fr.settings.preferences} icon={ThemeIcon}>
           <AppearanceRow />
           <CurrencyRow />
-        </SettingsGroup>
+        </RowGroup>
 
-        <SettingsGroup title={fr.settings.organisation} icon={CategoriesIcon}>
-          <SettingsRow
+        <RowGroup title={fr.settings.organisation} icon={CategoriesIcon}>
+          <Row
             label={fr.settings.categories}
             description={catalogue}
             to={SETTINGS_CATEGORIES_PATH}
           />
-        </SettingsGroup>
+        </RowGroup>
 
         {/* « Sur cet appareil » avant « Exporter / importer » : la première dit
             où les données vivent, la seconde comment les en faire sortir. */}
-        <SettingsGroup title={fr.settings.data} icon={DataIcon}>
-          <SettingsRow
+        <RowGroup title={fr.settings.data} icon={DataIcon}>
+          <Row
             label={fr.storage.title}
             description={fr.settings.storageSummary}
             to={SETTINGS_STORAGE_PATH}
           />
-          <SettingsRow
+          <Row
             label={fr.settings.transfer}
             description={fr.settings.transferSummary}
             to={SETTINGS_DATA_PATH}
           />
-        </SettingsGroup>
+        </RowGroup>
 
         {/* La seule porte vers « à propos » sous 1024px : la barre d'onglets ne
             peut pas en porter une sixième sans tronquer un libellé. */}
-        <SettingsGroup title={fr.nav.about} icon={InfoIcon}>
-          <SettingsRow
+        <RowGroup title={fr.nav.about} icon={InfoIcon}>
+          <Row
             label={fr.app.name}
             description={tpl(fr.settings.aboutSummary, VERSION)}
             to={ABOUT_PATH}
           />
-        </SettingsGroup>
+        </RowGroup>
       </div>
     </>
   )

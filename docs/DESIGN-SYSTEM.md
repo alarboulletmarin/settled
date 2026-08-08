@@ -352,6 +352,10 @@ Les pilules qui ne désignent personne n'ont pas de pastille (§2.5), et un file
 
 **ListRow** — pastille de catégorie, libellé, sous-libellé mono (date ou périodicité), montant à droite. Hauteur 56px. Un `planned` s'affiche à 60% d'opacité avec un contour en pointillés sur la pastille.
 
+**RowGroup** — une tuile, son étiquette, et des rangées séparées d'un filet. C'est la réponse à « deux ou trois portes voisines », là où une tuile chacune donnerait le même poids à tout et empilerait des cadres : les réglages en comptaient huit, l'écran des récurrences finissait par un paragraphe et un lien souligné. Le titre est facultatif — une liste de familles ou de résultats de recherche est un groupe sans nom.
+
+Une rangée prend l'élément de son geste : un `<Link>` quand elle mène ailleurs, un `<button>` quand elle agit sur place, un bloc quand elle ne fait que se lire. **Le chevron n'apparaît que là où le geste existe**, exactement comme le repère d'une tuile — une rangée sans chevron est une rangée qu'on lit. Le libellé se tronque, la seconde ligne passe à la ligne : un nom doit tenir sur une rangée, mais une valeur coupée en deux n'avertit plus de rien.
+
 **Bouton de saisie flottant** — un disque de 56px en lime, au coin bas-droit, au-dessus de la barre d'onglets et sous les surcouches. Il n'existe que sous 1024px : au-delà, la rangée de boutons en tête de l'écran du mois est à l'écran et ne défile jamais hors de vue. Une porte par largeur et pas deux — les mêmes trois boutons deux fois sur un écran ne font pas deux occasions.
 
 Il **se déplie** sur les trois portes de saisie, dans l'ordre de l'écran du mois, plutôt que d'en promettre une seule : « les deux sens sont deux boutons, jamais un seul » (§7) vaut aussi pour lui, et un `+` flottant qui ouvrirait toujours une dépense rétablirait exactement ce que cette règle corrige. Le glyphe pivote de 45° au lieu d'être remplacé par une croix — c'est le même bouton ; le nom accessible, lui, change, parce qu'il dit ce que le prochain appui fait. Il se referme sur Échap, sur un appui à côté, et à tout changement d'écran.

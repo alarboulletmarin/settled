@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdvanceFormPage } from '@/features/advances/AdvanceFormPage'
+import { AdvancesPage } from '@/features/advances/AdvancesPage'
 import { AboutPage } from '@/features/about/AboutPage'
 import { CalendarPage } from '@/features/calendar/CalendarPage'
 import { CreditFormPage } from '@/features/credits/CreditFormPage'
@@ -19,6 +20,7 @@ import { AppShell } from './AppShell'
 import { PlainShell } from './PlainShell'
 import {
   ABOUT_PATH,
+  ADVANCES_PATH,
   ADVANCE_NEW_PATH,
   LANDING_PATH,
   LEGAL_NOTICE_PATH,
@@ -134,6 +136,7 @@ export function AppRoutes() {
           <Route path="/credits/:id" element={<CreditFormPage />} />
           <Route path="/repartition" element={<SplitPage />} />
           <Route path="/epargne" element={<SavingsPage />} />
+          <Route path={ADVANCES_PATH} element={<AdvancesPage />} />
           <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
           <Route path="/historique" element={<HistoryPage />} />
           {/* Les réglages et leurs vues. L'ordre d'écriture n'y fait rien —

@@ -978,11 +978,14 @@ export const fr = {
     empty: 'Aucune récurrence pour l’instant. Ajoute la première.',
     /* La seule porte des crédits était une tuile du mois qui se retire tant
        qu'aucun crédit n'est suivi : on ne pouvait donc jamais créer le premier.
-       Elle est ici, parce que c'est une récurrence qui pose les mensualités. */
-    creditsHint: 'Une mensualité de crédit est une récurrence comme une autre. Pour suivre en plus le capital qu’il reste à devoir :',
-    emptyStopped: 'Aucune récurrence arrêtée.',
-    showStopped: 'Voir les récurrences arrêtées',
-    hideStopped: 'Masquer les récurrences arrêtées',
+       Elle est ici, parce que c'est une récurrence qui pose les mensualités.
+
+       Sur une rangée et non plus sous un paragraphe : la phrase disait pourquoi
+       le lien était là — « une mensualité de crédit est une récurrence comme
+       une autre » — ce qui explique le voisinage et non la destination. Une
+       rangée n'a de place que pour la seconde, et c'est la seule des deux qu'on
+       lise en cherchant où aller. */
+    creditsHint: 'Suivre le capital qu’il reste à devoir',
     stoppedBadge: 'Arrêtée',
     nextDue: 'Prochaine échéance',
     noNextDue: 'Plus d’échéance',
@@ -992,28 +995,42 @@ export const fr = {
     /* Le total suit la pastille : un total qui ne compterait que les sorties
        sans le dire décrirait mal la liste qu'il surplombe.
 
-       Et il dit son périmètre, parce qu'un total sans périmètre ne se vérifie
-       pas. Deux questions restaient sans réponse à l'écran : de qui, et de
-       quoi. Cette page ne connaît pas le filtre par membre — elle montre
-       toutes les règles — et le sens « ce qui sort » ramasse les charges, les
-       crédits et les versements d'épargne. */
-    totalMonthly: 'Total par mois',
-    totalScopeOut: 'Tout le monde · ce qui sort chaque mois, épargne et crédits compris',
-    totalScopeIn: 'Tout le monde · ce qui rentre chaque mois',
+       **C'est l'étiquette qui dit ce qu'on additionne**, et non plus une phrase
+       posée sous le chiffre. « Total par mois » sur une somme qui exclut les
+       revenus est un mot juste pour un périmètre faux : il fallait lire les
+       soixante-dix caractères de la ligne du dessous pour savoir que c'était
+       celui des sorties. Le DS §6 le dit d'ailleurs — la tuile n'a pas de
+       titre, elle a une étiquette, et une étiquette nomme son chiffre. Les
+       quatre mots sont ceux de l'app : le pluriel de « Sortie », et les trois
+       libellés des pilules. */
+    totalOut: 'Sorties par mois',
+    totalSpending: 'Charges par mois',
+    totalIn: 'Revenus par mois',
+    totalSaving: 'Épargne par mois',
+    /* Ce que l'étiquette ne dit pas : de qui, et ce que le mot recouvre. Cette
+       page ne connaît pas le filtre par membre — elle montre les règles du
+       foyer, pas un mois. En lecture tertiaire, sous l'annuel : c'est une
+       vérification, pas une lecture. */
+    scopeOut: 'Tout le monde · épargne et crédits compris',
     /* Sous une pilule, le total se borne à sa nature : « Charges » compte
        comme la tuile du même nom — sans l'épargne — et l'épargne se compte en
        net, reprises déduites, comme partout. */
-    totalScopeSpending: 'Tout le monde · charges et crédits chaque mois, épargne à part',
-    totalScopeSaving: 'Tout le monde · ce qui part sur l’épargne chaque mois, reprises déduites',
-    totalAnnual: 'Total annuel',
-    perMonth: '%s par mois',
+    scopeSpending: 'Tout le monde · épargne à part',
+    scopeIn: 'Tout le monde',
+    scopeSaving: 'Tout le monde · reprises déduites',
     groupBy: 'Regrouper par',
     byCategory: 'Catégorie',
     byMember: 'Personne',
     /* L'ordre était toujours imposé par le domaine — par prochaine échéance,
        qui répond à « qu'est-ce qui tombe bientôt ». C'est cet écran qui porte
-       l'autre question : « qu'est-ce qui me coûte le plus ». */
-    sortBy: 'Trier par',
+       l'autre question : « qu'est-ce qui me coûte le plus ».
+
+       Le tri passe de la bascule au sélecteur, et change donc de mot : la
+       bascule montrait ses deux positions et se faisait lire comme un troisième
+       choix d'affichage, à côté de l'axe et des pilules. « Trier » est le
+       libellé visible du sélecteur, donc son nom accessible ; « Trier par »
+       demandait une ligne à lui seul pour deux mots. */
+    sortBy: 'Trier',
     byDue: 'Échéance',
     byAmount: 'Montant',
     /* Le sens ne regroupe pas, il filtre — la règle qu'applique déjà la liste
@@ -1031,11 +1048,25 @@ export const fr = {
     showEmptyOut: 'Aucune charge récurrente.',
     showEmptyIn: 'Aucun revenu récurrent.',
     showEmptySaving: 'Aucune récurrence d’épargne.',
+    /* La sortie du filtre, à côté de la phrase qui dit qu'il ne laisse rien.
+       Les pilules sont juste au-dessus et « Tout » en fait partie, mais une
+       liste vide est exactement le moment où l'on ne cherche plus quel contrôle
+       a produit ça — on veut revenir. */
+    showAllBack: 'Voir tout',
     groupCountOne: '%s récurrence',
     groupCount: '%s récurrences',
     collapseAll: 'Tout replier',
     expandAll: 'Tout déplier',
-    unknownAmounts: '%s à montant variable, non chiffré%s',
+    /* Un groupe dont *tout* n'est pas variable affiche un total, et ce total est
+       incomplet : il le dit à côté de son compte, faute de quoi le chiffre se
+       croit exact. Un groupe entièrement variable, lui, n'a pas de chiffre du
+       tout — c'est `variable` qui prend la place du montant. */
+    groupVariable: '%s variable',
+    /* Ce que le total de tête laisse de côté, et pourquoi il n'est pas rond.
+       « non chiffré » disait l'état de la récurrence ; « non compté » dit ce
+       qu'il advient du total, qui est la question qu'on se pose devant lui. */
+    variableExcludedOne: '%s montant variable non compté',
+    variableExcluded: '%s montants variables non comptés',
     variable: 'Montant variable',
     fixedAmount: 'Montant fixe',
     priceChanged: 'Le prix a changé : %s → %s',
@@ -1200,6 +1231,17 @@ export const fr = {
     added: 'Avance ajoutée',
     deleted: 'Avance retirée',
     empty: 'Aucune avance en cours.',
+    /* Le même vide, mais dans l'écran des avances, où il occupe la page : le DS
+       §7 y veut une invitation et non un constat. La rangée de la liste des
+       récurrences, elle, garde le constat — elle n'a qu'une ligne, et son
+       chevron dit déjà où l'on va pour agir. */
+    emptyInvite: 'Aucune avance en cours. Ajoute la première.',
+    /* Ce que la rangée des récurrences résume : combien, et combien il reste.
+       Deux chiffres, parce que le second seul ne dit pas s'il vient d'une
+       avance ou de six. */
+    countOne: '%s avance',
+    count: '%s avances',
+    remainingTotal: '%s restant à remettre',
 
     label: 'Ce que tu as payé',
     labelPlaceholder: 'Assurance auto',

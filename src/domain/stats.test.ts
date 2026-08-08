@@ -397,6 +397,22 @@ describe('total des récurrences', () => {
     expect(recurrenceTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
   })
 
+  /* `endedOn` est la dernière date couverte : arrêtée le jour même, la
+     récurrence n'a plus d'échéance à venir et la liste la range déjà sous
+     « Arrêtée ». Le total la comptait encore jusqu'au lendemain. */
+  it('ignore une récurrence arrêtée le jour même', () => {
+    const recurrences = [
+      makeRecurrence({
+        id: 'a',
+        amount: eur(999),
+        period: { unit: 'month', every: 1, anchorDay: 1 },
+        endedOn: '2026-07-01',
+      }),
+    ]
+    expect(recurrenceTotals(recurrences, unpriced, '2026-07-01').monthly).toBe(0)
+    expect(recurrenceTotals(recurrences, unpriced, '2026-06-30').monthly).toBe(999)
+  })
+
   it('compte une variable non estimable plutôt que de la valoriser à zéro', () => {
     const recurrences = [
       makeRecurrence({ id: 'a', amount: null, period: { unit: 'month', every: 1, anchorDay: 1 } }),
@@ -479,6 +495,13 @@ describe('total des récurrences, borné à une nature', () => {
     const totals = recurrenceTotalsOfKinds(list, unpriced, '2026-07-01', kindOf, ['charge', 'debt'])
     expect(totals.monthly).toBe(0)
     expect(totals.unknownCount).toBe(1)
+  })
+
+  it('ignore une récurrence arrêtée le jour même, comme le total tous sens', () => {
+    const list = [monthly({ id: 'stop', categoryId: 'logement', amount: eur(9_999), endedOn: '2026-07-01' })]
+    expect(
+      recurrenceTotalsOfKinds(list, unpriced, '2026-07-01', kindOf, ['charge', 'debt']).monthly,
+    ).toBe(0)
   })
 })
 

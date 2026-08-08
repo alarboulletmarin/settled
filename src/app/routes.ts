@@ -113,10 +113,17 @@ export const SPLIT_PATH = '/repartition'
    question « où je place » se pose. */
 export const SAVINGS_PATH = '/epargne'
 
-/* Une avance se pose depuis la liste des récurrences, où elle vit : sa
-   mensualité en est une. L'écran de saisie est plein, comme tous les
-   formulaires — d'où une URL, hors navigation. */
-export const ADVANCE_NEW_PATH = '/avances/nouveau'
+/* Les avances ont leur écran, pour la raison qui donne le sien aux crédits :
+   elles vivent sous les récurrences — leur mensualité en est une — mais ce
+   qu'elles ajoutent est un suivi à part, qu'on ouvre quand on le cherche. En
+   section sous la liste, elles posaient une tuile pleine par avance au bas d'un
+   écran qui en avait déjà beaucoup, et une deuxième action « Ajouter » sans
+   rapport avec la première. La liste des récurrences n'en garde qu'une rangée.
+
+   Le segment fixe se déclare après le chemin qu'il prolonge, et React Router le
+   classe de toute façon avant un paramètre — il n'y en a pas ici. */
+export const ADVANCES_PATH = '/avances'
+export const ADVANCE_NEW_PATH = `${ADVANCES_PATH}/nouveau`
 
 /* Les réglages ne sont plus un écran mais une section.
  *
