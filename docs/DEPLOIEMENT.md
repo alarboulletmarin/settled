@@ -31,7 +31,7 @@ tiendrait même si une dépendance npm était compromise.
 | `Content-Security-Policy` | `default-src 'self'` : rien ne se charge ni ne part vers un tiers. `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'`. |
 | `X-Content-Type-Options` | `nosniff` — un export `.json` ne peut pas être réinterprété en HTML. |
 | `Referrer-Policy` | `no-referrer` — aucun lien sortant ne dit d'où l'on vient. |
-| `Permissions-Policy` | refuse caméra, micro, géolocalisation, capteurs, paiement, partage, Topics… L'app n'en demande aucun. |
+| `Permissions-Policy` | refuse caméra, micro, géolocalisation, capteurs, paiement, Topics… L'app n'en demande que deux, en `self` : le presse-papiers et la feuille de partage. |
 
 Quatre points de cette politique ne se devinent pas en relisant le code, et
 chacun a été trouvé en la vérifiant :
@@ -50,9 +50,11 @@ chacun a été trouvé en la vérifiant :
   large que le trou qu'il bouche. La concession ne coûte rien de ce qui compte :
   une exfiltration par CSS passerait par une `url()` distante, que `img-src` et
   `connect-src` refusent déjà.
-- **`Permissions-Policy` laisse passer `clipboard-write=(self)`.** Le bouton
-  « copier le schéma » des réglages s'appuie dessus. Un refus global l'aurait
-  éteint sans un mot.
+- **`Permissions-Policy` laisse passer `clipboard-write=(self)` et
+  `web-share=(self)`.** Le bouton « copier le schéma » des réglages s'appuie sur
+  le premier, « Envoyer vers… » sur le second. Un refus global les éteint sans un
+  mot : le second est arrivé bloqué, et c'est `csp:check` qui l'a dit — pas un
+  téléphone en production.
 
 ### Mettre à jour et vérifier
 

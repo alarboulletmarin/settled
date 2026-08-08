@@ -2,11 +2,12 @@ import { type ReactNode, useState } from 'react'
 import { today } from '@/domain/date'
 import { fr } from '@/i18n/fr'
 import { formatDate, tpl } from '@/i18n/format'
-import { downloadExport, readLastExport } from '@/persistence/transfer'
+import { canShareExport, downloadExport, readLastExport, shareExport } from '@/persistence/transfer'
 import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Eyebrow } from '@/ui/Eyebrow'
+import { ShareIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { toast } from '@/ui/toast'
 import { ExampleControl } from './ExampleControl'
@@ -47,6 +48,9 @@ export function DataSection() {
   const resetAll = useStore((s) => s.resetAll)
   const [lastExport, setLastExport] = useState(readLastExport)
   const [confirming, setConfirming] = useState(false)
+  /* Sondé une fois, au premier rendu : la réponse dépend du navigateur et du
+     type de fichier, pas de l'état de l'écran. */
+  const [canShare] = useState(canShareExport)
 
   const doExport = (): void => {
     const on = today()
@@ -55,19 +59,47 @@ export function DataSection() {
     toast(fr.settings.exported)
   }
 
+  const doShare = (): void => {
+    const on = today()
+    /* Rien avant l'appel : `shareExport` doit atteindre `share()` dans la tâche
+       de ce clic, sinon Safari iOS refuse d'ouvrir la feuille. */
+    void shareExport(data, on).then((outcome) => {
+      // Feuille fermée : l'utilisateur a changé d'avis. Rien n'est parti, rien
+      // n'est marqué, et il n'y a rien à lui dire.
+      if (outcome === 'dismissed') return
+      setLastExport(on)
+      if (outcome === 'shared') toast(fr.settings.shared)
+      // Le fichier est sur l'appareil, mais pas là où il était demandé : ça se
+      // remarque, sans quoi on le cherche sur l'autre appareil.
+      else toast(fr.settings.shareFailed, 'danger')
+    })
+  }
+
   return (
     <>
       <Tile className="gap-4">
+        {/* Deux sorties pour un seul fichier, et chacune dit au-dessus ce
+            qu'elle fait — le partage n'annonce pas dans la feuille ce qu'on
+            décide avant de cliquer. Le second bouton ne s'affiche que si le
+            navigateur sait envoyer un .json ; ailleurs, le bloc est
+            exactement celui d'avant. */}
         <Block title={fr.settings.backupGroup}>
           <p className="t-label">{fr.settings.exportHint}</p>
+          {canShare && <p className="t-label">{fr.settings.shareHint}</p>}
           <p className="t-label">
             {lastExport === null
               ? fr.settings.neverExported
               : tpl(fr.settings.lastExport, formatDate(lastExport))}
           </p>
-          <Button onClick={doExport} className="w-fit">
-            {fr.settings.export}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={doExport}>{fr.settings.export}</Button>
+            {canShare && (
+              <Button variant="secondary" onClick={doShare}>
+                <ShareIcon size={18} />
+                {fr.settings.share}
+              </Button>
+            )}
+          </div>
         </Block>
 
         {/* La conséquence reste écrite au-dessus du bouton, et pas seulement

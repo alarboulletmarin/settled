@@ -12,6 +12,38 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — l'export peut partir vers un autre appareil
+
+L'export n'avait qu'une sortie : le dossier des téléchargements. Sur un
+téléphone, c'est précisément l'endroit où le fichier devient difficile à
+retrouver, et impossible à donner à l'ordinateur d'à côté sans le faire passer
+par un service.
+
+- **« Envoyer vers… », à côté d'« Exporter mes données »** — le même fichier,
+  remis à la feuille de partage du système : AirDrop, Partage à proximité, une
+  messagerie. Ni le format ni le contenu ne changent, c'est le même export par
+  l'autre porte. Le bouton dit ce qu'il fait au-dessus de lui, comme ses
+  voisins : on décide avant de cliquer, pas une fois la feuille ouverte.
+- **Il n'apparaît que là où la feuille accepte un `.json`.** La disponibilité se
+  demande à `navigator.canShare({ files })`, sondé au rendu avec un fichier vide
+  de mêmes nom et type — et non à la présence de l'API : les navigateurs filtrent
+  les types partageables, et `application/json` n'est pas sur toutes les listes
+  blanches. Ailleurs, le bloc est exactement celui d'avant, sans bouton mort.
+- **L'appel part dans la tâche du clic**, sans rien attendre avant lui : la
+  feuille exige une activation transitoire, et un `await` glissé au-dessus la
+  consomme. Safari iOS lève alors `NotAllowedError` — lui seul, ce qui rend la
+  panne indétectable partout ailleurs. Un test la tient.
+- **Fermer la feuille ne compte pas comme un export.** L'`AbortError` qu'elle
+  rejette alors n'est pas une erreur : aucun message, et surtout aucune date
+  d'export écrite. Le rappel des trente jours ne doit pas s'endormir sur un
+  fichier qui n'est parti nulle part.
+- **Tout autre échec retombe sur le téléchargement**, et le dit. On ne repart
+  jamais de ce bouton les mains vides, et la date d'export ne s'écrit qu'une
+  fois — jamais deux pour un envoi qui a fini sur le disque.
+- **Les chemins de panique n'y touchent pas.** Le bandeau d'échec d'écriture et
+  l'écran de secours restent sur le téléchargement, qui ne demande ni cible ni
+  second geste : le partage est un confort des réglages, pas un recours.
+
 ### Ajouté — le thème dit clair ou sombre, la palette dit avec quelles couleurs
 
 **Migration de schéma : v6 → v7.** Un champ `settings.palette` s'ajoute, avec
