@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { SETTINGS_DATA_PATH } from '@/app/routes'
 import { today } from '@/domain/date'
 import { fr } from '@/i18n/fr'
 import {
@@ -48,8 +49,11 @@ export function ExportReminder() {
           <p className="t-label">{fr.settings.reminderBody}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+          {/* Droit sur la vue qui exporte, et non sur la page de réglages :
+              celle-ci n'a plus de bouton d'export, et le rappel demandait de
+              retrouver soi-même ce qu'il venait de réclamer. */}
           <Link
-            to="/reglages"
+            to={SETTINGS_DATA_PATH}
             className="inline-flex h-11 items-center justify-center rounded-input bg-accent px-5 font-medium text-accent-fg"
           >
             {fr.settings.export}

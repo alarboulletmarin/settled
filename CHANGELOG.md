@@ -12,6 +12,79 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — les réglages deviennent une section, et redeviennent lisibles
+
+**La page portait toute la gestion de l'app.** Les personnes, le catalogue
+entier des catégories, le thème, la devise, le stockage, l'export, l'import, le
+schéma de données, le jeu d'exemple, l'effacement total et « à propos » — avec
+trois formulaires ouverts en permanence, qu'on ait ou non l'intention de créer
+quoi que ce soit. **3 725 px de haut à 390 px de large**, jeu d'exemple chargé :
+changer de thème demandait de traverser quarante-sept catégories.
+
+Le défaut n'était pas graphique. C'était l'architecture de l'information :
+consulter, naviguer, créer et modifier vivaient au même endroit, sous le même
+cadre et au même poids visuel. Une console d'administration, pas une page de
+réglages qu'on ouvre à une main.
+
+- **Une entrée, et huit vues.** La page fait maintenant **952 px** : cinq
+  groupes, sept rangées, et chacune dit sa valeur — « Maison · 2 membres »,
+  « 47 catégories · 12 familles », « EUR · € ». On voit, on choisit, on modifie,
+  au lieu d'ouvrir, faire défiler, chercher, modifier. Ce qui est complexe est
+  descendu d'un cran : `/reglages/personnes` et la fiche d'un membre,
+  `/reglages/categories` et la vue d'une famille, les deux formulaires de
+  création, `/reglages/stockage`, `/reglages/donnees`.
+
+  Des URL, et non un état de composant : c'est ce qui rend le retour du
+  navigateur, le partage d'un lien et le bouton « retour » de l'écran identiques
+  à ceux du reste de l'app. « À propos » n'a pas été dupliquée — elle existait
+  déjà à la racine, la rangée y mène.
+
+- **Le catalogue se parcourt au lieu de se déplier.** Douze familles, une
+  ligne chacune avec son compte ; toucher l'une d'elles ouvre ses catégories. Le
+  « tout déplier » disparaît avec ce qu'il servait à ouvrir — cinquante-sept
+  lignes d'un coup. La recherche, elle, reste, et traverse les deux niveaux :
+  « carbu » rend *Carburant*, sous *Transport*, et mène à la famille sans qu'on
+  ait eu à deviner laquelle c'était.
+
+- **La création se demande.** « Nom de la famille / Nature / Ajouter » et
+  « Libellé / Famille / Ajouter » attendaient ouverts au bas de la liste pour un
+  geste qu'on fait une fois par an. Ils ouvrent maintenant leur vue, comme
+  toutes les saisies de l'app — et celle d'une catégorie ne redemande plus dans
+  quelle famille ranger, puisqu'on vient de l'ouvrir. Une famille créée s'ouvre
+  aussitôt : on en crée une pour y ranger quelque chose.
+
+- **Consulter n'est plus modifier.** La liste des personnes portait un champ de
+  saisie et une croix par membre. Elle porte des lignes, avec le revenu et la
+  part de chacun ; le prénom se change sur la fiche, et le retrait — le geste
+  qui touche le plus d'endroits à la fois — y vit à part, sous la phrase qui dit
+  ce qu'il emporte.
+
+- **« Tout effacer » sort de la file des outils.** Il s'y lisait comme
+  « Copier le schéma ». Il a maintenant sa zone, en bas de la vue des données,
+  avec son titre et sa conséquence écrite — et les outils qui restent sont
+  groupés par intention : sauvegarde, restauration, format, exemple. Les trois
+  questions d'avant l'effacement, elles, n'ont pas bougé.
+
+- **Le bouton flottant se retire des vues des réglages.** Il pose la saisie
+  d'une dépense ; « Ajouter un membre » pose un membre. Deux actions principales
+  à trois centimètres l'une de l'autre ne disent plus laquelle est celle de
+  l'écran. Il reste sur la page d'entrée, qui est une destination de la barre
+  d'onglets — laquelle garde « Réglages » allumé partout dans la section,
+  y compris sur « à propos ».
+
+- **Moins de phrases, et les bonnes.** Le thème ne se commente plus : « Clair ·
+  Sombre · Système » se lit sur la bascule. Ce qui explique une conséquence
+  reste, à l'endroit où elle se décide — « Remplace intégralement les données
+  actuelles » au-dessus de l'import, « Rien n'est converti : seul le symbole
+  change » sous la devise, et la prose sur ce que le navigateur promet est
+  descendue dans la vue qui en parle.
+
+Rien n'a changé du modèle ni des gestes : mêmes actions, mêmes confirmations,
+mêmes messages, même design system. Deux primitives de vingt lignes ont été
+ajoutées — un groupe et une rangée, au-dessus de `Tile` et d'`Eyebrow` —, et la
+tuile redevient ce que le DS §6 en dit : un groupe logique, dont la hiérarchie
+intérieure se fait en filets et en lettres plutôt qu'en cartes empilées.
+
 ### Modifié — la feuille du jour dit ce qu'elle fait, et se referme au doigt
 
 Trois reproches sur le même écran, et une seule cause : **la feuille promettait

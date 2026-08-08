@@ -26,10 +26,15 @@ type PendingRestore = { on: ISODate; entry: BackupEntry; data: Data }
 /**
  * Ce que ce navigateur promet, et ce qu'il garde.
  *
- * À part de « Données », qui parle des fichiers qui sortent : ici on parle de
- * l'appareil. Elle passe avant, parce qu'elle dit où les données vivent — la
- * suivante dit seulement comment les en faire sortir, et se termine sur un
- * effacement, qui clôt un sujet plutôt qu'il n'en ouvre un.
+ * À part de « Exporter / importer », qui parle des fichiers qui sortent : ici on
+ * parle de l'appareil. C'est aussi ici que la prose sur le fonctionnement du
+ * navigateur a sa place — elle occupait une tuile de la page de réglages, où
+ * personne ne vient pour lire comment un quota se négocie.
+ *
+ * Quatre niveaux de lecture, dans cet ordre : l'état, sa conséquence, le
+ * chiffre, le geste. Les trois phrases avaient jusqu'ici la même lettre et la
+ * même couleur, empilées comme un paragraphe — on ne pouvait pas savoir si le
+ * navigateur s'était engagé sans les lire toutes.
  */
 export function StorageSection() {
   const replaceData = useStore((s) => s.replaceData)
@@ -79,19 +84,20 @@ export function StorageSection() {
   }
 
   return (
-    <Tile className="gap-4">
-      <Eyebrow icon={DeviceIcon}>{fr.storage.title}</Eyebrow>
+    <>
+      <Tile className="gap-3">
+        {/* Aucune étiquette ici : la vue porte déjà « Sur cet appareil » en
+            titre, et le répéter en tête de la première tuile l'aurait dit deux
+            fois à deux centimètres d'écart.
 
-      <div className="flex flex-col gap-2">
+            L'état en premier et dans la lettre du texte courant : c'est la seule
+            chose qu'on vient vérifier ici. L'explication suit, à sa place. */}
+        <p className="t-body">{state.persisted ? fr.storage.stateKept : fr.storage.stateFragile}</p>
         <p className="t-label">{state.persisted ? fr.storage.persisted : fr.storage.notPersisted}</p>
-        <p className="t-label">
+        <p className="t-label tnum">
           {state.usage === null
             ? fr.storage.usageUnknown
-            : tpl(
-                fr.storage.usage,
-                formatBytes(state.usage.usage),
-                formatBytes(state.usage.quota),
-              )}
+            : tpl(fr.storage.usage, formatBytes(state.usage.usage), formatBytes(state.usage.quota))}
         </p>
         {!state.persisted && (
           <Button
@@ -104,20 +110,25 @@ export function StorageSection() {
             {fr.storage.persistAsk}
           </Button>
         )}
-      </div>
+      </Tile>
 
-      <div className="flex flex-col gap-2 border-t border-border pt-4">
-        <p className="t-label">{fr.storage.backups}</p>
+      <Tile className="gap-3">
+        <Eyebrow icon={DeviceIcon}>{fr.storage.backups}</Eyebrow>
         <p className="t-label">{fr.storage.backupsHint}</p>
         {state.backups.length === 0 ? (
           <p className="t-label">{fr.storage.backupsEmpty}</p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col">
             {state.backups.map((entry) => (
-              <li key={entry.on} className="flex flex-wrap items-center justify-between gap-2">
-                <span className="t-label min-w-0">
-                  {formatDate(entry.on)} —{' '}
-                  {tpl(fr.storage.backupContents, entry.entries, entry.recurrences)}
+              <li
+                key={entry.on}
+                className="flex min-h-14 flex-wrap items-center justify-between gap-2 border-t border-border py-2 first:border-t-0"
+              >
+                <span className="flex min-w-0 flex-col">
+                  <span className="t-body tnum">{formatDate(entry.on)}</span>
+                  <span className="t-axis">
+                    {tpl(fr.storage.backupContents, entry.entries, entry.recurrences)}
+                  </span>
                 </span>
                 <Button
                   variant="secondary"
@@ -132,7 +143,7 @@ export function StorageSection() {
             ))}
           </ul>
         )}
-      </div>
+      </Tile>
 
       {/* Deux pas : une restauration remplace tout, exactement comme un import. */}
       <ConfirmDialog
@@ -168,6 +179,6 @@ export function StorageSection() {
           })
         }}
       />
-    </Tile>
+    </>
   )
 }
