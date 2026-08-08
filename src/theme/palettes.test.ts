@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { contrast, distance, evaluate, over } from './color'
-import { classDeclarations, declaredPalettes, paletteDeclarations, resolveTokens } from './css'
+import {
+  classDeclarations,
+  declaredPalettes,
+  paletteDeclarations,
+  parseRules,
+  resolveTokens,
+  subtreeDeclarations,
+} from './css'
 import { DEFAULT_PALETTE, PALETTES, type PaletteSetting } from '@/domain/types'
 
 /* ============================================================================
@@ -210,8 +217,12 @@ describe('palettes', () => {
   it('laisse Classique entièrement à tokens.css', () => {
     /* Elle n'a rien à surcharger, et c'est ce qui garantit qu'elle ne dérive
        pas : une palette par défaut qui se redéclarerait ailleurs finirait par
-       dire deux choses. */
-    expect(palettesCss).not.toContain(`[data-palette='${DEFAULT_PALETTE}']`)
+       dire deux choses. Sur les sélecteurs et non sur le texte : `palettes.css`
+       nomme Classique en commentaire pour expliquer justement pourquoi elle n'y
+       est pas déclarée, et une explication n'est pas une déclaration. */
+    for (const rule of parseRules(palettesCss)) {
+      expect(rule.selector, rule.selector).not.toContain(`[data-palette='${DEFAULT_PALETTE}']`)
+    }
   })
 
   for (const palette of PALETTES) {
@@ -228,6 +239,20 @@ describe('palettes', () => {
       for (const theme of THEMES) {
         describe(theme, () => {
           const scope = scopeOf(palette, theme)
+
+          /* Un sous-arbre — la vignette des réglages, le panneau du styleguide —
+             n'est pas <html> : ce que seul `:root` déclare ne s'y redéclare pas,
+             et il hérite alors la valeur de la palette ambiante au lieu de la
+             sienne. C'était le cas de Classique, dont l'identité vivait dans le
+             `:root` invariant de `tokens.css` : sa vignette virait au sapin sous
+             Monochrome. Le thème, lui, n'a jamais eu ce défaut, ses deux blocs
+             portant `[data-theme='…']`. */
+          it('se redéclare entièrement dans un sous-arbre', () => {
+            const declared = subtreeDeclarations(SHEETS, palette, theme)
+            for (const token of [...REQUIRED_ANY_THEME, ...REQUIRED_PER_THEME]) {
+              expect([...declared], `${palette}/${theme} redéclare ${token}`).toContain(token)
+            }
+          })
 
           it('résout chaque token exigé en une couleur', () => {
             for (const token of [...REQUIRED_ANY_THEME, ...REQUIRED_PER_THEME, ...MEMBERS]) {
