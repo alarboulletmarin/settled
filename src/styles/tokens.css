@@ -83,6 +83,13 @@
 
 /* Identiques dans les deux thèmes — c'est volontaire (DS §2.2). */
 :root {
+  /* Le fond d'une feuille modale, distinct de --scrim. Le voile des portes de
+     saisie fait reculer d'un plan sans rien cacher ; ici une lecture ou une
+     question passe devant, et l'arrière-plan cesse d'être ce qu'on lit. Il vaut
+     la même chose dans les deux thèmes parce qu'il ne teinte pas une surface :
+     il éteint tout ce qu'il y a dessous. */
+  --backdrop: rgb(11 14 13 / 0.4);
+
   --accent: var(--lime-500);
   --accent-fg: var(--ink-950);
   /* Écart assumé au DS §2.2, qui prescrit var(--violet-500). Le DS §2.3 affirme

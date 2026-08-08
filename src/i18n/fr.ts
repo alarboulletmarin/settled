@@ -720,6 +720,13 @@ export const fr = {
     today: 'Aujourd’hui',
     backToTodayTitle: 'Revenir au %s',
     dayTotal: 'Total du jour',
+
+    /* La légende du pied de feuille. Trois pilules grises de largeur égale au
+       bas d'un panneau ont la forme exacte d'un `Segmented` : elles disaient
+       trois natures, pas trois gestes. Le verbe se dit une fois, au-dessus
+       d'elles — 88px par bouton ne laissent pas la place de le répéter trois
+       fois, et c'est déjà ce qui avait fait retirer le « + ». */
+    addLead: 'Ajouter',
   },
 
   month: {
@@ -854,6 +861,10 @@ export const fr = {
     savingIn: 'Je place',
     savingOut: 'Je reprends',
     addSaving: 'Mouvement d’épargne',
+    /* Le pendant verbal d'`addSaving`, pour un bouton dont le texte visible se
+       réduit à « Épargne » : le nom accessible doit dire le geste, et contenir
+       le libellé visible (DS §6). */
+    addSavingAction: 'Ajouter un mouvement d’épargne',
     editSaving: 'Modifier le mouvement',
     addedSaving: 'Mouvement d’épargne enregistré',
     updatedSaving: 'Mouvement d’épargne modifié',

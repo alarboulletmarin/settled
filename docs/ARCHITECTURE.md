@@ -519,16 +519,46 @@ pour mot — rien sur un écran de saisie, où il contournerait la garde de
 brouillon.
 
 Le mois se balaie horizontalement au doigt, le rappel d'export se chasse d'un
-balayage vers le haut, et les cibles tactiles font 44px partout. Les deux gestes
-sont en Pointer Events : souris et stylet balaient comme un doigt, sans code
-séparé. `MonthNav` a longtemps été en TouchEvents, donc réservé au doigt — deux
-grammaires pour un même mouvement, à un écran d'écart.
+balayage vers le haut, une feuille de lecture se referme en la tirant vers le
+bas, et les cibles tactiles font 44px partout. Les trois gestes sont en Pointer
+Events : souris et stylet balaient comme un doigt, sans code séparé. `MonthNav`
+a longtemps été en TouchEvents, donc réservé au doigt — deux grammaires pour un
+même mouvement, à un écran d'écart.
 
 Un piège à connaître sur les gestes : `touch-action` est ce qui rend le
 balayage possible, sur l'axe qu'on ne prend pas. `pan-x` sur le bandeau
 d'export, qu'on chasse vers le haut ; `pan-y` sur le mois, qu'on balaie sur le
-côté. Sans lui, le navigateur préempte le mouvement pour faire défiler la page
-et n'envoie plus un seul `pointermove`.
+côté ; `pan-x pinch-zoom` sur la prise d'une feuille, qui garde le zoom d'une
+surcouche plein écran. Sans lui, le navigateur préempte le mouvement pour faire
+défiler la page et n'envoie plus un seul `pointermove`.
+
+C'est ce piège, et pas un choix de confort, qui **borne la prise d'une feuille à
+sa poignée et à son en-tête**. Le corps défile, donc il lui faut l'axe vertical ;
+le glissement le veut aussi, et un même élément ne peut pas donner les deux. Le
+« glisser depuis le corps quand il est en haut » que font les bibliothèques
+demande `touch-action: none` sur toute la feuille plus un verrou de défilement
+écrit à la main — c'est-à-dire réécrire ce que `<dialog>` est là pour ne pas
+avoir à écrire.
+
+Les seuils suivent une règle, et il faut trois points pour la voir : **56 pour le
+bandeau d'export, 48 pour le mois, 96 pour une feuille — une hauteur d'objet
+chacun.** On valide un geste quand on a déplacé la chose au-delà d'elle-même.
+Jamais un pourcentage : une feuille d'un jour vide fait trois cents pixels et une
+feuille pleine sept cents, et un seuil relatif ferait dire deux choses
+différentes au même geste sur le même composant. Un lancer — plus d'un demi-pixel
+par milliseconde, mesuré sur au moins 60ms — est l'autre porte, faute de quoi
+chasser une feuille d'un coup de pouce ne ferait rien.
+
+L'entrée et la sortie des feuilles vivent dans la feuille de style, sur
+`.sheet` : `showModal()` n'anime rien. Elles s'appuient sur `@starting-style` et
+sur `transition-behavior: allow-discrete` — `display` et `overlay` sont des
+propriétés discrètes, et sans elles le nœud quitte la couche du dessus à
+l'instant du `close()`, avant d'avoir pu s'en aller. Les propriétés de
+transition sont écrites une par une et non en raccourci : un item invalide dans
+une liste `transition` invalide la déclaration entière, donc un navigateur qui
+ne connaîtrait pas `allow-discrete` y perdrait aussi le fondu. Là où
+`@starting-style` manque, la feuille arrive d'un coup à sa place — le
+comportement d'avant, sans une ligne de garde en JS.
 
 Une lecture qui n'a pas de réponse s'efface plutôt que d'afficher un nombre.
 « Reste à vivre » arrête le prévisionnel à la prochaine rentrée d'argent *à

@@ -477,3 +477,103 @@
     }
   }
 }
+
+@layer components {
+  /* --- Feuille modale — DS §4 et §6 ---------------------------------------
+   *
+   * Elle apparaissait et disparaissait d'un coup : `showModal()` n'anime rien,
+   * et rien ici ne le faisait à sa place. On ne voyait donc pas d'où elle
+   * venait, ce qui est précisément ce qu'une feuille montante doit dire.
+   *
+   * Deux traitements, parce que deux objets. Sous 640px la feuille monte du
+   * bord bas, en 240ms — le DS §4 donne cette durée à l'entrée d'une vue, et
+   * une feuille qui prend 90dvh d'un téléphone en est une. Au-delà, c'est une
+   * boîte centrée : elle ne vient de nulle part, elle se pose, et 160ms lui
+   * suffisent.
+   *
+   * `display` et `overlay` sont des propriétés discrètes. Sans
+   * `transition-behavior: allow-discrete`, le nœud quitte la couche du dessus à
+   * l'instant du `close()` et il n'y a plus rien à animer ; et `overlay` doit
+   * être listée en plus de `display`, c'est elle qui l'y retient le temps de la
+   * sortie.
+   *
+   * Les propriétés longues et non le raccourci `transition` : un item invalide
+   * dans une liste `transition: …, display 240ms allow-discrete` invalide la
+   * déclaration *entière*, donc un navigateur qui ne connaît pas
+   * `allow-discrete` perdrait aussi l'opacité et la translation. Écrites
+   * séparément, seul `transition-behavior` tombe — `display` et `overlay`
+   * restent dans la liste sans effet, et l'entrée continue de s'animer.
+   *
+   * Là où `@starting-style` manque, la feuille arrive d'un coup à sa place,
+   * c'est-à-dire le comportement d'avant. Rien à garder en JS.
+   */
+  .sheet {
+    opacity: 0;
+    translate: 0 100%;
+    transition-property: opacity, translate, display, overlay;
+    transition-duration: var(--dur-view);
+    transition-timing-function: var(--ease);
+    transition-behavior: allow-discrete;
+  }
+
+  .sheet[open] {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  /* L'état de départ, que le navigateur n'a jamais rendu : sans lui, un élément
+     qui passe de `display: none` à sa place finale n'a pas d'origine à
+     interpoler, et l'entrée saute. */
+  @starting-style {
+    .sheet[open] {
+      opacity: 0;
+      translate: 0 100%;
+    }
+  }
+
+  /* Le fond suit la même mécanique, sur sa seule propriété peinte : un
+     `::backdrop` n'hérite de rien et ne se déplace pas. */
+  .sheet::backdrop {
+    background-color: transparent;
+    transition-property: background-color, display, overlay;
+    transition-duration: var(--dur-view);
+    transition-timing-function: var(--ease);
+    transition-behavior: allow-discrete;
+  }
+
+  .sheet[open]::backdrop {
+    background-color: var(--backdrop);
+  }
+
+  @starting-style {
+    .sheet[open]::backdrop {
+      background-color: transparent;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .sheet {
+      translate: none;
+      scale: 0.97;
+      transition-property: opacity, scale, display, overlay;
+      transition-duration: var(--dur);
+    }
+
+    .sheet[open] {
+      scale: 1;
+    }
+
+    /* `translate` repointé et pas seulement omis : la règle du dessus vaut
+       toujours ici, et une boîte centrée n'a pas à partir cent pour cent plus
+       bas — même si, faute d'être transitionnée à cette largeur, la valeur ne
+       se verrait pas. Une valeur morte qui contredit ce qu'on lit se réveille
+       le jour où la liste des propriétés change. */
+    @starting-style {
+      .sheet[open] {
+        opacity: 0;
+        translate: none;
+        scale: 0.97;
+      }
+    }
+  }
+}

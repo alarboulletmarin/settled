@@ -3,6 +3,7 @@ import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { IconButton } from './Button'
 import { Close } from './Icons'
+import { useSheetDrag } from './useSheetDrag'
 
 export type SheetProps = {
   open: boolean
@@ -11,15 +12,51 @@ export type SheetProps = {
   children: ReactNode
   /** Zone d'actions collée en bas, hors du défilement. */
   footer?: ReactNode
+  /**
+   * Une ligne posée au-dessus des actions, dans le même pied de feuille.
+   *
+   * Elle dit ce que la rangée fait quand les libellés n'en ont plus la place :
+   * trois boutons dans 320px de fenêtre laissent 88px chacun, et « Ajouter une
+   * dépense » n'y tient pas. Sans `footer`, elle n'aurait rien à annoncer et ne
+   * se rend pas.
+   */
+  footerLead?: ReactNode
+  /**
+   * La feuille se referme en la tirant vers le bas, sous 640px seulement.
+   *
+   * Réservé aux **lectures** — la journée du calendrier, l'explication d'un
+   * chiffre (DS §6). Une question fermée ne le prend pas : elle a deux sorties,
+   * toutes deux nommées, et une troisième au doigt et sans mot jetterait sans
+   * rien dire des confirmations délibérées.
+   *
+   * C'est aussi ce qui commande la poignée : **elle n'existe que là où le geste
+   * existe.** Elle a longtemps été partout et n'a jamais rien fait — une pilule
+   * centrée au bord haut d'une feuille montante ne dit qu'une chose, et c'est
+   * « tire-moi ».
+   */
+  pullToClose?: boolean
 }
 
 /**
  * Feuille modale. S'appuie sur <dialog> natif : le piège de focus, la touche
  * Échap et l'inertie de l'arrière-plan sont fournis par le navigateur, donc
  * corrects. Feuille montante sur mobile, boîte centrée au-delà.
+ *
+ * Le mouvement d'entrée et de sortie vit dans la feuille de style, sur la
+ * classe `.sheet` : `showModal()` n'anime rien, et une feuille montante qui
+ * apparaît d'un coup ne dit pas d'où elle vient.
  */
-export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
+export function Sheet({
+  open,
+  onClose,
+  title,
+  children,
+  footer,
+  footerLead,
+  pullToClose = false,
+}: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
+  const drag = useSheetDrag({ open, onClose, enabled: pullToClose })
 
   useEffect(() => {
     const dialog = ref.current
@@ -41,7 +78,11 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
         if (event.target === ref.current) onClose()
       }}
       className={cn(
-        'surface m-0 w-full bg-transparent p-0 text-text backdrop:bg-black/40',
+        // `.sheet` porte l'entrée, la sortie et la couleur du fond. Le fond ne
+        // peut pas rester en utilitaire `backdrop:` : Tailwind émet la couche
+        // `utilities` après `components`, donc il gagnerait quel que soit
+        // l'ordre d'écriture, et le fondu ne se verrait jamais.
+        'sheet surface m-0 w-full bg-transparent p-0 text-text',
         // La feuille de style du navigateur pose `max-width` et `max-height:
         // calc(100% - 6px - 2em)` sur tout dialog modal — bordure et padding
         // par défaut comptés en dur, que `p-0` ne retire pas du calcul. Comme
@@ -53,42 +94,84 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
       )}
     >
       <div
+        /* Le glissement porte sur `transform`, pendant que l'entrée et la
+           sortie animent `translate` sur le <dialog> : deux éléments, deux
+           propriétés, et aucun style en ligne qui vienne figer l'animation de
+           sortie. Le <dialog> est transparent, c'est ce bloc qui porte la
+           surface — le déplacer déplace la feuille qu'on voit. */
+        style={
+          drag.offset === 0 ? undefined : { transform: `translateY(${String(drag.offset)}px)` }
+        }
         className={cn(
           'flex max-h-[90dvh] flex-col bg-surface text-text',
           'rounded-t-tile sm:rounded-tile',
+          // Pendant le glissement, suivre le doigt sans retard ; au
+          // relâchement, le retour à zéro s'anime.
+          !drag.dragging && 'transition-transform duration-[var(--dur)] ease-ds',
         )}
       >
-        {/* La poignée dit qu'on est sur une feuille montante, et donne au pouce
-            un repère au bord de l'écran. Sans objet sur une boîte centrée. */}
-        <div
-          aria-hidden="true"
-          className="mx-auto mt-2.5 h-1 w-9 shrink-0 rounded-chip bg-surface-2 sm:hidden"
-        />
+        {/* La zone de prise réunit la poignée et l'en-tête : 86px, bien au-delà
+            du plancher de 44px du DS §8, et c'est la bande que la poignée
+            désignait déjà. Le corps en est exclu — il défile, et `touch-action`
+            ne peut pas servir un défilement et un glissement sur le même
+            élément.
 
-        <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
-          <h2 className="t-section min-w-0 truncate">{title}</h2>
-          <IconButton label={fr.common.close} onClick={onClose}>
-            <Close />
-          </IconButton>
-        </header>
+            `touch-pan-x` cède l'axe horizontal au navigateur et garde le
+            vertical : sans lui, le navigateur préempte le mouvement pour faire
+            défiler et n'envoie plus un seul `pointermove`. `touch-pinch-zoom`
+            rend le zoom, qu'une modale plein écran est justement l'endroit où
+            l'on veut. */}
+        <div
+          {...(drag.live ? drag.handlers : {})}
+          className={cn(
+            'shrink-0',
+            drag.live && 'touch-pan-x touch-pinch-zoom cursor-grab select-none active:cursor-grabbing',
+          )}
+        >
+          {/* Elle dit qu'on est sur une feuille montante, donne au pouce un
+              repère au bord de l'écran, et — depuis qu'elle n'apparaît qu'avec
+              le geste — ne promet plus rien qu'elle ne tienne. Sans objet sur
+              une boîte centrée. */}
+          {pullToClose && (
+            <div
+              aria-hidden="true"
+              className="mx-auto mt-2.5 h-1 w-9 rounded-chip bg-surface-2 sm:hidden"
+            />
+          )}
+
+          <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
+            <h2 className="t-section min-w-0 truncate">{title}</h2>
+            <IconButton label={fr.common.close} onClick={onClose}>
+              <Close />
+            </IconButton>
+          </header>
+        </div>
 
         {/* Sans pied de feuille, c'est le contenu qui doit passer au-dessus de
             l'indicateur d'accueil : il colle sinon au bord bas de l'écran, où
-            le système le recouvre. */}
+            le système le recouvre.
+
+            `overscroll-contain` empêche un défilement arrivé en butée de
+            repartir sur la page derrière, qui est justement celle que la
+            feuille recouvre. */}
         <div
           className={cn(
-            'min-h-0 flex-1 overflow-y-auto px-5',
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5',
             footer === undefined ? 'pb-[max(1.5rem,env(safe-area-inset-bottom))]' : 'pb-5',
           )}
         >
           {children}
         </div>
 
-        {/* Les actions se partagent la largeur à parts égales : `w-full` sur
-            chacune les ferait déborder du pied de feuille. */}
         {footer !== undefined && (
-          <footer className="flex gap-2 border-t border-border px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] [&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-0">
-            {footer}
+          <footer className="flex flex-col gap-2 border-t border-border px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {footerLead}
+            {/* Les actions se partagent la largeur à parts égales : `w-full`
+                sur chacune les ferait déborder du pied de feuille. Le partage
+                vit sur cette rangée et non sur le pied, qui porte maintenant
+                deux enfants de natures différentes — `[&>*]` posé au-dessus
+                étirerait la légende comme un bouton. */}
+            <div className="flex gap-2 [&>*]:min-w-0 [&>*]:flex-1 [&>*]:basis-0">{footer}</div>
           </footer>
         )}
       </div>

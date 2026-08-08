@@ -12,6 +12,62 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — la feuille du jour dit ce qu'elle fait, et se referme au doigt
+
+Trois reproches sur le même écran, et une seule cause : **la feuille promettait
+des gestes qu'elle n'implémentait pas.**
+
+- **« Dépense », « Revenu » et « Épargne » ne se lisaient pas comme des
+  actions.** Trois pilules grises de largeur égale au bas d'un panneau ont la
+  forme exacte d'un `Segmented`, que l'app pose partout ailleurs : elles
+  disaient trois natures, pas trois gestes. Le verbe se dit maintenant une fois,
+  au-dessus d'eux — et chaque bouton le reprend dans son nom accessible, pour
+  qui n'a pas la légende sous les yeux.
+
+  Le « + » ne peut toujours pas revenir, et la mesure est plus dure qu'on ne
+  l'avait écrite : le pied de feuille partage 280px en trois, moins deux
+  gouttières, soit **88px par bouton** à 320px de fenêtre — et non 93. En taille
+  `md` il ne restait que 48px de texte pour « Dépense », qui en demande 52 : la
+  rangée débordait déjà, sans aucun glyphe. La densité `sm` rend douze pixels
+  par bouton sans toucher aux 44px de haut du plancher tactile, là où un glyphe
+  en réclamerait vingt-quatre de plus. « Dépense » mène désormais la rangée,
+  comme sur l'état vide du même écran et sur les portes du bouton flottant.
+
+- **La poignée mentait.** Une pilule centrée au bord haut d'une feuille montante
+  ne dit qu'une chose, et c'est « tire-moi ». Elle était partout et ne faisait
+  rien. On peut maintenant tirer une feuille de **lecture** vers le bas pour la
+  refermer, et la poignée n'apparaît plus que là où le geste existe.
+
+  Le geste vit sur la poignée et l'en-tête, pas sur le corps : celui-ci défile,
+  et `touch-action` ne peut pas servir un défilement et un glissement sur le
+  même élément. Son seuil est de **96px, ou un lancer** — la hauteur de la
+  prise, comme les deux autres gestes de l'app valent la hauteur de ce qu'ils
+  déplacent. Jamais un pourcentage : une feuille d'un jour vide fait trois cents
+  pixels et une feuille pleine sept cents, et le même geste y voudrait dire deux
+  choses.
+
+  **Les confirmations ne le prennent pas.** Une question a deux sorties, toutes
+  deux nommées ; une troisième, au doigt et sans mot, jetterait sans rien dire
+  des confirmations délibérées — l'escalier se redescend à zéro, donc un
+  balayage égaré au troisième pas fait tout recommencer. Elles perdent au
+  passage une poignée qu'elles n'auraient jamais dû porter.
+
+- **Rien ne bougeait.** Les feuilles apparaissaient et disparaissaient d'un
+  coup. Elles montent maintenant du bord bas en 240ms sous 640px, et se posent
+  en fondu au-delà, où elles sont des boîtes centrées ; le fond suit. Et l'état
+  **pressé** que le design system exige depuis toujours sur ce qu'on peut
+  actionner existe enfin : quarante-deux cases de calendrier, les lignes de
+  liste et les boutons ne répondaient rien du tout à un écran sans curseur.
+
+  Le contenu, lui, n'arrive pas en escalier : la montée de la feuille *est* le
+  mouvement, et douze lignes qui s'égrènent par-dessus sont deux mouvements qui
+  se disputent les mêmes 240ms.
+
+Tout reste neutralisé sous `prefers-reduced-motion` — sauf le glissement, qui
+n'est pas une animation : c'est le doigt qui le conduit. Aucune dépendance
+ajoutée, et le `<dialog>` natif n'est pas touché, donc le piège de focus, Échap,
+le clic sur le fond et le retour du focus restent ceux du navigateur.
+
 ### Modifié — le mot « foyer » quitte l'app
 
 « Foyer » supposait une chose que le calcul n'utilise jamais : la cohabitation.
