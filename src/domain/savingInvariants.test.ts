@@ -12,7 +12,7 @@
  * ==========================================================================*/
 
 import { describe, expect, it } from 'vitest'
-import { type ISODate, currentYm, startOfMonth, ymOf } from './date'
+import { type ISODate, type YearMonth, addMonthsToYm, currentYm, startOfMonth, ymOf } from './date'
 import {
   eur,
   makeCategory,
@@ -22,9 +22,10 @@ import {
   sequentialIds,
 } from './fixtures'
 import {
-  knownSavingTotal,
+  savingTotal,
   latestValuation,
   savingsBySupport,
+  supportFlows,
   supportMonthFlows,
   supportValue,
 } from './saving'
@@ -34,6 +35,7 @@ import {
   addEntry,
   addRecurrence,
   addSavingValuation,
+  confirmEntries,
   createAdvance,
   createSavingSupport,
   openMonth,
@@ -78,6 +80,10 @@ function withSupport(
   memberId: string,
   categoryId: string,
   value?: number,
+  /* Le jour du relevé, et non celui de la création : on saisit souvent un
+     chiffre qui date d'avant, et `latestValuation` refuse — à raison — un
+     relevé postérieur au jour où l'on regarde. */
+  on: ISODate = '2026-08-01',
 ): { data: Data; id: string } {
   const created = createSavingSupport(
     data,
@@ -85,7 +91,7 @@ function withSupport(
       label,
       memberId,
       categoryId,
-      ...(value === undefined ? {} : { value: { amount: eur(value), date: '2026-08-01' } }),
+      ...(value === undefined ? {} : { value: { amount: eur(value), date: on } }),
     },
     sequentialIds(`${label}-`),
   )
@@ -418,15 +424,17 @@ describe('scénarios d’épargne, de bout en bout', () => {
     const livret = withSupport(data, 'Livret A', 'm-marie', 'passbook', 800_000)
     data = livret.data
 
-    const all = knownSavingTotal(data.savingSupports, data.savingValuations, ON)
-    const andrea = knownSavingTotal(
+    const all = savingTotal(data.savingSupports, data.savingValuations, data.entries, ON)
+    const andrea = savingTotal(
       data.savingSupports.filter((s) => s.memberId === 'm-andrea'),
       data.savingValuations,
+      data.entries,
       ON,
     )
-    const marie = knownSavingTotal(
+    const marie = savingTotal(
       data.savingSupports.filter((s) => s.memberId === 'm-marie'),
       data.savingValuations,
+      data.entries,
       ON,
     )
 
@@ -446,8 +454,8 @@ describe('scénarios d’épargne, de bout en bout', () => {
     data = pea.data
     data = withSupport(data, 'Assurance-vie', 'm-andrea', 'plans').data
 
-    const total = knownSavingTotal(data.savingSupports, data.savingValuations, ON)
-    expect(total).toEqual({ known: 2_000_000, valued: 1, unvalued: 1 })
+    const total = savingTotal(data.savingSupports, data.savingValuations, data.entries, ON)
+    expect(total).toMatchObject({ known: 2_000_000, valued: 1, unvalued: 1 })
   })
 
   /* Une avance fait passer la reprise et toutes ses mensualités par le même
@@ -498,5 +506,103 @@ describe('scénarios d’épargne, de bout en bout', () => {
     if (currentYm() !== MONTH) {
       expect(supportMonthFlows(data.entries, livret.id, currentYm()).net).toBe(0)
     }
+  })
+})
+
+/* ============================================================================
+ * Le cumul sur plusieurs mois — un capital de départ, puis un virement
+ * mensuel, six mois de suite.
+ *
+ * C'est le scénario le plus banal de l'épargne, et le seul que les tests par
+ * mois ne couvrent pas : chacun d'eux peut être juste et la suite fausse, parce
+ * que rien ne dit qu'un mois lit ce que les précédents ont posé.
+ * ==========================================================================*/
+describe('six mois de versements sur un support', () => {
+  const START: YearMonth = '2026-01'
+  const MONTHS = 6
+  const OPENED: ISODate = '2026-06-30'
+
+  /** Un livret à 10 000 €, alimenté de 200 € le 5 de chaque mois. */
+  function sixMonths(): { data: Data; supportId: string } {
+    const created = withSupport(
+      household(),
+      'Livret A',
+      'm-andrea',
+      'passbook',
+      1_000_000,
+      startOfMonth(START),
+    )
+    let data = addRecurrence(created.data, {
+      id: 'r-livret',
+      label: 'Virement livret',
+      categoryId: 'passbook',
+      memberId: 'm-andrea',
+      savingSupportId: created.id,
+      direction: 'out',
+      amount: eur(20_000),
+      period: { unit: 'month', every: 1, anchorDay: 5 },
+      startedOn: startOfMonth(START),
+    })
+
+    /* Les mois s'ouvrent comme l'app les ouvre, du plus ancien au plus récent,
+       puis se confirment : c'est le chemin réel des `Entry`, pas une liste
+       écrite à la main. */
+    for (let index = 0; index < MONTHS; index += 1) {
+      const month = addMonthsToYm(START, index)
+      data = openMonth(data, month, sequentialIds(`m${String(index)}-`), OPENED).data
+      const due = data.entries.filter(
+        (entry) => ymOf(entry.date) === month && entry.status === 'planned',
+      )
+      data = confirmEntries(data, due.map((entry) => entry.id))
+    }
+    return { data, supportId: created.id }
+  }
+
+  it('pose une échéance par mois, et une seule', () => {
+    const { data, supportId } = sixMonths()
+    const posted = data.entries.filter((entry) => entry.savingSupportId === supportId)
+    expect(posted).toHaveLength(MONTHS)
+    expect(new Set(posted.map((entry) => ymOf(entry.date))).size).toBe(MONTHS)
+    expect(posted.every((entry) => entry.status === 'confirmed')).toBe(true)
+  })
+
+  /* Le cumul : 6 × 200 € versés, et le mois courant n'en compte qu'un. Les deux
+     lectures répondent à deux questions, et aucune ne vaut l'autre. */
+  it('cumule les six versements, sans les confondre avec le mois', () => {
+    const { data, supportId } = sixMonths()
+    expect(supportFlows(data.entries, supportId, undefined, true).net).toBe(120_000)
+    expect(supportMonthFlows(data.entries, supportId, '2026-06', true).net).toBe(20_000)
+  })
+
+  /* La valeur **estimée** ajoute les six versements au relevé d'origine. Elle
+     ne s'enregistre jamais : le document ne porte toujours qu'un seul relevé. */
+  it('estime le capital à 11 200 €, sans écrire une seconde valorisation', () => {
+    const { data, supportId } = sixMonths()
+    const value = supportValue(supportId, data.savingValuations, data.entries, OPENED)
+
+    expect(value.known).toBe(1_000_000)
+    expect(value.knownOn).toBe('2026-01-01')
+    expect(value.movedSince).toBe(120_000)
+    expect(value.estimated).toBe(1_120_000)
+    expect(data.savingValuations).toHaveLength(1)
+  })
+
+  /* Relever la valeur remet les compteurs à zéro : le nouveau chiffre fait foi,
+     et l'estimation ne recompte pas ce qu'il contient déjà. */
+  it('repart du dernier relevé, sans recompter ce qu’il contient', () => {
+    const { data, supportId } = sixMonths()
+    const after = addSavingValuation(data, {
+      id: 'v-bilan',
+      supportId,
+      amount: eur(1_124_000),
+      date: '2026-06-30',
+    })
+    const value = supportValue(supportId, after.savingValuations, after.entries, OPENED)
+
+    expect(value.known).toBe(1_124_000)
+    expect(value.movedSince).toBe(0)
+    expect(value.estimated).toBe(1_124_000)
+    // Les six versements restent, à leur date : un relevé ne réécrit rien.
+    expect(after.entries.filter((e) => e.savingSupportId === supportId)).toHaveLength(MONTHS)
   })
 })

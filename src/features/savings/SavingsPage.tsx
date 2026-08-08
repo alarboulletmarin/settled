@@ -62,6 +62,14 @@ function Term({ label, value, direction }: { label: string; value: Money; direct
  * Le net du mois est posé à côté, jamais dedans : ce sont deux questions — ce
  * que je possède, et ce que le mois y a ajouté — et les additionner reviendrait
  * à compter deux fois ce que la dernière valorisation contient déjà.
+ *
+ * **Et ce qui a bougé depuis les relevés, quand il y a quelque chose.** Verser
+ * 200 € par mois pendant six mois sans jamais relever sa valeur laissait un
+ * total figé à son chiffre de départ, alors que l'app connaît les 1 200 € partis
+ * dessus : les taire n'est pas de la prudence, c'est cacher ce qu'on sait. Le
+ * chiffre s'affiche donc — nommé « estimée », avec sa réserve, et **sous** le
+ * relevé qui reste le fait. C'est exactement ce que dit la fiche d'un support,
+ * par la même fonction.
  */
 function Total({ net, owner }: { net: Money; owner: string | null }) {
   const total = useSavingTotal()
@@ -88,6 +96,24 @@ function Total({ net, owner }: { net: Money; owner: string | null }) {
             : tpl(fr.savings.totalMissing, total.unvalued)}
         </span>
       )}
+
+      {/* Le cumul de ce qui est parti depuis les relevés. Il ne remplace pas le
+          chiffre du dessus — celui-là est un fait, daté ; celui-ci ne connaît
+          pas ce que le marché a fait. */}
+      {total.movedSince !== ZERO && (
+        <div className="mt-1 flex flex-col gap-1 border-t border-border pt-3">
+          <div className="flex items-baseline gap-3">
+            <span className="t-label min-w-0 flex-1 truncate">{fr.savings.estimated}</span>
+            <Amount value={total.estimated} size="body" className="shrink-0" />
+          </div>
+          <div className="flex items-baseline gap-3">
+            <span className="t-label min-w-0 flex-1 truncate">{fr.savings.movedSinceTotal}</span>
+            <Amount value={total.movedSince} size="body" signed className="shrink-0" />
+          </div>
+          <p className="t-label mt-1">{fr.savings.estimatedWarning}</p>
+        </div>
+      )}
+
       <div className="mt-1 flex items-baseline gap-3 border-t border-border pt-3">
         <span className="t-label min-w-0 flex-1 truncate">{fr.savings.netMonth}</span>
         <Amount value={net} size="body" signed className="shrink-0" />

@@ -215,6 +215,18 @@ describe('le versé du mois, vu des deux écrans', () => {
   it('n’additionne que les supports relevés, et dit ce qui manque', () => {
     useStore.setState({ data: savingData, ym: '2026-07' })
     const { result } = renderHook(() => useSavingTotal())
-    expect(result.current).toEqual({ known: 1_000_000, valued: 1, unvalued: 1 })
+    expect(result.current).toMatchObject({ known: 1_000_000, valued: 1, unvalued: 1 })
+  })
+
+  /* Ce que l'app sait et qu'elle taisait : les versements tombés depuis le
+     dernier relevé. Le relevé reste le fait ; l'estimation le dit à côté. */
+  it('cumule les versements postérieurs au relevé, sans les fondre dedans', () => {
+    useStore.setState({ data: savingData, ym: '2026-07' })
+    const { result } = renderHook(() => useSavingTotal())
+
+    // Le relevé du support de m-1 date du 1er, son versement du 5.
+    expect(result.current.known).toBe(1_000_000)
+    expect(result.current.movedSince).toBe(20_000)
+    expect(result.current.estimated).toBe(1_020_000)
   })
 })

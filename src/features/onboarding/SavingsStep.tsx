@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { currentYm } from '@/domain/date'
-import { knownSavingTotal, latestValuation } from '@/domain/saving'
+import { latestValuation, savingTotal } from '@/domain/saving'
 import { fr } from '@/i18n/fr'
 import { tpl } from '@/i18n/format'
 import { SupportFields } from '@/features/savings/SupportFields'
@@ -187,8 +187,10 @@ export function SavingsPreview() {
   }
 
   /* Le même calcul que l'écran Épargne, pas une seconde addition : une inconnue
-     n'entre pas dans le total, et le compte de ce qui manque est dit à côté. */
-  const total = knownSavingTotal(supports, valuations)
+     n'entre pas dans le total, et le compte de ce qui manque est dit à côté.
+     Sans `Entry` à ce stade — rien n'est encore tombé —, l'estimation vaut le
+     relevé, ce qui est exact. */
+  const total = savingTotal(supports, valuations)
 
   return (
     <Tile className="gap-3">

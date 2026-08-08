@@ -5,7 +5,7 @@ import { debtStatus } from '@/domain/debt'
 import { hasDataInYear, trailingMonths } from '@/domain/history'
 import { detectPriceChange, amountOn, isCostly } from '@/domain/priceHistory'
 import {
-  knownSavingTotal,
+  savingTotal,
   latestValuation,
   savingsBySupport,
   supportMonthFlows,
@@ -379,7 +379,7 @@ describe('ce que le domaine sait en tirer', () => {
      d'exemple doit le démontrer, pas seulement le rendre possible. */
   it('possède une épargne relevée, avec son historique', () => {
     expect(data.savingSupports.length).toBeGreaterThan(2)
-    const total = knownSavingTotal(data.savingSupports, data.savingValuations, ON)
+    const total = savingTotal(data.savingSupports, data.savingValuations, data.entries, ON)
     expect(total.known).toBeGreaterThan(0)
     expect(total.unvalued).toBe(0)
     for (const support of data.savingSupports) {

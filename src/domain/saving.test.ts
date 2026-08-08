@@ -4,7 +4,7 @@ import {
   UNLINKED_SUPPORT,
   activeSupports,
   isSupportEmpty,
-  knownSavingTotal,
+  savingTotal,
   latestValuation,
   savingsBySupport,
   supportEntries,
@@ -77,22 +77,30 @@ describe('le total de l’épargne renseignée', () => {
   /* « 12 450 €, un support sans valeur » plutôt que « 12 450 € » tout court :
      un patrimoine faux présenté comme exact est pire que pas de chiffre. */
   it('n’additionne que ce qui est relevé, et compte le reste à part', () => {
-    expect(knownSavingTotal([livret, pea], valuations)).toEqual({
+    expect(savingTotal([livret, pea], valuations)).toEqual({
       known: 1245000,
+      movedSince: 0,
+      estimated: 1245000,
       valued: 1,
       unvalued: 1,
     })
   })
 
   it('ne compte pas une inconnue comme un zéro', () => {
-    expect(knownSavingTotal([pea], valuations)).toEqual({ known: 0, valued: 0, unvalued: 1 })
+    expect(savingTotal([pea], valuations)).toEqual({
+      known: 0,
+      movedSince: 0,
+      estimated: 0,
+      valued: 0,
+      unvalued: 1,
+    })
   })
 
   it('compte bien un zéro relevé, qui est une information', () => {
     const empty = [
       makeSavingValuation({ id: 'v', supportId: 's-pea', amount: eur(0), date: '2026-08-08' }),
     ]
-    expect(knownSavingTotal([pea], empty)).toEqual({ known: 0, valued: 1, unvalued: 0 })
+    expect(savingTotal([pea], empty)).toMatchObject({ known: 0, valued: 1, unvalued: 0 })
   })
 })
 

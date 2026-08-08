@@ -45,7 +45,7 @@ import {
   type SupportValue,
   activeSupports,
   isSupportEmpty,
-  knownSavingTotal,
+  savingTotal,
   savingsBySupport,
   supportEntries,
   supportMonthFlows,
@@ -817,16 +817,25 @@ export function useSavingSupport(id: string | undefined): SavingSupport | null {
 }
 
 /**
- * Ce que valent les supports d'une lecture, et combien n'ont aucune valeur.
+ * Ce que valent les supports de la lecture courante : ce qui est relevé, ce qui
+ * a bougé depuis, et combien n'ont aucune valeur.
  *
- * Sous filtre par membre, seuls ses supports comptent : l'épargne est le seul
- * chiffre du mois qui n'a aucun sens au foyer — deux personnes n'ont pas un
- * livret commun, elles ont chacune le leur.
+ * Sous filtre par membre, seuls ses supports comptent — et l'écran d'épargne
+ * n'a pas d'autre lecture : deux personnes n'ont pas un livret commun, elles
+ * ont chacune le leur.
+ *
+ * Les `Entry` entrent dans le calcul parce que l'estimation en dépend : le
+ * total et la fiche d'un support passent par la **même** fonction, et ne
+ * peuvent donc pas diverger d'un centime.
  */
 export function useSavingTotal(): SavingTotal {
   const supports = useScopedSavingSupports()
   const valuations = useSavingValuations()
-  return useMemo(() => knownSavingTotal(supports, valuations), [supports, valuations])
+  const entries = useEntries()
+  return useMemo(
+    () => savingTotal(supports, valuations, entries),
+    [supports, valuations, entries],
+  )
 }
 
 /**

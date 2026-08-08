@@ -1575,6 +1575,9 @@ export const fr = {
     estimatedWarning:
       'Estimation : elle ne tient pas compte de ce que le marché a pu faire depuis. Mets la valeur à jour pour la remplacer par un chiffre relevé.',
     movedSince: 'Mouvements depuis',
+    /* Le même chiffre, mais au pluriel des supports : sur un total, « depuis »
+       ne désigne pas un relevé mais autant qu'il y a de comptes. */
+    movedSinceTotal: 'Versé depuis les derniers relevés',
 
     /* --- La fiche d'un support --------------------------------------------*/
     monthFlows: 'Ce mois-ci',

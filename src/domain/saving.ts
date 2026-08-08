@@ -200,41 +200,62 @@ export function supportValue(
 /* --- Totaux ---------------------------------------------------------------*/
 
 /**
- * Ce que vaut l'épargne renseignée, et ce qu'on ne sait pas.
+ * Ce que vaut l'épargne d'une personne : ce qui est relevé, ce qui a bougé
+ * depuis, et ce qu'on ne sait pas.
  *
  * Le total ne porte que sur les supports qui ont un relevé. Les autres sont
  * **comptés à part**, jamais à zéro : additionner une inconnue comme un zéro
  * donnerait un patrimoine faux et présenté comme exact, ce qui est pire que pas
  * de chiffre du tout. L'écran dit les deux — « 32 450 €, un support sans
  * valeur ».
+ *
+ * `movedSince` et `estimated` sont l'agrégat de `supportValue`, et ils existent
+ * pour une raison précise : quelqu'un qui verse 200 € par mois depuis six mois
+ * et n'a relevé sa valeur qu'une fois voyait un total figé à son chiffre de
+ * départ, alors que l'app connaît les 1 200 € partis dessus. Les taire n'est pas
+ * de la prudence — c'est cacher ce qu'on sait.
+ *
+ * Ils ne portent que sur les supports **relevés** : sans base, un mouvement ne
+ * fait pas une valeur — on saurait ce qui a été versé, pas ce qu'on possède.
  */
 export type SavingTotal = {
-  /** La somme des dernières valorisations connues. */
+  /** La somme des dernières valorisations connues. Un fait, à sa date. */
   known: Money
+  /** Les mouvements confirmés depuis ces relevés, sur ces mêmes supports. */
+  movedSince: Money
+  /** `known + movedSince`. Une estimation, qui ne s'enregistre jamais. */
+  estimated: Money
   /** Combien de supports y ont contribué. */
   valued: number
   /** Combien n'ont aucune valorisation, et ne comptent donc nulle part. */
   unvalued: number
 }
 
-export function knownSavingTotal(
+export function savingTotal(
   supports: readonly SavingSupport[],
   valuations: readonly SavingValuation[],
+  entries: readonly Entry[] = [],
   on: ISODate = today(),
 ): SavingTotal {
   let known = ZERO
+  let movedSince = ZERO
   let valued = 0
   let unvalued = 0
+
   for (const support of supports) {
-    const latest = latestValuation(valuations, support.id, on)
-    if (latest === null) {
+    /* La même fonction que la fiche d'un support, appelée une fois par
+       support : le total et le détail ne peuvent pas diverger d'un centime. */
+    const value = supportValue(support.id, valuations, entries, on)
+    if (value.known === null) {
       unvalued += 1
       continue
     }
-    known = add(known, latest.amount)
+    known = add(known, value.known)
+    movedSince = add(movedSince, value.movedSince)
     valued += 1
   }
-  return { known, valued, unvalued }
+
+  return { known, movedSince, estimated: add(known, movedSince), valued, unvalued }
 }
 
 /* --- Ventilation du mois --------------------------------------------------*/
