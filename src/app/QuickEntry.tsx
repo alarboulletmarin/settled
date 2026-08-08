@@ -161,10 +161,26 @@ export function QuickEntry() {
           se servent, et le sélecteur qui les replie a besoin des deux sur le
           même nœud. Séparés, il ne désignait rien et les portes restaient
           affichées en permanence. */}
+      {/* `pointer-events-none` sur la colonne, `auto` sur ce qui s'y touche.
+          Cette colonne fait 168px de large sur plus de 200px de haut — la
+          hauteur des trois portes, qui restent montées repliées, plus celle du
+          bouton. Sans fond ni bordure elle ne se voit pas, mais un `div` reste
+          une cible : tout ce qui passait sous ce rectangle, au coin bas droit
+          de chaque écran, recevait les appuis à la place de la page. Les deux
+          rangées du bas des récurrences — « Avances », « Crédits et dettes » —
+          y perdaient leur moitié droite, chevron compris, là précisément où le
+          doigt vise une rangée qui promet une navigation.
+
+          Posé ici et non sur `.quick-door` : ce n'est pas ce qui est replié qui
+          bloquait, c'est le cadre qui le porte. Chaque cible le reprend pour
+          elle seule, et l'espace entre elles laisse passer — ouvert, il tombe
+          alors sur le calque, qui referme, ce qui est exactement ce qu'un appui
+          à côté doit faire. */}
       <div
         data-open={open}
         className={cn(
-          'quick-doors fixed right-4 z-40 flex flex-col items-end gap-3 lg:hidden',
+          'quick-doors pointer-events-none fixed right-4 z-40 flex flex-col items-end gap-3',
+          'lg:hidden',
           'bottom-[calc(var(--nav-h)+1rem+env(safe-area-inset-bottom))]',
         )}
       >
@@ -190,7 +206,15 @@ export function QuickEntry() {
           aria-hidden={open ? undefined : true}
           aria-label={fr.shell.quickEntryLabel}
           onKeyDown={onKeys}
-          className="flex flex-col items-stretch gap-2"
+          /* Repliées, les portes ne reprennent pas les appuis : `inert` le dit
+             déjà aux navigateurs qui le connaissent, mais c'est une garantie
+             d'accessibilité, pas de géométrie — trois boutons transparents
+             empilés sur la page ne doivent rien intercepter, quel que soit le
+             moteur. */
+          className={cn(
+            'flex flex-col items-stretch gap-2',
+            open ? 'pointer-events-auto' : 'pointer-events-none',
+          )}
         >
           {doors.map((door, index) => (
             <Button
@@ -235,7 +259,8 @@ export function QuickEntry() {
             setOpen((previous) => !previous)
           }}
           className={cn(
-            'flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-fg',
+            'pointer-events-auto flex h-14 w-14 items-center justify-center rounded-full',
+            'bg-accent text-accent-fg',
             /* `rotate` et non `transform` : Tailwind 4 pose `rotate-45` sur la
                propriété `rotate`, et une transition déclarée sur `transform` ne
                la voit pas — le glyphe basculait d'un coup. Vérifié en lisant le

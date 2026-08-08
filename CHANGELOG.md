@@ -71,6 +71,23 @@ six existe dans les deux thèmes.
   `localStorage` que le script d'`index.html` lit avant le premier rendu. Sans
   lui, l'app s'afficherait une frame dans les couleurs d'une autre palette.
 
+### Corrigé — le bouton flottant volait les appuis d'un coin entier de l'écran
+
+- **Une colonne invisible de 168 × 216 pixels**, posée au coin bas droit de tous
+  les écrans sous 1024px : le cadre du bouton de saisie rapide, qui garde les
+  trois portes montées même repliées pour pouvoir les animer. Sans fond ni
+  bordure, il ne se voyait pas ; comme cible, il prenait tout. Les deux rangées
+  du bas des récurrences — « Avances » et « Crédits et dettes » — y perdaient
+  leur moitié droite, chevron compris, là où le doigt vise une rangée qui promet
+  une navigation. Mesuré : dans le foyer d'exemple, quatorze cibles volées sur
+  seize écrans, dont les trois boutons de saisie du calendrier, trois rangées des
+  réglages et sept liens d'« À propos ».
+- **Le cadre laisse passer, chaque cible reprend l'appui pour elle** — le motif
+  que `Toaster` tenait déjà. Ce qui tombe entre deux portes va donc au calque,
+  qui referme : un appui à côté fait ce qu'il doit faire. Repliées, les portes ne
+  reprennent rien non plus : `inert` est une garantie d'accessibilité, pas de
+  géométrie.
+
 ### Corrigé — l'anneau de focus ne se voyait pas sur le fond sombre
 
 - **Mesuré à 1,61:1**, là où WCAG 1.4.11 en demande 3 d'un indicateur de focus :
