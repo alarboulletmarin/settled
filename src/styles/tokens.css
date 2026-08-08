@@ -33,6 +33,9 @@
   --lime-600: #c2e432;
   --violet-500: #8478f2;
   --violet-600: #6e60e8;
+  /* Le seul violet assez clair pour se voir sur le sapin du thème sombre —
+     voir --focus plus bas. Les deux autres n'y atteignent pas 3:1. */
+  --violet-300: #b3a9f7;
 
   /* Neutres */
   --ink-950: #0b0e0d;
@@ -99,6 +102,24 @@
   --accent-2: var(--violet-600);
   --accent-2-fg: #ffffff;
 
+  /* L'anneau de focus du DS §8, exposé en token propre plutôt qu'écrit
+     `var(--accent-2)` dans `base.css`. Deux raisons, et la seconde est un bug.
+     D'abord : une palette dont l'accent 2 est sombre éteindrait l'anneau sur un
+     fond sombre, et il n'y aurait aucun endroit où le rattraper. Ensuite : c'est
+     déjà le cas ici. `--violet-600` sur `--bg` en thème sombre — du sapin, pas
+     du noir — ne donne que 1,61:1, là où WCAG 1.4.11 demande 3:1 d'un indicateur
+     de focus. Le thème sombre le repointe donc plus bas ; le clair ne bouge pas
+     (4,23 sur --bg, 4,67 sur --surface, 3,73 sur --surface-2). */
+  --focus: var(--accent-2);
+
+  /* L'opacité des voiles posés sur une tuile accentuée (`.tile--accent`).
+     Le DS n'en donnait qu'une valeur, 62 %, et elle n'est pas transposable : le
+     contraste d'un voile d'encre sur son propre fond monte avec la clarté de ce
+     fond, et le vert pomme de Classique est très clair. Sur un accent plus
+     sourd, 62 % retombe à 3,89:1 — sous le plancher AA. Chaque palette pose donc
+     le sien, mesuré ; Classique garde 62 % et ne bouge pas d'un pixel. */
+  --accent-veil: 62%;
+
   /* Alerte, exposée en sémantique : dépassements et erreurs uniquement.
      --danger est un remplissage non textuel (barres, pastilles). Dès qu'un
      texte se pose dessus, c'est --danger-fill : blanc sur --alert-500 ne donne
@@ -117,6 +138,25 @@
   /* Au-delà de six catégories : gris, regroupées sous « Autres ». */
   --cat-rest: var(--ink-400);
 
+}
+
+/* Les alias — des tokens qui ne valent que ce que valent d'autres tokens.
+ *
+ * TROIS SÉLECTEURS, et ce n'est pas de la redondance. Une propriété
+ * personnalisée est substituée au moment du calcul, **sur l'élément qui la
+ * déclare** : posé sur `:root` seul, `--member-1` vaudrait à jamais le
+ * `--cat-3` de <html>, et un sous-arbre qui change de palette ou de thème en
+ * hériterait tel quel — la vignette d'aperçu montrerait les pastilles de la
+ * palette en cours au lieu des siennes. Répéter le bloc sur `[data-theme]` et
+ * `[data-palette]` le fait redériver partout où ses entrées peuvent changer.
+ *
+ * Aucune de ces trois formes n'entre en conflit avec les autres : elles
+ * déclarent les mêmes tokens, que personne d'autre ne déclare — sauf une
+ * palette dans `palettes.css`, qui vient après et l'emporte à spécificité
+ * égale. */
+:root,
+[data-theme],
+[data-palette] {
   /* Palette membres — les teintes du DS §2.4, moins le vert pomme.
      Le vert pomme est --accent, donc le signal « actif » de toute l'app, et
      aussi la couleur du commun (la tuile Répartition est en accent). Une
@@ -131,7 +171,9 @@
   --member-4: var(--cat-6);
   --member-5: var(--cat-2);
 
-  /* Sens du flux — DS §2.3 : entrées = lime, sorties = violet.
+  /* Sens du flux — DS §2.3 : deux rôles distincts, jamais rouge et vert.
+     Classique les dit en lime et violet ; une autre palette a le droit de les
+     dire autrement, tant que l'écart entre les deux reste mesuré.
      Remplissage uniquement, jamais une `color`. */
   --flow-in: var(--accent);
   --flow-in-fg: var(--accent-fg);
@@ -160,6 +202,11 @@
 [data-theme='dark'] {
   --tile-border: var(--border);
   --track-on-accent: rgb(11 14 13 / 0.16);
+  /* Même violet, assez clair pour se voir sur le sapin : 3,56:1 sur --bg,
+     9,17 sur --surface, 8,31 sur --surface-2. La valeur du bloc invariant
+     (--violet-600) n'y atteint que 1,61 — un anneau qu'on ne voit pas ne dit
+     pas où est le focus. */
+  --focus: var(--violet-300);
   /* Valeur du DS, valable dès qu'on est dans une surface : 7,08:1 sur
      --surface, 6,41 sur --surface-2. `.tile` la remet en place. */
   --text-muted-on-surface: #8fa09a;

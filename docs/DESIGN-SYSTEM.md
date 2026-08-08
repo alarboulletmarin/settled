@@ -18,9 +18,48 @@ Une app de finances qui ressemble à un tableau de bord, pas à un relevé banca
 
 ## 2. Couleur
 
+### 2.0 Thème et palette
+
+Deux réglages, et ils se combinent. Le **thème** dit clair ou sombre — ou suit le
+système. La **palette** dit avec quelles couleurs. Chaque palette existe dans les
+deux thèmes, et aucune ne dispense de tester les deux.
+
+`data-palette` vit sur `<html>` à côté de `data-theme`, et les six identités sont
+déclarées dans `src/styles/palettes.css`. Une palette n'est qu'un **jeu de
+surcharges** de la couche sémantique : `tokens.css` *est* la palette Classique,
+qui n'a donc rien à déclarer et ne peut pas dériver. Aucun composant ne connaît
+la palette courante — c'est tout le propos.
+
+| Palette | Ce qu'elle change |
+|---|---|
+| Classique | les couleurs d'origine — sapin, vert pomme, violet |
+| Monochrome | une seule teinte, du plus clair au plus sombre |
+| Douce | les mêmes familles, moins saturées |
+| Vive | des teintes franches, qui se distinguent de loin |
+| Neutre | presque sans couleur, sauf l'alerte |
+| Contrastée | le contraste poussé au maximum |
+
+Trois règles tiennent la couche, et elles sont vérifiées :
+
+- **Ce que toute palette déclare** — `--accent`, `--accent-fg`, `--accent-2`,
+  `--accent-2-fg`, `--danger`, `--danger-fill`, `--danger-fg`, `--cat-1..6`,
+  `--cat-rest`, et par thème `--bg`, `--surface`, `--surface-2`, `--text`,
+  `--text-muted`, `--text-muted-on-surface`, `--danger-text`,
+  `--danger-text-on-surface`, `--focus`.
+- **Dans quel bloc, la palette le décide.** Ce qui tient dans les deux thèmes se
+  pose une fois ; le reste se pose deux fois. Une palette qui distingue ses
+  catégories par la **teinte** n'a qu'un jeu à donner ; une palette qui les
+  distingue par la **clarté** doit en donner deux — six pas assez sombres pour se
+  voir sur du blanc sont invisibles sur un fond noir.
+- **Un sous-arbre qui force un thème porte aussi sa palette dès qu'il en force
+  une.** Deux attributs sur deux éléments différents rendent la cascade
+  ambiguë, et CSS ne sait pas l'arbitrer.
+
 ### 2.1 Palette de base
 
-Ces valeurs ne changent jamais. Elles ne sont pas utilisées directement dans les composants.
+Ces valeurs ne changent jamais et aucune palette n'y touche : ce sont celles de
+Classique, dont la couche sémantique est faite. Elles ne sont pas utilisées
+directement dans les composants.
 
 ```css
 :root {
@@ -86,29 +125,53 @@ C'est la seule couche que les composants consomment.
 
 | Règle | Pourquoi |
 |---|---|
-| Lime et violet ne sont jamais une `color`, uniquement un `background` | Contraste insuffisant en texte sur les deux fonds |
-| Texte encre sur lime, texte blanc sur violet | Ces deux paires passent AA dans les deux thèmes, donc les chips ne changent pas |
-| Entrées = lime, sorties = violet | Évite le rouge/vert, illisible pour un daltonien et anxiogène sur du quotidien |
-| Rouge réservé aux dépassements et erreurs | S'il est partout, il ne signale plus rien |
+| Les deux accents ne sont jamais une `color`, uniquement un `background` | Une teinte choisie pour remplir n'a pas le contraste d'une encre |
+| Chaque remplissage déclare son encre — `--accent-fg`, `--accent-2-fg`, `--danger-fg` — et la paire passe AA | Mesuré palette par palette, pas supposé : une palette qui éclaircit son accent 2 doit pouvoir y poser autre chose que du blanc |
+| **Entrées et sorties sont deux rôles distincts, jamais rouge et vert** | Le rouge/vert est illisible pour un daltonien et anxiogène sur du quotidien. C'est la *séparation* qui compte, pas les deux teintes qui la portent |
+| L'écart entre les deux vaut au moins 3:1 | C'est ce qui survit au niveau de gris et à la dichromatie, donc exactement ce que la règle ci-dessus protège. Classique tient 3,88 ; une palette monochrome les sépare par la clarté et tient 3,45 |
+| Rouge réservé aux dépassements et erreurs | S'il est partout, il ne signale plus rien. Même Neutre le garde : une palette discrète qui décolorerait l'erreur serait muette |
 | En thème sombre, pas d'ombre : la hiérarchie passe par la bordure | Les ombres ne se voient pas sur du sapin |
+
+Classique dit les entrées en lime et les sorties en violet. C'est **une** façon
+de tenir la règle, pas la règle : elle portait ces deux noms tant qu'il n'y avait
+qu'une palette, et cinq autres n'auraient pas pu exister sans la contredire.
 
 ### 2.4 Palette catégories
 
-Six teintes, dans cet ordre, pour les donuts et les barres empilées. Au-delà de six catégories, les suivantes basculent en gris et sont regroupées sous « Autres ».
+Six teintes, dans cet ordre, pour les donuts et les barres empilées. Au-delà de six catégories, les suivantes basculent en gris et sont regroupées sous « Autres ». **C'est la palette qui les fournit** — celles de Classique sont ci-dessous.
 
 ```css
 --cat-1: #D8F84E;  --cat-2: #8478F2;  --cat-3: #4FC3A1;
 --cat-4: #F5B575;  --cat-5: #F09BB5;  --cat-6: #7FB8E8;
 ```
 
+Deux contraintes, mesurées pour chaque palette et chaque thème : deux teintes
+voisines s'écartent d'au moins **0,08** en distance OKLab, et chacune s'écarte
+d'au moins **0,15** du fond et des surfaces. Le rapport de contraste ne dit rien
+d'utile ici — le vert pomme sur du blanc ne donne que 1,20:1 et se voit très bien
+—, mais la distance dit juste : une teinte qui frôle sa surface disparaît.
+
+Le plancher de 0,08 n'est pas celui de Classique, qui tient 0,122, et c'est
+délibéré : six pas d'une seule teinte ne peuvent pas s'écarter davantage sans
+qu'un des six cesse d'être cette teinte. C'est le prix d'une palette monochrome,
+et le §8 le couvre déjà — une pastille accompagne un libellé, elle ne le
+remplace pas.
+
 ### 2.5 Palette membres
 
-Les mêmes teintes, **moins le vert pomme**, et dans un autre ordre. Cinq suffisent à un foyer ; au-delà, la palette recommence.
+Les mêmes teintes, **moins celle de l'accent**, et dans un autre ordre. Cinq suffisent à un foyer ; au-delà, la palette recommence.
 
 ```css
 --member-1: var(--cat-3);  --member-2: var(--cat-4);  --member-3: var(--cat-5);
 --member-4: var(--cat-6);  --member-5: var(--cat-2);
 ```
+
+Ces alias suffisent tant que l'accent n'est pas dans la rampe des catégories. Il
+l'est dès qu'une palette distingue ses catégories par la clarté : Monochrome et
+Neutre posent donc leurs cinq membres à la main, sur la moitié de la rampe la
+plus éloignée de leur accent. La règle qu'ils tiennent est mesurable — **au
+moins 0,10 de distance OKLab entre un membre et l'accent**, contre 0,039 par le
+simple alias.
 
 Le vert pomme est `--accent` : le signal « actif » de toute l'app, et la couleur du commun — la tuile Répartition est en accent. **Un membre ne le porte jamais.** Le premier le portait, et sa pastille se lisait comme une sélection : on croyait ne lire que ses données. Sur une pilule de filtre active, qui passe elle-même en `--accent`, elle disparaissait tout à fait.
 
@@ -323,7 +386,15 @@ Une erreur dit ce qui s'est passé et quoi faire, sans s'excuser. Un écran vide
 
 ## 8. Plancher de qualité
 
-Contraste AA sur tout texte. Focus clavier visible sur tout élément interactif, anneau 2px `--accent-2` avec 2px de décalage. Cible tactile minimale 44px. Chaque graphique est doublé d'une lecture accessible aux lecteurs d'écran. Les deux thèmes sont testés sur chaque écran avant de considérer l'écran terminé.
+Contraste AA sur tout texte. Focus clavier visible sur tout élément interactif, anneau 2px `--focus` avec 2px de décalage — l'anneau porte son propre token, et ne vaut plus `--accent-2` par écrit : sur un fond sombre, il faut pouvoir le repointer sans changer la couleur des sorties. Il tient 3:1 sur le fond comme sur les surfaces, ce que WCAG 1.4.11 demande d'un indicateur de focus. Cible tactile minimale 44px. Chaque graphique est doublé d'une lecture accessible aux lecteurs d'écran. Les deux thèmes sont testés sur chaque écran avant de considérer l'écran terminé.
+
+**Ce plancher est prouvé, pas affirmé.** `src/theme/palettes.test.ts` lit
+`tokens.css` et `palettes.css`, rejoue la cascade pour chacun des douze couples
+palette × thème et mesure : quinze paires de texte à 4,5:1, quatre séparations
+non textuelles à 3:1, et les distances du §2.4. Il rejoue au passage les ratios
+écrits en commentaire dans `tokens.css`, ce qui est le test du test. Les écarts
+assumés y sont déclarés un par un, avec leur plancher propre : un écart non
+déclaré fait échouer la construction, et un écart déclaré qui empire aussi.
 
 Deux écarts à la cible de 44px, et pas un de plus. Ils ont en commun d'être **mesurés, écrits à côté du code, et compensés sur l'autre axe** : une largeur d'écran ne se négocie pas, et un composant qui divise cette largeur par sept ou par douze finit par tomber en dessous. Le curseur d'un graphique donne seize pixels par mois sur un téléphone de 320, et la lecture existe aussi au clavier et dans le doublon accessible. Une case de calendrier tombe à 37px de large sous 375px de fenêtre, et garde ses 44px de haut. Ce qui n'est jamais négociable, en revanche, c'est la hauteur : une cible aplatie n'a plus rien pour être visée.
 

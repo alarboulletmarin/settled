@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { onPageHidden } from '@/persistence/lifecycle'
 import { useStore } from '@/store/store'
-import { useApplyTheme } from '@/theme/useTheme'
+import { useApplyAppearance } from '@/theme/useTheme'
 import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
 import { BootScreen } from './BootScreen'
@@ -41,8 +41,9 @@ function Booted() {
 export function App() {
   const hydrate = useStore((s) => s.hydrate)
   const theme = useStore((s) => s.data.settings.theme)
+  const palette = useStore((s) => s.data.settings.palette)
   const currency = useStore((s) => s.data.settings.currency)
-  useApplyTheme(theme)
+  useApplyAppearance(theme, palette)
 
   useEffect(() => {
     void hydrate()

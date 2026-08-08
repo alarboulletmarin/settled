@@ -26,6 +26,7 @@ import {
   PRIVACY_PATH,
   RECURRENCES_PATH,
   RECURRENCE_NEW_PATH,
+  SETTINGS_APPEARANCE_PATH,
   SETTINGS_CATEGORIES_PATH,
   SETTINGS_DATA_PATH,
   SETTINGS_FAMILY_NEW_PATH,
@@ -67,6 +68,7 @@ const HistoryPage = lazy(async () => ({
  */
 const settings = () => import('@/features/settings/pages')
 const SettingsPage = lazy(async () => ({ default: (await settings()).SettingsPage }))
+const AppearancePage = lazy(async () => ({ default: (await settings()).AppearancePage }))
 const PeoplePage = lazy(async () => ({ default: (await settings()).PeoplePage }))
 const MemberPage = lazy(async () => ({ default: (await settings()).MemberPage }))
 const CategoriesPage = lazy(async () => ({ default: (await settings()).CategoriesPage }))
@@ -139,6 +141,7 @@ export function AppRoutes() {
               mais il dit la hiérarchie : une page d'entrée, puis ce qu'elle
               ouvre, dans l'ordre où elle le propose. */}
           <Route path={SETTINGS_PATH} element={<SettingsPage />} />
+          <Route path={SETTINGS_APPEARANCE_PATH} element={<AppearancePage />} />
           <Route path={SETTINGS_PEOPLE_PATH} element={<PeoplePage />} />
           <Route path={SETTINGS_MEMBER_NEW_PATH} element={<MemberPage />} />
           <Route path={`${SETTINGS_PEOPLE_PATH}/:id`} element={<MemberPage />} />

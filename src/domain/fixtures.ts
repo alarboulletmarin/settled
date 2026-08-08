@@ -1,5 +1,6 @@
 /** Fabriques de test. Aucun module d'application ne dépend de ce fichier. */
 
+import { CURRENT_SCHEMA_VERSION } from '@/persistence/schema'
 import { type Money, money } from './money'
 import type {
   Advance,
@@ -85,9 +86,11 @@ export function makeAdvance(over: Partial<Advance> & { id: string }): Advance {
 
 export function makeData(over: Partial<Data> = {}): Data {
   return {
-    // La version courante du document : un aller-retour export / import doit
-    // pouvoir se comparer à l'identique, sans qu'une migration s'intercale.
-    schemaVersion: 6,
+    /* La version courante du document : un aller-retour export / import doit
+       pouvoir se comparer à l'identique, sans qu'une migration s'intercale.
+       Lue et non recopiée — le nombre écrit ici à la main devenait faux à chaque
+       incrément, et faisait tomber trois tests sans rapport avec le changement. */
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     household: { name: 'Maison', members: [] },
     families: [makeFamily({ id: 'fam-leisure' })],
     categories: [],
@@ -96,7 +99,7 @@ export function makeData(over: Partial<Data> = {}): Data {
     debts: [],
     advances: [],
     months: [],
-    settings: { theme: 'system', currency: 'EUR', monthStartsOn: 1 },
+    settings: { theme: 'system', palette: 'classique', currency: 'EUR', monthStartsOn: 1 },
     ...over,
   }
 }

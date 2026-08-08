@@ -24,14 +24,19 @@ const DIST = 'dist'
 
 /* Le budget, en kibioctets compressés.
 
-   L'app en pèse 192 au moment où ce chiffre est posé : la marge est de huit,
+   L'app en pèse 202 au moment où ce chiffre est posé : la marge est de huit,
    c'est-à-dire de quoi ajouter une fonctionnalité mais pas de quoi ramener un
    écran entier — les quatre qui se chargent à la demande pèsent de 2 à 5 Kio
    chacun. C'est un garde-fou, pas un objectif à raser.
 
    Le dépasser n'est pas interdit : c'est une décision, et elle se prend en
-   changeant ce chiffre, dans un commit qui dit pourquoi. */
-const BUDGET_KIB = 200
+   changeant ce chiffre, dans un commit qui dit pourquoi. Celui-ci le dit : les
+   palettes coûtent 2,3 Kio, dont 1,3 pour `styles/palettes.css` — cinq
+   identités de plus sur la couche de tokens — et le reste pour le réglage qui
+   les choisit, qui doit être lu avant le premier pixel. Le budget était à 200
+   et l'app à 199,9 : il ne restait plus de quoi ajouter quoi que ce soit, ce qui
+   n'est pas la marge que ce chiffre est censé tenir. */
+const BUDGET_KIB = 210
 
 const kib = (bytes) => bytes / 1024
 const format = (bytes) => `${kib(bytes).toFixed(1)} Kio`

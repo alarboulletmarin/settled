@@ -27,16 +27,29 @@
 
   /* Les variantes accentuées repointent les tokens sémantiques pour tout leur
      contenu : un enfant qui lit `--text-muted` s'adapte sans rien savoir. */
+  /* Les voiles sont tirés de --accent-fg au lieu d'être écrits en dur.
+     `rgb(11 14 13 / 0.62)` était exactement --accent-fg à 62 %, mais recopié :
+     la tuile supposait ainsi « l'accent est clair, donc son texte est encre »,
+     ce qu'une palette a le droit de renverser. `color-mix(… , transparent)`
+     prémultiplie l'alpha, donc le rendu est identique au pixel près tant que
+     --accent-fg vaut var(--ink-950). */
   .tile--accent {
     background-color: var(--accent);
     border-color: transparent;
     box-shadow: none;
     --text: var(--accent-fg);
-    --text-muted: rgb(11 14 13 / 0.62);
-    --surface-2: rgb(11 14 13 / 0.12);
-    --border: rgb(11 14 13 / 0.14);
-    --eyebrow-bg: rgb(11 14 13 / 0.12);
-    --eyebrow-fg: rgb(11 14 13 / 0.72);
+    --text-muted: color-mix(in srgb, var(--accent-fg) var(--accent-veil), transparent);
+    --surface-2: color-mix(in srgb, var(--accent-fg) 12%, transparent);
+    --border: color-mix(in srgb, var(--accent-fg) 14%, transparent);
+    --eyebrow-bg: color-mix(in srgb, var(--accent-fg) 12%, transparent);
+    /* Dix points au-dessus du voile de texte : l'étiquette se pose sur la pilule
+       à 12 %, donc elle part avec moins d'écart que le texte posé à même le
+       fond. Les deux se tiennent ou tombent ensemble — voir `palettes.test.ts`. */
+    --eyebrow-fg: color-mix(
+      in srgb,
+      var(--accent-fg) calc(var(--accent-veil) + 10%),
+      transparent
+    );
     color: var(--accent-fg);
   }
 
@@ -49,9 +62,16 @@
        repasse sous AA. Sur cette tuile, la hiérarchie vient de la taille et de
        la pilule d'eyebrow, jamais d'un texte atténué. */
     --text-muted: var(--accent-2-fg);
-    --surface-2: rgb(255 255 255 / 0.16);
-    --border: rgb(255 255 255 / 0.2);
-    --eyebrow-bg: rgb(255 255 255 / 0.18);
+    --surface-2: color-mix(in srgb, var(--accent-2-fg) 16%, transparent);
+    --border: color-mix(in srgb, var(--accent-2-fg) 20%, transparent);
+    /* Écart assumé, mesuré et antérieur à la couche palette : le blanc sur cette
+       pilule ne donne que 3,39:1, sous le plancher AA du DS §8. Le voile éclaire
+       le fond *vers* la couleur du texte, ce qui est juste sur un accent clair et
+       faux sur un accent sombre — le corriger demande de veiler en sens inverse
+       ici, donc de changer l'aspect de la tuile violette. Laissé tel quel et
+       déclaré dans `palettes.test.ts`, plutôt que corrigé au détour d'un autre
+       chantier. */
+    --eyebrow-bg: color-mix(in srgb, var(--accent-2-fg) 18%, transparent);
     --eyebrow-fg: var(--accent-2-fg);
     /* Le blanc plein ne donne que 4,67:1 sur violet : aucune atténuation ne
        tient, pas même sur le symbole monétaire. */

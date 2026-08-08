@@ -5,7 +5,14 @@
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "types": ["vite/client", "vitest/globals"],
+    // `node` n'est pas une invitation : aucun module d'application n'a le droit
+    // d'importer `node:*`, et le bundler le refuserait de toute façon. Il est là
+    // pour un seul fichier — `theme/palettes.test.ts`, qui lit `tokens.css` et
+    // `palettes.css` avec `node:fs` pour mesurer leurs contrastes. Il ne peut pas
+    // les importer : `css: false` (vite.config.ts) vide tout import de `.css`,
+    // extension `?raw` comprise, et l'activer ferait passer Tailwind sur chaque
+    // exécution de test.
+    "types": ["node", "vite/client", "vitest/globals"],
 
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

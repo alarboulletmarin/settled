@@ -11,7 +11,7 @@ import { type YearMonth, currentYm, today } from '@/domain/date'
 import { makeId } from '@/domain/ids'
 import { monthHorizon } from '@/domain/month'
 import { openMonth } from '@/domain/updates'
-import type { Data, ThemeSetting } from '@/domain/types'
+import type { Data, PaletteSetting, ThemeSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { requestPersistence } from '@/lib/storage'
 import { backupDaily, clearBackups } from '@/persistence/backups'
@@ -20,6 +20,7 @@ import { emptyData } from '@/persistence/defaults'
 import { type TabChannel, type TabMessage, openTabChannel } from '@/persistence/tabs'
 import { forgetExportMarks } from '@/persistence/transfer'
 import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
+import { mirrorAppearance, readStoredPalette, storePalette } from '@/theme/palette'
 import { readStoredPreference, storePreference } from '@/theme/theme'
 import { toast, useToasts } from '@/ui/toast'
 
@@ -85,6 +86,15 @@ export type StoreActions = {
   setYm: (ym: YearMonth) => void
   setFilter: (filter: MonthFilter) => void
   setTheme: (theme: ThemeSetting) => void
+  /**
+   * L'identité colorimétrique, à côté du thème et indépendante de lui.
+   *
+   * Les six palettes vivent dans `styles/palettes.css` : ce réglage-ci ne fait
+   * que poser `data-palette` sur <html>. Aucun composant n'en sait rien, et rien
+   * du document n'est réécrit — les teintes stockées sur une catégorie ou un
+   * membre sont des noms de tokens, donc elles suivent.
+   */
+  setPalette: (palette: PaletteSetting) => void
   /**
    * La devise dans laquelle les montants s'affichent.
    *
@@ -192,12 +202,21 @@ setDbEventHandler((event) => {
 export const HYDRATION_TIMEOUT_MS = 10_000
 
 /**
- * Document de départ. Le thème reprend le miroir localStorage pour que rien ne
- * clignote entre le premier rendu et la fin de l'hydratation.
+ * Document de départ. Le thème et la palette reprennent leur miroir localStorage
+ * pour que rien ne clignote entre le premier rendu et la fin de l'hydratation :
+ * ce sont les deux réglages qui décident des couleurs avant que le document ne
+ * soit lu.
  */
 function initialData(): Data {
   const data = emptyData()
-  return { ...data, settings: { ...data.settings, theme: readStoredPreference() } }
+  return {
+    ...data,
+    settings: {
+      ...data.settings,
+      theme: readStoredPreference(),
+      palette: readStoredPalette(),
+    },
+  }
 }
 
 export const useStore = create<Store>()((set, get) => ({
@@ -233,7 +252,7 @@ export const useStore = create<Store>()((set, get) => ({
         set({ status: 'onboarding', data: initialData() })
         return
       }
-      storePreference(stored.data.settings.theme)
+      mirrorAppearance(stored.data.settings)
       bootSnapshot = stored.data
       set({ status: 'ready', data: stored.data, rev: stored.rev })
       // Cahier §4.3 : l'ouverture est déclenchée au premier lancement du mois.
@@ -283,9 +302,16 @@ export const useStore = create<Store>()((set, get) => ({
     get().mutate((data) => ({ ...data, settings: { ...data.settings, theme } }))
   },
 
-  /* Pas de miroir en `localStorage`, contrairement au thème : celui-ci évite un
-     éclair de blanc avant le premier rendu, alors qu'un symbole monétaire
-     n'apparaît qu'une fois le document lu. */
+  /* Miroir aussi, et pour la même raison que le thème : une palette change le
+     fond de page, donc elle doit être juste avant le premier pixel. */
+  setPalette(palette) {
+    storePalette(palette)
+    get().mutate((data) => ({ ...data, settings: { ...data.settings, palette } }))
+  },
+
+  /* Pas de miroir en `localStorage`, contrairement à l'apparence : celle-ci
+     évite un éclair de blanc avant le premier rendu, alors qu'un symbole
+     monétaire n'apparaît qu'une fois le document lu. */
   setCurrency(currency) {
     get().mutate((data) => ({ ...data, settings: { ...data.settings, currency } }))
   },
@@ -339,7 +365,7 @@ export const useStore = create<Store>()((set, get) => ({
     // Un import ou le jeu d'exemple créent un foyer tout autant : quelqu'un qui
     // restaure un export sur un appareil neuf ne passe jamais par l'onboarding.
     void requestPersistence()
-    storePreference(data.settings.theme)
+    mirrorAppearance(data.settings)
     set({ data, status: 'ready', error: null, ym: currentYm(), filter: ALL_FILTER })
     // Le fichier importé peut dater : le mois courant n'y est pas forcément.
     get().ensureMonthOpen()
@@ -365,7 +391,7 @@ export const useStore = create<Store>()((set, get) => ({
     forgetExportMarks()
     bootSnapshot = null
     const fresh = emptyData()
-    storePreference(fresh.settings.theme)
+    mirrorAppearance(fresh.settings)
     set({
       data: fresh,
       status: 'onboarding',
@@ -427,7 +453,7 @@ export const useStore = create<Store>()((set, get) => ({
     useToasts.getState().clearActions()
     const loaded = await loadDocument()
     if (loaded === null) return
-    storePreference(loaded.data.settings.theme)
+    mirrorAppearance(loaded.data.settings)
     set({ data: loaded.data, rev: loaded.rev, status: 'ready', error: null })
     // Un toast, pas une modale : arrêter quelqu'un pour lui dire qu'il n'a rien
     // perdu serait pire que le lui dire en passant.

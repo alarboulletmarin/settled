@@ -1,3 +1,4 @@
+import { PALETTES, type PaletteSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { Section, SubTitle } from './Section'
 import { ThemePane } from './ThemePane'
@@ -8,6 +9,15 @@ import {
   SEMANTIC_TOKENS,
   type TokenEntry,
 } from './tokens.data'
+
+const PALETTE_NAME: Record<PaletteSetting, string> = {
+  classique: fr.palettes.classique,
+  monochrome: fr.palettes.monochrome,
+  douce: fr.palettes.douce,
+  vive: fr.palettes.vive,
+  neutre: fr.palettes.neutre,
+  contrastee: fr.palettes.contrastee,
+}
 
 function Swatch({ entry }: { entry: TokenEntry }) {
   return (
@@ -71,14 +81,31 @@ export function SemanticTokensSection() {
   )
 }
 
+function SwatchRow({ entries }: { entries: TokenEntry[] }) {
+  return (
+    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
+      {entries.map((entry) => (
+        <Swatch key={entry.name} entry={entry} />
+      ))}
+    </ul>
+  )
+}
+
+/* Les deux thèmes côte à côte, et non plus une seule rangée : depuis que les
+   palettes existent, deux d'entre elles changent leur rampe d'un thème à
+   l'autre — six pas assez sombres pour se voir sur du blanc sont invisibles sur
+   un fond noir. Une rangée unique n'en montrait donc que la moitié. */
 export function CategoryPaletteSection() {
   return (
     <Section title={fr.styleguide.sections.categories} note={fr.styleguide.categoriesNote}>
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
-        {CATEGORY_PALETTE.map((entry) => (
-          <Swatch key={entry.name} entry={entry} />
-        ))}
-      </ul>
+      <div className="grid gap-4 md:grid-cols-2">
+        <ThemePane theme="light">
+          <SwatchRow entries={CATEGORY_PALETTE} />
+        </ThemePane>
+        <ThemePane theme="dark">
+          <SwatchRow entries={CATEGORY_PALETTE} />
+        </ThemePane>
+      </div>
     </Section>
   )
 }
@@ -86,11 +113,68 @@ export function CategoryPaletteSection() {
 export function MemberPaletteSection() {
   return (
     <Section title={fr.styleguide.sections.members} note={fr.styleguide.membersNote}>
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
-        {MEMBER_PALETTE.map((entry) => (
-          <Swatch key={entry.name} entry={entry} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <ThemePane theme="light">
+          <SwatchRow entries={MEMBER_PALETTE} />
+        </ThemePane>
+        <ThemePane theme="dark">
+          <SwatchRow entries={MEMBER_PALETTE} />
+        </ThemePane>
+      </div>
+    </Section>
+  )
+}
+
+/**
+ * Les six palettes, dans les deux thèmes.
+ *
+ * Chaque cellule est un `ThemePane` qui porte sa palette : c'est exactement le
+ * mécanisme de l'aperçu des réglages, et le seul endroit du dépôt où les six se
+ * regardent en même temps. Elle montre les rôles qui portent du sens — le fond,
+ * la surface, l'accent et son texte, l'accent 2, l'alerte, et les six teintes.
+ */
+export function PalettesSection() {
+  return (
+    <Section title={fr.styleguide.sections.palettes} note={fr.styleguide.palettesNote}>
+      <div className="flex flex-col gap-4">
+        {PALETTES.map((palette) => (
+          <div key={palette} className="flex flex-col gap-2">
+            <SubTitle>{PALETTE_NAME[palette]}</SubTitle>
+            <div className="grid gap-4 md:grid-cols-2">
+              {(['light', 'dark'] as const).map((theme) => (
+                <ThemePane key={theme} theme={theme} palette={palette}>
+                  <div className="flex flex-col gap-3">
+                    <div className="surface rounded-inner bg-surface p-3">
+                      <p className="t-eyebrow text-muted">{PALETTE_NAME[palette]}</p>
+                      <p className="t-tile-num tnum text-text">1 240</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="t-eyebrow rounded-chip bg-accent px-2 py-1 text-accent-fg">
+                        {fr.kinds.resource}
+                      </span>
+                      <span className="t-eyebrow rounded-chip bg-accent-2 px-2 py-1 text-accent-2-fg">
+                        {fr.kinds.charge}
+                      </span>
+                      <span className="t-eyebrow rounded-chip bg-danger-fill px-2 py-1 text-danger-fg">
+                        !
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {CATEGORY_PALETTE.map((entry) => (
+                        <span
+                          key={entry.name}
+                          className="h-4 flex-1 rounded-chip"
+                          style={{ backgroundColor: `var(${entry.name})` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </ThemePane>
+              ))}
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </Section>
   )
 }

@@ -34,6 +34,7 @@ import type {
   Settings,
   ThemeSetting,
 } from '@/domain/types'
+import { DEFAULT_PALETTE, isPaletteSetting } from '@/domain/types'
 import { defaultFamilies, fallbackFamilyId, repairedCategory } from './defaults'
 import { CURRENT_SCHEMA_VERSION } from './schema'
 
@@ -324,6 +325,10 @@ function settings(raw: unknown): Settings {
   const startsOn = int(source['monthStartsOn'], 1)
   return {
     theme: known,
+    /* Une palette inconnue retombe sur Classique plutôt que d'écarter la ligne :
+       c'est un réglage d'apparence, et un document par ailleurs sain n'a pas à
+       être signalé parce qu'il vient d'une version qui en proposait une de plus. */
+    palette: isPaletteSetting(source['palette']) ? source['palette'] : DEFAULT_PALETTE,
     currency: str(source['currency'], 'EUR'),
     monthStartsOn: startsOn >= 1 && startsOn <= 28 ? startsOn : 1,
   }

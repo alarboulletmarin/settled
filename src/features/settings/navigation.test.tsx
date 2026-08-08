@@ -7,11 +7,12 @@
  * qu'un rangement de composants casse sans que rien ne le dise.
  * ==========================================================================*/
 
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  SETTINGS_APPEARANCE_PATH,
   SETTINGS_CATEGORIES_PATH,
   SETTINGS_FAMILY_NEW_PATH,
   SETTINGS_MEMBER_NEW_PATH,
@@ -29,6 +30,7 @@ import { CategoryNewPage, FamilyNewPage } from './CategoryForms'
 import { FamilyPage } from './FamilyPage'
 import { MemberPage } from './MemberPage'
 import { PeoplePage } from './PeoplePage'
+import { AppearancePage } from './AppearancePage'
 import { SettingsPage } from './SettingsPage'
 
 /* Les mêmes chemins que `app/Routes.tsx`, par les mêmes constantes : un test
@@ -39,6 +41,7 @@ function open(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path={SETTINGS_PATH} element={<SettingsPage />} />
+        <Route path={SETTINGS_APPEARANCE_PATH} element={<AppearancePage />} />
         <Route path={SETTINGS_PEOPLE_PATH} element={<PeoplePage />} />
         <Route path={SETTINGS_MEMBER_NEW_PATH} element={<MemberPage />} />
         <Route path={`${SETTINGS_PEOPLE_PATH}/:id`} element={<MemberPage />} />
@@ -96,13 +99,60 @@ describe('la page d’entrée', () => {
     expect(screen.getByRole('link', { name: fr.settings.membersNone })).toBeInTheDocument()
   })
 
-  /* Les deux réglages qui restent modifiables sur place : trois positions et
-     six choix ne méritent pas un écran chacun. */
-  it('garde le thème et la devise à portée', () => {
+  /* La devise reste modifiable sur place — six codes dans un sélecteur natif
+     n'ont rien à montrer qu'une vue rendrait mieux. L'apparence, elle, est une
+     rangée qui dit sa valeur : le thème l'a suivie le jour où la palette est
+     arrivée à côté de lui. */
+  it('garde la devise à portée et renvoie l’apparence à sa vue', () => {
     open(SETTINGS_PATH)
 
-    expect(screen.getByRole('radiogroup', { name: fr.theme.label })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: fr.settings.currency })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: fr.theme.label })).not.toBeInTheDocument()
+
+    const row = screen.getByRole('link', { name: new RegExp(fr.appearance.title) })
+    expect(row).toHaveAttribute('href', SETTINGS_APPEARANCE_PATH)
+    expect(row).toHaveTextContent(fr.theme.system)
+    expect(row).toHaveTextContent(fr.palettes.classique)
+  })
+})
+
+describe('l’apparence', () => {
+  it('descend depuis la page d’entrée, et remonte', async () => {
+    const user = userEvent.setup()
+    open(SETTINGS_PATH)
+
+    await user.click(screen.getByRole('link', { name: new RegExp(fr.appearance.title) }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(fr.appearance.title)
+
+    await user.click(screen.getByRole('button', { name: fr.common.back }))
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(fr.nav.settings)
+  })
+
+  /* Deux réglages, deux groupes de choix : c'est ce qui les rend combinables
+     plutôt que confondus. */
+  it('porte le thème et les six palettes', async () => {
+    const user = userEvent.setup()
+    open(SETTINGS_APPEARANCE_PATH)
+
+    expect(screen.getByRole('radiogroup', { name: fr.theme.label })).toBeInTheDocument()
+    const palettes = screen.getByRole('group', { name: fr.appearance.paletteLabel })
+    expect(within(palettes).getAllByRole('radio')).toHaveLength(6)
+
+    await user.click(screen.getByRole('radio', { name: new RegExp(fr.palettes.vive) }))
+    expect(useStore.getState().data.settings.palette).toBe('vive')
+  })
+
+  /* La palette est un réglage d'apparence, pas une donnée : la changer ne doit
+     toucher à rien d'autre — et surtout pas aux teintes déjà posées sur les
+     catégories, qui sont des noms de tokens et suivent d'elles-mêmes. */
+  it('ne touche qu’au réglage, jamais aux teintes enregistrées', async () => {
+    const user = userEvent.setup()
+    const before = useStore.getState().data.categories.map((c) => c.color)
+    open(SETTINGS_APPEARANCE_PATH)
+
+    await user.click(screen.getByRole('radio', { name: new RegExp(fr.palettes.contrastee) }))
+    expect(useStore.getState().data.categories.map((c) => c.color)).toEqual(before)
+    expect(useStore.getState().data.settings.theme).toBe('system')
   })
 })
 

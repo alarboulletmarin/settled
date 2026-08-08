@@ -1,7 +1,13 @@
 /* Document initial. Deux questions au premier lancement suffisent : tout le
  * reste part de valeurs par défaut modifiables ensuite (cahier §1 et §4.1). */
 
-import { type Category, type CategoryKind, type Family, directionOfKind } from '@/domain/types'
+import {
+  type Category,
+  type CategoryKind,
+  DEFAULT_PALETTE,
+  type Family,
+  directionOfKind,
+} from '@/domain/types'
 import type { Data } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { CURRENT_SCHEMA_VERSION } from './schema'
@@ -222,7 +228,7 @@ export function emptyData(): Data {
     debts: [],
     advances: [],
     months: [],
-    settings: { theme: 'system', currency: 'EUR', monthStartsOn: 1 },
+    settings: { theme: 'system', palette: DEFAULT_PALETTE, currency: 'EUR', monthStartsOn: 1 },
   }
 }
 

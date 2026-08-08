@@ -2,11 +2,13 @@ import { useId } from 'react'
 import { VERSION } from '@/app/meta'
 import {
   ABOUT_PATH,
+  SETTINGS_APPEARANCE_PATH,
   SETTINGS_CATEGORIES_PATH,
   SETTINGS_DATA_PATH,
   SETTINGS_PEOPLE_PATH,
   SETTINGS_STORAGE_PATH,
 } from '@/app/routes'
+import type { PaletteSetting, ThemeSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { currencySymbol, tpl } from '@/i18n/format'
 import { useCategories, useFamilies, useHouseholdName, useMembers } from '@/store/selectors'
@@ -14,14 +16,22 @@ import { useStore } from '@/store/store'
 import { Select } from '@/ui/Field'
 import { CategoriesIcon, DataIcon, InfoIcon, PeopleIcon, ThemeIcon } from '@/ui/Icons'
 import { PageTitle } from '@/ui/PageTitle'
-import { Segmented } from '@/ui/Segmented'
 import { SettingsGroup, SettingsRow } from './SettingsRow'
 
-const THEME_OPTIONS = [
-  { value: 'light' as const, label: fr.theme.light },
-  { value: 'dark' as const, label: fr.theme.dark },
-  { value: 'system' as const, label: fr.theme.system },
-]
+const THEME_NAME: Record<ThemeSetting, string> = {
+  light: fr.theme.light,
+  dark: fr.theme.dark,
+  system: fr.theme.system,
+}
+
+const PALETTE_NAME: Record<PaletteSetting, string> = {
+  classique: fr.palettes.classique,
+  monochrome: fr.palettes.monochrome,
+  douce: fr.palettes.douce,
+  vive: fr.palettes.vive,
+  neutre: fr.palettes.neutre,
+  contrastee: fr.palettes.contrastee,
+}
 
 /* Les devises des pays où l'on tient ses comptes en français, plus les deux
    qu'un foyer francophone croise le plus souvent. Une liste et non un champ
@@ -31,33 +41,28 @@ const THEME_OPTIONS = [
 const CURRENCIES = ['EUR', 'CHF', 'CAD', 'XPF', 'GBP', 'USD']
 
 /**
- * Le thème, réglable là où on le lit.
+ * L'apparence : une rangée qui dit sa valeur, et mène à sa vue.
  *
- * Il ne descend pas dans une vue : trois positions, un geste, et c'est le
- * réglage qu'on vient changer le plus souvent — l'enfouir d'un cran coûterait
- * plus que la rangée qu'il occupe. La bascule est celle de tout le reste de
- * l'app, à sa place et dans son langage.
+ * Le thème était réglable ici même, et l'argument tenait : trois positions, un
+ * geste, l'enfouir d'un cran aurait coûté plus que la rangée qu'il occupait. Il
+ * ne tient plus depuis qu'il y a deux réglages, dont un qui ne se choisit pas à
+ * la lecture de son nom — six palettes se regardent avant de se prendre, et six
+ * aperçus ne tiennent pas dans les 250px utiles d'une rangée à 320px. Le thème
+ * suit la palette plutôt que de rester seul : les régler à deux endroits, dont
+ * un sans aperçu, aurait été le pire des deux.
  *
- * Elle passe sous le libellé plutôt qu'à sa droite : à 320px, la tuile n'offre
- * qu'environ 250px utiles, et « Clair · Sombre · Système » les prend presque
- * tous.
+ * La rangée dit la **préférence**, pas le thème résolu : « Système » est ce
+ * qu'on a choisi, et l'afficher « Clair » ferait croire à un réglage figé.
  */
-function ThemeRow() {
+function AppearanceRow() {
   const theme = useStore((s) => s.data.settings.theme)
-  const setTheme = useStore((s) => s.setTheme)
+  const palette = useStore((s) => s.data.settings.palette)
 
   return (
     <SettingsRow
-      label={fr.theme.label}
-      control={
-        <Segmented
-          options={THEME_OPTIONS}
-          value={theme}
-          onChange={setTheme}
-          label={fr.theme.label}
-          className="w-fit"
-        />
-      }
+      label={fr.appearance.title}
+      description={tpl(fr.settings.appearanceSummary, THEME_NAME[theme], PALETTE_NAME[palette])}
+      to={SETTINGS_APPEARANCE_PATH}
     />
   )
 }
@@ -114,10 +119,14 @@ function CurrencyRow() {
  * traverser quarante-six catégories pour atteindre le choix du thème.
  *
  * Ce qu'on lit ici tient désormais en cinq groupes et sept rangées : qui
- * compose le foyer, quel thème, quelle devise, où sont les catégories, où sont
- * les données, ce qu'est cette app. Chaque rangée dit sa valeur — c'est ce qui
- * fait qu'on n'ouvre que ce qu'on venait changer. Le thème seul reste réglable
- * sur place : trois positions ne méritent pas un écran.
+ * compose le foyer, quelle apparence, quelle devise, où sont les catégories, où
+ * sont les données, ce qu'est cette app. Chaque rangée dit sa valeur — c'est ce
+ * qui fait qu'on n'ouvre que ce qu'on venait changer.
+ *
+ * La devise est le dernier réglage à se faire sur place, et le seul : six codes
+ * dans un sélecteur natif n'ont rien à montrer qu'une vue rendrait mieux. Le
+ * thème y était aussi tant qu'il était seul de son espèce ; il a suivi la
+ * palette dans `/reglages/apparence` le jour où il a cessé de l'être.
  */
 export function SettingsPage() {
   const name = useHouseholdName()
@@ -158,10 +167,10 @@ export function SettingsPage() {
           />
         </SettingsGroup>
 
-        {/* Deux réglages d'apparence, deux rangées : ils occupaient deux tuiles
-            pleines pour un choix à trois positions et un choix à six. */}
+        {/* Ce qui règle la présentation, et rien de plus : l'apparence mène à sa
+            vue, la devise se change ici même. */}
         <SettingsGroup title={fr.settings.preferences} icon={ThemeIcon}>
-          <ThemeRow />
+          <AppearanceRow />
           <CurrencyRow />
         </SettingsGroup>
 

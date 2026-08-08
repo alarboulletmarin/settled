@@ -1,13 +1,20 @@
 <!doctype html>
-<html lang="fr" data-theme="light">
+<html lang="fr" data-theme="light" data-palette="classique">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="Suivi de tes finances. Tout reste sur ton appareil." />
-    <meta name="theme-color" content="#F0F5F2" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#2F5D4C" media="(prefers-color-scheme: dark)" />
+    <!--
+      Une seule balise, sans `media`, et c'est un changement de fond : les deux
+      balises conditionnelles qui vivaient ici figeaient les deux fonds de la
+      palette Classique, alors qu'il y en a six. C'est désormais `theme.ts` qui
+      la tient à jour en lisant `--bg` sur la feuille — donc la couleur juste,
+      thème *et* palette compris. La valeur écrite ici est celle du premier
+      rendu, avant que React ne prenne la main.
+    -->
+    <meta name="theme-color" content="#F0F5F2" />
     <title>Tout compte fait</title>
 
     <!--
@@ -62,18 +69,27 @@
       }
     </script>
     <script>
-      // Applique le thème avant le premier rendu. Le document de données vit en
-      // IndexedDB (asynchrone) : sans ce miroir localStorage, l'app s'afficherait
-      // une frame en clair avant de basculer.
+      // Applique l'apparence avant le premier rendu — le thème et la palette,
+      // qui décident ensemble des couleurs. Le document de données vit en
+      // IndexedDB (asynchrone) : sans ces deux miroirs localStorage, l'app
+      // s'afficherait une frame dans les couleurs de quelqu'un d'autre.
+      // La liste des palettes est recopiée ici, et c'est le seul endroit où :
+      // ce script tourne avant tout module, il ne peut rien importer. Une valeur
+      // inconnue retombe sur « classique », comme à la lecture du document.
       ;(function () {
+        var root = document.documentElement
         try {
           var pref = localStorage.getItem('tout-compte-fait.theme') || 'system'
           var dark =
             pref === 'dark' ||
             (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+          root.dataset.theme = dark ? 'dark' : 'light'
+          var palette = localStorage.getItem('tout-compte-fait.palette')
+          var known = ['classique', 'monochrome', 'douce', 'vive', 'neutre', 'contrastee']
+          root.dataset.palette = known.indexOf(palette) === -1 ? 'classique' : palette
         } catch (e) {
-          document.documentElement.dataset.theme = 'light'
+          root.dataset.theme = 'light'
+          root.dataset.palette = 'classique'
         }
       })()
     </script>

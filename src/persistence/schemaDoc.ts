@@ -67,6 +67,7 @@ const RULES = [
   '**Un `Debt` ou une `Advance` ne produit aucun mouvement d’argent.** Il faut lui lier la récurrence qui pose les mensualités (`recurrenceId`), sinon rien ne s’amortit. Le capital restant dû est dérivé des mensualités confirmées, jamais saisi.',
   '**`Advance.memberId` est obligatoire** — une épargne est toujours à quelqu’un. Une avance sans lui est écartée à l’import.',
   '**Les `id` sont des chaînes libres**, à toi de les choisir. Ils doivent être uniques dans leur tableau, et tout `categoryId`, `memberId`, `familyId` ou `recurrenceId` cité doit désigner quelque chose qui existe.',
+  '**`settings.theme` et `settings.palette` sont deux réglages distincts.** Le thème dit `"light"`, `"dark"` ou `"system"` ; la palette dit avec quelles couleurs — `"classique"`, `"monochrome"`, `"douce"`, `"vive"`, `"neutre"` ou `"contrastee"`. Purement cosmétiques : ni l’un ni l’autre ne change un calcul. Une valeur inconnue retombe sur `"classique"` sans que la ligne soit écartée.',
   '**Trois champs sont réservés et sans effet en v1.** `Category.icon`, `MonthState.closed` et `settings.monthStartsOn` sont lus, validés et conservés à l’import, mais aucun écran ne s’en sert : l’icône n’est jamais rendue, un mois n’est jamais clos, et l’app raisonne en mois calendaire. Laisse-les à leur valeur par défaut — `""`, `false`, `1`. Y mettre autre chose ne casse rien et ne fait rien non plus, et ce document préfère le dire plutôt que de te laisser croire à un réglage.',
 ]
 
@@ -193,7 +194,7 @@ const MINIMAL = `{
   "debts": [],
   "advances": [],
   "months": [{ "ym": "2026-01", "openedAt": "2026-01-01", "closed": false }],
-  "settings": { "theme": "system", "currency": "EUR", "monthStartsOn": 1 }
+  "settings": { "theme": "system", "palette": "classique", "currency": "EUR", "monthStartsOn": 1 }
 }`
 
 /** Le catalogue, famille par famille, tel qu'une app neuve le pose. */
