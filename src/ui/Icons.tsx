@@ -31,6 +31,7 @@ import { Clock } from '@phosphor-icons/react/dist/csr/Clock'
 import { Bank } from '@phosphor-icons/react/dist/csr/Bank'
 import { Coins } from '@phosphor-icons/react/dist/csr/Coins'
 import { Database } from '@phosphor-icons/react/dist/csr/Database'
+import { DotsThreeOutline } from '@phosphor-icons/react/dist/csr/DotsThreeOutline'
 import { GearSix } from '@phosphor-icons/react/dist/csr/GearSix'
 import { HandCoins } from '@phosphor-icons/react/dist/csr/HandCoins'
 import { House } from '@phosphor-icons/react/dist/csr/House'
@@ -105,6 +106,11 @@ export const ShareIcon = adapt(ShareNetwork)
 export const NavMonth = adapt(SquaresFour)
 export const NavCalendar = adapt(CalendarBlank)
 export const NavSettings = adapt(GearSix)
+/* Le quatrième onglet, celui qui ouvre le reste de l'app. Trois points et non
+   une roue dentée : ce n'est pas la section des réglages, c'est ce qui n'a pas
+   sa place dans une barre de quatre — le rangement du foyer d'un côté, les
+   réglages de l'autre. Le glyphe le dit sans nommer l'un des deux. */
+export const NavMore = adapt(DotsThreeOutline)
 
 /* --- Repère — tuiles et sections ------------------------------------------*/
 

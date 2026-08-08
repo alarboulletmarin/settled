@@ -79,10 +79,10 @@ export function MemberShareTile() {
        Sur téléphone les deux formats sont le même : pleine largeur, deux
        rangées.
 
-       Le geste est au coin et la tuile n'est plus un bouton, comme la
-       Répartition : son contenu porte une liste, et le nom unique d'un bouton
-       effaçait les deux montants qu'elle sépare exprès. Le repère du coin est
-       hors du flux — c'est ce qui permet au lien de ne rien coûter aux 148px de
+       Un lien et non un bouton, comme la Répartition : son contenu porte une
+       liste, et le nom unique d'un bouton effaçait les deux montants qu'elle
+       sépare exprès. Le lien couvre toute la tuile et le repère reste au coin,
+       hors du flux — c'est ce qui lui permet de ne rien coûter aux 148px de
        contenu, qui sont comptés. */
     <Tile
       span="4x2"

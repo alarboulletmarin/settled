@@ -8,6 +8,7 @@ import { CreditFormPage } from '@/features/credits/CreditFormPage'
 import { CreditsPage } from '@/features/credits/CreditsPage'
 import { EntryPage } from '@/features/month/EntryPage'
 import { MonthPage } from '@/features/month/MonthPage'
+import { MorePage } from '@/features/more/MorePage'
 import { OnboardingPage } from '@/features/onboarding/OnboardingPage'
 import { RecurrenceDetailPage } from '@/features/recurrences/RecurrenceDetailPage'
 import { RecurrenceFormPage } from '@/features/recurrences/RecurrenceFormPage'
@@ -24,6 +25,7 @@ import {
   ADVANCE_NEW_PATH,
   LANDING_PATH,
   LEGAL_NOTICE_PATH,
+  MORE_PATH,
   ONBOARDING_PATH,
   PRIVACY_PATH,
   RECURRENCES_PATH,
@@ -139,6 +141,11 @@ export function AppRoutes() {
           <Route path={ADVANCES_PATH} element={<AdvancesPage />} />
           <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
           <Route path="/historique" element={<HistoryPage />} />
+          {/* Le quatrième onglet. Pas de découpage à la demande : l'écran n'est
+              qu'une liste de rangées, et il est sur le chemin de la navigation
+              — un aller-retour de réseau pour l'atteindre coûterait plus que
+              les quelques octets qu'il pèse. */}
+          <Route path={MORE_PATH} element={<MorePage />} />
           {/* Les réglages et leurs vues. L'ordre d'écriture n'y fait rien —
               React Router classe les segments fixes avant les paramètres —,
               mais il dit la hiérarchie : une page d'entrée, puis ce qu'elle

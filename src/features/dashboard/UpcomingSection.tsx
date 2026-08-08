@@ -4,7 +4,7 @@ import { upcomingRows } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
 import { formatDate, formatRelativeDays } from '@/i18n/format'
 import { cn } from '@/lib/cn'
-import { useCategoryMap, useUpcoming } from '@/store/selectors'
+import { useCategoryMap, useRecurrences, useUpcoming } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
@@ -42,6 +42,11 @@ export function UpcomingSection() {
   const upcoming = useUpcoming(5)
   const categories = useCategoryMap()
   const rows = useMemo(() => upcomingRows(upcoming), [upcoming])
+  /* Son vide n'a pas la même cause selon qu'une règle existe ou non : sans
+     aucune récurrence, c'est un document qui n'a pas démarré, et la phrase dit
+     alors le geste qui l'amorce. C'est la distinction que l'écran du mois fait
+     déjà sur son propre état vide. */
+  const hasRecurrence = useRecurrences().length > 0
 
   return (
     <Tile className="gap-1">
@@ -71,7 +76,9 @@ export function UpcomingSection() {
       </div>
 
       {rows.length === 0 ? (
-        <p className="t-label">{fr.dashboard.noUpcoming}</p>
+        <p className="t-label">
+          {hasRecurrence ? fr.dashboard.noUpcoming : fr.dashboard.noUpcomingStart}
+        </p>
       ) : (
         /* `content-start` : la liste s'ancre en haut, comme du temps où sa
            boîte avait une hauteur fixe à déborder. Elle n'en a plus, mais

@@ -24,10 +24,12 @@ function plural(n: number): string {
  * inclut les intérêts, et le confondre avec l'amortissement ferait croire un
  * prêt soldé bien avant qu'il ne le soit.
  *
- * La ligne n'est pas un bouton, et le geste vit au coin (DS §6). Elle empile
- * un anneau, trois lectures et un séparateur : un `<button>` n'admet rien de
- * tout cela, et le nom unique qu'il portait — le libellé du crédit — effaçait
- * à l'oreille les quatre chiffres qui font l'intérêt de la ligne.
+ * La ligne n'est pas un bouton mais une tuile à lien (DS §6). Elle empile un
+ * anneau, trois lectures et un séparateur : un `<button>` n'admet rien de tout
+ * cela, et le nom unique qu'il portait — le libellé du crédit — effaçait à
+ * l'oreille les quatre chiffres qui font l'intérêt de la ligne. Le lien couvre
+ * toute la ligne pour autant, et le repère reste au coin : elle se touche donc
+ * n'importe où, comme si elle était ce bouton.
  */
 function DebtRow({ status }: { status: DebtStatus }) {
   const categories = useCategoryMap()

@@ -46,15 +46,18 @@ export function SplitTile() {
     .join(', ')
 
   return (
-    /* Le geste est au coin, et la tuile n'est plus un bouton : son contenu est
-       une liste de parts, ce qu'un `<button>` n'admet pas — et qu'un lecteur
-       d'écran aplatissait derrière un nom unique, quand c'est justement ligne à
-       ligne qu'on veut l'entendre. C'est le motif du DS §6, celui qu'écrit déjà
-       `UpcomingTile`.
+    /* Un lien et non un bouton : son contenu est une liste de parts, ce qu'un
+       `<button>` n'admet pas — et qu'un lecteur d'écran aplatissait derrière un
+       nom unique, quand c'est justement ligne à ligne qu'on veut l'entendre.
+       C'est le motif du DS §6.
 
-       Le lien reste le repère du coin plutôt qu'un lien posé dans le flux : les
-       148px de contenu d'une 2×2 sont comptés au pixel (`donut.ts`), et une
-       rangée de 44px de plus ferait remonter l'anneau sur l'eyebrow.
+       **Toute la tuile est la cible pour autant.** Le lien ne faisait que les
+       44px du repère, au coin : la règle réglait un problème d'oreille et en
+       créait un de doigt, sur une tuile de 300px de large posée à côté d'une
+       Capacité d'épargne qui, elle, se touche n'importe où. Le lien s'étend
+       maintenant sur le cadre, vide, et le coin ne garde que le repère — il ne
+       coûte donc toujours pas un pixel des 148px de contenu d'une 2×2, comptés
+       au pixel dans `donut.ts`.
 
        Le repère n'a pas de nom de destination à l'écran : l'eyebrow dit déjà
        « Répartition », et l'écrire une seconde fois au coin n'apprendrait rien
