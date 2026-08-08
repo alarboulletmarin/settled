@@ -5,7 +5,9 @@ import {
   coveredYears,
   hasDataInYear,
   monthSeries,
+  splitDeltas,
   trailingMonths,
+  yearHorizon,
   yearSeries,
 } from './history'
 
@@ -83,6 +85,77 @@ describe('comparaison de deux mois', () => {
 
   it('ne renvoie rien quand les deux mois sont vides', () => {
     expect(compareMonths(entries, '2026-01', '2026-02')).toEqual([])
+  })
+})
+
+describe('partage des écarts', () => {
+  /* Une catégorie au même montant des deux côtés n'apprend rien tant qu'elle
+     est mêlée aux autres : c'est elle qu'on met de côté, pas l'inverse. */
+  const stable = [
+    makeEntry({ date: '2026-05-02', direction: 'out', amount: eur(30000), categoryId: 'assurance' }),
+    makeEntry({ date: '2026-07-02', direction: 'out', amount: eur(30000), categoryId: 'assurance' }),
+  ]
+
+  it('met d’un côté ce qui a bougé, de l’autre ce qui n’a pas bougé', () => {
+    const { changed, unchanged } = splitDeltas(compareMonths([...entries, ...stable], '2026-05', '2026-07'))
+    expect(changed.map((d) => d.categoryId)).toEqual(['logement', 'courses'])
+    expect(unchanged.map((d) => d.categoryId)).toEqual(['assurance'])
+  })
+
+  it('garde l’ordre par ampleur d’écart', () => {
+    const { changed } = splitDeltas(compareMonths(entries, '2026-05', '2026-07'))
+    expect(changed.map((d) => d.delta)).toEqual([45000, 12000])
+  })
+
+  it('rend deux listes vides quand il n’y a rien à comparer', () => {
+    expect(splitDeltas([])).toEqual({ changed: [], unchanged: [] })
+  })
+
+  it('ne range rien dans « changé » quand les deux mois sont identiques', () => {
+    const { changed, unchanged } = splitDeltas(compareMonths(stable, '2026-05', '2026-07'))
+    expect(changed).toEqual([])
+    expect(unchanged).toHaveLength(1)
+  })
+
+  /* Toutes à égalité sous le tri par ampleur d'écart : ce qui les distingue
+     encore, c'est ce qu'elles pèsent. */
+  it('classe les inchangées par montant commun décroissant', () => {
+    const both = [
+      ...stable,
+      makeEntry({ date: '2026-05-03', direction: 'out', amount: eur(90000), categoryId: 'loyer' }),
+      makeEntry({ date: '2026-07-03', direction: 'out', amount: eur(90000), categoryId: 'loyer' }),
+    ]
+    const { unchanged } = splitDeltas(compareMonths(both, '2026-05', '2026-07'))
+    expect(unchanged.map((d) => d.categoryId)).toEqual(['loyer', 'assurance'])
+  })
+
+  it('ne modifie pas la liste qu’on lui donne', () => {
+    const deltas = compareMonths([...entries, ...stable], '2026-05', '2026-07')
+    const before = deltas.map((d) => d.categoryId)
+    splitDeltas(deltas)
+    expect(deltas.map((d) => d.categoryId)).toEqual(before)
+  })
+})
+
+describe('horizon d’une année', () => {
+  /* C'est lui qui rend deux années comparables : sans lui, onze mois de 2026 se
+     lisent contre douze mois de 2025. */
+  it('désigne le dernier mois chiffré d’une année en cours', () => {
+    expect(yearHorizon(yearSeries(entries, 2026))).toBe(6) // juillet
+  })
+
+  it('désigne décembre d’une année qui va jusqu’au bout', () => {
+    const full = [...entries, makeEntry({ date: '2026-12-31', direction: 'out', amount: eur(1000) })]
+    expect(yearHorizon(yearSeries(full, 2026))).toBe(11)
+  })
+
+  it('ne désigne aucun mois d’une année vide', () => {
+    expect(yearHorizon(yearSeries(entries, 2025))).toBe(-1)
+  })
+
+  it('ne s’arrête pas au premier trou', () => {
+    // Mai, rien en juin, juillet : l'horizon est juillet, pas mai.
+    expect(yearHorizon(yearSeries(entries, 2026))).toBe(6)
   })
 })
 

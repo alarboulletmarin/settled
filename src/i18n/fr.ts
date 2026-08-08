@@ -564,68 +564,11 @@ export const fr = {
     updateAction: 'Recharger',
   },
 
-  history: {
-    title: 'Historique',
-    trailing: 'Douze derniers mois',
-    /* Les deux bornes de la fenêtre, pour le nom accessible du graphique : elle
-       s'arrête au mois courant, quoi qu'on regarde ailleurs dans l'app. */
-    trailingRange: 'de %s à %s',
-    trailingEmpty: 'Pas encore assez de données pour tracer une courbe.',
-    legendIn: 'Entrées',
-    legendOut: 'Sorties',
-    legendBalance: 'Solde',
-    compare: 'Comparer deux mois',
-    compareLeft: 'Mois de référence',
-    compareRight: 'Mois comparé',
-    compareEmpty: 'Ces deux mois n’ont aucune sortie à comparer.',
-    compareSingleMonth:
-      'Un seul mois de données pour l’instant. La comparaison arrivera avec le deuxième.',
-    category: 'Catégorie',
-    delta: 'Écart',
-    years: 'Comparer deux années',
-    year: 'Année',
-    yearsEmpty: 'Pas encore d’année complète à comparer.',
-    yearCurrent: '%s',
-    yearPrevious: '%s',
-    cumulative: 'Cumul du solde, mois après mois',
-    srTrailing: 'Solde mensuel : %s',
-    srYears: 'Cumul %s contre %s : %s',
-    /* Le nom accessible d'un mois du graphique. Il porte les trois chiffres :
-       c'est lui la lecture, la ligne visible au-dessus n'en est que le double
-       à l'œil. */
-    srMonthRead: '%s : entrées %s, sorties %s, solde %s',
-    /* Un mois sans donnée n'est pas un mois à zéro (cahier §4.7). Il se dit, il
-       ne se chiffre pas. */
-    srMonthNoData: '%s : aucune donnée',
-    /* Le cumul porte une ou deux années : la partie variable est assemblée par
-       le graphique, comme `srTrailing` l'est par la page. */
-    srCumulativeRead: '%s : %s',
-    noData: 'Aucune donnée sur cette période.',
-    /* Sur un document neuf, les trois tuiles empilaient trois phrases d'excuse —
-       pas assez pour une courbe, pas deux mois à comparer, pas d'année
-       complète. Trois façons de dire la même chose, et aucune ne disait quoi
-       faire. Un seul état vide les remplace tant que rien n'a été saisi, comme
-       sur les autres écrans. */
-    /* Retrouver une ligne se faisait mois par mois, ou pas du tout. La
-       recherche vit ici et non derrière un sixième onglet — la barre en porte
-       cinq et n'en tient pas six à 320px — et c'est de toute façon l'écran de
-       la question : « ce prélèvement de mars » est un regard en arrière. */
-    search: 'Retrouver une ligne',
-    searchLabel: 'Rechercher par libellé',
-    searchPlaceholder: 'EDF',
-    searchHint: 'Tous mois confondus, récurrences comprises.',
-    searchEntries: 'Entrées',
-    searchRecurrences: 'Récurrences',
-    searchEmpty: 'Aucune ligne ne correspond à « %s ».',
-    /* Sans « précise la recherche » : c'était un conseil, pas une commande, et
-       il ne servait à rien quand tout ce qui dépasse porte réellement le même
-       mot. Le bouton d'à côté fait ce que la phrase demandait. */
-    searchMore: '… et %s de plus.',
-    searchShowAll: 'Tout afficher',
-    empty: 'L’historique se remplit tout seul, à mesure que les mois passent.',
-    emptyHint:
-      'Il n’y a encore rien à comparer : la courbe, l’écart entre deux mois et le cumul annuel arrivent avec les premières entrées.',
-  },
+  /* Les chaînes de l'historique vivent dans `i18n/history.ts` : cet écran-là
+     se charge à la demande, et sa prose n'a pas plus de raison que ses
+     graphiques de voyager dans le graphe initial. `fr.nav.history`, lui, reste
+     ici — la barre d'onglets nomme l'écran sans le charger. */
+
 
   dashboard: {
     balance: 'Solde du mois',

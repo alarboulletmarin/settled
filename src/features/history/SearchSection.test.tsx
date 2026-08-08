@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { money } from '@/domain/money'
 import { makeCategory, makeData, makeEntry, makeFamily } from '@/domain/fixtures'
-import { fr } from '@/i18n/fr'
+import { history } from '@/i18n/history'
 import { tpl } from '@/i18n/format'
 import { ALL_FILTER, useStore } from '@/store/store'
 import { SearchSection } from './SearchSection'
@@ -60,11 +60,11 @@ describe('la recherche', () => {
   it('compte ce qu’elle laisse de côté, et sait le montrer', async () => {
     setup()
     await userEvent.type(screen.getByRole('searchbox'), 'carburant')
-    expect(screen.getByText(tpl(fr.history.searchMore, 5))).toBeInTheDocument()
+    expect(screen.getByText(tpl(history.searchMore, 5))).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: fr.history.searchShowAll }))
+    await userEvent.click(screen.getByRole('button', { name: history.searchShowAll }))
     expect(screen.getAllByText('Carburant')).toHaveLength(25)
-    expect(screen.queryByRole('button', { name: fr.history.searchShowAll })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: history.searchShowAll })).not.toBeInTheDocument()
   })
 
   /* Une liste complète héritée du mot précédent n'a pas été demandée pour
@@ -73,11 +73,11 @@ describe('la recherche', () => {
     setup()
     const field = screen.getByRole('searchbox')
     await userEvent.type(field, 'carburant')
-    await userEvent.click(screen.getByRole('button', { name: fr.history.searchShowAll }))
+    await userEvent.click(screen.getByRole('button', { name: history.searchShowAll }))
 
     await userEvent.type(field, 'x')
     await userEvent.clear(field)
     await userEvent.type(field, 'carburant')
-    expect(screen.getByRole('button', { name: fr.history.searchShowAll })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: history.searchShowAll })).toBeInTheDocument()
   })
 })

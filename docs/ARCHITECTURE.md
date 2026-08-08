@@ -24,11 +24,14 @@ doit faire, et le [design system](DESIGN-SYSTEM.md) de quoi elle a l'air.
   rapporte ce qu'elle a fait.
 - `src/persistence/tabs.ts` — ce que les onglets se disent, et rien d'autre.
 - `src/i18n/fr.ts` — toutes les chaînes. Aucun texte en dur dans un composant.
-  Deux exceptions, et la même raison : `src/i18n/legal.ts` et
-  `src/i18n/landing.ts`. Ce fichier-ci est importé par presque tous les
-  composants, donc il pèse dans le graphe initial que `scripts/size.mjs`
-  plafonne ; ces deux prose-là sont rendues par des écrans chargés à la demande,
-  et personne ne les relit au quotidien. Elles voyagent avec eux.
+  Trois exceptions, et la même raison : `src/i18n/legal.ts`,
+  `src/i18n/landing.ts` et `src/i18n/history.ts`. Ce fichier-ci est importé par
+  presque tous les composants, donc il pèse dans le graphe initial que
+  `scripts/size.mjs` plafonne ; ces trois-là sont rendues par des écrans chargés
+  à la demande. Elles voyagent avec eux. L'historique emportait déjà ses trois
+  graphiques, dont aucun autre écran ne se sert : sa prose n'avait pas plus de
+  raison qu'eux de peser sur l'écran du mois. Le nom de l'écran, lui, reste dans
+  `fr.nav` — la barre d'onglets le dit sans charger la page.
 - `src/persistence/schemaDoc.ts` — le modèle de données à donner à un assistant,
   et `src/persistence/example.ts` — le document d'exemple. Tous deux dérivés du
   code, tous deux chargés à la demande.
@@ -353,6 +356,32 @@ qui agirait derrière une question de confirmation la laisserait ouverte sur un
 écran qui a changé. `n` se tait en plus sur les écrans de saisie, où il
 contournerait la garde de brouillon : celle-ci ne surveille que les deux boutons
 de sortie, pas les départs qui ne passent pas par eux.
+
+**Un écart de zéro n'est pas une lecture.** `compareMonths` rend l'union des
+catégories des deux mois, et une catégorie présente de part et d'autre au même
+montant y figure avec un écart nul. Affichées ensemble, ces lignes-là noyaient
+les autres : sur le catalogue par défaut, quinze « 0,00 € · 0 % » pour deux
+vraies variations, et la comparaison mensuelle devenait à elle seule la moitié
+de la hauteur de l'écran. `splitDeltas` sépare donc ce qui a bougé de ce qui n'a
+pas bougé — c'est une distinction métier, pas une mise en page, d'où sa place
+dans le domaine. Le repli des inchangées ne les cache pas : il change ce qu'on
+lit d'elles. Une catégorie qui n'a pas bougé n'a rien à dire d'un écart, mais
+elle a quelque chose à dire de ce qu'elle pèse, et c'est **le montant commun aux
+deux mois** qui s'y affiche, classé du plus lourd au plus léger. Elles arrivent
+toutes à égalité sous le tri par ampleur d'écart, donc sans ce second tri leur
+ordre serait celui de l'itération d'un `Set`.
+
+**Deux années ne se comparent qu'au même mois.** Le cumul annuel courait
+jusqu'en décembre pour les deux séries : huit mois d'une année en cours s'y
+lisaient contre douze de la précédente, et le mois de plus passait pour un
+écart. `yearHorizon` rend le rang du dernier mois que l'année **choisie** sait
+chiffrer, et c'est à ce rang que les deux se lisent. La lecture au curseur était
+déjà juste — elle compare le mois *n* au mois *n* par construction —, c'est le
+résumé accessible qui mentait. Le tracé, lui, garde les deux années entières :
+rogner l'année d'avant cacherait des données réelles, ce qui est un autre défaut
+que celui qu'on corrige, et l'œil voit très bien où l'année en cours s'arrête.
+L'écran le dit quand même en toutes lettres — un chiffre juste qu'on ne comprend
+pas se lit comme un chiffre faux.
 
 **La recherche est du calcul pur, et elle vit sur l'historique.** L'appariement
 est dans `domain/search.ts`, testé : casse et accents mis de côté — on ne tape

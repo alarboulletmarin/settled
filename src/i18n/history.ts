@@ -1,0 +1,121 @@
+/* ============================================================================
+ * Toutes les chaînes de l'historique, et le seul endroit où elles s'écrivent.
+ *
+ * **Pourquoi pas dans `fr.ts`.** La même raison que `i18n/landing.ts` et
+ * `i18n/legal.ts`, et elle est mesurable : `fr.ts` est importé par presque tous
+ * les composants, donc il vit dans le graphe initial que `scripts/size.mjs`
+ * plafonne à 200 Kio. L'historique, lui, se charge à la demande
+ * (`app/Routes.tsx`) et emporte déjà avec lui les trois graphiques de
+ * `src/charts`, dont aucun autre écran ne se sert : sa prose n'a pas plus de
+ * raison qu'eux de voyager avec l'écran du mois.
+ *
+ * Rien d'autre que l'historique ne lit ce module — `fr.nav.history` reste dans
+ * `fr.ts`, parce que la barre d'onglets nomme l'écran sans le charger.
+ *
+ * Le vocabulaire commun n'est pas ici : « Entrée », « Sortie », « Autres » se
+ * disent avec les clés de `fr.ts`, comme partout ailleurs.
+ * ==========================================================================*/
+
+export const history = {
+  title: 'Historique',
+  /* L'étiquette de la tuile, et le mot le plus court qui dise ce qu'elle
+     montre. La fenêtre, elle, se dit à côté : deux étiquettes empilées
+     n'étaient qu'une seule information écrite deux fois. */
+  evolution: 'Évolution',
+  trailing: 'Douze derniers mois',
+  /* Les deux bornes de la fenêtre, pour le nom accessible du graphique : elle
+     s'arrête au mois courant, quoi qu'on regarde ailleurs dans l'app. */
+  trailingRange: 'de %s à %s',
+  trailingEmpty: 'Pas encore assez de données pour tracer une courbe.',
+  legendIn: 'Entrées',
+  legendOut: 'Sorties',
+  legendBalance: 'Solde',
+  /* Une seule étiquette pour les deux comparaisons : elles répondent à la
+     même intention — mettre deux périodes côte à côte —, et deux grandes
+     cartes l'une sous l'autre le disaient deux fois pour une seule question.
+     C'est la bascule qui nomme la période, plus la carte. */
+  compare: 'Comparer',
+  compareAxis: 'Ce qu’on compare',
+  compareModeMonths: 'Mois',
+  compareModeYears: 'Années',
+  /* Deux mots plutôt que quatre : les deux sélecteurs se partagent la largeur
+     d'un téléphone, et « Mois de référence » y passait à la ligne quand le
+     mot qui distingue les deux est le second. */
+  compareLeft: 'Référence',
+  compareRight: 'Comparé',
+  compareEmpty: 'Ces deux mois n’ont aucune sortie à comparer.',
+  compareSingleMonth:
+    'Un seul mois de données pour l’instant. La comparaison arrivera avec le deuxième.',
+  /* Le compte tient lieu de synthèse : c'est la réponse à « qu'est-ce qui a
+     changé » avant même de lire une ligne. Deux clés plutôt qu'un pluriel
+     calculé, comme partout ailleurs dans ce fichier. */
+  compareChangedOne: '1 catégorie a changé',
+  compareChangedMany: '%s catégories ont changé',
+  compareUnchanged: 'Inchangées',
+  /* Dans le repli, la ligne porte un montant et non un écart : sans un mot,
+     on ne saurait pas duquel des deux mois il vient. */
+  compareUnchangedHint: 'Le même montant dans les deux mois.',
+  compareNoChange: 'Aucune variation entre ces deux mois.',
+  /* Le mois de référence est à zéro : il n'y a pas de proportion à écrire, et
+     le cadratin laissait la question ouverte. Le mot y répond. */
+  compareAppeared: 'nouvelle',
+  year: 'Année',
+  /* « Pas encore d'année *complète* » décrivait une autre condition que celle
+     qui déclenche la phrase : elle tombe quand les données ne couvrent aucune
+     année, pas quand la dernière est inachevée — une année en cours se
+     compare très bien, à son horizon. */
+  yearsEmpty: 'Pas encore d’année à comparer.',
+  /* La comparaison n'a qu'un sélecteur et se fait toujours contre l'année
+     d'avant : autant le dire plutôt que de le laisser deviner au tracé. */
+  yearsVersus: '%s contre %s',
+  yearsDelta: 'Écart',
+  /* Une année en cours ne se compare pas en silence à une année finie : un
+     chiffre juste qu'on ne comprend pas se lit comme un chiffre faux. */
+  yearsPartial: '%s s’arrête à %s : les deux années se lisent à ce mois-là.',
+  yearsNoPrevious: 'Aucune donnée en %s : rien à comparer.',
+  cumulative: 'Cumul du solde, mois après mois',
+  srTrailing: 'Solde mensuel : %s',
+  /* L'horizon est nommé, et les deux cumuls s'y arrêtent tous les deux : une
+     année en cours lue jusqu'à son dernier mois contre une année pleine lue
+     jusqu'en décembre comparait onze mois à douze, et annonçait comme un
+     écart ce qui n'était qu'un mois de plus. */
+  srYears: 'Cumul %s contre %s, arrêté à %s : %s',
+  srYearsEmpty: 'Cumul %s : aucune donnée.',
+  /* Le nom accessible d'un mois du graphique. Il porte les trois chiffres :
+     c'est lui la lecture, la ligne visible au-dessus n'en est que le double
+     à l'œil. */
+  srMonthRead: '%s : entrées %s, sorties %s, solde %s',
+  /* Un mois sans donnée n'est pas un mois à zéro (cahier §4.7). Il se dit, il
+     ne se chiffre pas. */
+  srMonthNoData: '%s : aucune donnée',
+  /* Le cumul porte une ou deux années : la partie variable est assemblée par
+     le graphique, comme `srTrailing` l'est par la page. */
+  srCumulativeRead: '%s : %s',
+  /* Sur un document neuf, les trois tuiles empilaient trois phrases d'excuse —
+     pas assez pour une courbe, pas deux mois à comparer, pas d'année
+     complète. Trois façons de dire la même chose, et aucune ne disait quoi
+     faire. Un seul état vide les remplace tant que rien n'a été saisi, comme
+     sur les autres écrans. */
+  /* Retrouver une ligne se faisait mois par mois, ou pas du tout. La
+     recherche vit ici et non derrière un sixième onglet — la barre en porte
+     cinq et n'en tient pas six à 320px — et c'est de toute façon l'écran de
+     la question : « ce prélèvement de mars » est un regard en arrière.
+     Le libellé ne s'affiche plus : il est dans le champ. Une étiquette au-
+     dessus d'un espace réservé qui dit le même mot l'écrit deux fois, et
+     cette recherche-ci ouvre l'écran — elle n'a pas de voisine avec qui
+     s'aligner. Le nom accessible, lui, reste celui-là. */
+  searchLabel: 'Rechercher par libellé',
+  searchPlaceholder: 'Rechercher une ligne…',
+  searchHint: 'Tous mois confondus, récurrences comprises.',
+  searchEntries: 'Entrées',
+  searchRecurrences: 'Récurrences',
+  searchEmpty: 'Aucune ligne ne correspond à « %s ».',
+  /* Sans « précise la recherche » : c'était un conseil, pas une commande, et
+     il ne servait à rien quand tout ce qui dépasse porte réellement le même
+     mot. Le bouton d'à côté fait ce que la phrase demandait. */
+  searchMore: '… et %s de plus.',
+  searchShowAll: 'Tout afficher',
+  empty: 'L’historique se remplit tout seul, à mesure que les mois passent.',
+  emptyHint:
+    'Il n’y a encore rien à comparer : la courbe, l’écart entre deux mois et le cumul annuel arrivent avec les premières entrées.',
+} as const
