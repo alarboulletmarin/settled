@@ -113,7 +113,7 @@ export const privacyPolicy: LegalDocument = {
       heading: 'Ce que l’app enregistre, et où',
       body: [
         'Tout ce que tu saisis — personnes, catégories, récurrences, entrées, crédits, avances — est enregistré dans la base IndexedDB de ton navigateur, sur ton appareil. C’est le seul endroit où ces informations existent.',
-        'S’y ajoutent trois réglages minuscules, dans le stockage local du même navigateur : le thème choisi, la date de ton dernier export, et la date à laquelle tu as écarté le rappel d’export. Ils décrivent cet appareil-ci, et c’est pourquoi ils ne figurent pas dans un fichier exporté.',
+        'S’y ajoutent cinq réglages minuscules, dans le stockage local du même navigateur : le thème choisi, la palette choisie, la date de ton dernier export, la date à laquelle tu as écarté le rappel d’export, et le fait que tu as fermé la notice du premier lancement. Ils décrivent cet appareil-ci, et c’est pourquoi ils ne figurent pas dans un fichier exporté.',
         'Rien de tout cela n’est transmis. L’app ne fait aucune requête réseau vers un tiers : elle ne contient ni appel à une interface distante, ni ressource externe — les polices de caractères elles-mêmes sont servies depuis le site, précisément pour qu’aucune requête ne parte ailleurs.',
       ],
     },
@@ -132,16 +132,18 @@ export const privacyPolicy: LegalDocument = {
       ],
     },
     {
-      heading: 'Pourquoi il n’y a pas de bandeau cookies',
+      heading: 'Pourquoi il y a une notice, et pas un bandeau de consentement',
       body: [
         'Écrire ou lire quelque chose sur ton appareil suppose en principe ton consentement — et la règle vaut pour le stockage local et IndexedDB, pas seulement pour les cookies. Elle connaît une exception : ce qui est strictement nécessaire à la fourniture du service que tu as expressément demandé.',
-        'C’est exactement le cas ici. La base IndexedDB, ce sont tes données elles-mêmes : sans elle, il n’y a pas d’app. Les trois réglages du stockage local servent l’affichage et le rappel de sauvegarde, rien d’autre. Aucun identifiant, aucun suivi, aucune transmission. Un bandeau n’aurait donc rien à faire consentir, et t’en présenter un reviendrait à te faire cliquer pour rien.',
+        'C’est exactement le cas ici. La base IndexedDB, ce sont tes données elles-mêmes : sans elle, il n’y a pas d’app. Les cinq réglages du stockage local servent l’affichage, le rappel de sauvegarde et la notice du premier lancement, rien d’autre. Aucun identifiant, aucun suivi, aucune transmission. Il n’y a donc rien à te faire consentir, et un bandeau de consentement te ferait cliquer pour rien.',
+        'Ce que tu as vu au premier lancement n’en est pas un. Il ne demande pas d’accepter, il ne propose pas de refuser, et le fermer ne change rien à ce que l’app fait : elle se comporte exactement pareil avant et après. C’est un accusé de lecture, et il existe parce que cette page-ci ne valait rien tant qu’elle ne se lisait qu’ici. Quelqu’un qui arrive méfiant saisit ses revenus avant d’avoir croisé une seule de ces lignes.',
       ],
     },
     {
       heading: 'Tes droits',
       body: [
-        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien derrière. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
+        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien de tes données derrière : la base est vidée, les sauvegardes locales aussi, et les deux dates de sauvegarde partent avec elles. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
+        'Trois choses restent dans le stockage local après un effacement, parce qu’aucune ne parle de tes données : le thème, la palette, et le fait que tu as fermé la notice du premier lancement. Effacer ce qu’on a saisi ne fait pas oublier ce qu’on a lu, ni choisi.',
         'Sur les journaux de l’hébergeur, la demande se fait par le dépôt — le lien est en bas de cette page. Tu peux aussi introduire une réclamation auprès de la CNIL.',
       ],
     },

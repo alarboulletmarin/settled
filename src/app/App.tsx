@@ -6,6 +6,7 @@ import { useApplyAppearance } from '@/theme/useTheme'
 import { Toaster } from '@/ui/Toaster'
 import { CurrencyContext } from '@/ui/currency'
 import { BootScreen } from './BootScreen'
+import { PrivacyNotice } from './PrivacyNotice'
 import { AppRoutes, OnboardingRoutes } from './Routes'
 import { LANDING_PATH } from './routes'
 import { UpdatePrompt } from './UpdatePrompt'
@@ -76,6 +77,15 @@ export function App() {
         </Suspense>
         <Toaster />
         <UpdatePrompt />
+        {/* Hors des routes, comme ses deux voisins, et pour une raison de plus :
+            elle doit répondre pendant que `hydrate` lit encore la base, donc
+            au-dessus du `Booted` qui attend le statut. Elle recouvre aussi le
+            nuancier, une fois, et c'est assumé : le drapeau vaut pour le
+            navigateur, et une exemption de route qu'aucun écran ne montre est
+            une règle que personne ne peut vérifier.
+            Aucun `z-index` à accorder avec le bandeau de mise à jour ni avec les
+            messages : une modale `<dialog>` vit dans la couche supérieure. */}
+        <PrivacyNotice />
       </BrowserRouter>
     </CurrencyContext>
   )

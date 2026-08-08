@@ -12,6 +12,84 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté : la promesse se lit avant la première saisie, pas dans les pages qu'on ne lit pas
+
+« Pas de compte, pas de serveur » était écrit quatre fois : sur la présentation,
+à la dernière étape de l'onboarding, sur « à propos », et en détail sur la page
+de confidentialité. Toutes se lisent, et c'était exactement le problème :
+quelqu'un qui arrive méfiant devant une app de finances saisissait ses revenus
+sans en avoir croisé une ligne. La promesse était partout sauf devant lui.
+
+- **Une notice bloquante au premier lancement**, une seule fois par navigateur et
+  pour tout le monde, quel que soit l'écran d'arrivée. Elle dit les quatre choses
+  que l'app ne fait pas de ce qu'on y écrit : aucun compte, aucun cookie ni
+  traceur, aucun serveur, personne qui lise les données. Elle mène à la page de
+  confidentialité. C'est un bandeau cookies retourné, et la forme est empruntée
+  exprès : là où l'un fait accepter ce qui est pris, celle-ci dit ce qui n'est
+  pas pris. Elle bloque pour la seule raison qui rend un bandeau cookies
+  efficace, c'est-à-dire qu'on ne peut pas ne pas le voir.
+- **La case est là pour qu'on lise, pas pour qu'on réponde.** Elle allume le
+  bouton « J'ai compris », et c'est tout ce qu'elle fait : rien n'est enregistré
+  de ce qu'elle vaut. C'est ce qui distingue la notice d'une question, et ce qui
+  laisse intact le « rien à configurer pour démarrer » du cahier §1 : elle ne
+  configure rien et ne demande aucune information sur qui la lit. Le nom du foyer
+  reste supprimé pour la raison inverse : il exigeait une réponse sur soi, et
+  pour une décoration.
+- **Aucune des quatre lignes ne dit « aucun traitement de données ».** Servir la
+  page laisse une trace dans les journaux de l'hébergeur, la page de
+  confidentialité le dit depuis toujours, et une notice faite pour être crue ne
+  peut pas se faire prendre sur la seule ligne qu'on puisse vérifier. Les quatre
+  portent donc sur ce que devient *ce qu'on saisit*, ce qui reste vrai ; la
+  nuance se lit sur la page, à un lien de là.
+- **« Pourquoi il n'y a pas de bandeau cookies » devient « Pourquoi il y a une
+  notice, et pas un bandeau de consentement ».** La section disait qu'un bandeau
+  n'aurait rien à faire consentir et ferait cliquer pour rien : c'est toujours
+  vrai d'un bandeau de *consentement*, et la page le dit maintenant dans ces
+  mots-là. Ce qui s'ajoute est une notice d'information, qui ne demande pas
+  d'accepter, ne propose pas de refuser, et dont la fermeture ne change rien à ce
+  que l'app fait.
+- **L'énumération du stockage local est corrigée**, et c'est plus qu'un détail :
+  toute la crédibilité d'une notice qui affirme ne rien collecter repose sur
+  l'exactitude de la liste de ce qui est écrit. Elle annonçait trois réglages
+  quand il y en avait quatre, la palette manquant depuis que les six palettes
+  existent, et il y en a cinq maintenant, tous nommés.
+- **« Tout effacer » cesse de promettre qu'il ne reste rien.** La page disait
+  qu'il « ne laisse rien derrière » ; elle dit maintenant qu'il ne laisse rien
+  *de tes données*, et nomme les trois choses qui restent, le thème, la palette
+  et cette notice, avec la raison : aucune ne parle de tes données. C'était déjà
+  vrai du thème avant cette version.
+- **Ni croix, ni Échap, ni clic sur le fond, ni glissement** : `Sheet` accepte
+  `dismissible={false}`, et c'est le seul écran qui y a droit. Il n'y a pas de
+  « non » à offrir puisqu'il n'y a rien à accepter, et une sortie sans mot ferait
+  passer pour un refus le fait d'avoir cliqué de travers. Ce n'est pas un piège
+  au sens de WCAG 2.1.2 : la case répond à la barre d'espace, le bouton à
+  Entrée, donc la sortie existe au clavier ; elle est simplement nommée.
+- **Le texte de la feuille est désigné, et la feuille prend le focus.** Les deux
+  vont ensemble, et le premier ne valait rien sans le second : `showModal()`
+  visait le lien « Confidentialité » au milieu du corps, dont un lecteur d'écran
+  annonçait le nom *à la place* de la description qu'on venait de poser.
+- **La case vit en fin de corps, pas dans le pied**, où elle a d'abord été
+  posée : le pied est hors du défilement, donc sur un téléphone de 320 on cochait
+  « J'ai lu » sans avoir fait défiler une seule des quatre lignes. Mesuré : 304
+  pixels de fenêtre pour 453 de texte.
+- **Trois familles d'écrans ne la reçoivent pas.** Les trois pages juridiques,
+  parce qu'elle y mène : la modale recouvrait la page que son lien venait
+  d'ouvrir, on ne voyait rien se passer, et le lien passait donc pour cassé. Le
+  nuancier, qui n'est pas un écran de l'app et qui existe pour inspecter les
+  composants, celui-ci compris. Et un document qui ne s'ouvre pas : l'écran
+  d'arrivée porte alors les quatre recours du cahier §5, et retarder un sauvetage
+  de données pour une formalité serait le pire moment de toute l'app pour
+  bloquer. Dans ces deux derniers cas, rien n'est retenu : elle est due, elle est
+  seulement remise.
+- **Elle se referme sans se démonter**, pour que l'animation de sortie ait encore
+  un nœud à animer : la feuille de style la porte depuis toujours, et la démonter
+  l'escamotait d'un coup.
+- **Fermer la notice survit à « Tout effacer ».** Le drapeau vit hors du document,
+  comme le thème et la palette, et pour la même raison : il décrit ce qu'on a lu,
+  pas l'état des données. Les deux dates d'export, elles, partent à l'effacement
+  parce qu'elles décrivent des données qui ne sont plus là. Rouvrir une modale
+  bloquante devant quelqu'un qui vient de tout effacer serait une punition.
+
 ### Ajouté — l'export peut partir vers un autre appareil
 
 L'export n'avait qu'une sortie : le dossier des téléchargements. Sur un

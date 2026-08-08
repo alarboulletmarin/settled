@@ -35,6 +35,30 @@ export type SheetProps = {
    * « tire-moi ».
    */
   pullToClose?: boolean
+  /**
+   * Une feuille qu'aucun geste ne referme : ni croix, ni Échap, ni clic sur le
+   * fond. Un seul bouton nommé la referme, et c'est celui du pied.
+   *
+   * C'est l'inverse exact de ce que le DS §6 demande partout ailleurs, et ça
+   * n'est permis qu'à la notice du premier lancement (cahier §4.1). L'argument
+   * est qu'elle ne pose aucune question : il n'y a pas de « non » à offrir
+   * puisqu'il n'y a rien à accepter, et une sortie sans mot, touche Échap ou
+   * doigt à côté, ferait passer pour un refus le fait d'avoir cliqué de travers.
+   *
+   * Ce n'est pas un piège au sens de WCAG 2.1.2 : le piège de focus reste celui
+   * du navigateur, et la sortie existe au clavier comme au doigt.
+   */
+  dismissible?: boolean
+  /**
+   * L'`id` de ce que la feuille dit, posé en `aria-describedby`.
+   *
+   * `showModal()` place le focus sur le premier élément focusable du contenu.
+   * Une feuille dont le texte *est* le propos, et non le décor d'un
+   * formulaire, le ferait donc traverser sans être lu : un lecteur d'écran
+   * annoncerait le nom de la feuille puis le premier lien, et rien entre les
+   * deux. Là où le contenu doit être entendu, il se désigne.
+   */
+  describedBy?: string
 }
 
 /**
@@ -45,6 +69,9 @@ export type SheetProps = {
  * Le mouvement d'entrée et de sortie vit dans la feuille de style, sur la
  * classe `.sheet` : `showModal()` n'anime rien, et une feuille montante qui
  * apparaît d'un coup ne dit pas d'où elle vient.
+ *
+ * `dismissible={false}` retire les trois sorties sans mot, croix, Échap et clic
+ * sur le fond, et n'est permis qu'à un seul écran de l'app. Voir la prop.
  */
 export function Sheet({
   open,
@@ -54,28 +81,60 @@ export function Sheet({
   footer,
   footerLead,
   pullToClose = false,
+  dismissible = true,
+  describedBy,
 }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
-  const drag = useSheetDrag({ open, onClose, enabled: pullToClose })
+  /* Le glissement est la quatrième sortie, et elle n'a pas à survivre là où les
+     trois autres ont été retirées : `pullToClose` et `dismissible={false}`
+     ensemble décriraient une feuille qu'on ne peut pas fermer mais qu'on peut
+     jeter au pouce. Les deux props se croisent ici une fois pour toutes, plutôt
+     que de compter sur personne pour ne jamais les poser côte à côte. Une seule
+     fois, aussi, parce que la poignée suit la même condition que le geste : elle
+     n'existe que là où il existe. */
+  const draggable = pullToClose && dismissible
+  const drag = useSheetDrag({ open, onClose, enabled: draggable })
 
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      /* `showModal()` donne le focus au premier élément focusable du contenu.
+         Sur une feuille ordinaire c'est la croix, en tête : on arrive donc en
+         haut. Sur une feuille dont le texte *est* le propos, c'est le premier
+         lien du corps, et un lecteur d'écran annonce alors son nom à lui, ce
+         qui écrase la description que `describedBy` vient de poser. Le focus va
+         donc sur la boîte : le nom et la description sont lus d'abord, et la
+         première tabulation atteint le lien. */
+      if (!dismissible) dialog.focus()
+    }
     if (!open && dialog.open) dialog.close()
-  }, [open])
+  }, [open, dismissible])
 
   return (
     <dialog
       ref={ref}
       aria-label={title}
+      aria-describedby={describedBy}
+      /* Focusable seulement là où l'effet le vise : un `<dialog>` n'est pas
+         focusable de lui-même, et le poser partout ferait de toutes les feuilles
+         de l'app un conteneur qui prend le focus. `outline-none` avec, parce
+         qu'un conteneur focusé au programme dessine son anneau autour de la
+         boîte entière, alors que le DS §8 demande un focus visible sur ce qu'on
+         actionne, et qu'une boîte n'est pas un bouton. */
+      tabIndex={dismissible ? undefined : -1}
+      /* `preventDefault` dans les deux cas, et pour deux raisons différentes :
+         une feuille ordinaire referme elle-même par son `open` plutôt que de
+         laisser le navigateur le faire dans son dos ; une feuille non
+         refermable, elle, ne referme pas du tout. */
       onCancel={(event) => {
         event.preventDefault()
-        onClose()
+        if (dismissible) onClose()
       }}
       onClick={(event) => {
         // Un clic sur le fond ferme ; un clic dans la feuille ne remonte pas.
-        if (event.target === ref.current) onClose()
+        if (dismissible && event.target === ref.current) onClose()
       }}
       className={cn(
         // `.sheet` porte l'entrée, la sortie et la couleur du fond. Le fond ne
@@ -91,6 +150,7 @@ export function Sheet({
         // ici, la hauteur au `max-h-[90dvh]` du contenu.
         'max-h-none max-w-none',
         'mt-auto sm:m-auto sm:max-w-lg',
+        !dismissible && 'outline-none',
       )}
     >
       <div
@@ -132,18 +192,24 @@ export function Sheet({
               repère au bord de l'écran, et — depuis qu'elle n'apparaît qu'avec
               le geste — ne promet plus rien qu'elle ne tienne. Sans objet sur
               une boîte centrée. */}
-          {pullToClose && (
+          {draggable && (
             <div
               aria-hidden="true"
               className="mx-auto mt-2.5 h-1 w-9 rounded-chip bg-surface-2 sm:hidden"
             />
           )}
 
+          {/* La croix n'apparaît que là où le geste existe : la même règle que
+              la poignée, et que les repères d'action du DS §6. Un bouton
+              « Fermer » sur une feuille qui ne se ferme pas serait la pire des
+              deux : il promettrait la sortie et ne la donnerait pas. */}
           <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
             <h2 className="t-section min-w-0 truncate">{title}</h2>
-            <IconButton label={fr.common.close} onClick={onClose}>
-              <Close />
-            </IconButton>
+            {dismissible && (
+              <IconButton label={fr.common.close} onClick={onClose}>
+                <Close />
+              </IconButton>
+            )}
           </header>
         </div>
 
