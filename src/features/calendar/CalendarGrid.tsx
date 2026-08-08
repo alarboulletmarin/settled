@@ -1,5 +1,5 @@
-import { type KeyboardEvent, useEffect, useId, useRef } from 'react'
-import type { ISODate, YearMonth } from '@/domain/date'
+import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef } from 'react'
+import { type ISODate, type YearMonth, parseISO } from '@/domain/date'
 import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatWeekdayDate, formatYearMonth, de, tpl } from '@/i18n/format'
@@ -15,6 +15,12 @@ function countLabel(count: number): string {
   return tpl(fr.calendar.someEntries, count)
 }
 
+function plannedLabel(count: number): string {
+  if (count === 0) return ''
+  if (count === 1) return fr.calendar.onePlanned
+  return tpl(fr.calendar.somePlanned, count)
+}
+
 /**
  * Le nom d'une case, qui dit tout ce que la case montre.
  *
@@ -22,16 +28,27 @@ function countLabel(count: number): string {
  * compte muet ne portent l'information qu'à la vue, ce que le DS §8 refuse. Le
  * cadre d'aujourd'hui et le chiffre atténué d'un voisin sont dans le même cas,
  * d'où les deux mentions ajoutées à la fin.
+ *
+ * Le pointillé d'une pastille prévue était le seul signe qui n'avait aucun mot :
+ * une case disait « 3 échéances » là où l'œil voit deux pleines et une en
+ * pointillés. Il en a un maintenant, et c'est le même que celui de la légende.
  */
-function cellLabel(cell: GridCell, count: number, isToday: boolean): string {
+function cellLabel(cell: GridCell, entries: readonly Entry[], isToday: boolean): string {
+  const planned = entries.filter((entry) => entry.status === 'planned').length
   return [
-    tpl(fr.calendar.dayLabel, formatWeekdayDate(cell.date), countLabel(count)),
+    tpl(fr.calendar.dayLabel, formatWeekdayDate(cell.date), countLabel(entries.length)),
+    plannedLabel(planned),
     isToday ? fr.calendar.dayToday : '',
     cell.inMonth ? '' : fr.calendar.dayOutside,
   ]
     .filter((part) => part !== '')
     .join(fr.calendar.labelJoin)
 }
+
+/* La pilule du quantième, partagée par la case et par la légende : celle-ci
+   montre le cadre d'aujourd'hui pour le nommer, et deux cadres qui ne se
+   ressemblent pas ne s'expliquent pas l'un l'autre. */
+const PILL = 'flex h-5 min-w-5 items-center justify-center rounded-chip border px-1 t-body tnum leading-none'
 
 /** Une pastille par échéance, couleur de la catégorie, en pointillés si prévue. */
 function Dots({ entries, colorOf }: { entries: readonly Entry[]; colorOf: (id: string) => string }) {
@@ -93,7 +110,7 @@ function Cell({
          pas re-toucher la case pour la relâcher. Elle ouvre quelque chose, elle
          le dit. */
       aria-haspopup="dialog"
-      aria-label={cellLabel(cell, entries.length, isToday)}
+      aria-label={cellLabel(cell, entries, isToday)}
       onClick={() => {
         onOpen(cell.date)
       }}
@@ -129,8 +146,7 @@ function Cell({
           surface de la tuile, quoi qu'il arrive. */}
       <span
         className={cn(
-          'flex h-5 min-w-5 items-center justify-center rounded-chip border px-1',
-          't-body tnum leading-none',
+          PILL,
           isToday && 'font-semibold',
           opened
             ? 'border-accent bg-accent text-accent-fg'
@@ -153,6 +169,67 @@ function Cell({
       </span>
       <Dots entries={entries} colorOf={colorOf} />
     </button>
+  )
+}
+
+function Mark({ sample, children }: { sample: ReactNode; children: string }) {
+  return (
+    <li className="flex items-center gap-1.5">
+      {sample}
+      <span className="t-label">{children}</span>
+    </li>
+  )
+}
+
+/**
+ * Ce que les marques de la grille veulent dire.
+ *
+ * Une pastille pleine, une pastille en pointillés, un chiffre dans un contour,
+ * un « +4 » : quatre signes, et pas un mot pour les nommer. Le DS §8 demande
+ * qu'une forme ne porte jamais seule ce qu'elle dit — la règle valait jusqu'ici
+ * pour le nom accessible des cases, et laissait l'œil deviner. Deviner « pas
+ * encore confirmée » derrière un contour en pointillés n'arrive à personne.
+ *
+ * La légende montre la forme et pas la couleur : les pastilles d'exemple sont
+ * en `--text-muted`, faute de quoi elles nommeraient une catégorie en plus d'une
+ * forme — et le calendrier en sert quarante-sept. C'est la phrase du dessous qui
+ * dit ce que la couleur fait, une fois pour toutes ; les catégories, elles, se
+ * lisent dans la feuille du jour, où chaque ligne porte son nom à côté de sa
+ * pastille.
+ *
+ * Elle n'apparaît que s'il y a quelque chose à expliquer : une fenêtre sans
+ * aucune échéance n'a aucune pastille, et une légende qui nomme des marques
+ * absentes est du bruit. Le cadre d'aujourd'hui suit la même règle — il ne se
+ * nomme que sur les mois où il se voit.
+ */
+function Legend({ today, more }: { today: number | null; more: boolean }) {
+  return (
+    <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <Mark sample={<Dot color="var(--text-muted)" size={6} />}>{fr.calendar.legendDone}</Mark>
+        <Mark sample={<Dot color="var(--text-muted)" size={6} outlined />}>
+          {fr.calendar.legendPlanned}
+        </Mark>
+        {today !== null && (
+          <Mark
+            sample={
+              /* Muet pour un lecteur d'écran : le quantième du jour lu ici
+                 s'entendrait comme une case de plus, alors que ce n'en est pas
+                 une. Le mot à côté suffit, et les cases disent déjà
+                 « aujourd'hui » dans leur nom. */
+              <span aria-hidden="true" className={cn(PILL, 'border-muted font-semibold')}>
+                {today}
+              </span>
+            }
+          >
+            {fr.calendar.legendToday}
+          </Mark>
+        )}
+      </ul>
+      <p className="t-label">
+        {[fr.calendar.legendDots, more ? fr.calendar.legendMore : ''].filter((s) => s !== '').join(' ')}
+      </p>
+    </div>
   )
 }
 
@@ -194,6 +271,12 @@ export function CalendarGrid({
   const colorOf = (id: string): string => categories.get(id)?.color ?? 'var(--cat-rest)'
   const hintId = useId()
   const cells = useRef(new Map<ISODate, HTMLButtonElement>())
+
+  /* La fenêtre entière, et pas seulement le mois : une pastille de débord est
+     une pastille qu'on voit, et la légende explique ce qui est à l'écran. */
+  const hasEntries = grid.cells.some((cell) => entriesOn(grid, cell.date).length > 0)
+  const hasMore = grid.cells.some((cell) => density(entriesOn(grid, cell.date).length).rest > 0)
+  const showsToday = grid.cells.some((cell) => cell.date === today && reachable(cell.date))
 
   const register = (date: ISODate, node: HTMLButtonElement | null): void => {
     if (node === null) cells.current.delete(date)
@@ -308,6 +391,11 @@ export function CalendarGrid({
       <p id={hintId} className="sr-only-text">
         {fr.a11y.calendarGridHint}
       </p>
+
+      {/* Hors du `role="group"` : la légende explique la grille, elle n'en est
+          pas une case. Dedans, elle s'annoncerait comme un enfant de plus d'une
+          fenêtre qui en compte quarante-deux. */}
+      {hasEntries && <Legend today={showsToday ? parseISO(today).d : null} more={hasMore} />}
     </div>
   )
 }
