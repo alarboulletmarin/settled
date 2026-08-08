@@ -2,7 +2,14 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { scrollToTop } from '@/lib/reveal'
-import { ABOUT_PATH, NAV_ROUTES, SETTINGS_PATH, STYLEGUIDE_ROUTE } from './routes'
+import {
+  ABOUT_PATH,
+  MORE_PATH,
+  NAV_ROUTES,
+  SIDEBAR_GROUPS,
+  STYLEGUIDE_ROUTE,
+  isInMoreSection,
+} from './routes'
 
 /* Un onglet ramène en haut de sa section, qu'on y soit déjà ou non — c'est ce
    que fait le logo d'un site. Sans ça, toucher l'onglet actif ne produisait
@@ -15,12 +22,29 @@ const ITEM = cn(
   'transition-colors duration-[var(--dur)] ease-ds',
 )
 
-/** Colonne latérale, à partir de la tablette. */
+/**
+ * Colonne latérale, à partir de 1024px — **en trois groupes**.
+ *
+ * Elle alignait cinq destinations à plat. Une liste plate n'est pas une
+ * hiérarchie : elle donnait le même poids à « Le mois », qu'on ouvre tous les
+ * jours, et à « Réglages », qu'on ouvre trois fois par an — et pendant ce
+ * temps, quatre écrans de l'app n'y figuraient pas du tout, faute d'une place
+ * que la barre d'onglets n'avait pas et que la colonne, elle, avait de reste.
+ *
+ * Ce qu'on ouvre pour regarder, puis ce qu'on tient, puis ce qu'on règle. Le
+ * premier groupe n'a pas de titre : la colonne doit s'ouvrir sur les
+ * destinations quotidiennes, pas sur un mot à lire avant elles. Voir
+ * `SIDEBAR_GROUPS`, qui porte l'ordre et le rationale.
+ *
+ * Le titre d'un groupe est un `t-eyebrow` atténué — exactement la classe du nom
+ * de l'app juste au-dessus. Aucune convention visuelle nouvelle : c'est déjà
+ * comme ça que cet écran nomme ce qui surplombe une liste.
+ */
 export function Sidebar({ householdName }: { householdName: string }) {
   return (
     <nav
       aria-label={fr.nav.label}
-      className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 p-5 lg:flex"
+      className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 overflow-y-auto p-5 lg:flex"
     >
       {/* Le nom est facultatif — il ne se demande plus au premier lancement.
           Vide, la seconde ligne ne s'affiche pas plutôt que de tenir une place
@@ -33,32 +57,49 @@ export function Sidebar({ householdName }: { householdName: string }) {
         )}
       </div>
 
-      {NAV_ROUTES.map((route) => {
-        const Icon = route.icon
-        return (
-          <NavLink
-            key={route.path}
-            to={route.path}
-            end={route.path === '/'}
-            onClick={scrollToTop}
-            className={({ isActive }) =>
-              cn(
-                ITEM,
-                'h-11 justify-start gap-3',
-                isActive ? 'bg-accent text-accent-fg' : 'hover:bg-surface-2',
-              )
-            }
-          >
-            <Icon size={18} className="shrink-0" />
-            {route.label}
-          </NavLink>
-        )
-      })}
+      {SIDEBAR_GROUPS.map((group, index) => (
+        /* La clé est le titre quand il y en a un, et le rang sinon : le premier
+           groupe n'en a pas, et c'est le seul dans ce cas. */
+        <div key={group.title ?? index} className="flex flex-col gap-1">
+          {group.title !== undefined && (
+            /* `aria-hidden` : le groupe n'est pas une région, c'est une suite de
+               liens que l'étiquette sépare à l'œil. L'annoncer en ferait un
+               titre sans niveau au milieu d'une navigation. */
+            <span aria-hidden="true" className="t-eyebrow mt-5 mb-1 px-3 text-muted">
+              {group.title}
+            </span>
+          )}
+          {group.routes.map((route) => {
+            const Icon = route.icon
+            return (
+              <NavLink
+                key={route.path}
+                to={route.path}
+                end={route.path === '/'}
+                onClick={scrollToTop}
+                className={({ isActive }) =>
+                  cn(
+                    ITEM,
+                    'h-11 justify-start gap-3',
+                    isActive ? 'bg-accent text-accent-fg' : 'hover:bg-surface-2',
+                  )
+                }
+              >
+                <Icon size={18} className="shrink-0" />
+                {route.label}
+              </NavLink>
+            )
+          })}
+        </div>
+      ))}
 
       {/* Les deux liens secondaires se groupent, et c'est le groupe qui porte
           le `mt-auto`. « À propos » au-dessus : c'est le seul des deux qui
-          s'adresse à qui utilise l'app. */}
-      <div className="mt-auto flex flex-col gap-1">
+          s'adresse à qui utilise l'app. Le `pt-6` est le sien et non une marge
+          du groupe précédent : la colonne défile maintenant qu'elle porte neuf
+          liens, et une marge qui s'effondre laisserait les deux se toucher en
+          bas de course. */}
+      <div className="mt-auto flex flex-col gap-1 pt-6">
         {[
           { path: ABOUT_PATH, label: fr.nav.about },
           STYLEGUIDE_ROUTE,
@@ -82,7 +123,15 @@ export function Sidebar({ householdName }: { householdName: string }) {
   )
 }
 
-/** Barre d'onglets mobile. Cible tactile de 56px, au-delà du minimum du DS. */
+/**
+ * Barre d'onglets mobile. Cible tactile de 56px, au-delà du minimum du DS.
+ *
+ * **Quatre onglets et non cinq** : les trois lectures qu'on ouvre pour regarder,
+ * puis « Plus », qui range le reste. Le rationale du découpage est dans
+ * `NAV_ROUTES` ; ce qui change ici est mécanique — quatre `flex-1` rendent 25 %
+ * de largeur chacun au lieu de 20, ce qui détend les libellés à 320px, où
+ * « Récurrences » se tronquait.
+ */
 export function TabBar() {
   const { pathname } = useLocation()
 
@@ -97,15 +146,17 @@ export function TabBar() {
       <ul className="flex">
         {NAV_ROUTES.map((route) => {
           const Icon = route.icon
-          /* Les vues des réglages allument leur onglet toutes seules — elles
-             sont sous `/reglages`, que `NavLink` apparie par préfixe. « À
-             propos », non : elle vit à la racine parce qu'elle parle de l'app
-             et répond avant même qu'un foyer existe. Or sous 1024px on n'y
-             arrive que par les réglages, et la barre disait alors qu'on avait
-             quitté la section — cinq onglets éteints, sans aucun moyen de
-             savoir d'où l'on venait. La colonne latérale, elle, porte son
-             propre lien « À propos » et n'a pas ce trou. */
-          const inSection = route.path === SETTINGS_PATH && pathname.startsWith(ABOUT_PATH)
+          /* « Plus » reste allumé dans tout ce qu'il range — les récurrences,
+             l'épargne, la répartition, les crédits, les avances, les réglages,
+             « à propos ». `NavLink` n'apparie que son propre préfixe, et sans
+             cette table on quittait « Plus » dès le premier pas à l'intérieur :
+             quatre onglets éteints, sans rien pour dire d'où l'on venait.
+             C'est le défaut que le cas particulier d'« à propos » corrigeait
+             déjà à la main pour l'onglet des réglages, et qui vaut maintenant
+             pour six sections — d'où la table, dans `routes.ts`.
+             La colonne latérale n'a pas ce trou : elle déplie ces destinations
+             et porte son propre lien « À propos ». */
+          const inSection = route.path === MORE_PATH && isInMoreSection(pathname)
           return (
             <li key={route.path} className="min-w-0 flex-1">
               <NavLink

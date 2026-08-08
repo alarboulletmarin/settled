@@ -36,19 +36,37 @@ export type TileAffordance =
   | { kind: 'scroll'; destination: string }
 
 /**
- * Le même repère, mais cliquable — et la tuile reste une section.
+ * Le geste d'une tuile dont le contenu est une liste — **et toute la tuile est
+ * la cible**.
  *
  * Une tuile actionnable est un `<button>`, qui n'admet que du contenu de
  * phrase : trois d'entre elles y plaçaient une liste, ce qu'aucun navigateur ne
  * valide et qu'un lecteur d'écran aplatit derrière le nom unique du bouton. Le
- * DS §6 prescrit alors la tuile non cliquable avec un vrai lien au coin, et
- * `UpcomingTile` en écrit le rationale.
+ * DS §6 prescrit alors la tuile non cliquable avec un vrai lien, pour que ses
+ * lignes continuent de se lire une à une.
  *
- * Le lien est ce repère-ci et non un lien posé dans le flux : le coin est en
- * position absolue, il ne coûte donc ni la hauteur ni la largeur qu'une 2×2 n'a
- * pas — son budget vertical est compté au pixel dans `donut.ts`. La cible de
- * 44px du DS §8 s'obtient par un cadre qui déborde dans celui de la tuile, où
- * rien d'autre n'est actionnable.
+ * **Ce lien couvrait 44px au coin, et c'était le défaut de la solution.** La
+ * règle règle un problème d'oreille et en créait un de doigt : la tuile fait
+ * 300px de large et n'en offrait qu'une quarantaine à viser, dans un coin, sans
+ * rien pour dire où. À côté, la Capacité d'épargne se touche n'importe où
+ * puisqu'elle est un bouton — deux tuiles voisines, de même taille, de même
+ * apparence, et l'une des deux ne répondait qu'au coin.
+ *
+ * Le lien s'étend donc à toute la tuile (`.tile-stretch`), et le coin ne garde
+ * que le **repère**, en `aria-hidden` — exactement le partage que connaît déjà
+ * une tuile-bouton. Rien ne change pour l'oreille : c'est toujours une section
+ * qu'on parcourt ligne à ligne, avec un lien nommé dedans. Ce qui change est
+ * qu'on peut la toucher.
+ *
+ * Le repère reste en position absolue : il ne coûte donc ni la hauteur ni la
+ * largeur qu'une 2×2 n'a pas — son budget vertical est compté au pixel dans
+ * `donut.ts`.
+ *
+ * **Corollaire à connaître : plus rien d'autre n'est actionnable dans la
+ * tuile.** La surface du lien passe devant le contenu, et un bouton posé dans
+ * une ligne ne recevrait plus le doigt. Une tuile dont la légende s'ouvre part
+ * en part — « Où part l'argent » — ne prend donc pas de `link` : ses parts sont
+ * des boutons, et c'est le contenu qui porte les gestes.
  */
 export type TileLink = {
   to: string
@@ -157,6 +175,26 @@ function Marker({
   )
 }
 
+/**
+ * Le repère posé au coin, en décor : il dit ce que le geste fait, il n'est pas
+ * le geste. `aria-hidden`, parce que le nom accessible de la cible le dit déjà.
+ */
+function Corner({
+  destination,
+  glyph,
+  span,
+}: {
+  destination: string | undefined
+  glyph: typeof ChevronRight
+  span: TileSpan | undefined
+}) {
+  return (
+    <span aria-hidden="true" className={cn('pointer-events-none', cornerClass(span))}>
+      <Marker destination={destination} glyph={glyph} span={span} />
+    </span>
+  )
+}
+
 function Affordance({ affordance, span }: { affordance: TileAffordance; span?: TileSpan }) {
   const Glyph =
     affordance.kind === 'explain'
@@ -166,44 +204,49 @@ function Affordance({ affordance, span }: { affordance: TileAffordance; span?: T
         : ChevronRight
 
   return (
-    <span aria-hidden="true" className={cn('pointer-events-none', cornerClass(span))}>
-      <Marker
-        destination={affordance.kind === 'explain' ? undefined : affordance.destination}
-        glyph={Glyph}
-        span={span}
-      />
-    </span>
+    <Corner
+      destination={affordance.kind === 'explain' ? undefined : affordance.destination}
+      glyph={Glyph}
+      span={span}
+    />
   )
 }
 
 /**
- * Le repère du coin, en vrai lien.
+ * Le geste d'une tuile à liste : un lien vide, étendu sur toute la tuile.
+ *
+ * Vide, et c'est ce qui le rend possible. Le repère visible est resté au coin,
+ * en `aria-hidden` (`Corner`) : ce lien-ci n'a donc rien à afficher, seulement
+ * une surface à couvrir et un nom à porter. Il ne s'insère pas dans le flux,
+ * donc il ne coûte pas un pixel de hauteur — ce qui compte sur une 2×2, dont le
+ * budget vertical est mesuré au pixel (`donut.ts`).
  *
  * Il porte son nom accessible plutôt que de compter sur son entourage : un
  * lecteur d'écran sait lister les liens d'une page hors de leur contexte, et
  * « › » n'y dit rien. C'est aussi ce qui autorise le chevron nu à l'écran, là où
  * l'eyebrow de la tuile nomme déjà la destination.
+ *
+ * L'anneau de focus ne se dessine pas sur lui mais sur la tuile
+ * (`components.css`) : posé ici, il serait rogné par l'`overflow-hidden` du
+ * cadre, et il doit de toute façon entourer ce qu'on actionne — c'est la tuile
+ * entière, comme sur une tuile-bouton.
  */
-function AffordanceLink({ link, span }: { link: TileLink; span?: TileSpan }) {
-  return (
-    <Link
-      to={link.to}
-      aria-label={link.label}
-      className={cn(
-        cornerClass(span),
-        /* La cible de 44px, prise dans le cadre de la tuile plutôt que dans son
-           contenu : le glyphe fait 14px, le cadre en ajoute 30, et la marge
-           négative rend au repère sa position au pixel — un élément positionné
-           se décale de ses marges. Le contenu, lui, ne bouge pas d'un pixel :
-           c'est ce qui permet à une 2×2 de porter un lien sans que l'anneau
-           remonte sur l'eyebrow (voir `donut.ts`). */
-        '-m-[15px] rounded-input p-[15px]',
-      )}
-    >
-      <Marker destination={link.destination} glyph={ChevronRight} span={span} />
-    </Link>
-  )
+function StretchedLink({ link }: { link: TileLink }) {
+  return <Link to={link.to} aria-label={link.label} className="tile-stretch" />
 }
+
+/**
+ * Le retour qu'une tuile actionnable donne au geste.
+ *
+ * Le survol n'existe pas au doigt : sans état pressé, la moitié des
+ * utilisateurs n'a aucun retour que le geste a été pris (DS §6). Il vaut pour
+ * les deux formes — bouton et tuile à lien étendu —, parce que les deux se
+ * touchent de la même façon et doivent donc répondre pareil.
+ */
+const ACTIONABLE = cn(
+  'transition-[transform,box-shadow,filter] duration-[var(--dur)] ease-ds',
+  'hover:-translate-y-px active:translate-y-0 active:brightness-95',
+)
 
 export function Tile({
   children,
@@ -230,13 +273,7 @@ export function Tile({
         type="button"
         onClick={onClick}
         aria-label={label}
-        className={cn(
-          classes,
-          'text-left transition-[transform,box-shadow,filter] duration-[var(--dur)] ease-ds',
-          // Le survol n'existe pas au doigt : sans état pressé, la moitié des
-          // utilisateurs n'a aucun retour que le geste a été pris.
-          'hover:-translate-y-px active:translate-y-0 active:brightness-95',
-        )}
+        className={cn(classes, 'text-left', ACTIONABLE)}
       >
         {affordance && <Affordance affordance={affordance} {...(span ? { span } : {})} />}
         {children}
@@ -245,8 +282,16 @@ export function Tile({
   }
 
   return (
-    <section className={classes} aria-label={label}>
-      {link && <AffordanceLink link={link} {...(span ? { span } : {})} />}
+    /* La tuile reste une `<section>` — un `<button>` n'admettrait pas la liste
+       qu'elle porte —, mais elle se touche partout : le lien s'étend dessous,
+       et le coin ne garde que le repère. Voir `TileLink`. */
+    <section className={cn(classes, link && ACTIONABLE)} aria-label={label}>
+      {link && (
+        <>
+          <Corner destination={link.destination} glyph={ChevronRight} span={span} />
+          <StretchedLink link={link} />
+        </>
+      )}
       {children}
     </section>
   )

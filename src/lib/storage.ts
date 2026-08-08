@@ -9,17 +9,31 @@
 
 export type StorageUsage = { usage: number; quota: number }
 
+/**
+ * Ce que le navigateur répond sur la durabilité : oui, non, ou rien du tout.
+ *
+ * Trois valeurs et non deux, et c'est la correction principale de ce module.
+ * `false` valait jusqu'ici pour deux situations qui n'ont rien à voir : un
+ * navigateur qui *dit* ne pas s'engager, et un navigateur qui n'a pas l'API du
+ * tout — donc qui n'a rien dit. Les confondre laissait écrire n'importe où
+ * « ce navigateur n'a rien promis » sur la foi d'une absence de réponse, et
+ * c'est exactement le raccourci qu'on refuse ailleurs : un `false` n'est pas
+ * une preuve de navigation privée, et une API manquante n'est pas un refus.
+ */
+export type Persistence = boolean | 'unknown'
+
 function api(): StorageManager | null {
   return typeof navigator !== 'undefined' && 'storage' in navigator ? navigator.storage : null
 }
 
-export async function isPersisted(): Promise<boolean> {
+/** Ce que le navigateur garde déjà, sans rien lui demander. */
+export async function persistedState(): Promise<Persistence> {
   const storage = api()
-  if (storage === null || typeof storage.persisted !== 'function') return false
+  if (storage === null || typeof storage.persisted !== 'function') return 'unknown'
   try {
     return await storage.persisted()
   } catch {
-    return false
+    return 'unknown'
   }
 }
 
@@ -31,14 +45,18 @@ export async function isPersisted(): Promise<boolean> {
  * toujours. Annoncer une décision que personne ne contrôle est du bruit — la
  * vérité s'affiche dans les réglages, avec un bouton qui redemande, et c'est là
  * que l'invite de Firefox a un sens puisqu'elle suit un clic.
+ *
+ * Un `true` n'est d'ailleurs pas une garantie : il engage le navigateur contre
+ * l'éviction sous pression disque, pas contre quelqu'un qui vide ses données de
+ * site. Aucun écran ne doit en promettre davantage.
  */
-export async function requestPersistence(): Promise<boolean> {
+export async function requestPersistence(): Promise<Persistence> {
   const storage = api()
-  if (storage === null || typeof storage.persist !== 'function') return false
+  if (storage === null || typeof storage.persist !== 'function') return 'unknown'
   try {
     return await storage.persist()
   } catch {
-    return false
+    return 'unknown'
   }
 }
 

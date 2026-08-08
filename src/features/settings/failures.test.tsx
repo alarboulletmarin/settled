@@ -7,6 +7,7 @@
 
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '@/i18n/fr'
 import { useStore } from '@/store/store'
@@ -141,7 +142,13 @@ describe('une écriture qui n’aboutit pas', () => {
     const resetAll = vi.fn().mockRejectedValue(new Error('base verrouillée'))
     useStore.setState({ resetAll })
 
-    render(<DataSection />)
+    /* La vue porte un lien vers « Sur cet appareil » depuis qu'elle résume le
+       stockage : elle demande un routeur, comme toutes celles qui en ont un. */
+    render(
+      <MemoryRouter>
+        <DataSection />
+      </MemoryRouter>,
+    )
     await userEvent.click(screen.getByRole('button', { name: fr.settings.reset }))
 
     // Trois pas : c'est le seul geste de l'app qui n'épargne rien.

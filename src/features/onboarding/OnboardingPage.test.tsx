@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -9,6 +9,7 @@ import { fr } from '@/i18n/fr'
 import { formatMoney, tpl } from '@/i18n/format'
 import { closeDb } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
+import { useStorageHealth } from '@/persistence/health'
 import { useStore } from '@/store/store'
 import { OnboardingPage } from './OnboardingPage'
 
@@ -73,6 +74,7 @@ describe('les trois étapes du premier lancement', () => {
 
   afterEach(() => {
     closeDb()
+    useStorageHealth.setState({ durable: 'unknown', probed: false, asked: false })
   })
 
   it('pose un salaire par personne et un loyer commun, puis ouvre le mois', async () => {
@@ -253,5 +255,28 @@ describe('les trois étapes du premier lancement', () => {
 
     await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
     expect(screen.getByText(fr.onboarding.backup)).toBeInTheDocument()
+  })
+
+  /* La phrase se durcit d'un cran là où le navigateur a répondu qu'il ne
+     s'engageait pas — et là seulement. Un « on ne sait pas » n'est pas un refus,
+     et l'annoncer à tout le monde ferait de la phrase honnête un avertissement
+     de plus qu'on n'écoute pas. */
+  it('ne durcit la phrase que sur un refus dont on est sûr', async () => {
+    useStorageHealth.setState({ probed: true, durable: 'unknown', asked: true })
+    render(
+      <MemoryRouter>
+        <OnboardingPage />
+      </MemoryRouter>,
+    )
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.solo }))
+    // La phrase vit à la dernière étape, qui est la troisième depuis l'épargne.
+    await userEvent.click(screen.getByRole('button', { name: fr.onboarding.starterSkip }))
+    expect(screen.getByText(fr.onboarding.backup)).toBeInTheDocument()
+
+    act(() => {
+      useStorageHealth.setState({ durable: false })
+    })
+    expect(screen.getByText(fr.onboarding.backupFragile)).toBeInTheDocument()
+    expect(screen.queryByText(fr.onboarding.backup)).not.toBeInTheDocument()
   })
 })

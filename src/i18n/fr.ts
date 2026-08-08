@@ -184,6 +184,25 @@ export const fr = {
     styleguide: 'Styleguide',
     about: 'À propos',
     landing: 'La présentation',
+    /* Le quatrième onglet. « Plus » et non « Menu » : il ne cache pas la
+       navigation, il la continue — ce qu'on y trouve est le reste de l'app, pas
+       une autre façon d'atteindre ce qui est déjà dans la barre. */
+    more: 'Plus',
+    moreHint: 'Le reste de tes écrans, et les réglages.',
+    /* Le titre du groupe qui rassemble ce qu'on tient, par opposition aux trois
+       lectures qu'on ouvre pour regarder. Un verbe, parce qu'on y va pour poser
+       une règle ou corriger un partage, pas pour lire un chiffre. */
+    manage: 'Gérer',
+    savings: 'Épargne',
+    split: 'Répartition',
+    /* Ce que chaque rangée de « Gérer » dit d'elle-même : sur un écran qui n'est
+       qu'une liste de portes, le libellé seul demande d'ouvrir pour savoir. */
+    subscriptionsHint: 'Ce qui revient chaque mois, écrit une fois.',
+    savingsHint: 'Ce que tu peux mettre de côté, et où le placer.',
+    splitHint: 'Qui verse quoi sur les charges communes.',
+    creditsHint: 'Tes crédits en cours et ce qu’il reste à rendre.',
+    settingsHint: 'Personnes, catégories, apparence, données.',
+    aboutHint: 'Ce que fait l’app, et ce qu’elle ne fait pas.',
   },
 
   shell: {
@@ -254,6 +273,18 @@ export const fr = {
     writeFailedLabel: 'Échec d’enregistrement',
     exportNow: 'Exporter maintenant',
 
+    /* L'avis de conservation : le niveau du dessous, et il se lit à sa langue.
+       Rien n'a échoué, donc rien n'est au passé ni en rouge — on constate un
+       engagement qui n'a pas été pris, pas une perte. Et surtout aucune phrase
+       ne prétend savoir *pourquoi* : « mode privé détecté » serait faux un jour
+       sur deux, et un avertissement qui se trompe sur la cause discrédite le
+       conseil qui, lui, reste bon. */
+    durabilityTitle: 'Tes données sont enregistrées sur cet appareil',
+    durabilityBody:
+      'Ce navigateur ne garantit pas leur conservation dans la durée. Un export est la seule copie qui ne dépende pas de lui.',
+    durabilityLabel: 'Conservation non garantie',
+    durabilityDismiss: 'Masquer l’avis de conservation',
+
     /* Les trois incidents de connexion. Chacun dit ce qu'il faut faire, et
        aucun ne dit « rechargez la page » sans expliquer pourquoi. */
     blocking:
@@ -317,14 +348,46 @@ export const fr = {
        la lettre du texte courant, et la prose passe en dessous. */
     stateKept: 'Tes données sont conservées',
     stateFragile: 'Rien n’est promis',
-    persisted: 'Le navigateur s’est engagé à garder tes données.',
+    /* Le troisième état, qui n'existait pas. Un navigateur sans l'API de
+       stockage ne *refuse* pas : il ne répond pas, et l'app écrivait jusqu'ici
+       « rien n'est promis » sur la foi de ce silence. Le conseil est le même,
+       l'affirmation ne l'est pas. */
+    stateUnknown: 'Ce navigateur ne dit rien',
+    persisted:
+      'Le navigateur s’est engagé à garder tes données tant que tu ne les effaces pas toi-même.',
     notPersisted:
       'Le navigateur n’a rien promis : il peut effacer tes données s’il manque de place. Un export régulier reste la vraie protection.',
+    persistUnknown:
+      'Ce navigateur ne dit pas s’il conserve tes données. Ce n’est pas un refus, mais on ne peut pas s’y fier : un export régulier reste la vraie protection.',
+    /* Ce qu'on ne pouvait pas dire tant que le fait d'avoir demandé n'était pas
+       gardé : « on n'a jamais demandé » et « on a demandé, il a refusé » ne se
+       lisaient qu'à la même phrase. */
+    persistAsked: 'La conservation lui a déjà été demandée.',
+    /* L'installation, dite là où la conservation se lit et nulle part ailleurs :
+       la présentation porte déjà le bandeau d'installation, et le répéter sur
+       le tableau de bord ferait de l'app une réclame pour elle-même. */
+    installHint:
+      'Une app installée sur l’écran d’accueil est moins exposée : iOS efface les données des sites qu’on n’a pas ouverts depuis environ une semaine.',
     persistAsk: 'Demander à les garder',
     persistGranted: 'C’est accordé.',
     persistRefused: 'Le navigateur a refusé. Rien n’est perdu — exporte plus souvent.',
+    persistSilent: 'Ce navigateur ne répond pas à la question. Rien n’est perdu — exporte plus souvent.',
     usage: '%s occupés sur %s disponibles.',
     usageUnknown: 'Ce navigateur ne dit pas la place qu’il te laisse.',
+
+    /* Le résumé de la vue des données : trois lignes, une étiquette et une
+       valeur chacune. C'est là qu'on vient comprendre où sont ses données et
+       depuis quand elles ne sont copiées nulle part — la vue « Sur cet
+       appareil » garde le détail, les chiffres et les gestes. */
+    placeLabel: 'Stockage',
+    placeValue: 'Sur cet appareil',
+    keepLabel: 'Conservation',
+    keepPersistent: 'Persistante',
+    keepFragile: 'Non garantie par ce navigateur',
+    keepUnknown: 'Non communiquée par ce navigateur',
+    lastExportLabel: 'Dernier export',
+    lastExportNever: 'Jamais',
+    statusMore: 'Détail du stockage sur cet appareil',
 
     backups: 'Sauvegardes locales',
     backupsHint:
@@ -506,8 +569,9 @@ export const fr = {
     export: 'Exporter mes données',
     exportHint: 'Un fichier .json contenant tout, à ranger où tu veux.',
     exported: 'Export téléchargé',
-    lastExport: 'Dernier export : %s',
-    neverExported: 'Jamais exporté.',
+    /* La date du dernier export ne se dit plus ici : elle a rejoint le résumé
+       de la vue, où elle se lit à côté de ce que le navigateur promet — les
+       deux faits ne veulent rien dire l'un sans l'autre. */
 
     /* L'autre sortie du même fichier : la feuille de partage du système. Le
        bouton n'existe que là où elle accepte un .json — un bouton qui ouvre
@@ -671,11 +735,48 @@ export const fr = {
        des sorties — simplement rien qui soit sorti pour de bon. */
     noBreakdown: 'Aucune charge ni crédit ce mois-ci.',
     /* La tuile ne s'arrête pas au mois affiché : elle lit les règles au-delà
-       des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout. */
+       des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout —
+       et c'est justement pour ça qu'il n'a pas la même cause selon qu'une règle
+       existe ou non.
+
+       Sans aucune récurrence, ce vide est le vide d'un document qui n'a pas
+       démarré, et le geste qui l'amorce n'est pas une dépense : c'est la même
+       distinction que fait déjà le mois vide (`month.emptyStart`). Avec des
+       règles en place, il n'y a plus rien à proposer — les échéances viendront
+       toutes seules —, et le constat suffit. Un état vide est une invitation
+       quand il y a quelque chose à inviter, pas une invitation de principe. */
     noUpcoming: 'Aucune échéance à venir.',
+    noUpcomingStart:
+      'Aucune échéance à venir. Écris une fois ce qui revient chaque mois, et les prochaines s’inscriront ici toutes seules.',
     progress: 'Jour %s sur %s',
     monthAhead: 'Mois à venir',
     monthDone: 'Mois terminé',
+
+    /* Le couple prévu / confirmé, lu au niveau du mois.
+       C'est le concept central du produit — une opération se prévoit, puis se
+       confirme —, et il ne se lisait nulle part comme un avancement : chaque
+       ligne portait le sien, le mois ne portait pas le compte. Savoir qu'il
+       reste quatre échéances demandait de descendre jusqu'à la liste et de
+       lire son titre.
+
+       **Des opérations, et non des échéances.** Le compte additionne les
+       lignes ponctuelles — des faits, jamais prévues — aux échéances de
+       récurrence, qui le sont. « 12 / 16 échéances » aurait rangé sous ce mot
+       des lignes qui n'en sont pas, alors que le cahier §4.3 le réserve à ce
+       qu'une règle produit.
+
+       **Un ratio en toutes lettres, pas une jauge.** Une tuile plate n'offre
+       que 56px utiles, où un anneau n'entre pas ; et « 12 / 16 » se lit là où
+       un arc demande d'être interprété. C'est aussi ce que demande le DS §8 :
+       la lecture ne repose ni sur une forme ni sur une couleur. */
+    monthStatus: 'Suivi du mois',
+    monthStatusConfirmed: 'opérations confirmées',
+    /* Le nom accessible dit l'état, puis le geste — dans cet ordre, parce que
+       le geste ne se devine pas d'un chiffre. Sans échéance prévue il n'y a
+       plus de geste, et la seconde phrase tombe avec lui. */
+    srMonthStatus: '%s opérations confirmées sur %s.',
+    srMonthStatusGo: '%s opérations confirmées sur %s. Voir ce qui reste à confirmer.',
+
     capacity: 'Capacité d’épargne',
     capacityHint: 'ressources − charges − crédits',
     /* La seconde lecture porte le reste à placer, et non le taux d'épargne : le
@@ -1640,6 +1741,14 @@ export const fr = {
        qu'une moitié se paie un jour. */
     backup:
       'C’est aussi la contrepartie : vider ce navigateur les efface. Exporte un fichier de temps en temps, depuis les réglages.',
+    /* La même contrepartie, quand ce navigateur a déjà répondu qu'il ne
+       s'engageait pas. Elle ne remplace la phrase ordinaire que dans ce cas-là
+       — pas sur un simple « on ne sait pas », pas avant d'avoir posé la
+       question : annoncer une conservation fragile à tout le monde ferait de la
+       phrase honnête un avertissement de plus qu'on n'écoute pas. Et elle ne
+       bloque rien : c'est une ligne de texte sous deux boutons. */
+    backupFragile:
+      'Et ce navigateur ne garantit pas de les conserver. Avant de saisir beaucoup de choses, prends l’habitude d’exporter un fichier : c’est la seule copie qui ne dépend pas de lui.',
 
     /* Seconde étape, facultative. Le cahier §4.1 refuse le questionnaire de
        configuration, et il a raison — mais « ne rien exiger » et « ne rien

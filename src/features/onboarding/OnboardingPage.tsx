@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { currentYm } from '@/domain/date'
 import { fr } from '@/i18n/fr'
+import { isKnownFragile, useStorageHealth } from '@/persistence/health'
 import { addMember, addRecurrence, removeMember, renameMember } from '@/store/actions'
 import { useCategoryMap, useMembers } from '@/store/selectors'
 import { useStore } from '@/store/store'
@@ -47,6 +48,7 @@ export function OnboardingPage() {
   const categories = useCategoryMap()
   const finishOnboarding = useStore((s) => s.finishOnboarding)
   const navigate = useNavigate()
+  const fragile = useStorageHealth(isKnownFragile)
 
   /* Les montants de la seconde étape vivent ici plutôt que dans l'étape :
      l'aperçu posé à côté les lit à chaque frappe, et deux états qui décrivent
@@ -152,8 +154,14 @@ export function OnboardingPage() {
         {/* La contrepartie du local-first, à la dernière étape : elle ne se
             découvrait qu'au bout de trente jours, par un bandeau. Ici parce que
             c'est le moment où la promesse de la ligne au-dessus est faite, et
-            là seulement pour ne pas la répéter trois fois. */}
-        {step === LAST_STEP && <p className="t-label">{fr.onboarding.backup}</p>}
+            là seulement pour ne pas la répéter trois fois.
+            Elle se durcit d'un cran là où le navigateur a déjà dit qu'il ne
+            s'engageait pas — et là seulement : voir `isKnownFragile`. */}
+        {step === LAST_STEP && (
+          <p className="t-label">
+            {fragile ? fr.onboarding.backupFragile : fr.onboarding.backup}
+          </p>
+        )}
       </div>
     </div>
   )

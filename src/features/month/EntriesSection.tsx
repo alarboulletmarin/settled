@@ -209,7 +209,7 @@ export function EntriesSection({
   }
 
   return (
-    <div ref={root} className="scroll-mt-4">
+    <div ref={root} className="reveal-target">
       <Tile className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Eyebrow icon={EntriesIcon}>{fr.month.entries}</Eyebrow>

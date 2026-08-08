@@ -23,6 +23,15 @@ doit faire, et le [design system](DESIGN-SYSTEM.md) de quoi elle a l'air.
   IndexedDB : on lui donne une fonction d'écriture, il décide quand l'appeler et
   rapporte ce qu'elle a fait.
 - `src/persistence/tabs.ts` — ce que les onglets se disent, et rien d'autre.
+- `src/persistence/health.ts` — la santé du stockage de **cet appareil** : la
+  durabilité que le navigateur accorde, le fait qu'on la lui ait demandée, la
+  date de la dernière écriture qui a abouti et de la dernière qui a raté. Rien
+  n'en voyage dans un export, pour la raison qui vaut déjà pour la révision et
+  la date de dernier export. C'est aussi le seul module qui appelle
+  `navigator.storage.persist()`.
+- `src/app/noticeLevel.ts` — la priorité des messages de sécurité des données,
+  en une fonction pure. Le rendu est dans `src/app/DataNotice.tsx`, qui est le
+  seul bandeau de la coquille.
 - `src/i18n/fr.ts` — toutes les chaînes. Aucun texte en dur dans un composant.
   Trois exceptions, et la même raison : `src/i18n/legal.ts`,
   `src/i18n/landing.ts` et `src/i18n/history.ts`. Ce fichier-ci est importé par
@@ -135,7 +144,44 @@ L'erreur porte un `kind`, `read` ou `write`, et c'est lui qui permet à une
 écriture réussie d'effacer le bandeau d'écriture sans effacer un échec de
 lecture : rien de ce qu'on écrit ne rend lisible ce qui ne l'était pas. Les deux
 n'ont d'ailleurs ni la même issue ni le même écran — l'un se règle par un export
-depuis la coquille, l'autre par un import depuis l'arrivée.
+depuis la coquille, l'autre par un import depuis l'arrivée. Le bandeau montre
+quand même les deux : un échec de lecture n'ouvre l'écran d'arrivée que s'il
+tombe à l'hydratation, et une base `blocked` à la réouverture — après qu'un
+`terminated` a fermé la connexion — arrive alors que la coquille est déjà montée.
+Ce cas-là ne disait rien du tout, pour une conséquence pratique pourtant
+identique : plus rien ne s'enregistre.
+
+**On raisonne en conservation, jamais en « navigation privée ».** Aucun
+navigateur n'expose ce mode, les détours qu'on lit ailleurs se démentent d'une
+version à l'autre, et une app qui affirme « mode privé détecté » a tort tôt ou
+tard devant quelqu'un qui ne peut pas la contredire. Ce que l'app sait tient en
+trois faits observables : ce que `persisted()` répond, si on le lui a demandé,
+et si les écritures passent. `persisted()` a donc **trois** valeurs et non deux
+— un navigateur sans l'API n'a pas refusé, il n'a pas répondu, et l'app écrivait
+jusqu'ici « rien n'est promis » sur la foi de ce silence. Un `true` n'est pas non
+plus une garantie : il engage le navigateur contre l'éviction sous pression
+disque, pas contre quelqu'un qui vide ses données de site.
+
+**Trois niveaux, et un seul bandeau.** L'échec confirmé, la conservation non
+garantie et l'export ancien disent au fond la même chose — garde une copie —
+avec trois gravités. Ils décidaient chacun de leur côté de s'afficher, si bien
+que les deux premiers pouvaient s'empiler ; ils passent maintenant par
+`dataNoticeLevel`, qui n'en laisse parler qu'un. L'ordre découle de ce que chacun
+coûte s'il est ignoré : un échec se paie tout de suite, une conservation fragile
+peut-être un jour, un export ancien le jour où l'appareil tombe. Les deux
+premiers occupent d'ailleurs deux registres visuels différents — le rouge du DS
+est réservé à ce qui a échoué, et un stockage non durable n'a rien raté.
+
+**La demande de durabilité est centralisée, et le résultat est retenu.** Trois
+chemins appelaient `persist()` chacun de leur côté, aucun n'en gardait la
+réponse : la vérité n'existait que dans l'état local de l'écran des réglages,
+donc nulle part pour qui voulait en faire quelque chose. Elle vit dans
+`persistence/health.ts`, relue à l'hydratation — une lecture, jamais une demande,
+sans quoi Firefox ouvrirait son invite devant quelqu'un qui vient d'ouvrir
+l'app — et demandée aux deux moments du cahier §5 : création du document et
+import. Le fait d'avoir demandé est gardé sur l'appareil, parce que « on n'a
+jamais demandé » et « on a demandé, il a refusé » ne se disent pas pareil : seul
+le second autorise à écrire « ce navigateur ne garantit pas ».
 
 **Un document illisible n'est pas un document absent.** `hydrate` bascule sur
 l'onboarding dans les deux cas, mais la première écriture qui suit écraserait
@@ -553,9 +599,21 @@ latérale au-dessus. La grille bento du DS §5, elle, a **trois paliers** :
 
 | Bande | Colonnes | Rangée | Navigation |
 |---|---|---|---|
-| < 768px | 2 | 88px | barre d'onglets + bouton flottant |
+| < 768px | 2 | 88px | barre de 4 onglets + écran « Plus » + bouton flottant |
 | 768 – 1024px | 4 | 96px | idem |
-| ≥ 1024px | 6 | 108px | colonne latérale |
+| ≥ 1024px | 6 | 108px | colonne latérale, en trois groupes |
+
+La barre porte **quatre** onglets — Le mois, Calendrier, Historique, Plus — et non
+plus cinq. Ce n'est pas un choix de largeur mais d'architecture : cinq était le
+plafond à 320px, et ce plafond décidait qu'un écran de plus n'aurait aucune
+adresse. Quatre écrans réels vivaient dans ce cas. Le quatrième onglet range ce
+qui déborde ; la colonne latérale, qui a la place, déplie les mêmes groupes
+(`SIDEBAR_GROUPS` et `MORE_SECTIONS`, `app/routes.ts`). Voir le DS §6.
+
+L'écran du mois porte **deux** grilles bento et non une, séparées par la section
+« À confirmer » : la grille sait ranger des tuiles côte à côte, elle ne sait pas
+dire que l'une répond à une question qu'on se pose avant l'autre (DS §5,
+cahier §4.6).
 
 Les six colonnes n'arrivent qu'à **1024px, et non 768**. La colonne latérale
 consomme 224px : les déclencher en même temps qu'elle ne laisse que ~480px de

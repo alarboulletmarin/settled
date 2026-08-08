@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { entryPath } from '@/app/routes'
 import { type Money, parseAmount, toAmountInput } from '@/domain/money'
@@ -6,6 +6,7 @@ import type { Entry } from '@/domain/types'
 import { fr } from '@/i18n/fr'
 import { formatDateCompact, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
+import { reveal } from '@/lib/reveal'
 import { confirmEntries, confirmEntry, unconfirmEntries, undoable } from '@/store/actions'
 import {
   useCategoryMap,
@@ -212,14 +213,31 @@ const WORTH_HIDING = 2
  * recherche de l'historique, avec ses mots. La section garde sa place dans la
  * page plutôt que de partir sur un écran à elle — une tâche qu'il faut aller
  * chercher est une tâche qu'on oublie, et le routage n'y gagnerait rien.
+ *
+ * **Elle est le deuxième étage de l'écran**, entre la situation du mois et les
+ * lectures analytiques. Elle en était le sixième, après neuf tuiles et deux
+ * sections : la seule chose qui demande un geste arrivait deux écrans plus bas
+ * que les chiffres qui n'en demandent aucun.
+ *
+ * `focus` compte les demandes venues de la tuile de suivi, exactement comme
+ * `EntriesSection` compte celles des deux tuiles de flux — un compteur et non
+ * un drapeau, sinon redemander la section après avoir fait défiler la page ne
+ * changerait aucun état, donc ne défilerait pas.
  */
-export function PendingSection() {
+export function PendingSection({ focus = 0 }: { focus?: number }) {
   const { fixed, variable } = useMonthPending()
   const categories = useCategoryMap()
   const navigate = useNavigate()
   const unconfirmable = useMonthUnconfirmable()
   const [undoing, setUndoing] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+
+  // Une demande venue de la tuile de suivi : la section vient sous les yeux.
+  useEffect(() => {
+    if (focus === 0) return
+    reveal(root.current)
+  }, [focus])
 
   /* Se referme au changement de mois, et à celui-là seulement : la liste
      dépliée d'août n'a pas été demandée pour septembre. Pas sur `all`, qui
@@ -274,20 +292,26 @@ export function PendingSection() {
   if (all.length === 0) {
     if (unconfirmable.length === 0) return null
     return (
-      <Tile className="flex flex-col gap-3">
-        <Eyebrow icon={ToConfirmIcon}>{fr.month.toConfirm}</Eyebrow>
-        <p className="t-label">{fr.month.done}</p>
-        <Button
-          variant="ghost"
-          className="self-start"
-          onClick={() => {
-            setUndoing(true)
-          }}
-        >
-          {fr.month.unconfirmAll}
-        </Button>
-        {undo}
-      </Tile>
+      /* La cible du défilement est le cadre et non la tuile : `Tile` ne prend
+         pas de `ref`, et lui en poser une pour un seul appelant élargirait son
+         contrat. `reveal-target` dégage la section du bandeau collant — sans
+         quoi on atterrissait après le titre et après « Confirmer le mois ». */
+      <div ref={root} className="reveal-target">
+        <Tile className="flex flex-col gap-3">
+          <Eyebrow icon={ToConfirmIcon}>{fr.month.toConfirm}</Eyebrow>
+          <p className="t-label">{fr.month.done}</p>
+          <Button
+            variant="ghost"
+            className="self-start"
+            onClick={() => {
+              setUndoing(true)
+            }}
+          >
+            {fr.month.unconfirmAll}
+          </Button>
+          {undo}
+        </Tile>
+      </div>
     )
   }
 
@@ -304,78 +328,80 @@ export function PendingSection() {
   }
 
   return (
-    <Tile className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Eyebrow icon={ToConfirmIcon}>
-          {tpl(`${fr.month.toConfirm} · %s`, all.length)}
-        </Eyebrow>
-        {fixed.length > 0 && <Button onClick={confirmAll}>{fr.month.confirmAll}</Button>}
-      </div>
+    <div ref={root} className="reveal-target">
+      <Tile className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Eyebrow icon={ToConfirmIcon}>
+            {tpl(`${fr.month.toConfirm} · %s`, all.length)}
+          </Eyebrow>
+          {fixed.length > 0 && <Button onClick={confirmAll}>{fr.month.confirmAll}</Button>}
+        </div>
 
-      {/* Dit ce que « Confirmer le mois » laisse derrière lui, plutôt que de
-          laisser découvrir que des lignes restent après l'avoir actionné. */}
-      {fixed.length > 0 && variable.length > 0 && (
-        <p className="t-label">{fr.month.confirmAllHint}</p>
-      )}
-
-      <ul className="flex flex-col gap-1">
-        {shown.map((entry) =>
-          toFill.has(entry.id) ? (
-            <VariableRow
-              key={entry.id}
-              entry={entry}
-              color={colorOf(entry.categoryId)}
-              onOpen={() => {
-                open(entry)
-              }}
-            />
-          ) : (
-            <FixedRow
-              key={entry.id}
-              entry={entry}
-              color={colorOf(entry.categoryId)}
-              onOpen={() => {
-                open(entry)
-              }}
-            />
-          ),
+        {/* Dit ce que « Confirmer le mois » laisse derrière lui, plutôt que de
+            laisser découvrir que des lignes restent après l'avoir actionné. */}
+        {fixed.length > 0 && variable.length > 0 && (
+          <p className="t-label">{fr.month.confirmAllHint}</p>
         )}
-      </ul>
 
-      {/* Une coupe annoncée, et qui se lève : la même que celle des résultats
-          de recherche de l'historique, avec ses deux morceaux — ce qui reste
-          se compte, et un bouton le montre. Sans le compte, une liste tronquée
-          se lit comme une liste complète et l'on croit avoir tout confirmé. */}
-      {cut && (
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="t-label">{tpl(fr.month.pendingMore, hidden)}</p>
+        <ul className="flex flex-col gap-1">
+          {shown.map((entry) =>
+            toFill.has(entry.id) ? (
+              <VariableRow
+                key={entry.id}
+                entry={entry}
+                color={colorOf(entry.categoryId)}
+                onOpen={() => {
+                  open(entry)
+                }}
+              />
+            ) : (
+              <FixedRow
+                key={entry.id}
+                entry={entry}
+                color={colorOf(entry.categoryId)}
+                onOpen={() => {
+                  open(entry)
+                }}
+              />
+            ),
+          )}
+        </ul>
+
+        {/* Une coupe annoncée, et qui se lève : la même que celle des résultats
+            de recherche de l'historique, avec ses deux morceaux — ce qui reste
+            se compte, et un bouton le montre. Sans le compte, une liste tronquée
+            se lit comme une liste complète et l'on croit avoir tout confirmé. */}
+        {cut && (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="t-label">{tpl(fr.month.pendingMore, hidden)}</p>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setShowAll(true)
+              }}
+            >
+              {fr.month.pendingShowAll}
+            </Button>
+          </div>
+        )}
+
+        {/* Le retour en arrière reste atteignable tant qu'il reste quelque chose
+            à ramener, y compris quand le mois n'est confirmé qu'à moitié. */}
+        {unconfirmable.length > 0 && (
           <Button
-            size="sm"
             variant="ghost"
+            size="sm"
+            className="self-start"
             onClick={() => {
-              setShowAll(true)
+              setUndoing(true)
             }}
           >
-            {fr.month.pendingShowAll}
+            {fr.month.unconfirmAll}
           </Button>
-        </div>
-      )}
-
-      {/* Le retour en arrière reste atteignable tant qu'il reste quelque chose
-          à ramener, y compris quand le mois n'est confirmé qu'à moitié. */}
-      {unconfirmable.length > 0 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="self-start"
-          onClick={() => {
-            setUndoing(true)
-          }}
-        >
-          {fr.month.unconfirmAll}
-        </Button>
-      )}
-      {undo}
-    </Tile>
+        )}
+        {undo}
+      </Tile>
+    </div>
   )
 }

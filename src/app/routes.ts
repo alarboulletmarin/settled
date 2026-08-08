@@ -1,11 +1,16 @@
 import { fr } from '@/i18n/fr'
 import {
+  CreditsIcon,
   HistoryIcon,
   type IconComponent,
+  InfoIcon,
   NavCalendar,
   NavMonth,
+  NavMore,
   NavSettings,
   RecurrencesIcon,
+  SavingsIcon,
+  SplitIcon,
 } from '@/ui/Icons'
 
 export type RouteDef = { path: string; label: string; icon: IconComponent }
@@ -14,6 +19,9 @@ export type RouteDef = { path: string; label: string; icon: IconComponent }
    l'évaluation du module. */
 export const RECURRENCES_PATH = '/recurrences'
 export const SETTINGS_PATH = '/reglages'
+/* Le quatrième onglet : tout ce que la barre ne peut pas porter. Voir
+   `MORE_SECTIONS` plus bas, qui dit ce qu'on y trouve et pourquoi. */
+export const MORE_PATH = '/plus'
 /* Segment fixe : React Router le classe avant `/recurrences/:id`, une
    récurrence ne peut donc pas éclipser le formulaire de création. */
 export const RECURRENCE_NEW_PATH = `${RECURRENCES_PATH}/nouveau`
@@ -21,16 +29,34 @@ export const recurrencePath = (id: string): string => `${RECURRENCES_PATH}/${id}
 export const recurrenceEditPath = (id: string): string => `${RECURRENCES_PATH}/${id}/modifier`
 
 /**
- * L'ordre fait foi : il pilote la barre d'onglets comme la colonne latérale.
+ * Les quatre onglets de la barre du bas, dans l'ordre.
+ *
+ * **Quatre et non cinq.** La barre en portait cinq — le mois, le calendrier,
+ * les récurrences, l'historique, les réglages —, et cette liste-là n'était pas
+ * une hiérarchie : elle mettait « Récurrences », qu'on écrit une fois, au même
+ * rang que « Le mois », qu'on ouvre tous les jours, et surtout elle décidait
+ * *par sa longueur* que quatre écrans réels de l'app — l'épargne, la
+ * répartition, les crédits, les avances — n'auraient aucune porte de
+ * navigation. On n'y arrivait que par une tuile du mois, laquelle s'efface
+ * précisément quand il n'y a rien à y montrer : un écran atteignable seulement
+ * quand on n'en a pas besoin.
+ *
+ * Restent donc les trois lectures qu'on ouvre pour regarder — ce mois, les
+ * jours, les mois d'avant — et une quatrième porte, « Plus », qui range le
+ * reste au lieu de le laisser sans adresse (`MORE_SECTIONS`).
+ *
+ * Le prix est assumé : les récurrences et les réglages passent de un à deux
+ * appuis. Les premières restent à un appui depuis l'état vide du mois, qui est
+ * l'endroit où l'on va justement en poser une.
+ *
  * Chaque destination porte son glyphe ici, en un seul endroit, pour que les
  * deux navigations ne puissent pas diverger.
  */
 export const NAV_ROUTES: RouteDef[] = [
   { path: '/', label: fr.nav.month, icon: NavMonth },
   { path: '/calendrier', label: fr.nav.calendar, icon: NavCalendar },
-  { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: RecurrencesIcon },
   { path: '/historique', label: fr.nav.history, icon: HistoryIcon },
-  { path: SETTINGS_PATH, label: fr.nav.settings, icon: NavSettings },
+  { path: MORE_PATH, label: fr.nav.more, icon: NavMore },
 ]
 
 export const STYLEGUIDE_ROUTE = { path: '/styleguide', label: fr.nav.styleguide }
@@ -103,19 +129,20 @@ export function entryNewPath(
 
 export const CREDITS_PATH = '/credits'
 
-/* Hors navigation, pour la même raison que les crédits : six onglets ne
-   tiennent pas à 320px. On y accède par la tuile Répartition de l'écran du
-   mois, qui s'efface tant qu'il n'y a rien à répartir. */
+/* La tuile Répartition de l'écran du mois y mène — mais elle s'efface tant
+   qu'il n'y a rien à répartir, et c'est exactement le moment où l'on cherche
+   comment répartir. D'où sa rangée dans « Gérer » (`MANAGE_ROUTES`). */
 export const SPLIT_PATH = '/repartition'
 
-/* Même règle, même porte : la tuile Capacité d'épargne du mois y mène, et elle,
-   ne s'efface jamais — un mois sans versement est justement celui où la
-   question « où je place » se pose.
+/* Même porte, même raison : la tuile Capacité d'épargne du mois y mène, et
+   elle, ne s'efface jamais — un mois sans versement est justement celui où la
+   question « où je place » se pose. Sa rangée dans « Gérer » (`MANAGE_ROUTES`)
+   lui donne l'adresse que la tuile seule ne donnait pas.
 
-   L'écran porte désormais deux lectures qui ne se remplacent pas : le **stock**
-   — ce que valent les supports, et à qui ils sont — et le **flux** du mois, ce
-   qu'on y a versé ou repris. Les fiches de support s'ouvrent sous lui : un
-   support est un objet de l'épargne, pas un réglage. */
+   L'écran porte deux lectures qui ne se remplacent pas : le **stock** — ce que
+   valent les supports, et à qui ils sont — et le **flux** du mois, ce qu'on y a
+   versé ou repris. Les fiches de support s'ouvrent sous lui : un support est un
+   objet de l'épargne, pas un réglage. */
 export const SAVINGS_PATH = '/epargne'
 /* Segment fixe avant `:id`, comme partout ailleurs : React Router le classe
    d'abord, un support ne peut donc pas éclipser le formulaire de création. */
@@ -142,6 +169,104 @@ export const valuationEditPath = (supportId: string, valuationId: string): strin
    classe de toute façon avant un paramètre — il n'y en a pas ici. */
 export const ADVANCES_PATH = '/avances'
 export const ADVANCE_NEW_PATH = `${ADVANCES_PATH}/nouveau`
+
+/* --- Le rangement de la navigation ---------------------------------------*/
+
+/**
+ * Ce qu'on tient, par opposition à ce qu'on regarde.
+ *
+ * Les quatre écrans du foyer qu'on ouvre quand on les cherche : la règle qui
+ * écrit les mois, le support où l'on place, le partage du pot, ce qu'on doit
+ * encore. Trois d'entre eux n'avaient aucune adresse dans la navigation, et
+ * n'existaient qu'au bout d'une tuile qui s'efface — voir `NAV_ROUTES`.
+ *
+ * **Les avances n'y sont pas**, et c'est délibéré : elles vivent sous les
+ * récurrences, dont leur mensualité est une, et la liste des récurrences porte
+ * leur rangée. Une seconde porte au même rang que les quatre autres défferait
+ * ce rangement pour ne rien raccourcir.
+ *
+ * Déclaré ici et non en tête du fichier : un `const` ne remonte pas, et cette
+ * table lit quatre chemins déclarés au-dessus.
+ */
+export const MANAGE_ROUTES: RouteDef[] = [
+  { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: RecurrencesIcon },
+  { path: SAVINGS_PATH, label: fr.nav.savings, icon: SavingsIcon },
+  { path: SPLIT_PATH, label: fr.nav.split, icon: SplitIcon },
+  { path: CREDITS_PATH, label: fr.nav.credits, icon: CreditsIcon },
+]
+
+const SETTINGS_ROUTE: RouteDef = {
+  path: SETTINGS_PATH,
+  label: fr.nav.settings,
+  icon: NavSettings,
+}
+
+export type NavGroup = { title?: string; routes: RouteDef[] }
+
+/**
+ * La colonne latérale, en trois groupes.
+ *
+ * Elle alignait cinq entrées à plat, ce qui donnait le même poids à « Le mois »
+ * et à « Réglages » — et laissait 224px de colonne à moitié vides pendant que
+ * quatre écrans n'y figuraient pas du tout. Le premier groupe est ce qu'on
+ * ouvre pour regarder, le deuxième ce qu'on tient, le troisième ce qu'on règle.
+ *
+ * **Seul celui du milieu porte un titre.** Le premier n'en a pas parce que la
+ * colonne doit s'ouvrir sur les destinations quotidiennes, pas sur un mot à
+ * lire avant elles ; le dernier n'en a pas parce qu'il ne contient qu'une
+ * destination, et qu'un titre « Réglages » posé au-dessus d'un lien « Réglages »
+ * est une étiquette qui ne sépare rien de ce qu'elle nomme. Un titre dit qu'on
+ * descend d'un cran ; sur un groupe d'un seul, il n'y a pas de cran.
+ *
+ * **Elle ne montre pas « Plus ».** Cet écran est le repli d'une barre de quatre
+ * onglets ; ici la colonne a la place de déplier ce qu'il contient, et un lien
+ * vers une page qui redirait la colonne serait un tour sur soi-même.
+ */
+export const SIDEBAR_GROUPS: NavGroup[] = [
+  { routes: NAV_ROUTES.filter((route) => route.path !== MORE_PATH) },
+  { title: fr.nav.manage, routes: MANAGE_ROUTES },
+  { routes: [SETTINGS_ROUTE] },
+]
+
+/**
+ * Ce que l'écran « Plus » range, et dans le même ordre que la colonne.
+ *
+ * Les deux navigations lisent les mêmes tables : ce qui est atteignable au
+ * doigt l'est à la souris, et l'inverse. C'est la règle que `NAV_ROUTES` posait
+ * déjà pour la barre et la colonne, étendue au cran du dessous.
+ *
+ * Le second groupe n'a pas de titre, pour la raison qui le lui retire dans la
+ * colonne — et « À propos » l'y rejoint, parce que sous 1024px c'est la seule
+ * porte vers cette page : la barre ne peut pas la porter, et la colonne, elle,
+ * a son propre lien en pied.
+ */
+export const MORE_SECTIONS: NavGroup[] = [
+  { title: fr.nav.manage, routes: MANAGE_ROUTES },
+  { routes: [SETTINGS_ROUTE, { path: ABOUT_PATH, label: fr.nav.about, icon: InfoIcon }] },
+]
+
+/* Ce que « Plus » recouvre. Sans cette liste, descendre dans l'une des sections
+   qu'il range éteignait les quatre onglets d'un coup, sans rien pour dire d'où
+   l'on venait — c'est le défaut que le cas particulier d'« à propos » corrigeait
+   déjà à la main pour l'onglet des réglages, et qui vaut désormais pour six
+   sections. `NavLink` apparie par préfixe, cette table dit lesquels. */
+const MORE_PREFIXES = [
+  MORE_PATH,
+  SETTINGS_PATH,
+  RECURRENCES_PATH,
+  SAVINGS_PATH,
+  SPLIT_PATH,
+  CREDITS_PATH,
+  ADVANCES_PATH,
+  ABOUT_PATH,
+]
+
+/** L'onglet « Plus » est-il celui de l'écran affiché ? */
+export function isInMoreSection(pathname: string): boolean {
+  return MORE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+}
 
 /* Les réglages ne sont plus un écran mais une section.
  *
