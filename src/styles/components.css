@@ -195,6 +195,33 @@
     display: none;
   }
 
+  /* Le geste d'une tuile à liste, étendu sur toute la tuile — DS §6.
+     Le lien est vide : le repère visible reste au coin, en `aria-hidden`. Il
+     n'a donc qu'une surface à couvrir, et il la couvre en entier.
+     Positionné, il passe devant le contenu en flux sans qu'aucun `z-index`
+     n'ait à le dire — c'est aussi pourquoi une tuile à lien étendu ne peut plus
+     rien contenir d'actionnable (voir `TileLink`). */
+  .tile-stretch {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* L'anneau de focus se dessine sur la tuile et non sur le lien.
+     Deux raisons, et chacune suffirait. Le cadre de la tuile porte
+     `overflow: hidden` — l'anneau du DS §8 déborde de 4px et s'y ferait rogner
+     sur les quatre côtés. Et il doit entourer *ce qu'on actionne*, qui est la
+     tuile entière : c'est déjà ce que fait une tuile-bouton, dont l'anneau
+     épouse le cadre. L'outline d'un élément n'est pas rognée par son propre
+     `overflow`, celle-ci s'affiche donc en entier. */
+  .tile:has(> .tile-stretch:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .tile-stretch:focus-visible {
+    outline: none;
+  }
+
   /* La rangée ne tient qu'une ligne : la lecture doit tenir à côté du chiffre. */
   @media (max-width: 1023.98px) {
     @container (min-width: 300px) {

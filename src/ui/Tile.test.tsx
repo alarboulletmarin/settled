@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { Tile } from './Tile'
@@ -37,7 +37,7 @@ describe('Tile', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
   })
 
-  it('nomme le lien du coin, qui se lit hors de la tuile', () => {
+  it('nomme son lien, qui se lit hors de la tuile', () => {
     show(
       <Tile label="Répartition" link={{ to: '/repartition', label: 'Voir le détail' }}>
         <p>Rien à cliquer ici</p>
@@ -48,6 +48,45 @@ describe('Tile', () => {
       'href',
       '/repartition',
     )
+  })
+
+  /* Le défaut que ce test existe pour tenir : la règle qui sort la tuile du
+     `<button>` règle un problème d'oreille, et en créait un de doigt — 44px à
+     viser dans le coin d'une tuile de 300px, quand la voisine de même taille
+     se touche n'importe où parce qu'elle, est un bouton. Le lien couvre donc
+     toute la tuile, et le coin ne garde que le repère. */
+  it('étend son lien sur toute la tuile, repère compris', () => {
+    show(
+      <Tile label="Répartition" link={{ to: '/repartition', label: 'Voir le détail' }}>
+        <ul>
+          <li>Camille 60 %</li>
+        </ul>
+      </Tile>,
+    )
+
+    const link = screen.getByRole('link', { name: 'Voir le détail' })
+    expect(link).toHaveClass('tile-stretch')
+    // Le repère n'est pas dedans : c'est un décor posé au coin, que le nom
+    // accessible du lien dit déjà.
+    expect(link).toBeEmptyDOMElement()
+  })
+
+  /* Ce qui ne doit pas revenir en le corrigeant : la liste se lit toujours
+     ligne à ligne, et la tuile reste une section — un lien qui aurait avalé
+     le contenu ferait exactement ce que le `<button>` faisait. */
+  it('garde ses lignes lisibles malgré le lien étendu', () => {
+    show(
+      <Tile label="Répartition" link={{ to: '/repartition', label: 'Voir le détail' }}>
+        <ul>
+          <li>Camille 60 %</li>
+          <li>Dominique 40 %</li>
+        </ul>
+      </Tile>,
+    )
+
+    const region = screen.getByRole('region', { name: 'Répartition' })
+    expect(within(region).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(region).getAllByRole('link')).toHaveLength(1)
   })
 
   it('reste un bouton quand toute la tuile est la cible', () => {
