@@ -10,7 +10,7 @@ import { Button } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
 import { Field, TextInput } from '@/ui/Field'
 import { PageTitle } from '@/ui/PageTitle'
-import { SettingsGroup, SettingsRow } from './SettingsRow'
+import { Row, RowGroup } from '@/ui/RowGroup'
 
 /** Le compte d'une famille : le chiffre à l'œil, la phrase entière à la voix. */
 function Count({ count }: { count: number }) {
@@ -111,9 +111,9 @@ export function CategoriesPage() {
         /* Sans étiquette pendant une recherche : ce qui s'y affiche n'est plus
            une liste de familles, et « FAMILLES » au-dessus d'une catégorie
            mentirait sur ce qu'on lit. */
-        <SettingsGroup {...(searching ? {} : { title: fr.settings.families })}>
+        <RowGroup {...(searching ? {} : { title: fr.settings.families })}>
           {families.map((group) => (
-            <SettingsRow
+            <Row
               key={group.family.id}
               label={group.family.label}
               trailing={<Count count={group.categories.length} />}
@@ -121,7 +121,7 @@ export function CategoriesPage() {
             />
           ))}
           {found.matches.map(({ category, family }) => (
-            <SettingsRow
+            <Row
               key={category.id}
               leading={<Dot color={category.color} outlined={category.archived} />}
               label={category.label}
@@ -132,7 +132,7 @@ export function CategoriesPage() {
               to={settingsFamilyPath(family.id)}
             />
           ))}
-        </SettingsGroup>
+        </RowGroup>
       )}
 
       {/* Le formulaire de création n'attend plus en bas de la liste : on le

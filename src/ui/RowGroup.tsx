@@ -1,29 +1,35 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/cn'
-import { Eyebrow } from '@/ui/Eyebrow'
-import { ChevronRight, type IconComponent } from '@/ui/Icons'
-import { Tile } from '@/ui/Tile'
+import { Eyebrow } from './Eyebrow'
+import { ChevronRight, type IconComponent } from './Icons'
+import { Tile } from './Tile'
 
 /**
- * Un groupe de réglages : une tuile, son étiquette, et des rangées.
+ * Un groupe de rangées : une tuile, son étiquette, et ce qu'elle contient.
  *
- * La page en comptait huit — une tuile par sujet, chacune avec son cadre, son
- * ombre et son eyebrow, qu'il s'agisse de choisir un thème ou de gérer
+ * Les réglages en comptaient huit — une tuile par sujet, chacune avec son cadre,
+ * son ombre et son eyebrow, qu'il s'agisse de choisir un thème ou de gérer
  * quarante-six catégories. Huit cadres identiques donnent le même poids à tout,
- * et c'est exactement ce qu'une page de réglages ne doit pas faire.
+ * et c'est exactement ce qu'une page ne doit pas faire.
  *
  * La tuile redevient donc ce que le DS §6 en dit — un **groupe logique** — et la
  * hiérarchie passe à l'intérieur : l'étiquette nomme le groupe, les rangées
- * portent les réglages, un filet les sépare. Rien de nouveau dans le design
+ * portent le contenu, un filet les sépare. Rien de nouveau dans le design
  * system : `Tile`, `Eyebrow`, et la même règle de filet que les sections de
  * `DataSection` posaient déjà à la main.
+ *
+ * **Elle vit dans `ui/` et non plus dans les réglages**, où elle est née : elle
+ * n'a jamais rien su d'un réglage, et le bas de l'écran des récurrences pose
+ * exactement la même question — deux portes voisines, dans un seul cadre, plutôt
+ * qu'une tuile chacune. Une primitive nommée d'après son premier appelant est
+ * une primitive qu'on recopie au deuxième.
  *
  * Le titre est facultatif : une liste de familles ou de résultats de recherche
  * est un groupe sans nom — la page en porte déjà un, et le répéter au-dessus de
  * la première ligne ne dirait rien de plus.
  */
-export function SettingsGroup({
+export function RowGroup({
   title,
   icon,
   children,
@@ -61,7 +67,7 @@ const ROW = '-mx-2 flex min-h-14 items-center gap-3 rounded-inner px-2 py-2 text
 const ROW_ACTION =
   'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2 active:bg-surface-2'
 
-export type SettingsRowProps = {
+export type RowProps = {
   label: string
   /**
    * L'identifiant du contrôle que l'étiquette nomme. Renseigné, elle devient un
@@ -87,7 +93,7 @@ export type SettingsRowProps = {
 }
 
 /**
- * Une rangée de réglage : ce qu'on règle, sa valeur, et où l'on va.
+ * Une rangée : ce dont il s'agit, sa valeur, et où l'on va.
  *
  * Un lien quand elle mène ailleurs, un bouton quand elle agit sur place, un
  * simple bloc quand elle ne fait que porter un contrôle — jamais un `div`
@@ -97,7 +103,7 @@ export type SettingsRowProps = {
  * Le chevron n'apparaît que là où le geste existe, exactement comme le repère
  * d'une tuile (`Tile`) : une rangée sans chevron est une rangée qu'on lit.
  */
-export function SettingsRow({
+export function Row({
   label,
   labelFor,
   description,
@@ -106,7 +112,7 @@ export function SettingsRow({
   control,
   to,
   onClick,
-}: SettingsRowProps) {
+}: RowProps) {
   const heading = (
     <span className="flex min-w-0 flex-1 flex-col">
       {labelFor === undefined ? (

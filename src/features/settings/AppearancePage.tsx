@@ -7,7 +7,7 @@ import { PageTitle } from '@/ui/PageTitle'
 import { Segmented } from '@/ui/Segmented'
 import { Tile } from '@/ui/Tile'
 import { PaletteChoice } from './PaletteChoice'
-import { SettingsGroup, SettingsRow } from './SettingsRow'
+import { Row, RowGroup } from '@/ui/RowGroup'
 
 const THEME_OPTIONS = [
   { value: 'light' as const, label: fr.theme.light },
@@ -48,8 +48,8 @@ export function AppearancePage() {
         }}
       />
 
-      <SettingsGroup title={fr.theme.label}>
-        <SettingsRow
+      <RowGroup title={fr.theme.label}>
+        <Row
           label={fr.theme.label}
           control={
             <Segmented
@@ -61,7 +61,7 @@ export function AppearancePage() {
             />
           }
         />
-      </SettingsGroup>
+      </RowGroup>
 
       {/* La phrase est ici et non sur la page d'entrée : elle explique comment
           les deux réglages se combinent, ce qui ne se pose comme question qu'une

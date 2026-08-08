@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { RECURRENCES_PATH } from '@/app/routes'
+import { ADVANCES_PATH } from '@/app/routes'
 import { monthlyInstalment, monthsCovered } from '@/domain/advance'
 import { type ISODate, type YearMonth, currentYm, today, ymOf } from '@/domain/date'
 import { parseAmount } from '@/domain/money'
@@ -113,7 +113,7 @@ export function AdvanceFormPage() {
   }
 
   const back = (): void => {
-    if (location.key === 'default') void navigate(RECURRENCES_PATH)
+    if (location.key === 'default') void navigate(ADVANCES_PATH)
     else void navigate(-1)
   }
 
@@ -139,7 +139,7 @@ export function AdvanceFormPage() {
       ...(draft.shared ? { shared: true } : {}),
     })
     toast(fr.advances.added)
-    void navigate(RECURRENCES_PATH)
+    void navigate(ADVANCES_PATH)
   }
 
   return (

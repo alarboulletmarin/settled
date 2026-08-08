@@ -9,23 +9,52 @@ import { Dot } from '@/ui/Dot'
 import { Warning } from '@/ui/Icons'
 import { useCurrency } from '@/ui/currency'
 
-function meta(row: Row): string {
+/**
+ * La seconde ligne : quand ça tombe, et — quand la liste ne le dit pas déjà par
+ * son axe — à qui c'est.
+ *
+ * Les deux se joignent plutôt que de se chasser, comme sur la liste du mois :
+ * « 12 janv. · dans 3 jours · Alix » répond aux trois questions sur une ligne
+ * qui n'en a qu'une à donner. Un prénom y tient ; c'est la raison pour laquelle
+ * l'appelant n'y met que ça (voir `whoOf`).
+ */
+function meta(row: Row, who: string | undefined): string {
   if (row.stopped) return fr.recurrences.stoppedBadge
-  if (row.next === null) return fr.recurrences.noNextDue
-  return `${formatDayMonthShort(row.next)} · ${formatRelativeDays(diffDays(today(), row.next))}`
+  const when =
+    row.next === null
+      ? fr.recurrences.noNextDue
+      : `${formatDayMonthShort(row.next)} · ${formatRelativeDays(diffDays(today(), row.next))}`
+  return who === undefined ? when : `${when} · ${who}`
+}
+
+/**
+ * Le coût annuel n'est une lecture que là où il en est une.
+ *
+ * Sur une mensuelle, il vaut douze fois le chiffre juste au-dessus : il
+ * n'apprend rien et fait le quatrième nombre d'une ligne qui en portait déjà
+ * trop. Sur une hebdomadaire, une trimestrielle ou une annuelle, le mensuel est
+ * un amortissement — un chiffre qu'on n'a jamais payé tel quel — et l'annuel est
+ * alors la somme réelle. Il reste sur la fiche dans tous les cas.
+ */
+function showsAnnual(row: Row): boolean {
+  const { unit, every } = row.recurrence.period
+  return !(unit === 'month' && every === 1)
 }
 
 /**
  * Une ligne de récurrence : prochaine échéance à gauche, coût mensuel amorti à
- * droite, coût annuel en seconde lecture. Un changement de prix se signale ici.
+ * droite. Un changement de prix se signale ici.
  */
 export function RecurrenceRow({
   row,
   color,
+  who,
   onOpen,
 }: {
   row: Row
   color: string
+  /** À qui elle est, quand la liste ne le dit pas déjà par son axe. */
+  who?: string
   onOpen: () => void
 }) {
   const currency = useCurrency()
@@ -41,18 +70,19 @@ export function RecurrenceRow({
       className={cn(
         /* Quatre chiffres par ligne — le mensuel, l'annuel, la date, le délai —
            et deux lignes de texte qui se touchaient : la liste se lisait comme
-           un bloc. Rien n'en part, chacun sert ; c'est l'espace qui manquait.
+           un bloc. L'annuel n'y est plus quand il ne dit rien (voir
+           `showsAnnual`) ; le reste sert, et c'est l'espace qui lui manquait.
            Le cadre passe donc de 10 à 12px, et les deux niveaux de chaque
            colonne se décollent l'un de l'autre. */
         'flex w-full items-center gap-3 rounded-inner px-3 py-3 text-left',
-        'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2',
+        'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2 active:bg-surface-2',
       )}
     >
       <Dot color={color} outlined={stopped} />
 
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className={cn('t-body truncate', stopped && 'text-muted')}>{recurrence.label}</span>
-        <span className="t-axis truncate">{meta(row)}</span>
+        <span className="t-axis truncate">{meta(row, who)}</span>
         {priceChange !== null && (
           /* L'alerte ne se déclenche que quand le changement coûte : une charge
              qui monte, un revenu qui baisse — jamais l'épargne, qui reste au
@@ -81,7 +111,7 @@ export function RecurrenceRow({
         ) : (
           <>
             <Amount value={monthly} direction={recurrence.direction} />
-            {annual !== null && (
+            {annual !== null && showsAnnual(row) && (
               <span className="t-axis tnum">
                 {tpl(fr.recurrences.perYear, formatMoney(annual, currency, false))}
               </span>
