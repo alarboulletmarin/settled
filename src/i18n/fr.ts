@@ -458,6 +458,20 @@ export const fr = {
     exported: 'Export téléchargé',
     lastExport: 'Dernier export : %s',
     neverExported: 'Jamais exporté.',
+
+    /* L'autre sortie du même fichier : la feuille de partage du système. Le
+       bouton n'existe que là où elle accepte un .json — un bouton qui ouvre
+       une feuille vide ne serait qu'une fausse promesse de plus sur le geste
+       qui sauvegarde. « Envoyer vers… », avec ses points de suspension : ils
+       disent qu'un choix vient après le clic, et que rien ne part avant. */
+    share: 'Envoyer vers…',
+    shareHint:
+      'Le même fichier, remis directement à un autre appareil — AirDrop, Partage à proximité, une messagerie. Il ne passe pas par le dossier des téléchargements.',
+    shared: 'Export envoyé',
+    /* Ce que le repli doit dire : ce qui n'a pas marché, et où le fichier a
+       atterri quand même. Sans la seconde phrase, on croit repartir les mains
+       vides et on recommence. */
+    shareFailed: 'Le partage n’a pas abouti. Le fichier a été téléchargé à la place.',
     import: 'Importer un fichier',
     importHint: 'Remplace intégralement les données actuelles.',
     importConfirm: 'Remplacer toutes les données par ce fichier ?',

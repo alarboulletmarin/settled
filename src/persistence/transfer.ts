@@ -8,6 +8,7 @@
 import { type ISODate, diffDays, today } from '@/domain/date'
 import type { Data } from '@/domain/types'
 import { download } from '@/lib/download'
+import { canShareFile, shareFile } from '@/lib/share'
 import { ImportError, type MigrationResult, migrateDocument } from './schema'
 
 export { ImportError }
@@ -47,6 +48,46 @@ export function toExportBlob(data: Data): Blob {
 export function downloadExport(data: Data, on: ISODate = today()): void {
   download(toExportBlob(data), exportFilename(on))
   markExported(on)
+}
+
+/** Ce qu'a donné l'envoi, vu de l'écran qui l'a demandé. */
+export type ShareOutcome = 'shared' | 'dismissed' | 'downloaded'
+
+/**
+ * Vrai si la feuille de partage de cet appareil accepte un export.
+ *
+ * Se demande au rendu : un bouton mort — présent, cliquable, sans effet — est
+ * pire que pas de bouton du tout sur le seul geste qui sauvegarde.
+ */
+export function canShareExport(): boolean {
+  return canShareFile(exportFilename(), EXPORT_MIME)
+}
+
+/**
+ * Le même fichier que `downloadExport`, remis à un autre appareil plutôt qu'au
+ * disque. **Réservé aux réglages** : les trois chemins de panique restent sur
+ * le téléchargement, où rien ne peut échouer ni demander un second geste.
+ *
+ * Le fichier se construit ici, de façon synchrone : `shareFile` doit rester le
+ * premier acte asynchrone de la chaîne, sans quoi l'activation du clic est
+ * perdue (voir `lib/share`).
+ *
+ * `markExported` exactement une fois, et seulement sur ce qui est parti : une
+ * feuille fermée ne marque rien — endormir le rappel des trente jours sur un
+ * export qui n'a pas eu lieu est la façon la plus discrète de perdre des
+ * données —, et un envoi replié sur le téléchargement ne marque pas deux fois.
+ */
+export function shareExport(data: Data, on: ISODate = today()): Promise<ShareOutcome> {
+  const blob = toExportBlob(data)
+  const filename = exportFilename(on)
+  return shareFile(new File([blob], filename, { type: EXPORT_MIME })).then((result) => {
+    if (result === 'dismissed') return 'dismissed'
+    // Le partage n'a pas abouti : il reste le disque, qui ne rate pas. Personne
+    // ne doit repartir de ce bouton les mains vides.
+    if (result === 'failed') download(blob, filename)
+    markExported(on)
+    return result === 'failed' ? 'downloaded' : 'shared'
+  })
 }
 
 /**

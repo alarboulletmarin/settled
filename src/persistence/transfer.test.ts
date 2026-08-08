@@ -1,15 +1,17 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { eur, makeCategory, makeData, makeEntry, makeRecurrence } from '@/domain/fixtures'
 import type { Data } from '@/domain/types'
 import { emptyData } from './defaults'
 import { CURRENT_SCHEMA_VERSION, ImportError } from './schema'
 import {
   EXPORT_REMINDER_DAYS,
+  LAST_EXPORT_KEY,
   exportFilename,
   markExported,
   parseImport,
   readLastExport,
   serializeData,
+  shareExport,
   shouldRemindExport,
   dismissReminder,
   readReminderDismissed,
@@ -230,6 +232,58 @@ describe('rappel d’export', () => {
     dismissReminder('2026-07-30')
     markExported('2026-07-31')
     expect(readReminderDismissed()).toBeNull()
+  })
+})
+
+describe('envoi de l’export vers un autre appareil', () => {
+  /** jsdom n'a pas de feuille de partage : on pose celle du test. */
+  function stubShare(value: unknown): void {
+    Object.defineProperty(navigator, 'share', { value, configurable: true, writable: true })
+  }
+
+  /** Le nombre de fois que la date d'export a été écrite. */
+  const marks = (calls: unknown[][]): number =>
+    calls.filter(([key]) => key === LAST_EXPORT_KEY).length
+
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, 'share')
+    vi.restoreAllMocks()
+  })
+
+  it('marque la date une fois l’envoi abouti', async () => {
+    stubShare(vi.fn().mockResolvedValue(undefined))
+    await expect(shareExport(emptyData(), '2026-07-30')).resolves.toBe('shared')
+    expect(readLastExport()).toBe('2026-07-30')
+  })
+
+  /* Le cas qui compte. Fermer la feuille n'envoie rien, et marquer quand même
+     endormirait le rappel des trente jours sur un export qui n'a pas eu lieu —
+     la façon la plus discrète de perdre des données. */
+  it('ne marque rien quand la feuille est fermée', async () => {
+    stubShare(vi.fn().mockRejectedValue(new DOMException('annulé', 'AbortError')))
+
+    await expect(shareExport(emptyData(), '2026-07-30')).resolves.toBe('dismissed')
+
+    expect(readLastExport()).toBeNull()
+  })
+
+  it('replie sur le téléchargement, et ne marque qu’une fois', async () => {
+    stubShare(vi.fn().mockRejectedValue(new DOMException('refusé', 'NotAllowedError')))
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+
+    await expect(shareExport(emptyData(), '2026-07-30')).resolves.toBe('downloaded')
+
+    // Personne ne repart de ce bouton les mains vides.
+    expect(click).toHaveBeenCalledTimes(1)
+    expect(readLastExport()).toBe('2026-07-30')
+    expect(marks(setItem.mock.calls)).toBe(1)
   })
 })
 

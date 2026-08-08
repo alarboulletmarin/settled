@@ -41,6 +41,7 @@ import { PiggyBank } from '@phosphor-icons/react/dist/csr/PiggyBank'
 import { Plus as PhPlus } from '@phosphor-icons/react/dist/csr/Plus'
 import { MagnifyingGlass } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 import { Receipt } from '@phosphor-icons/react/dist/csr/Receipt'
+import { ShareNetwork } from '@phosphor-icons/react/dist/csr/ShareNetwork'
 import { ShieldCheck } from '@phosphor-icons/react/dist/csr/ShieldCheck'
 import { SquaresFour } from '@phosphor-icons/react/dist/csr/SquaresFour'
 import { Tag } from '@phosphor-icons/react/dist/csr/Tag'
@@ -92,6 +93,10 @@ export const InfoIcon = adapt(Info)
    n'en veut pas. Poser les deux ferait deux marqueurs côte à côte, donc aucun
    (DS §9.1). */
 export const ExternalIcon = adapt(ArrowUpRight)
+/* Le glyphe du partage, sur le bouton qui ouvre la feuille du système. Il est
+   seul de sa rangée à en porter un, et c'est ce qui fait son travail : l'export
+   voisin est le geste courant, celui-ci est la sortie de côté. */
+export const ShareIcon = adapt(ShareNetwork)
 
 /* --- Repère — navigation --------------------------------------------------*/
 
