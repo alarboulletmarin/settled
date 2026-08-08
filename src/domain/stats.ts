@@ -13,6 +13,7 @@ import {
   daysInMonth,
   diffDays,
   endOfMonth,
+  isWithin,
   parseYm,
   startOfMonth,
   ymOf,
@@ -25,14 +26,33 @@ import { type CategoryKind, type Direction, type Entry, type Recurrence, directi
 /** Filtre par membre. `undefined` = tout le foyer. */
 export type MemberFilter = string | undefined
 
+/**
+ * Les échéances d'un intervalle, bornes incluses.
+ *
+ * Le mois n'est pas la seule fenêtre de lecture : celle du calendrier fait six
+ * semaines et déborde donc sur les deux mois voisins. Deux façons de filtrer
+ * finiraient par ne plus rendre les mêmes lignes — c'est l'argument qui a déjà
+ * fait poser `isCommon` en un seul endroit pour la répartition et pour la
+ * régularisation.
+ */
+export function entriesInRange(
+  entries: readonly Entry[],
+  from: ISODate,
+  to: ISODate,
+  memberId?: MemberFilter,
+): Entry[] {
+  return entries.filter(
+    (e) => isWithin(e.date, from, to) && (memberId === undefined || e.memberId === memberId),
+  )
+}
+
+/** Le mois n'est qu'un intervalle : du 1er au dernier jour. */
 export function entriesOfMonth(
   entries: readonly Entry[],
   month: YearMonth,
   memberId?: MemberFilter,
 ): Entry[] {
-  return entries.filter(
-    (e) => ymOf(e.date) === month && (memberId === undefined || e.memberId === memberId),
-  )
+  return entriesInRange(entries, startOfMonth(month), endOfMonth(month), memberId)
 }
 
 function totalOf(entries: readonly Entry[], direction: Direction, planned: boolean): Money {
