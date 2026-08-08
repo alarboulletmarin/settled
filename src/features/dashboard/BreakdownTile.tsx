@@ -46,7 +46,7 @@ export function BreakdownTile({ onShowFamily }: { onShowFamily?: ShowFamily }) {
 
   if (slices.length === 0) {
     return (
-      <Tile span="4x2" className="justify-between">
+      <Tile span="2x2" className="justify-between">
         <Eyebrow icon={BreakdownIcon}>{fr.dashboard.spending}</Eyebrow>
         <p className="t-label">{fr.dashboard.noBreakdown}</p>
       </Tile>
@@ -65,14 +65,7 @@ export function BreakdownTile({ onShowFamily }: { onShowFamily?: ShowFamily }) {
     .join(', ')
 
   return (
-    /* `4x2` et non `2x2` : la grille du mois s'est resserrée à quatre tuiles de
-       résumé, et sur six colonnes le pavage n'est exact qu'ainsi — solde
-       (c1-2) + revenus (c3-4) + charges (c5-6) sur la première rangée, solde +
-       cet anneau (c3-6) sur la seconde. Le format ne coûte rien sur les deux
-       autres paliers, où `4x2` et `2x2` font la même boîte : pleine largeur sur
-       téléphone, moitié sur tablette. Le budget vertical de `donut.ts` est donc
-       inchangé au pixel ; seule la légende gagne la largeur qui lui manquait. */
-    <Tile span="4x2" className="gap-3">
+    <Tile span="2x2" className="gap-3">
       <Eyebrow icon={BreakdownIcon}>{fr.dashboard.spending}</Eyebrow>
       <div className="flex min-h-0 flex-1 items-center gap-4">
         <Ring

@@ -22,7 +22,7 @@ import { SAMPLE } from './sample'
  *
  * **Chaque tuile reprend le format que le vrai tableau de bord a choisi pour le
  * même libellé.** Ce n'est pas de la coquetterie : « Capacité d'épargne » est en
- * `4x1` partout où elle est une tuile, et le §5 dit pourquoi — dix-huit caractères
+ * `4x1` chez `SavingTile`, et son commentaire dit pourquoi — dix-huit caractères
  * d'eyebrow ne tiennent pas dans la centaine de pixels d'une demi-colonne
  * mobile. Posée ici en `2x1`, la pilule se faisait trancher net par
  * l'`overflow-hidden` de la tuile. La fidélité au tableau de bord n'est pas
@@ -83,7 +83,7 @@ export function LandingTiles() {
         </div>
       </Tile>
 
-      {/* Le donut de `SplitPage`, au gabarit partagé : deux anneaux de la même
+      {/* Le donut de `SplitTile`, au gabarit partagé : deux anneaux de la même
           app qui ne feraient pas la même taille se verraient. Il remplit aussi
           la 2×2, que deux lignes de membres laissaient à moitié vide. */}
       <Tile span="2x2" className="gap-3" label={fr.dashboard.split}>
@@ -114,7 +114,7 @@ export function LandingTiles() {
         <p className="t-label">{fr.dashboard.splitHint}</p>
       </Tile>
 
-      {/* 4×1 et non 2×1, pour la raison que le DS §5 a déjà écrite : dix-huit
+      {/* 4×1 et non 2×1, pour la raison que `SavingTile` a déjà écrite : dix-huit
           caractères d'eyebrow ne tiennent pas dans une demi-colonne mobile. */}
       <Tile span="4x1" className="justify-between" label={fr.dashboard.capacity}>
         <Eyebrow icon={SavingsIcon}>{fr.dashboard.capacity}</Eyebrow>

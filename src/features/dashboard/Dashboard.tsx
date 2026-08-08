@@ -1,37 +1,73 @@
-import { useIsCommonFilter, useKindOf, useMonthConfirmed } from '@/store/selectors'
+import { useState } from 'react'
+import { useIsCommonFilter, useIsCurrentMonth, useKindOf, useMonthConfirmed } from '@/store/selectors'
 import { kindsOfNature } from '@/ui/categoryKinds'
 import { BentoGrid } from '@/ui/Tile'
-import { BalanceTile } from './BalanceTile'
+import { BalanceTile, ForecastTile, RemainingTile } from './BalanceTiles'
 import { BreakdownTile, type ShowFamily } from './BreakdownTile'
+import { CreditsTile } from './CreditsTile'
 import { ChargesTile, IncomeTile, type ShowNature } from './FlowTiles'
 import { MemberShareTile } from './MemberShareTile'
-import type { Metric } from './MetricInfo'
+import { type Metric, MetricInfo } from './MetricInfo'
+import { SavingTile } from './SavingTile'
 import { SettlementTile } from './SettlementTile'
+import { SplitTile } from './SplitTile'
 
 /**
- * La grille bento du DS §5 — **le résumé du mois, et rien d'autre**.
+ * La grille bento du DS §5.
  *
- * Elle en portait douze, c'est-à-dire une tuile par métrique : quatre soldes
- * qui se ressemblent, deux flux, deux répartitions, une capacité, un capital
- * restant dû, une liste d'échéances. Tout y était vrai et tout y avait le même
- * poids, sur deux écrans de défilement avant d'atteindre les lignes du mois.
+ * **L'ordre pave la grille, et ce sont les paires qui font le bento.** Une
+ * grille de tuiles de tailles inégales n'existe, sur les deux colonnes d'un
+ * téléphone, que si des `2x1` se rangent côte à côte : quatre blocs pleine
+ * largeur empilés font une pile de cartes, si inégales que soient leurs
+ * hauteurs. Trois paires portent donc le rythme — ce qui rentre et ce qui sort,
+ * les deux soldes qui les projettent, les deux écrans qu'on ne fait que
+ * désigner — et le solde du mois, l'anneau des postes et la capacité prennent
+ * la largeur entre elles.
  *
- * Il en reste ce à quoi on répond d'un coup d'œil, dans l'ordre des trois
- * questions qu'on pose en arrivant : où j'en suis, ce qui rentre, ce qui sort —
- * puis où il part. Le reste n'a pas disparu : ce qui se dérive de ces chiffres
- * se lit en rangées juste dessous (`SituationSection`), ce qui appelle un autre
- * écran s'y rend en une ligne (`MoreSection`), et ce qui est une liste est
- * devenu une section (`UpcomingSection`).
+ * Ce que ça donne, et c'est vrai des trois paliers :
  *
- * **L'ordre pave la grille.** Sur six colonnes : solde (c1-2, deux rangées),
- * revenus (c3-4), charges (c5-6), puis « Où part l'argent » en `4x2` sous les
- * deux flux (c3-6). Deux rangées pleines, sans trou. Sur deux colonnes, les
- * quatre s'empilent dans le même ordre, et les deux flux restent voisins —
- * c'est la même phrase, on ne lit pas ce qui rentre sans ce qui sort.
+ * ```
+ *  téléphone (2 col)     tablette (4 col)         bureau (6 col)
+ *  ┌───────────────┐     ┌───────┬───┬───┐        ┌───────┬───┬───┐
+ *  │    solde      │     │ solde │ € │ € │        │ solde │ € │ € │
+ *  │     2×2       │     │  2×2  ├───┼───┤        │  2×2  ├───┼───┤
+ *  ├───────┬───────┤     │       │prév│rav│       │       │prév│rav│
+ *  │   €   │   €   │     ├───────┴────┴───┤       ├───────┼───────┤
+ *  ├───────┼───────┤     │postes │capacité│       │postes │capacité│
+ *  │ prév  │  rav  │     │  2×2  ├───┬────┤       │  2×2  ├───┬────┤
+ *  ├───────┴───────┤     │       │rép│cré │       │       │rép│cré │
+ *  │    postes     │     └───────┴───┴────┘       └───────┴───┴────┘
+ *  │     2×2       │
+ *  ├───────────────┤     Quatre rangées pleines et sans un trou sur les
+ *  │   capacité    │     trois paliers : `dense` les range, mais seulement
+ *  ├───────┬───────┤     si l'ordre le permet.
+ *  │  rép  │  cré  │
+ *  └───────┴───────┘
+ * ```
  *
- * La part du foyer et sa régularisation s'intercalent sous un filtre par
- * membre : elles sont le troisième terme de cette phrase-là, ce que la personne
- * porte du pot commun, compris dans ses chiffres sans être montré nulle part.
+ * Ce qui rentre et ce qui se paie viennent juste après le solde, avant les deux
+ * lectures qui les combinent : c'est la première question qu'on pose au mois —
+ * combien j'ai gagné, combien je paie — et elle passait derrière trois soldes
+ * qui n'y répondent qu'indirectement.
+ *
+ * La part du foyer les suit immédiatement sous un filtre par membre, parce
+ * qu'elle est le troisième terme de la même phrase : le solde y vaut les
+ * revenus moins les charges de la personne moins sa part du pot commun, et ce
+ * dernier morceau était compris dans les chiffres sans être montré nulle part.
+ * Hors filtre, elle s'efface et c'est la Répartition qui montre les parts de
+ * tout le monde.
+ *
+ * **Les prochaines échéances ne sont plus ici.** Ce n'est pas un chiffre qu'on
+ * lit d'un coup d'œil mais une liste qu'on parcourt, et sa hauteur doit venir
+ * de son contenu plutôt que d'un format : cinq lignes se serraient à un pixel
+ * d'interligne pour tenir dans les 188px d'une `4x2`. Elle vit en section sous
+ * la grille (`UpcomingSection`).
+ *
+ * La feuille d'explication vit ici, hors de la grille : un `<dialog>` posé
+ * parmi les tuiles en occuperait une case tant qu'il est fermé.
+ *
+ * Les deux tuiles de flux, elles, ne s'expliquent pas : elles mènent aux lignes
+ * du mois. C'est la page qui tient cette liste, pas la grille — d'où le relais.
  *
  * Une nature dont rien n'est confirmé n'a aucune ligne à montrer : sa tuile
  * porte quand même un chiffre, qui compte les échéances encore prévues. Elle ne
@@ -39,22 +75,23 @@ import { SettlementTile } from './SettlementTile'
  * La nature, pas le sens : la tuile Charges exclut l'épargne, et un versement
  * d'épargne confirmé ne suffit pas à lui donner des lignes à montrer.
  *
- * La feuille d'explication ne vit plus ici : deux rangées de `SituationSection`
- * l'ouvrent aussi, et c'est donc la page qui la tient — un `<dialog>` par
- * appelant en monterait deux dans le DOM pour un seul à l'écran.
+ * Pas de tuile « Récurrences » : le total mensuel et annualisé est déjà en tête
+ * de l'onglet du même nom, à un doigt de la barre de navigation. Une tuile qui
+ * ne fait que répéter un chiffre pour mener à l'écran où il vit prend la place
+ * de ce que le mois est seul à savoir dire.
  */
 export function Dashboard({
   onShowNature,
   onShowFamily,
-  onExplain,
 }: {
   onShowNature?: ShowNature
   onShowFamily?: ShowFamily
-  onExplain: (metric: Metric) => void
 }) {
+  const [metric, setMetric] = useState<Metric | null>(null)
   const confirmed = useMonthConfirmed()
   const kindOf = useKindOf()
   const common = useIsCommonFilter()
+  const thisMonth = useIsCurrentMonth()
 
   const openable = (nature: 'expense' | 'income'): { onShow?: ShowNature } => {
     const kinds = kindsOfNature(nature)
@@ -65,20 +102,47 @@ export function Dashboard({
   }
 
   return (
-    <BentoGrid>
-      {/* Sur le commun, le solde et les revenus n'ont plus de quoi répondre :
-          un revenu ne se partage jamais, donc le pot n'en a aucun, et un solde
-          qui soustrait des charges à des ressources inexistantes vaudrait les
-          charges au signe près. Ils s'effacent plutôt que d'annoncer un zéro —
-          c'est déjà ce que font Répartition sous un filtre par membre et Part
-          du foyer sans filtre. Reste ce que le pot sait dire : ce qu'il coûte,
-          et où il part. */}
-      {!common && <BalanceTile onExplain={onExplain} />}
-      {!common && <IncomeTile {...openable('income')} />}
-      <ChargesTile {...openable('expense')} />
-      <MemberShareTile />
-      <SettlementTile />
-      <BreakdownTile {...(onShowFamily === undefined ? {} : { onShowFamily })} />
-    </BentoGrid>
+    <>
+      <BentoGrid>
+        {/* Sur le commun, cinq tuiles n'ont plus de quoi répondre. Un revenu ne
+            se partage jamais : le pot n'en a aucun, donc les quatre lectures
+            qui soustraient les charges à des ressources — le solde, le
+            prévisionnel, le reste à vivre, la capacité d'épargne — vaudraient
+            toutes le même chiffre, celui des charges, au signe près. Et
+            l'épargne ne rentre pas dans un partage, par la même règle qui
+            l'exclut de « Où part l'argent ».
+            Elles s'effacent plutôt que d'annoncer un zéro ou une redite —
+            c'est déjà ce que font Répartition sous un filtre par membre et
+            Part du foyer sans filtre. Reste ce que le pot sait dire : ce qu'il
+            coûte, où il part, et qui verse quoi. */}
+        {!common && <BalanceTile onExplain={setMetric} />}
+        {!common && <IncomeTile {...openable('income')} />}
+        <ChargesTile {...openable('expense')} />
+        <MemberShareTile />
+        <SettlementTile />
+        {!common && <ForecastTile onExplain={setMetric} />}
+        {/* « Reste à vivre » se lit depuis aujourd'hui, pas depuis le mois
+            affiché : c'est le prévisionnel arrêté à la prochaine rentrée
+            d'argent. Sur un mois passé l'horizon est déjà derrière, sur un
+            mois à venir il est encore devant — le chiffre se calcule dans les
+            deux cas et ne veut rien dire ni dans l'un ni dans l'autre. Il
+            s'efface donc, comme les cinq tuiles que le commun retire : une
+            lecture qui n'a pas de réponse vaut mieux absente que fausse.
+            Sa demi-rangée ne reste pas vide pour autant : `dense` y range la
+            tuile suivante, et le pavage se referme d'un cran. */}
+        {!common && thisMonth && <RemainingTile onExplain={setMetric} />}
+        <BreakdownTile {...(onShowFamily === undefined ? {} : { onShowFamily })} />
+        {!common && <SavingTile />}
+        <SplitTile />
+        <CreditsTile />
+      </BentoGrid>
+
+      <MetricInfo
+        metric={metric}
+        onClose={() => {
+          setMetric(null)
+        }}
+      />
+    </>
   )
 }

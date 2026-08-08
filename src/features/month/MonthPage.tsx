@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { RECURRENCE_NEW_PATH, entryNewPath, entryPath } from '@/app/routes'
 import { Dashboard } from '@/features/dashboard/Dashboard'
-import { type Metric, MetricInfo } from '@/features/dashboard/MetricInfo'
-import { MoreSection } from '@/features/dashboard/MoreSection'
-import { SituationSection } from '@/features/dashboard/SituationSection'
 import { UpcomingSection } from '@/features/dashboard/UpcomingSection'
 import { fr } from '@/i18n/fr'
 import { useScopedMonthEntries } from '@/store/selectors'
@@ -36,11 +33,6 @@ export function MonthPage() {
      la nature : il se pose depuis une tuile et se retire depuis la liste. */
   const [family, setFamily] = useState<string | null>(null)
   const [focus, setFocus] = useState(0)
-  /* La feuille d'explication vit ici et non dans la grille : deux blocs
-     l'ouvrent — la tuile du solde et les deux premières rangées de la
-     situation. Une par appelant en monterait deux dans le DOM pour une seule à
-     l'écran, et chacune fermerait la sienne. */
-  const [metric, setMetric] = useState<Metric | null>(null)
 
   const showNature = (value: 'expense' | 'income'): void => {
     setNature(value)
@@ -164,23 +156,18 @@ export function MonthPage() {
           </div>
         </EmptyState>
       ) : (
-        /* Quatre étages, et l'ordre est la refonte elle-même : le résumé —
-           ce qu'on vient lire —, puis ce qu'on en déduit et ce qui tombe
-           bientôt, puis ce qui demande un geste, puis les deux écrans qu'on ne
-           fait que désigner, et enfin le détail où l'on entre. La page posait
-           tout à plat, chaque lecture dans sa tuile, et il fallait six écrans
-           pour arriver aux lignes du mois. */
+        /* Trois étages, et l'ordre est la refonte elle-même : les chiffres du
+           mois d'un coup d'œil, puis ce qui tombe bientôt et ce qui demande un
+           geste, puis le détail où l'on entre. Ce qui a changé n'est pas ce
+           qu'on montre mais ce qu'on montre *en entier* : la grille ne porte
+           plus de liste, « À confirmer » n'affiche plus les treize lignes, et
+           le détail n'ouvre plus tous ses jours. Il fallait six écrans de
+           défilement pour arriver aux lignes du mois. */
         <div className="flex flex-col gap-4">
-          <Dashboard
-            onShowNature={showNature}
-            onShowFamily={showFamily}
-            onExplain={setMetric}
-          />
+          <Dashboard onShowNature={showNature} onShowFamily={showFamily} />
           <div className="flex max-w-3xl flex-col gap-4">
-            <SituationSection onExplain={setMetric} />
             <UpcomingSection />
             <PendingSection />
-            <MoreSection />
             <EntriesSection
               nature={nature}
               onNature={chooseNature}
@@ -194,13 +181,6 @@ export function MonthPage() {
           </div>
         </div>
       )}
-
-      <MetricInfo
-        metric={metric}
-        onClose={() => {
-          setMetric(null)
-        }}
-      />
     </>
   )
 }

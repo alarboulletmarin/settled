@@ -22,15 +22,19 @@ export type ShowNature = (nature: 'expense' | 'income') => void
  * répondrait « presque rien » en début de mois. Ce qui reste à tomber se lit
  * en seconde lecture, là où les autres tuiles plates mettent la leur.
  *
- * **Ces deux-là prennent deux colonnes sous 1024px**, seules de toutes les
- * `2x1` : la pleine largeur sur la grille mobile, la moitié sur le palier
- * tablette. C'est ce qui rend leur seconde lecture visible — et sans elle,
- * elle ne l'était nulle part. Les quatre soldes voisins s'en passent parce
- * qu'une feuille la porte sur téléphone (`MetricInfo`) ; ces deux tuiles-ci
- * n'en ont pas, et ne doivent pas en avoir : devant « Charges : 1 166 € », la
- * question suivante n'est pas « qu'est-ce qu'une charge » mais « lesquelles ».
- * Le coût est de deux rangées de plus à faire défiler sur un téléphone, pour
- * les deux chiffres qu'on vient chercher en premier.
+ * **Elles occupent une demi-colonne, comme toute `2x1`.** Elles ont pris deux
+ * colonnes sous 1024px, seules de tous les formats, pour rendre leur seconde
+ * lecture visible sur un téléphone. Ça marchait — et ça coûtait les deux
+ * rangées pleine largeur qui, avec celles de leurs voisines, faisaient du
+ * tableau de bord une pile de cartes au lieu d'une grille. La grille bento est
+ * faite de tuiles de tailles inégales (DS §5), et sur deux colonnes une paire
+ * côte à côte est la seule façon d'en avoir : quatre blocs empilés n'en font
+ * pas une, si inégales que soient leurs hauteurs.
+ *
+ * La seconde lecture suit donc le sort de toutes les tuiles plates : elle
+ * s'affiche là où elle tient, à partir de 1024px, et reste dans le DOM
+ * ailleurs. Ce qu'elle dit n'est perdu pour personne — le reste à payer se lit
+ * sur les lignes du mois, où le clic mène précisément.
  *
  * Le clic filtre la liste du mois sur cette nature-là et l'amène sous les
  * yeux. Sur la nature, pas le sens : la tuile Charges exclut l'épargne, et un
@@ -65,7 +69,7 @@ function FlowTile({
   return (
     <Tile
       span="2x1"
-      className="justify-between max-lg:col-span-2"
+      className="justify-between"
       {...(onShow === undefined
         ? {}
         : {

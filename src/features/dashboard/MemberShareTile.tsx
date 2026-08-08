@@ -92,7 +92,7 @@ export function MemberShareTile() {
          est l'eyebrow le plus long de la grille (~195px en mono 11px, sans
          césure possible) et « Répartition › » en demande 95 de plus, quand la
          tuile n'en offre que 288 sur un écran de 360. Les deux se croisaient.
-         `SettlementTile` passe déjà son repère nu, pour la même raison. Le nom du
+         `SplitTile` passe déjà son repère nu, pour la même raison. Le nom du
          lien, lui, est entier : il ne coûte aucun pixel. */
       link={{ to: SPLIT_PATH, label: fr.dashboard.showMemberShare }}
     >

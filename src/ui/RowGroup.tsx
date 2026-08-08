@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { Eyebrow } from './Eyebrow'
-import { ChevronRight, type IconComponent, InfoIcon } from './Icons'
+import { ChevronRight, type IconComponent } from './Icons'
 import { Tile } from './Tile'
 
 /**
@@ -67,17 +67,6 @@ const ROW = '-mx-2 flex min-h-14 items-center gap-3 rounded-inner px-2 py-2 text
 const ROW_ACTION =
   'transition-colors duration-[var(--dur)] ease-ds hover:bg-surface-2 active:bg-surface-2'
 
-/**
- * Ce que le geste de la rangée fait — et donc le repère posé à son bout.
- *
- * C'est la taxonomie du `Tile` (voir son en-tête), transposée à une rangée et
- * réduite à ce dont une rangée a besoin. Le chevron promet une navigation :
- * posé sur une rangée qui ouvre une feuille sur place, il annonce un écran
- * qui ne vient jamais. Le glyphe d'information ne promet, lui, aucune
- * destination — il n'y en a pas.
- */
-export type RowAffordance = 'navigate' | 'explain'
-
 export type RowProps = {
   label: string
   /**
@@ -101,8 +90,6 @@ export type RowProps = {
   /** Mène à une vue. Exclusif d'`onClick`. */
   to?: string
   onClick?: () => void
-  /** Sans objet sans geste : on ne pose pas de repère sur ce qui n'agit pas. */
-  affordance?: RowAffordance
 }
 
 /**
@@ -113,10 +100,8 @@ export type RowProps = {
  * cliquable : le chevron promet une navigation, et une navigation se tabule,
  * s'ouvre dans un onglet et s'annonce comme telle.
  *
- * Le repère n'apparaît que là où le geste existe, exactement comme celui d'une
- * tuile (`Tile`) : une rangée sans repère est une rangée qu'on lit. Et il dit
- * *lequel* de geste — chevron vers un écran, glyphe d'information pour une
- * feuille qui s'ouvre sur place (`RowAffordance`).
+ * Le chevron n'apparaît que là où le geste existe, exactement comme le repère
+ * d'une tuile (`Tile`) : une rangée sans chevron est une rangée qu'on lit.
  */
 export function Row({
   label,
@@ -127,7 +112,6 @@ export function Row({
   control,
   to,
   onClick,
-  affordance = 'navigate',
 }: RowProps) {
   const heading = (
     <span className="flex min-w-0 flex-1 flex-col">
@@ -146,16 +130,14 @@ export function Row({
     </span>
   )
 
-  const Marker = affordance === 'explain' ? InfoIcon : ChevronRight
-
-  const content = (marker: boolean): ReactNode => (
+  const content = (chevron: boolean): ReactNode => (
     <>
       {leading}
       {heading}
       {trailing !== undefined && <span className="flex shrink-0 items-center">{trailing}</span>}
       {/* `aria-hidden` : le nom accessible du lien dit déjà où il mène, et un
           chevron annoncé une seconde fois ne l'apprendrait pas mieux. */}
-      {marker && <Marker size={16} className="shrink-0 text-muted" aria-hidden="true" />}
+      {chevron && <ChevronRight size={16} className="shrink-0 text-muted" aria-hidden="true" />}
     </>
   )
 

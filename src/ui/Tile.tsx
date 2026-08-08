@@ -42,7 +42,7 @@ export type TileAffordance =
  * phrase : trois d'entre elles y plaçaient une liste, ce qu'aucun navigateur ne
  * valide et qu'un lecteur d'écran aplatit derrière le nom unique du bouton. Le
  * DS §6 prescrit alors la tuile non cliquable avec un vrai lien au coin, et
- * `MemberShareTile` en écrit le rationale.
+ * `UpcomingTile` en écrit le rationale.
  *
  * Le lien est ce repère-ci et non un lien posé dans le flux : le coin est en
  * position absolue, il ne coûte donc ni la hauteur ni la largeur qu'une 2×2 n'a
@@ -96,8 +96,7 @@ const PADDING = 'p-5 md:p-6'
  *
  * Mesuré, pas calculé : le plafond d'une `2x1` est de **13 caractères**.
  * « Reste à vivre » (13) tient, et ne tenait pas avant le troisième palier ;
- * « Capacité d'épargne » (18) déborde de 35px, d'où la `4x1` que `LandingTiles`
- * lui garde.
+ * « Capacité d'épargne » (18) déborde de 35px, d'où la `4x1` de `SavingTile`.
  * Passé 13 caractères, le format est `4x1` — c'est au format d'être choisi pour
  * le libellé, pas au libellé d'être raboté pour le format.
  */
