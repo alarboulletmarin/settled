@@ -47,13 +47,6 @@ catégorie 1 disparaissait purement sur le jour qu'on venait d'ouvrir.
   d'insertion du document : un loyer pouvait tomber dans le « +3 » derrière
   trois cafés. Confirmé avant prévu, puis du plus gros au plus petit — et la
   feuille du jour se lit dans l'ordre exact des pastilles de sa case.
-- **La carte reste une carte sur téléphone.** La grille partait à bord perdu
-  sous 404px pour tenir 44px de large : ça rendait quelques pixels et ça coûtait
-  la carte — une bande d'un bord à l'autre de l'écran, sans coin ni ombre, qui
-  ne se lit plus comme une surface posée sur la page. C'est la gouttière qu'on
-  abandonne maintenant, jamais le cadre, et la tuile resserre le sien à 16px
-  sous 480px : 44,4px par colonne à 375px, 37 à 320 — où la cible garde ses
-  44px de haut, écart mesuré et inscrit au DS §8.
 - **Le jour s'ouvre en feuille**, avec le total de la journée, son compte
   d'échéances et ses trois portes de saisie. Il était une tuile posée sous la
   grille, qui devait réécrire à la main ce qu'un `<dialog>` donne : Échap, le
@@ -62,6 +55,38 @@ catégorie 1 disparaissait purement sur le jour qu'on venait d'ouvrir.
   l'on est parti. Le design system §6 est amendé des deux décisions : le bandeau
   garde « ce mois-ci » parce qu'il ne bouge que le mois, et la lecture courte et
   refermable rejoint la question fermée parmi ce qui a droit à la feuille.
+
+### Modifié — la répartition se lit d'un trait, comme la page qui la présente
+
+La présentation montre le partage dans une seule carte qu'on lit sans lever les
+yeux : les parts sous un même filet, et la vérification qui la ferme. L'écran
+disait la même chose, éclaté en une tuile par personne, avec la ligne qui prouve
+que la somme des parts vaut le total reléguée après deux sections repliables —
+à deux écrans de défilement des chiffres qu'elle vérifie. Il fallait en retenir
+deux pour constater qu'ils tombent, c'est-à-dire croire l'écran sur parole. Un
+partage entre deux personnes ne se croit pas sur parole : c'est toute la raison
+d'être de cette page.
+
+- **Une seule carte pour tout le monde, vérification comprise.** Les parts
+  deviennent les lignes d'une même liste, et « Total des parts » la referme,
+  contre les chiffres qu'il additionne.
+- **Le versement passe après le calcul qui le produit.** L'ordre était inverse :
+  « À verser » en tête, puis les raisons en dessous, en plus petit. On lit
+  désormais qui, ce qu'il gagne, ce que le mois lui coûte, ce que le mois
+  précédent rattrape — et enfin ce qu'il verse.
+- **Le revenu redevient une ligne comme les autres.** Il s'écrivait « Revenu
+  2 890 € » d'un seul tenant, collé en bas de tuile ; il s'aligne maintenant à
+  droite avec les autres montants, où l'œil les compare.
+- **« Sa part du mois » cesse d'être arrondie à l'euro.** C'est le premier terme
+  d'une soustraction qu'on lit juste en dessous, et arrondie elle ne tombait
+  plus juste : « 1 963 € + 176,44 € » ne fait pas 2 138,99 €. Ces lignes-là
+  n'existent que pour être vérifiables.
+- **Les parts forment enfin une liste** pour un lecteur d'écran, là où c'était
+  une pile de sections sans nom : « liste, 2 éléments », puis chaque part lue
+  d'un trait.
+
+Ce que le mois affiche ne change pas d'un centime : les parts, le prorata et les
+reports sont calculés comme avant.
 
 ### Ajouté — le premier geste après les deux questions
 
@@ -747,8 +772,10 @@ document : `schemaVersion` reste à 6.
   dit dans une région live de la coquille, le focus part au contenu — sauf là
   où l'écran a posé le sien, comme le premier champ d'une saisie.
 - **Une case du calendrier faisait 32px de large** sous 404px de fenêtre, pour
-  une cible que le DS §8 fixe à 44px. La grille passe à bord perdu sous ce
-  seuil, et c'est la gouttière qu'on sacrifie.
+  une cible que le DS §8 fixe à 44px. C'est la gouttière qu'on sacrifie : la
+  tuile resserre son cadre sur les petites largeurs et les sept colonnes se
+  joignent, ce qui rend 44,4px par colonne à 375px — la carte, elle, reste une
+  carte.
 - **`EmptyState` se déclarait région live** en permanence, sur un texte qui ne
   change jamais.
 - **Le `<h1>` s'écrivait de trois façons**, et le calendrier n'en avait aucun :
