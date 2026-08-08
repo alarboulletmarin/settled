@@ -680,17 +680,33 @@ export const fr = {
   },
 
   calendar: {
-    title: 'Calendrier',
     dayLabel: '%s — %s',
     noEntry: 'aucune échéance',
     oneEntry: '1 échéance',
     someEntries: '%s échéances',
-    selected: 'Jour sélectionné',
     emptyDay: 'Rien ce jour-là.',
     empty: 'Aucune échéance ce mois-ci.',
     more: '+%s',
+
+    /** Le nom de la fenêtre. Reçoit `de(formatYearMonth(ym))` : « d’avril 2026 ». */
+    gridLabel: 'Calendrier %s',
+    /* Les deux mentions d'une case, ajoutées à son nom accessible : elles disent
+       en mots ce que la forme dit à l'œil — un cadre pour aujourd'hui, un
+       chiffre atténué pour le voisin. Sans elles, la case ne se lit qu'à la vue,
+       et le DS §8 demande l'inverse. */
+    dayToday: 'aujourd’hui',
+    dayOutside: 'hors du mois affiché',
+    /* La ponctuation d'une énumération est une affaire de langue autant que les
+       mots qu'elle sépare : elle se range donc ici, et non dans le composant. */
+    labelJoin: ', ',
+
+    /* Le retour au jour, dans la tuile. « Aujourd'hui » et non « ce mois-ci » :
+       ce bouton-ci rouvre le mois courant ET ouvre la date du jour, donc il
+       ramène vraiment au jour. C'est la condition que le DS §6 posait pour
+       refuser le mot au bandeau. */
     today: 'Aujourd’hui',
-    closeDay: 'Fermer le jour',
+    backToTodayTitle: 'Revenir au %s',
+    dayTotal: 'Total du jour',
   },
 
   month: {
@@ -1589,6 +1605,11 @@ export const fr = {
     previousMonthKey: 'Mois précédent (←)',
     nextMonthKey: 'Mois suivant (→)',
     newEntryKey: 'Ajouter une dépense (n)',
+    /* Même parti que le curseur des graphiques : quarante-deux cases n'ont aucun
+       bouton à survoler pour dire leurs touches en infobulle, alors elles se
+       disent au lecteur d'écran, sur la grille elle-même. */
+    calendarGridHint:
+      'Flèches pour changer de jour, Origine et Fin pour les bords de la semaine, Page précédente et Page suivante pour changer de mois.',
   },
 } as const
 

@@ -250,6 +250,8 @@ Un état **pressé** sur toute tuile actionnable, et pas seulement un survol : l
 
 **Écrans de saisie** — un formulaire ou une fiche est un écran plein avec son URL, jamais une feuille modale : chevron de retour et titre en haut, le formulaire dans une tuile, les actions dessous dans le flux. Rien à faire glisser, rien à refermer pour revenir. La règle vise la **saisie**, pas la confirmation : une question fermée qui n'attend que oui ou non est exactement ce pour quoi un `<dialog>` existe.
 
+Une **lecture courte et refermable** est le troisième cas, et elle va aussi sur la feuille : la journée qu'on ouvre depuis le calendrier, la feuille d'explication d'une tuile. Elle ne saisit rien — elle montre ce qu'il y a, et passe la main à l'écran plein pour créer. Ce qu'elle y gagne est ce que le §8 demande et que rien d'écrit à la main ne fait aussi bien : piège de focus, touche Échap, clic sur le fond, et retour du focus à ce qui l'a ouverte. En tuile sous le contenu, il fallait réécrire les quatre, et il en manquait toujours un.
+
 **ConfirmDialog** — la confirmation d'un geste destructif, la même partout, sur la feuille modale et donc sur `<dialog>` natif : piège de focus, Échap, clic sur le fond et retour du focus au bouton d'origine viennent du navigateur. Le pied de feuille pose ses deux boutons à largeur égale — `Annuler` en `secondary`, l'action en `danger`. Le nombre de questions fait la gravité : une pour une ligne, deux pour un import qui remplace tout, trois pour l'effacement des données, avec un compteur `n / N` dès qu'il y en a plus d'une. Chaque question dit **ce qui est perdu** et porte le verbe de l'action sur son bouton, jamais « êtes-vous sûr » suivi d'un « OK ». Une seule boîte par écran, qui sait sur quoi elle porte : une par ligne d'une liste en monterait autant dans le DOM.
 
 **Amount** — composant unique pour tout montant. Props : valeur en centimes, taille, sens. Gère seul le tabular-nums, le symbole, les centimes réduits et la couleur.
@@ -283,7 +285,9 @@ Rien sur un écran de saisie : il partirait créer une ligne par-dessus celle qu
 
 **MonthNav** — chevrons de part et d'autre du mois courant, mois en sans 20px, année en mono 11px dessous. Balayage horizontal sur mobile.
 
-Un **retour au mois courant** l'accompagne dans le bandeau, à sa droite, et n'apparaît que lorsqu'on n'y est pas — c'est la règle des repères d'action appliquée à un bouton : celui qui ne bouge rien apprend à ignorer ceux qui bougent quelque chose. Douze chevrons pour revenir de février à août n'est pas une navigation, c'est une pénalité. Il dit « ce mois-ci » et non « aujourd'hui » : on revient à un mois, pas à un jour, et sur le calendrier le second aurait promis de ramener au jour. Le mois d'arrivée se nomme en infobulle, jamais dans le libellé — le nom accessible d'un bouton contient son texte visible.
+Un **retour au mois courant** l'accompagne dans le bandeau, à sa droite, et n'apparaît que lorsqu'on n'y est pas — c'est la règle des repères d'action appliquée à un bouton : celui qui ne bouge rien apprend à ignorer ceux qui bougent quelque chose. Douze chevrons pour revenir de février à août n'est pas une navigation, c'est une pénalité. Il dit « ce mois-ci » et non « aujourd'hui » : ce bouton-ci ne bouge que le mois, et « aujourd'hui » aurait promis de ramener au jour. Le mois d'arrivée se nomme en infobulle, jamais dans le libellé — le nom accessible d'un bouton contient son texte visible.
+
+**Le calendrier, lui, dit « aujourd'hui »** — dans sa carte, sous la grille, aux mêmes conditions d'apparition. C'est le même mot pour une promesse plus grande, et c'est ce qui l'autorise : sa grille a un jour focalisé et un jour ouvert, donc son bouton rouvre le mois courant, ouvre la date du jour et y repose le focus. Le §6 refusait le mot au bandeau parce que le bandeau ne pouvait pas le tenir ; là où il se tient, il se dit. Deux boutons, deux libellés, deux portées — et jamais le même libellé pour deux gestes différents sur un même écran.
 
 **Ring** — l'anneau. Épaisseur 12px, extrémités arrondies, départ à midi, sens horaire, fond de piste en `--surface-2`. Sert de progression du mois, de jauge et de donut de répartition. Le contenu central est un `Amount`.
 
@@ -306,6 +310,8 @@ Une erreur dit ce qui s'est passé et quoi faire, sans s'excuser. Un écran vide
 ## 8. Plancher de qualité
 
 Contraste AA sur tout texte. Focus clavier visible sur tout élément interactif, anneau 2px `--accent-2` avec 2px de décalage. Cible tactile minimale 44px. Chaque graphique est doublé d'une lecture accessible aux lecteurs d'écran. Les deux thèmes sont testés sur chaque écran avant de considérer l'écran terminé.
+
+Deux écarts à la cible de 44px, et pas un de plus. Ils ont en commun d'être **mesurés, écrits à côté du code, et compensés sur l'autre axe** : une largeur d'écran ne se négocie pas, et un composant qui divise cette largeur par sept ou par douze finit par tomber en dessous. Le curseur d'un graphique donne seize pixels par mois sur un téléphone de 320, et la lecture existe aussi au clavier et dans le doublon accessible. Une case de calendrier tombe à 37px de large sous 375px de fenêtre, et garde ses 44px de haut. Ce qui n'est jamais négociable, en revanche, c'est la hauteur : une cible aplatie n'a plus rien pour être visée.
 
 ---
 

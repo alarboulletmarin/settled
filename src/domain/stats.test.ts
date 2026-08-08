@@ -14,6 +14,7 @@ import {
   savingsByCategory,
   spendingFlow,
   totalsByKind,
+  entriesInRange,
   entriesOfMonth,
   monthProgress,
   monthTotals,
@@ -68,6 +69,28 @@ describe('totaux du mois', () => {
   it('ne déborde pas sur le mois suivant', () => {
     expect(entriesOfMonth(july, '2026-07')).toHaveLength(5)
     expect(monthTotals(july, '2026-08').confirmedOut).toBe(9999)
+  })
+
+  /* La fenêtre du calendrier fait six semaines et déborde sur deux mois : c'est
+     elle qui a fait sortir l'intervalle, dont le mois est devenu un cas. */
+  it('lit un intervalle, bornes incluses', () => {
+    expect(entriesInRange(july, '2026-07-05', '2026-07-08')).toHaveLength(2)
+    expect(entriesInRange(july, '2026-07-06', '2026-07-07')).toHaveLength(0)
+    // Un intervalle à l'envers ne rend rien plutôt que de rendre tout.
+    expect(entriesInRange(july, '2026-07-08', '2026-07-05')).toHaveLength(0)
+  })
+
+  it('rend exactement le mois quand l’intervalle est le mois', () => {
+    expect(entriesInRange(july, '2026-07-01', '2026-07-31')).toEqual(entriesOfMonth(july, '2026-07'))
+  })
+
+  it('filtre l’intervalle par membre, comme le mois', () => {
+    const entries = [
+      makeEntry({ date: '2026-07-01', direction: 'in', amount: eur(1000), memberId: 'a' }),
+      makeEntry({ date: '2026-08-02', direction: 'in', amount: eur(2000), memberId: 'b' }),
+      makeEntry({ date: '2026-08-03', direction: 'in', amount: eur(4000), memberId: 'a' }),
+    ]
+    expect(entriesInRange(entries, '2026-07-01', '2026-08-31', 'a')).toHaveLength(2)
   })
 
   it('rend tout à zéro sur un mois sans aucune donnée', () => {
