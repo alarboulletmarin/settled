@@ -84,8 +84,25 @@
   --scrim: rgb(11 14 13 / 0.28);
 }
 
-/* Identiques dans les deux thèmes — c'est volontaire (DS §2.2). */
-:root {
+/* Identiques dans les deux thèmes — c'est volontaire (DS §2.2).
+ *
+ * DEUX SÉLECTEURS, et le second corrige un bug. Ce bloc *est* l'identité de
+ * Classique : posé sur `:root` seul, il ne se déclare que sur <html>, et une
+ * autre palette l'y écrase — c'est tout l'objet de `palettes.css`. Un sous-arbre
+ * qui force `data-palette='classique'` n'avait alors plus rien qui redéclare son
+ * accent ni ses catégories, et héritait de <html> les valeurs de la palette en
+ * cours : la vignette « Classique » des réglages passait au sapin sous
+ * Monochrome, au jaune franc sous Contrastée. Les tokens qui varient avec le
+ * thème ne souffraient pas du même mal, parce que `[data-theme='light']` et son
+ * pendant sombre, eux, atteignent bien le sous-arbre.
+ *
+ * `[data-palette='classique']` vaut (0,1,0), comme les blocs sans thème de
+ * `palettes.css`, qui viennent après et l'emportent donc sur <html> quand une
+ * autre palette est choisie. Classique reste déclarée une seule fois, ici, et
+ * ne peut toujours pas dériver.
+ */
+:root,
+[data-palette='classique'] {
   /* Le fond d'une feuille modale, distinct de --scrim. Le voile des portes de
      saisie fait reculer d'un plan sans rien cacher ; ici une lecture ou une
      question passe devant, et l'arrière-plan cesse d'être ce qu'on lit. Il vaut

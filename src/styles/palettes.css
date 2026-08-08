@@ -12,6 +12,13 @@
  * n'apparaît donc pas ici, et c'est voulu : elle n'a rien à surcharger, ce qui
  * garantit qu'elle ne peut pas dériver.
  *
+ * Elle se nomme en revanche dans `tokens.css`, où son bloc invariant s'écrit
+ * `:root, [data-palette='classique']`. Ce n'est pas une seconde déclaration mais
+ * la même, rendue atteignable depuis un sous-arbre : les blocs sans thème
+ * ci-dessous valent (0,1,0) comme elle et, venant après, l'emportent sur <html>
+ * dès qu'une autre palette est choisie. Sans ce sélecteur-là, une vignette
+ * « Classique » n'a rien qui redéclare son accent et hérite celui de <html>.
+ *
  * DEUX SÉLECTEURS PAR BLOC DE THÈME, et il en faut deux.
  *   - le composé, pour <html>, qui porte les deux attributs ;
  *   - le descendant, pour un sous-arbre qui force un thème sans forcer de

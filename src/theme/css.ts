@@ -151,6 +151,42 @@ export function resolveTokens(sheets: string[], palette: string, theme: string):
   return winners
 }
 
+/**
+ * Une règle atteint-elle un **sous-arbre** qui force `(palette, thème)` ?
+ *
+ * C'est la question que `resolveTokens` ne pose pas : elle modélise <html>, où
+ * `:root` s'applique. Une vignette d'aperçu, elle, n'est pas la racine — un
+ * token que seul `:root` déclare ne s'y redéclare pas, et le sous-arbre hérite
+ * alors la valeur de la palette ambiante au lieu de la sienne.
+ */
+function matchesSubtree(selector: string, palette: string, theme: string): boolean {
+  return selector.split(',').some((part) => {
+    const one = part.trim()
+    // `:root` ne vise que <html> ; la forme descendante porte un
+    // `:not([data-palette])`, et un sous-arbre qui force une palette en porte un.
+    if (one === ':root' || one.includes(' ')) return false
+    // Les alias de `tokens.css`, posés sur l'attribut nu pour redériver partout.
+    if (one === '[data-theme]' || one === '[data-palette]') return true
+    const attrs = [...one.matchAll(/\[data-(palette|theme)='([a-z-]+)'\]/g)]
+    if (attrs.length === 0 || attrs.map(([whole]) => whole).join('') !== one) return false
+    return attrs.every(([, key, value]) =>
+      key === 'palette' ? value === palette : value === theme,
+    )
+  })
+}
+
+/** Les tokens qu'un sous-arbre forçant `(palette, thème)` redéclare lui-même. */
+export function subtreeDeclarations(sheets: string[], palette: string, theme: string): Set<string> {
+  const names = new Set<string>()
+  for (const sheet of sheets) {
+    for (const rule of parseRules(sheet)) {
+      if (!matchesSubtree(rule.selector, palette, theme)) continue
+      for (const name of Object.keys(rule.declarations)) names.add(name)
+    }
+  }
+  return names
+}
+
 /** Les déclarations d'une classe de composant — `.tile--accent`, par exemple. */
 export function classDeclarations(css: string, className: string): Declarations {
   const rule = parseRules(css).find((r) =>

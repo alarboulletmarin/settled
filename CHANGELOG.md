@@ -26,7 +26,10 @@ six existe dans les deux thèmes.
 - **Six palettes** — Classique (les couleurs d'origine), Monochrome, Douce,
   Vive, Neutre, Contrastée. Aucun composant n'a changé : une palette n'est qu'un
   jeu de surcharges de la couche de tokens, et `tokens.css` *est* la palette
-  Classique, qui n'a donc rien à déclarer et ne peut pas dériver.
+  Classique, qui n'a donc rien à surcharger et ne peut pas dériver. Son bloc s'y
+  déclare sur `:root, [data-palette='classique']` : sans le second sélecteur,
+  elle n'existe que sur `<html>`, et un sous-arbre qui la force — l'aperçu des
+  réglages — héritait les couleurs de la palette en cours au lieu des siennes.
 - **Une vue « Apparence »** sous `/reglages`, avec un aperçu par palette. Le
   thème y descend avec elle : l'argument qui le gardait sur la page d'entrée
   — trois positions ne méritent pas un écran — valait tant qu'il était seul, et
