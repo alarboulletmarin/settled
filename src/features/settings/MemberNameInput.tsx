@@ -1,12 +1,16 @@
 import { useDraftField } from '@/ui/useDraftField'
 
 /**
- * Le prénom d'un membre, modifiable sur place.
+ * Le prénom d'un membre, modifiable sur place — au premier lancement.
  *
- * Même geste que le libellé d'une catégorie ou le nom du foyer : on tape dans le
- * mot, il n'y a pas de bouton « modifier » ni de champ qui s'ouvre. Le champ n'a
- * donc aucun décor tant qu'on ne l'a pas touché — c'est un nom qu'on lit, et
- * accessoirement qu'on corrige.
+ * Même geste que le libellé d'une catégorie : on tape dans le mot, il n'y a pas
+ * de bouton « modifier » ni de champ qui s'ouvre. Le champ n'a donc aucun décor
+ * tant qu'on ne l'a pas touché — c'est un nom qu'on lit, et accessoirement
+ * qu'on corrige. C'est ce qu'il faut à une liste qu'on est *en train* d'écrire.
+ *
+ * Dans les réglages, non : le prénom s'y modifie sur la fiche du membre, avec
+ * un bouton qui valide. Une liste de neuf champs de saisie ne se lisait plus
+ * comme une liste, et rien n'y distinguait consulter de modifier.
  *
  * Le prénom vide n'est jamais enregistré : il resterait une ligne blanche dont
  * le bouton de retrait s'annoncerait « Retirer  », et rien à l'écran ne dirait

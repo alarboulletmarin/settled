@@ -1,8 +1,8 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { scrollToTop } from '@/lib/reveal'
-import { ABOUT_PATH, NAV_ROUTES, STYLEGUIDE_ROUTE } from './routes'
+import { ABOUT_PATH, NAV_ROUTES, SETTINGS_PATH, STYLEGUIDE_ROUTE } from './routes'
 
 /* Un onglet ramène en haut de sa section, qu'on y soit déjà ou non — c'est ce
    que fait le logo d'un site. Sans ça, toucher l'onglet actif ne produisait
@@ -84,6 +84,8 @@ export function Sidebar({ householdName }: { householdName: string }) {
 
 /** Barre d'onglets mobile. Cible tactile de 56px, au-delà du minimum du DS. */
 export function TabBar() {
+  const { pathname } = useLocation()
+
   return (
     <nav
       aria-label={fr.nav.label}
@@ -95,6 +97,15 @@ export function TabBar() {
       <ul className="flex">
         {NAV_ROUTES.map((route) => {
           const Icon = route.icon
+          /* Les vues des réglages allument leur onglet toutes seules — elles
+             sont sous `/reglages`, que `NavLink` apparie par préfixe. « À
+             propos », non : elle vit à la racine parce qu'elle parle de l'app
+             et répond avant même qu'un foyer existe. Or sous 1024px on n'y
+             arrive que par les réglages, et la barre disait alors qu'on avait
+             quitté la section — cinq onglets éteints, sans aucun moyen de
+             savoir d'où l'on venait. La colonne latérale, elle, porte son
+             propre lien « À propos » et n'a pas ce trou. */
+          const inSection = route.path === SETTINGS_PATH && pathname.startsWith(ABOUT_PATH)
           return (
             <li key={route.path} className="min-w-0 flex-1">
               <NavLink
@@ -105,7 +116,7 @@ export function TabBar() {
                   cn(
                     'flex h-14 flex-col items-center justify-center gap-0.5 px-1 text-center',
                     'text-[11px] leading-tight',
-                    isActive ? 'text-text' : 'text-muted',
+                    isActive || inSection ? 'text-text' : 'text-muted',
                   )
                 }
               >
@@ -119,7 +130,7 @@ export function TabBar() {
                       className={cn(
                         'flex h-7 w-12 items-center justify-center rounded-chip',
                         'transition-colors duration-[var(--dur)] ease-ds',
-                        isActive && 'bg-accent text-accent-fg',
+                        (isActive || inSection) && 'bg-accent text-accent-fg',
                       )}
                     >
                       <Icon size={18} />

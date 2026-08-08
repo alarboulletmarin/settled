@@ -245,6 +245,12 @@ export const fr = {
        prête, ce qu'il promet de garder — là où « Données » parle des fichiers
        qui en sortent. */
     title: 'Sur cet appareil',
+    /* L'état d'abord, l'explication ensuite. Les deux phrases ci-dessous disent
+       ce qu'il faut comprendre, mais elles se lisent — et un réglage se
+       reconnaît d'un coup d'œil avant de se lire. Quatre mots au-dessus, dans
+       la lettre du texte courant, et la prose passe en dessous. */
+    stateKept: 'Tes données sont conservées',
+    stateFragile: 'Rien n’est promis',
     persisted: 'Le navigateur s’est engagé à garder tes données.',
     notPersisted:
       'Le navigateur n’a rien promis : il peut effacer tes données s’il manque de place. Un export régulier reste la vraie protection.',
@@ -267,17 +273,30 @@ export const fr = {
   },
 
   settings: {
-    themeHint: 'Le thème suit ton système, ou reste sur ton choix.',
+    /* Les deux étiquettes de groupe de la page d'entrée. Elles ne nomment pas
+       un écran mais une intention — ce qu'on vient y régler —, et c'est ce qui
+       permet à « Thème » et « Devise » de tenir en deux rangées là où chacun
+       occupait une tuile entière. */
+    preferences: 'Préférences',
+    organisation: 'Organisation',
+
+    /* Le thème ne se commente plus : « Clair · Sombre · Système » se lit sur la
+       bascule elle-même, et une phrase pour redire les trois positions qu'on a
+       sous les yeux est exactement le genre d'explication permanente qui
+       allongeait la page sans rien apprendre. */
 
     currency: 'Devise',
-    /* La phrase dit surtout ce que ce réglage **ne fait pas**. Un sélecteur de
-       devise invite à croire qu'on convertit ; l'app ne convertit rien et ne le
-       fera pas — le cahier §2 laisse la multi-devise hors v1. Ne rien dire
-       aurait laissé quelqu'un changer de devise en pensant que ses montants
-       suivraient. */
-    currencyHint:
-      'Le symbole sous lequel tes montants s’affichent. Rien n’est converti : les chiffres saisis restent les mêmes.',
+    /* La phrase dit ce que ce réglage **ne fait pas**, et rien d'autre : un
+       sélecteur de devise invite à croire qu'on convertit ; l'app ne convertit
+       rien et ne le fera pas — le cahier §2 laisse la multi-devise hors v1. Ne
+       rien dire laisserait changer de devise en pensant que les montants
+       suivent ; en dire plus reviendrait à décrire ce que le sélecteur montre
+       déjà. */
+    currencyHint: 'Rien n’est converti : seul le symbole change.',
     aboutLink: 'Le projet, le code et la licence',
+    /* Ce que « à propos » contient, sur une ligne — la version en tête, parce
+       que c'est la seule chose qu'on y cherche sans l'avoir déjà lue. */
+    aboutSummary: 'Version %s · le projet, le code, la licence',
 
     household: 'Personnes',
     /* Le nom ne décrit plus un foyer, il décore un en-tête — et il est
@@ -285,12 +304,25 @@ export const fr = {
        et se passe très bien d'une seconde ligne. Il ne se demande donc plus au
        premier lancement, où il était la seule réponse exigée de toute l'app. */
     householdName: 'Nom affiché',
-    householdHint: 'En haut de chaque écran. Facultatif.',
+    /* Sans « Facultatif. » : l'étiquette du champ le dit déjà, à trois
+       centimètres au-dessus. */
+    householdHint: 'En haut de chaque écran.',
     householdPlaceholder: '',
     members: 'Membres',
+    /* Le résumé que lit la page d'entrée : le nom affiché tient la première
+       ligne, celui-ci la seconde. Il répond à « qui compose mon foyer » sans
+       ouvrir quoi que ce soit — c'est tout ce qu'on demande à une page de
+       réglages. */
+    membersCountOne: '%s membre',
+    membersCount: '%s membres',
+    membersNone: 'Personne pour l’instant',
     memberAdd: 'Ajouter un membre',
     memberName: 'Prénom',
     memberPlaceholder: 'Alix',
+    /* Sur la fiche d'un membre : ce qu'il gagne, et sa part. Le chiffre ne s'y
+       saisit pas — il se lit sur ses récurrences de ressources —, l'étiquette
+       nomme donc une lecture, pas un champ. */
+    memberIncome: 'Revenu mensuel',
     /* Le prénom se corrige sur place, comme le libellé d'une catégorie. Le nom
        accessible porte celui qu'on modifie : la liste compte un champ par
        membre, et « Prénom » seul les annoncerait tous pareil. */
@@ -345,7 +377,6 @@ export const fr = {
     familyName: 'Nom de la famille',
     familyPlaceholder: 'Animaux',
     familyKind: 'Nature',
-    familyOf: 'Famille',
     categoryAdd: 'Ajouter une catégorie',
     categoryName: 'Libellé',
     categoryPlaceholder: 'Loisirs',
@@ -353,12 +384,21 @@ export const fr = {
     categoryRestore: 'Réactiver %s',
     familyCountOne: '%s catégorie',
     familyCount: '%s catégories',
-    collapseAll: 'Tout replier',
-    expandAll: 'Tout déplier',
+    /* Le pendant du précédent, pour le résumé de la page d'entrée : « 46
+       catégories · 12 familles » dit la taille du catalogue sans en déplier une
+       seule ligne. */
+    familiesCountOne: '%s famille',
+    familiesCount: '%s familles',
+    /* Deux vides, deux phrases : un catalogue sans aucune famille n'est pas une
+       famille sans catégorie, et la seconde n'invite pas au même geste. */
+    familiesEmpty: 'Aucune famille pour l’instant.',
+    familyEmpty: 'Aucune catégorie ici pour l’instant.',
     archive: 'Archiver',
     restore: 'Réactiver',
-    categoryDirection: 'Sens',
-    categoryArchived: 'Archivées',
+    /* « Sens » et « Archivées » vivaient ici sans être écrits nulle part : le
+       sens d'une catégorie découle de la nature de sa famille depuis qu'il ne
+       se saisit plus, et rien ne filtre plus les archivées — leur pastille en
+       pointillés le dit dans la liste. */
     categoriesHint:
       'Une catégorie n’est jamais effacée : elle est archivée, et les entrées passées la gardent.',
     /* Quarante-six catégories sous onze familles repliées : retrouver
@@ -368,6 +408,19 @@ export const fr = {
     categorySearchEmpty: 'Aucune catégorie ne correspond à « %s ».',
 
     data: 'Données',
+    /* Les deux vues que le groupe « Données » ouvre, et ce qu'elles contiennent
+       — dit en une ligne chacune, à la place des deux tuiles pleines qu'elles
+       étaient. « Sur cet appareil » porte son titre dans `storage`, avec le
+       reste de ce qui parle au navigateur. */
+    storageSummary: 'Données conservées localement',
+    transfer: 'Exporter / importer',
+    transferSummary: 'Sauvegarder ou restaurer les données',
+    /* Les deux premières intentions de la vue des données — les deux autres se
+       nomment déjà, « Schéma de données » et « Jeu d'exemple ». Des titres, pas
+       des cartes : une carte par bouton aurait donné le même poids visuel à
+       « exporter tout » et à « télécharger le schéma ». */
+    backupGroup: 'Sauvegarde',
+    restoreGroup: 'Restauration',
     export: 'Exporter mes données',
     exportHint: 'Un fichier .json contenant tout, à ranger où tu veux.',
     exported: 'Export téléchargé',
@@ -451,6 +504,12 @@ export const fr = {
     exampleLoaded: 'Jeu d’exemple chargé',
     exampleFailed: 'Le jeu d’exemple n’a pas pu être chargé. Vérifie ta connexion, puis réessaie.',
 
+    /* Le seul geste de l'app qui n'épargne rien vivait au milieu des outils,
+       sous la même forme qu'« Exporter » et « Copier le schéma ». Il a
+       maintenant sa zone, en bas et à part : ce n'est pas la couleur qui
+       prévient l'erreur, c'est la distance et le titre qui l'annonce. */
+    sensitive: 'Zone sensible',
+    resetTitle: 'Effacer toutes les données',
     reset: 'Tout effacer',
     resetHint: 'Efface les personnes, les récurrences et toutes les entrées. Sans retour.',
     /* Trois questions, et trois questions différentes : ce qui part, le fait

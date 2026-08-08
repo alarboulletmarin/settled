@@ -13,6 +13,7 @@ export type RouteDef = { path: string; label: string; icon: IconComponent }
 /* Déclaré avant la table : un `const` ne remonte pas, et `NAV_ROUTES` le lit à
    l'évaluation du module. */
 export const RECURRENCES_PATH = '/recurrences'
+export const SETTINGS_PATH = '/reglages'
 /* Segment fixe : React Router le classe avant `/recurrences/:id`, une
    récurrence ne peut donc pas éclipser le formulaire de création. */
 export const RECURRENCE_NEW_PATH = `${RECURRENCES_PATH}/nouveau`
@@ -29,7 +30,7 @@ export const NAV_ROUTES: RouteDef[] = [
   { path: '/calendrier', label: fr.nav.calendar, icon: NavCalendar },
   { path: RECURRENCES_PATH, label: fr.nav.subscriptions, icon: RecurrencesIcon },
   { path: '/historique', label: fr.nav.history, icon: HistoryIcon },
-  { path: '/reglages', label: fr.nav.settings, icon: NavSettings },
+  { path: SETTINGS_PATH, label: fr.nav.settings, icon: NavSettings },
 ]
 
 export const STYLEGUIDE_ROUTE = { path: '/styleguide', label: fr.nav.styleguide }
@@ -117,6 +118,38 @@ export const SAVINGS_PATH = '/epargne'
    formulaires — d'où une URL, hors navigation. */
 export const ADVANCE_NEW_PATH = '/avances/nouveau'
 
+/* Les réglages ne sont plus un écran mais une section.
+ *
+ * Ils tenaient dans une seule page : les personnes, le catalogue entier des
+ * catégories, le thème, la devise, le stockage, l'export, l'import, le schéma,
+ * le jeu d'exemple, l'effacement et « à propos », formulaires ouverts compris.
+ * On y cherchait un réglage en faisant défiler une page d'administration.
+ *
+ * Une page d'entrée, donc, et huit vues qu'on n'ouvre qu'en les demandant.
+ * Chacune porte son URL — c'est ce qui rend le retour du navigateur, le partage
+ * d'un lien et le bouton « retour » de l'écran identiques à ceux du reste de
+ * l'app, plutôt qu'un état de composant qu'aucune de ces trois choses ne
+ * connaît. « À propos » n'en fait pas partie : la page existe déjà, elle parle
+ * de l'app et non d'un foyer, et la dupliquer sous `/reglages` aurait donné
+ * deux adresses au même texte. */
+export const SETTINGS_PEOPLE_PATH = `${SETTINGS_PATH}/personnes`
+/* Segment fixe avant `:id`, comme pour les récurrences : React Router le classe
+   d'abord, un membre ne peut donc pas éclipser le formulaire de création. */
+export const SETTINGS_MEMBER_NEW_PATH = `${SETTINGS_PEOPLE_PATH}/nouveau`
+export const settingsMemberPath = (id: string): string => `${SETTINGS_PEOPLE_PATH}/${id}`
+
+export const SETTINGS_CATEGORIES_PATH = `${SETTINGS_PATH}/categories`
+export const SETTINGS_FAMILY_NEW_PATH = `${SETTINGS_CATEGORIES_PATH}/nouvelle`
+export const settingsFamilyPath = (id: string): string => `${SETTINGS_CATEGORIES_PATH}/${id}`
+/* La création d'une catégorie vit sous sa famille : celle-ci porte la nature et
+   la teinte, et l'écran n'a donc plus à redemander ce qu'on vient de choisir en
+   ouvrant la famille. */
+export const settingsCategoryNewPath = (familyId: string): string =>
+  `${SETTINGS_CATEGORIES_PATH}/${familyId}/nouvelle`
+
+export const SETTINGS_STORAGE_PATH = `${SETTINGS_PATH}/stockage`
+export const SETTINGS_DATA_PATH = `${SETTINGS_PATH}/donnees`
+
 /**
  * Écrans qui n'ont qu'une chose à montrer — une saisie, une fiche. Aucune
  * bannière ne s'y intercale au-dessus du titre.
@@ -126,7 +159,16 @@ export function isFocusScreen(pathname: string): boolean {
     pathname.startsWith(ENTRY_NEW_PATH) ||
     pathname.startsWith(ADVANCE_NEW_PATH) ||
     (pathname.startsWith(`${RECURRENCES_PATH}/`) && pathname !== `${RECURRENCES_PATH}/`) ||
-    (pathname.startsWith(`${CREDITS_PATH}/`) && pathname !== `${CREDITS_PATH}/`)
+    (pathname.startsWith(`${CREDITS_PATH}/`) && pathname !== `${CREDITS_PATH}/`) ||
+    /* Les vues des réglages, et non la page d'entrée. Chacune n'a qu'un sujet,
+       son propre retour, et le plus souvent sa propre action principale —
+       « Ajouter un membre », « Ajouter une famille », « Ajouter une catégorie ».
+       Le bouton flottant y poserait une seconde action principale sur le même
+       écran, à trois centimètres de la première et sans rapport avec elle ; et
+       le rappel d'export s'intercalerait au-dessus d'un titre qui, sur la vue
+       des données, mène justement à l'export. La page d'entrée reste une
+       destination de la barre d'onglets : elle garde les deux. */
+    pathname.startsWith(`${SETTINGS_PATH}/`)
   )
 }
 

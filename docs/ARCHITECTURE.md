@@ -244,9 +244,43 @@ lecteur d'écran, répond au clavier, et la recherche dans la page sait ouvrir c
 qui est replié. L'en-tête garde une lecture visible même replié — un total, un
 compte : une section qu'il faut ouvrir pour savoir si elle vaut la peine ne fait
 gagner aucun défilement. Le mois passe ainsi de 2 150 px à 302 px groupé par
-personne, les récurrences de 1 518 px à 708 px, et les réglages de 4 779 px à
-1 137 px. L'état d'un jeu de sections vit dans `ui/useDisclosureGroup.ts`, une
-seule fois pour les trois écrans.
+personne, et les récurrences de 1 518 px à 708 px. L'état d'un jeu de sections
+vit dans `ui/useDisclosureGroup.ts`, une seule fois pour les deux écrans.
+
+Le repli a une limite, et les réglages l'ont atteinte : replier douze familles
+raccourcit la page, mais retrouver « Carburant » demande encore de deviner
+sous laquelle elle est rangée, puis de les ouvrir une par une. Passé un
+certain volume, une section n'est plus une section — c'est un écran (voir
+ci-dessous).
+
+**Les réglages sont une section, pas un écran.** La page portait tout : les
+personnes, le catalogue entier, le thème, la devise, le stockage, l'export,
+l'import, le schéma, le jeu d'exemple, l'effacement total et « à propos », avec
+trois formulaires ouverts en permanence — **3 725 px à 390 px de large**, jeu
+d'exemple chargé. C'était une console d'administration, pas une page de réglages
+de téléphone : consulter, naviguer, créer et modifier s'y faisaient au même
+endroit et au même poids visuel, et changer de thème demandait de traverser
+quarante-sept catégories.
+
+Une entrée, donc — **952 px**, cinq groupes, sept rangées, chacune disant sa
+valeur — et huit vues sous `/reglages/…` : les personnes, la fiche d'un membre,
+le catalogue, une famille, les deux formulaires de création, le stockage, les
+données. Le thème seul reste réglable sur place : trois positions ne méritent
+pas un écran. Chaque vue porte son URL, ce qui rend le retour du navigateur, le
+partage d'un lien et le bouton de l'écran identiques à ceux du reste de l'app —
+là où un état de composant n'aurait été connu d'aucun des trois.
+
+Deux conséquences, l'une et l'autre écrites une fois : `isFocusScreen` compte
+désormais `/reglages/…` mais pas `/reglages`, ce qui retire le bouton flottant
+des vues qui ont déjà leur propre action principale (« Ajouter un membre »,
+« Ajouter une famille ») ; et la barre d'onglets garde « Réglages » allumé sur
+`/a-propos`, qui vit à la racine — elle parle de l'app, pas d'un foyer — mais
+qu'on n'atteint, sous 1024px, que par les réglages.
+
+Le groupe et la rangée sont deux primitives de vingt lignes
+(`features/settings/SettingsRow.tsx`), au-dessus de `Tile` et d'`Eyebrow` : la
+tuile redevient ce que le DS §6 en dit — un groupe logique —, et la hiérarchie
+passe à l'intérieur, en filets et en lettres, plutôt qu'en cartes empilées.
 
 **Défaire tient dans un instantané, pas dans une commande.** Toutes les
 mutations du domaine sont pures — `updates.ts` rend un `Data` neuf plutôt que de

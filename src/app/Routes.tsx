@@ -26,6 +26,13 @@ import {
   PRIVACY_PATH,
   RECURRENCES_PATH,
   RECURRENCE_NEW_PATH,
+  SETTINGS_CATEGORIES_PATH,
+  SETTINGS_DATA_PATH,
+  SETTINGS_FAMILY_NEW_PATH,
+  SETTINGS_MEMBER_NEW_PATH,
+  SETTINGS_PATH,
+  SETTINGS_PEOPLE_PATH,
+  SETTINGS_STORAGE_PATH,
   TERMS_PATH,
 } from './routes'
 
@@ -47,9 +54,27 @@ import {
 const HistoryPage = lazy(async () => ({
   default: (await import('@/features/history/HistoryPage')).HistoryPage,
 }))
-const SettingsPage = lazy(async () => ({
-  default: (await import('@/features/settings/SettingsPage')).SettingsPage,
-}))
+
+/**
+ * Les réglages, en un seul morceau — pour sept écrans.
+ *
+ * Toutes les vues de la section passent par le même spécificateur, donc par le
+ * même chunk : ouvrir « Réglages » amène la section entière, et descendre vers
+ * les catégories puis vers une famille n'attend plus le réseau à chaque pas.
+ * Un `import()` par vue aurait rendu sept morceaux dont six se chargent
+ * toujours à la suite du premier — c'est-à-dire six allers-retours au lieu
+ * d'un, sur les écrans où l'on fait justement des allers-retours.
+ */
+const settings = () => import('@/features/settings/pages')
+const SettingsPage = lazy(async () => ({ default: (await settings()).SettingsPage }))
+const PeoplePage = lazy(async () => ({ default: (await settings()).PeoplePage }))
+const MemberPage = lazy(async () => ({ default: (await settings()).MemberPage }))
+const CategoriesPage = lazy(async () => ({ default: (await settings()).CategoriesPage }))
+const FamilyPage = lazy(async () => ({ default: (await settings()).FamilyPage }))
+const FamilyNewPage = lazy(async () => ({ default: (await settings()).FamilyNewPage }))
+const CategoryNewPage = lazy(async () => ({ default: (await settings()).CategoryNewPage }))
+const StoragePage = lazy(async () => ({ default: (await settings()).StoragePage }))
+const DataPage = lazy(async () => ({ default: (await settings()).DataPage }))
 
 /**
  * Les trois pages juridiques, dans un seul morceau.
@@ -109,7 +134,20 @@ export function AppRoutes() {
           <Route path="/epargne" element={<SavingsPage />} />
           <Route path={ADVANCE_NEW_PATH} element={<AdvanceFormPage />} />
           <Route path="/historique" element={<HistoryPage />} />
-          <Route path="/reglages" element={<SettingsPage />} />
+          {/* Les réglages et leurs vues. L'ordre d'écriture n'y fait rien —
+              React Router classe les segments fixes avant les paramètres —,
+              mais il dit la hiérarchie : une page d'entrée, puis ce qu'elle
+              ouvre, dans l'ordre où elle le propose. */}
+          <Route path={SETTINGS_PATH} element={<SettingsPage />} />
+          <Route path={SETTINGS_PEOPLE_PATH} element={<PeoplePage />} />
+          <Route path={SETTINGS_MEMBER_NEW_PATH} element={<MemberPage />} />
+          <Route path={`${SETTINGS_PEOPLE_PATH}/:id`} element={<MemberPage />} />
+          <Route path={SETTINGS_CATEGORIES_PATH} element={<CategoriesPage />} />
+          <Route path={SETTINGS_FAMILY_NEW_PATH} element={<FamilyNewPage />} />
+          <Route path={`${SETTINGS_CATEGORIES_PATH}/:id`} element={<FamilyPage />} />
+          <Route path={`${SETTINGS_CATEGORIES_PATH}/:id/nouvelle`} element={<CategoryNewPage />} />
+          <Route path={SETTINGS_STORAGE_PATH} element={<StoragePage />} />
+          <Route path={SETTINGS_DATA_PATH} element={<DataPage />} />
           {/* Déclarée ici *et* dans les routes d'avant le foyer, pour qu'elle
               hérite de la navigation quand celle-ci existe. La hisser au niveau de
               `/styleguide` l'en aurait privée une fois le foyer créé : pas de
