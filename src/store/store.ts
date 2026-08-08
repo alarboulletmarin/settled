@@ -13,10 +13,10 @@ import { monthHorizon } from '@/domain/month'
 import { openMonth } from '@/domain/updates'
 import type { Data, PaletteSetting, ThemeSetting } from '@/domain/types'
 import { fr } from '@/i18n/fr'
-import { requestPersistence } from '@/lib/storage'
 import { backupDaily, clearBackups } from '@/persistence/backups'
 import { clearDocument, loadDocument, saveDocument, setDbEventHandler } from '@/persistence/db'
 import { emptyData } from '@/persistence/defaults'
+import { askDurability, noteWrite, noteWriteFailure, probeDurability } from '@/persistence/health'
 import { type TabChannel, type TabMessage, openTabChannel } from '@/persistence/tabs'
 import { forgetExportMarks } from '@/persistence/transfer'
 import { WRITE_DELAY_MS, createWriter } from '@/persistence/writer'
@@ -143,7 +143,19 @@ let bootSnapshot: Data | null = null
  */
 async function persist(data: Data): Promise<void> {
   const rev = useStore.getState().rev + 1
-  await saveDocument(data, rev)
+  /* Le seul endroit d'où part une écriture du document — le writer et les
+     remplacements passent tous deux par ici —, donc le seul où la santé du
+     stockage puisse se tenir à jour sans être notée à deux endroits qui
+     finiraient par diverger. La marque est posée sur la transaction commise,
+     pas sur l'appel : c'est toute la différence entre « l'écran a changé » et
+     « c'est écrit ». */
+  try {
+    await saveDocument(data, rev)
+  } catch (cause) {
+    noteWriteFailure()
+    throw cause
+  }
+  noteWrite()
   useStore.setState({ rev })
   channel?.post({ type: 'saved', rev })
 
@@ -230,6 +242,12 @@ export const useStore = create<Store>()((set, get) => ({
   async hydrate() {
     // Idempotent : `StrictMode` fait partir l'effet deux fois en développement.
     channel ??= openTabChannel((message) => void get().onTabMessage(message))
+
+    /* Une lecture, jamais une demande — voir `probeDurability`. Hors du chemin
+       d'hydratation : ce que le navigateur promet ne conditionne rien de ce
+       qu'on affiche, et faire attendre le document derrière une API de
+       stockage serait payer une seconde d'écran de démarrage pour un bandeau. */
+    void probeDurability()
 
     /* Le délai gagne définitivement : une lecture qui aboutit après coup est
        jetée. Remplacer tout le document sous quelqu'un qui a commencé à
@@ -319,8 +337,10 @@ export const useStore = create<Store>()((set, get) => ({
   finishOnboarding() {
     /* Sans `persist()`, le navigateur a le droit d'évincer IndexedDB sous
        pression disque, sur une app dont c'est le seul endroit où vivent les
-       données. Rien n'est annoncé du résultat ici — voir `requestPersistence`. */
-    void requestPersistence()
+       données. Rien n'est annoncé du résultat ici — voir `askDurability` —,
+       mais il est désormais retenu : c'est ce qui permet aux réglages et à
+       l'avis de conservation de dire ce qu'il en est plutôt que de redemander. */
+    void askDurability()
 
     /* Un document illisible n'est pas un document absent. `hydrate` bascule sur
        l'onboarding dans les deux cas — l'app n'a rien d'utilisable à montrer —
@@ -364,7 +384,7 @@ export const useStore = create<Store>()((set, get) => ({
     useToasts.getState().clearActions()
     // Un import ou le jeu d'exemple créent un foyer tout autant : quelqu'un qui
     // restaure un export sur un appareil neuf ne passe jamais par l'onboarding.
-    void requestPersistence()
+    void askDurability()
     mirrorAppearance(data.settings)
     set({ data, status: 'ready', error: null, ym: currentYm(), filter: ALL_FILTER })
     // Le fichier importé peut dater : le mois courant n'y est pas forcément.

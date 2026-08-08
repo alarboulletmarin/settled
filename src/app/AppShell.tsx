@@ -1,15 +1,14 @@
 import { type ReactNode, useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ExportReminder } from '@/features/settings/ExportReminder'
 import { fr } from '@/i18n/fr'
 import { cn } from '@/lib/cn'
 import { useHouseholdName } from '@/store/selectors'
 import { ScreenEntryProvider } from '@/ui/ScreenEntryProvider'
 import { ScreenTitleProvider } from '@/ui/ScreenTitleProvider'
 import { useHotkeys } from '@/ui/useHotkeys'
+import { DataNotice } from './DataNotice'
 import { Sidebar, TabBar } from './Nav'
 import { QuickEntry } from './QuickEntry'
-import { StorageAlert } from './StorageAlert'
 import { entryNewPath, isFocusScreen } from './routes'
 
 /** Coquille de l'app : navigation et gabarit. Aucune règle métier ici. */
@@ -92,13 +91,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             'pb-[calc(var(--nav-h)+5.5rem+env(safe-area-inset-bottom))] lg:pb-10',
           )}
         >
-          {/* Celui-ci ne connaît pas `isFocusScreen` : un écran de saisie est
-              précisément l'endroit où l'on est en train de perdre du travail. */}
-          <StorageAlert />
-          {/* Le rappel d'export, lui, ne s'intercale pas au-dessus d'une saisie
-              en cours ni d'une fiche : ces écrans-là n'ont qu'une chose à
-              montrer, et un export peut attendre la fin de la phrase. */}
-          {!focus && <ExportReminder />}
+          {/* Un seul bandeau pour les trois façons de dire « garde une copie » —
+              échec d'écriture, conservation non garantie, export ancien — et une
+              seule décision derrière : voir `DataNotice`. Il reçoit `focus`
+              plutôt que de s'effacer entièrement sur un écran de saisie, car
+              l'échec confirmé, lui, doit s'y montrer : c'est précisément là
+              qu'on est en train de perdre du travail. */}
+          <DataNotice focus={focus} />
           {/* Sous `key={pathname}` : c'est cette clé qui fait d'un changement
               d'URL une arrivée, et le marqueur d'arrivée doit repartir avec
               elle. Il n'englobe pas les deux bandeaux ci-dessus, qui ne
