@@ -232,6 +232,35 @@ describe('Sheet — la feuille qu’on ne referme pas', () => {
     const { dialog } = open()
     expect(dialog).not.toHaveAttribute('aria-describedby')
   })
+
+  /* `showModal()` viserait le premier élément focusable du contenu, dont un
+     lecteur d'écran annoncerait le nom à la place de la description. */
+  it('prend le focus elle-même', () => {
+    const { dialog } = open({ dismissible: false })
+    expect(dialog).toHaveFocus()
+    expect(dialog).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('ne le prend pas quand la croix est là pour l’avoir', () => {
+    const { dialog } = open()
+    expect(dialog).not.toHaveFocus()
+    expect(dialog).not.toHaveAttribute('tabindex')
+  })
+
+  /* La poignée est la quatrième sortie : elle n'a pas à survivre là où les trois
+     autres ont été retirées, même si les deux props se posent côte à côte. */
+  it('ne prend pas le glissement, même invitée à le prendre', () => {
+    const { onClose, dialog } = open({ dismissible: false, pullToClose: true })
+    expect(handle(dialog)).toBeNull()
+
+    const zone = band()
+    pointer('pointerDown', zone, { y: 100 })
+    pointer('pointerMove', zone, { y: 400 })
+    pointer('pointerUp', zone, { y: 400 })
+
+    expect(pulled(dialog)).toBe('')
+    expect(onClose).not.toHaveBeenCalled()
+  })
 })
 
 describe('Sheet — le pied de feuille', () => {

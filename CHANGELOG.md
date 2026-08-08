@@ -51,18 +51,39 @@ sans en avoir croisé une ligne. La promesse était partout sauf devant lui.
 - **L'énumération du stockage local est corrigée**, et c'est plus qu'un détail :
   toute la crédibilité d'une notice qui affirme ne rien collecter repose sur
   l'exactitude de la liste de ce qui est écrit. Elle annonçait trois réglages
-  quand il y en avait quatre — la palette manquait — et il y en a cinq
-  maintenant, tous nommés.
-- **Ni croix, ni Échap, ni clic sur le fond** : `Sheet` accepte
+  quand il y en avait quatre — la palette manquait depuis que les six palettes
+  existent — et il y en a cinq maintenant, tous nommés.
+- **« Tout effacer » cesse de promettre qu'il ne reste rien.** La page disait
+  qu'il « ne laisse rien derrière » ; elle dit maintenant qu'il ne laisse rien
+  *de tes données*, et nomme les trois choses qui restent — le thème, la palette
+  et cette notice — avec la raison : aucune ne parle de tes données. C'était déjà
+  vrai du thème avant cette version.
+- **Ni croix, ni Échap, ni clic sur le fond, ni glissement** : `Sheet` accepte
   `dismissible={false}`, et c'est le seul écran qui y a droit. Il n'y a pas de
   « non » à offrir puisqu'il n'y a rien à accepter, et une sortie sans mot ferait
   passer pour un refus le fait d'avoir cliqué de travers. Ce n'est pas un piège
   au sens de WCAG 2.1.2 : la case répond à la barre d'espace, le bouton à
   Entrée — la sortie existe au clavier, elle est simplement nommée.
-- **Le texte de la feuille est désigné**, et pas seulement affiché.
-  `showModal()` place le focus sur le premier élément focusable : sans
-  `aria-describedby`, un lecteur d'écran annonçait le titre puis
-  « Confidentialité, lien », et rien des quatre lignes entre les deux.
+- **Le texte de la feuille est désigné, et la feuille prend le focus.** Les deux
+  vont ensemble, et le premier ne valait rien sans le second : `showModal()`
+  visait le lien « Confidentialité » au milieu du corps, dont un lecteur d'écran
+  annonçait le nom *à la place* de la description qu'on venait de poser.
+- **La case vit en fin de corps, pas dans le pied**, où elle a d'abord été
+  posée : le pied est hors du défilement, donc sur un téléphone de 320 on cochait
+  « J'ai lu » sans avoir fait défiler une seule des quatre lignes. Mesuré — 304
+  pixels de fenêtre pour 453 de texte.
+- **Trois familles d'écrans ne la reçoivent pas.** Les trois pages juridiques,
+  parce qu'elle y mène : la modale recouvrait la page que son lien venait
+  d'ouvrir, on ne voyait rien se passer, et le lien passait donc pour cassé. Le
+  nuancier, qui n'est pas un écran de l'app et qui existe pour inspecter les
+  composants — celui-ci compris. Et un document qui ne s'ouvre pas : l'écran
+  d'arrivée porte alors les quatre recours du cahier §5, et retarder un sauvetage
+  de données pour une formalité serait le pire moment de toute l'app pour
+  bloquer. Dans ces deux derniers cas, rien n'est retenu : elle est due, elle est
+  seulement remise.
+- **Elle se referme sans se démonter**, pour que l'animation de sortie ait encore
+  un nœud à animer — la feuille de style la porte depuis toujours, et la démonter
+  l'escamotait d'un coup.
 - **Fermer la notice survit à « Tout effacer ».** Le drapeau vit hors du document,
   comme le thème et la palette, et pour la même raison : il décrit ce qu'on a lu,
   pas l'état des données. Les deux dates d'export, elles, partent à l'effacement

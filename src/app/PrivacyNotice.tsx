@@ -1,12 +1,13 @@
 import { useId, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { fr } from '@/i18n/fr'
 import { hasReadNotice, markNoticeRead } from '@/lib/notice'
+import { useStore } from '@/store/store'
 import { Button } from '@/ui/Button'
 import { Checkbox } from '@/ui/Field'
 import { Sheet } from '@/ui/Sheet'
 import { LINK } from './AppFooter'
-import { PRIVACY_PATH } from './routes'
+import { LEGAL_ROUTES, PRIVACY_PATH, STYLEGUIDE_ROUTE } from './routes'
 
 /**
  * La promesse de ne rien collecter, devant qui n'a pas l'intention de la lire.
@@ -31,12 +32,36 @@ import { PRIVACY_PATH } from './routes'
  * foyer, lui, reste supprimé pour la raison inverse : il exigeait une réponse
  * *sur soi* pour une décoration (§4.1).
  *
+ * Elle vit **en fin de corps et non dans le pied**, où elle a d'abord été
+ * posée : le pied est hors du défilement, donc sur un téléphone de 320 on
+ * cochait « J'ai lu » sans avoir fait défiler une seule des quatre lignes. Une
+ * case qui atteste de ce qu'on n'a pas pu lire ne vaut rien — et le DS §6 dit
+ * par ailleurs de la légende du pied qu'elle « est pour l'œil, elle n'est reliée
+ * à rien », ce qu'un contrôle ne peut pas être.
+ *
  * **Échap inerte n'est pas un piège au sens de WCAG 2.1.2.** Le piège de focus
  * reste celui du navigateur, la case répond à la barre d'espace et le bouton à
- * Entrée : la sortie existe au clavier, elle est simplement nommée. Et le texte
- * est désigné en `aria-describedby` — sans quoi `showModal()` poserait le focus
- * sur le premier lien du corps, et un lecteur d'écran annoncerait le titre puis
- * « Confidentialité, lien », sans un mot des quatre lignes entre les deux.
+ * Entrée : la sortie existe au clavier, elle est simplement nommée. Le focus
+ * d'entrée, lui, va sur la boîte et non sur son premier lien — sans quoi un
+ * lecteur d'écran annoncerait le nom du lien à la place de la description que
+ * `describedBy` pose (voir `Sheet`).
+ *
+ * **Trois familles d'écrans ne la reçoivent pas**, et aucune n'est une
+ * exception de confort :
+ *
+ * - **Les trois pages juridiques**, parce qu'elle y mène. Son lien est la seule
+ *   chose qu'elle donne à vérifier, et la modale recouvrait la page qu'il vient
+ *   d'ouvrir : on ne voyait rien se passer, donc le lien passait pour cassé.
+ *   Elle revient en repartant, décochée — le drapeau n'est pas écrit, et lire la
+ *   politique n'est pas la même chose que dire qu'on l'a lue.
+ * - **Le nuancier**, qui n'est pas un écran de l'app : `App.tsx` le dit d'une
+ *   route de développement que « personne n'ouvre depuis l'app », et le pied de
+ *   page refuse de le lier. C'est aussi le seul écran où une surcouche globale
+ *   nuit vraiment — il existe pour inspecter les composants, celui-ci compris.
+ * - **Un document qui ne s'ouvre pas.** L'écran d'arrivée porte alors les quatre
+ *   recours du cahier §5, et retarder un sauvetage de données pour une formalité
+ *   serait le pire moment de toute l'app pour bloquer. Le drapeau ne s'écrit pas
+ *   non plus : elle est due, elle est seulement remise.
  *
  * **Le drapeau se lit au premier rendu**, pas dans un effet : le document vit en
  * IndexedDB (asynchrone), la notice doit répondre avant lui, et `localStorage`
@@ -45,18 +70,34 @@ import { PRIVACY_PATH } from './routes'
  * annoncée à ceux qui s'en servent déjà.
  */
 export function PrivacyNotice() {
-  /* Un initialiseur et non une valeur : `hasReadNotice()` toucherait
-     `localStorage` à chaque rendu, et un rendu de plus est tout ce qu'il faut
-     pour rouvrir une modale qu'on vient de fermer. */
-  const [open, setOpen] = useState(() => !hasReadNotice())
+  /* Deux états et non un seul, parce qu'ils ne disent pas la même chose : ce
+     qu'on savait au montage, et ce que ce chargement-ci a fait. Le premier est
+     figé — un initialiseur, donc une seule lecture de `localStorage` —, et c'est
+     lui qui décide s'il y a quelque chose à monter ; le second referme la
+     feuille en la laissant en place, sans quoi l'animation de sortie de `.sheet`
+     n'aurait plus de nœud à animer et le bouton escamoterait la modale d'un
+     coup. */
+  const [seen] = useState(hasReadNotice)
+  const [done, setDone] = useState(false)
   const [read, setRead] = useState(false)
   const bodyId = useId()
 
-  if (!open) return null
+  const { pathname } = useLocation()
+  /* Une lecture synchrone, fausse au premier rendu comme toute lecture du store
+     avant l'hydratation : c'est exactement ce qu'il faut ici — rien ne se
+     retarde, et l'échec, quand il arrive, arrive avec l'écran qui le porte. */
+  const failing = useStore((s) => s.error !== null)
+
+  const elsewhere =
+    pathname === STYLEGUIDE_ROUTE.path || LEGAL_ROUTES.some((route) => route.path === pathname)
+
+  /* Rien du tout, et non une feuille refermée : elle n'a jamais été là chez qui
+     l'a déjà lue, donc il n'y a aucune sortie à animer. */
+  if (seen) return null
 
   return (
     <Sheet
-      open
+      open={!done && !elsewhere && !failing}
       /* Elle ne se referme pas, donc `onClose` n'a rien à faire — mais la prop
          est requise, et lui donner le bouton reviendrait à écrire une sortie que
          `dismissible={false}` vient justement de retirer. */
@@ -64,25 +105,13 @@ export function PrivacyNotice() {
       dismissible={false}
       describedBy={bodyId}
       title={fr.notice.title}
-      footerLead={
-        <Checkbox
-          checked={read}
-          onChange={setRead}
-          label={fr.notice.check}
-          /* L'aide reste affichée après la coche : le DS §6 le demande de ce qui
-             informe de ce qui va se passer, et la faire disparaître au moment où
-             l'on comprend enfin le lien entre la case et le bouton reviendrait à
-             effacer l'explication au profit de qui n'en a plus besoin. */
-          hint={fr.notice.checkHint}
-        />
-      }
       footer={
         <Button
           full
           disabled={!read}
           onClick={() => {
             markNoticeRead()
-            setOpen(false)
+            setDone(true)
           }}
         >
           {fr.notice.action}
@@ -122,6 +151,20 @@ export function PrivacyNotice() {
             {fr.legal.privacy}
           </Link>
         </div>
+
+        {/* Dernière chose du corps, donc derrière ce qu'elle atteste, et séparée
+            d'un filet : ce n'est plus de la lecture, c'est le geste. */}
+        <Checkbox
+          className="border-t border-border pt-3"
+          checked={read}
+          onChange={setRead}
+          label={fr.notice.check}
+          /* L'aide reste affichée après la coche : le DS §6 le demande de ce qui
+             informe de ce qui va se passer, et la faire disparaître au moment où
+             l'on comprend enfin le lien entre la case et le bouton reviendrait à
+             effacer l'explication au profit de qui n'en a plus besoin. */
+          hint={fr.notice.checkHint}
+        />
       </div>
     </Sheet>
   )

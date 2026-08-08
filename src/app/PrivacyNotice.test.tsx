@@ -1,19 +1,30 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fr } from '@/i18n/fr'
 import { NOTICE_STORAGE_KEY } from '@/lib/notice'
-import { PRIVACY_PATH } from './routes'
+import { useStore } from '@/store/store'
+import {
+  LEGAL_NOTICE_PATH,
+  ONBOARDING_PATH,
+  PRIVACY_PATH,
+  STYLEGUIDE_ROUTE,
+  TERMS_PATH,
+} from './routes'
 import { PrivacyNotice } from './PrivacyNotice'
 
 beforeEach(() => {
   localStorage.clear()
 })
 
-function mount() {
-  render(
-    <MemoryRouter>
+afterEach(() => {
+  useStore.setState({ error: null })
+})
+
+function mount(path = '/') {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
       <PrivacyNotice />
     </MemoryRouter>,
   )
@@ -52,11 +63,71 @@ describe('PrivacyNotice — quand elle se montre', () => {
   })
 
   /* Le vrai contrat du « une seule fois » : sans lui, la notice serait une
-     modale bloquante à chaque ouverture de l'app. */
+     modale bloquante à chaque ouverture de l'app. Rien du tout dans le DOM, et
+     pas seulement pas de feuille — chez qui l'a lue, elle n'a jamais été là. */
   it('ne revient pas quand elle a été lue', () => {
     localStorage.setItem(NOTICE_STORAGE_KEY, '1')
+    const { container } = mount()
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  /* Le stockage inaccessible — navigation privée sur un vieux Safari. On ne sait
+     pas, donc on montre : une notice vue deux fois est une gêne, une notice
+     jamais vue est la fonctionnalité qui manque. */
+  it('se montre plutôt que de se taire quand le stockage refuse', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+      throw new Error('mode privé')
+    })
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('mode privé')
+    })
+
     mount()
-    expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
+    expect(dialog()).toBeInTheDocument()
+
+    // Et la fermer ne lève pas, même si rien ne peut être retenu.
+    await user.click(screen.getByRole('checkbox', { name: fr.notice.check }))
+    await user.click(action())
+    expect(dialog()).not.toHaveAttribute('open')
+
+    vi.restoreAllMocks()
+  })
+})
+
+describe('PrivacyNotice — les écrans qui ne la reçoivent pas', () => {
+  /* Son lien est la seule chose qu'elle donne à vérifier. Tant qu'elle
+     recouvrait la page qu'il ouvre, on ne voyait rien se passer — donc le lien
+     passait pour cassé. */
+  it.each([PRIVACY_PATH, LEGAL_NOTICE_PATH, TERMS_PATH])('s’efface sur %s', (path) => {
+    mount(path)
+    expect(screen.queryByRole('dialog', { hidden: true })).not.toHaveAttribute('open')
+  })
+
+  it('s’efface sur le nuancier, qui n’est pas un écran de l’app', () => {
+    mount(STYLEGUIDE_ROUTE.path)
+    expect(screen.queryByRole('dialog', { hidden: true })).not.toHaveAttribute('open')
+  })
+
+  it.each(['/', ONBOARDING_PATH])('bloque sur %s', (path) => {
+    mount(path)
+    expect(dialog()).toBeInTheDocument()
+  })
+
+  /* Repartir des pages juridiques la ramène, décochée : le drapeau n'a pas été
+     écrit, et lire la politique n'est pas dire qu'on l'a lue. */
+  it('ne retient rien d’un détour par sa propre source', () => {
+    mount(PRIVACY_PATH)
+    expect(localStorage.getItem(NOTICE_STORAGE_KEY)).toBeNull()
+  })
+
+  /* Le pire moment de toute l'app pour bloquer : l'écran d'arrivée porte alors
+     les quatre recours du cahier §5. */
+  it('se retire devant un document qui ne s’ouvre pas', () => {
+    useStore.setState({ error: { kind: 'read', message: 'illisible' } })
+    mount()
+    expect(screen.queryByRole('dialog', { hidden: true })).not.toHaveAttribute('open')
+    expect(localStorage.getItem(NOTICE_STORAGE_KEY)).toBeNull()
   })
 })
 
@@ -70,6 +141,8 @@ describe('PrivacyNotice — la case et le bouton', () => {
     expect(action()).toBeEnabled()
   })
 
+  /* La feuille reste montée, refermée : l'animation de sortie de `.sheet` vit en
+     CSS et lui faut son nœud — la démonter escamoterait la modale d'un coup. */
   it('referme et retient, sur le seul geste qui le peut', async () => {
     const user = userEvent.setup()
     mount()
@@ -77,7 +150,7 @@ describe('PrivacyNotice — la case et le bouton', () => {
     await user.click(screen.getByRole('checkbox', { name: fr.notice.check }))
     await user.click(action())
 
-    expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
+    expect(dialog()).not.toHaveAttribute('open')
     expect(localStorage.getItem(NOTICE_STORAGE_KEY)).toBe('1')
   })
 
@@ -143,5 +216,26 @@ describe('PrivacyNotice — ce qu’elle donne à vérifier', () => {
   it('compte quatre « aucun », et les rend en liste', () => {
     mount()
     expect(screen.getAllByRole('listitem')).toHaveLength(4)
+  })
+
+  /* Le focus va sur la boîte et non sur son premier lien : c'est la condition
+     pour que la description ci-dessus soit annoncée plutôt que le nom du lien. */
+  it('donne le focus à la boîte, pas au lien qu’elle contient', () => {
+    mount()
+    expect(dialog()).toHaveFocus()
+  })
+
+  /* La case est derrière ce qu'elle atteste. Dans le pied, elle était hors du
+     défilement : sur un téléphone de 320, on cochait « J'ai lu » sans avoir fait
+     défiler une seule des quatre lignes. */
+  it('pose la case après le texte, et non dans le pied', () => {
+    mount()
+    const body = document.getElementById(dialog().getAttribute('aria-describedby') ?? '')
+    const box = screen.getByRole('checkbox', { name: fr.notice.check })
+
+    expect(body).toContainElement(box)
+    // Et derrière le lien, donc en dernier de l'ordre de tabulation du corps.
+    const link = screen.getByRole('link', { name: fr.legal.privacy })
+    expect(link.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

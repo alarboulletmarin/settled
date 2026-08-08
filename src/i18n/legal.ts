@@ -142,7 +142,8 @@ export const privacyPolicy: LegalDocument = {
     {
       heading: 'Tes droits',
       body: [
-        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien derrière. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
+        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien de tes données derrière — la base est vidée, les sauvegardes locales aussi, et les deux dates de sauvegarde partent avec elles. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
+        'Trois choses restent dans le stockage local après un effacement, parce qu’aucune ne parle de tes données : le thème, la palette, et le fait que tu as fermé la notice du premier lancement. Effacer ce qu’on a saisi ne fait pas oublier ce qu’on a lu, ni choisi.',
         'Sur les journaux de l’hébergeur, la demande se fait par le dépôt — le lien est en bas de cette page. Tu peux aussi introduire une réclamation auprès de la CNIL.',
       ],
     },

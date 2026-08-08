@@ -86,20 +86,45 @@ export function Sheet({
   describedBy,
 }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
-  const drag = useSheetDrag({ open, onClose, enabled: pullToClose })
+  /* Le glissement est la quatrième sortie, et elle n'a pas à survivre là où les
+     trois autres ont été retirées : `pullToClose` et `dismissible={false}`
+     ensemble décriraient une feuille qu'on ne peut pas fermer mais qu'on peut
+     jeter au pouce. Les deux props se croisent ici une fois pour toutes, plutôt
+     que de compter sur personne pour ne jamais les poser côte à côte — et une
+     seule fois, parce que la poignée suit la même condition que le geste : elle
+     n'existe que là où il existe. */
+  const draggable = pullToClose && dismissible
+  const drag = useSheetDrag({ open, onClose, enabled: draggable })
 
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
+    if (open && !dialog.open) {
+      dialog.showModal()
+      /* `showModal()` donne le focus au premier élément focusable du contenu.
+         Sur une feuille ordinaire c'est la croix, en tête : on arrive donc en
+         haut. Sur une feuille dont le texte *est* le propos, c'est le premier
+         lien du corps — et un lecteur d'écran annonce alors son nom à lui, ce
+         qui écrase la description que `describedBy` vient de poser. Le focus va
+         donc sur la boîte : le nom et la description sont lus d'abord, et la
+         première tabulation atteint le lien. */
+      if (!dismissible) dialog.focus()
+    }
     if (!open && dialog.open) dialog.close()
-  }, [open])
+  }, [open, dismissible])
 
   return (
     <dialog
       ref={ref}
       aria-label={title}
       aria-describedby={describedBy}
+      /* Focusable seulement là où l'effet le vise : un `<dialog>` n'est pas
+         focusable de lui-même, et le poser partout ferait de toutes les feuilles
+         de l'app un conteneur qui prend le focus. `outline-none` avec, parce
+         qu'un conteneur focusé au programme dessine son anneau autour de la
+         boîte entière — le DS §8 demande un focus visible sur ce qu'on
+         actionne, et une boîte n'est pas un bouton. */
+      tabIndex={dismissible ? undefined : -1}
       /* `preventDefault` dans les deux cas, et pour deux raisons différentes :
          une feuille ordinaire referme elle-même par son `open` plutôt que de
          laisser le navigateur le faire dans son dos ; une feuille non
@@ -126,6 +151,7 @@ export function Sheet({
         // ici, la hauteur au `max-h-[90dvh]` du contenu.
         'max-h-none max-w-none',
         'mt-auto sm:m-auto sm:max-w-lg',
+        !dismissible && 'outline-none',
       )}
     >
       <div
@@ -167,7 +193,7 @@ export function Sheet({
               repère au bord de l'écran, et — depuis qu'elle n'apparaît qu'avec
               le geste — ne promet plus rien qu'elle ne tienne. Sans objet sur
               une boîte centrée. */}
-          {pullToClose && (
+          {draggable && (
             <div
               aria-hidden="true"
               className="mx-auto mt-2.5 h-1 w-9 rounded-chip bg-surface-2 sm:hidden"

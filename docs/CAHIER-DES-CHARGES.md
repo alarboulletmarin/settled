@@ -175,7 +175,11 @@ Elle est bloquante parce qu'aucune autre forme ne l'est. La promesse est déjà 
 
 **Aucune des quatre lignes ne dit « aucun traitement de données ».** Servir la page laisse une trace dans les journaux de l'hébergeur, la page de confidentialité le dit en clair, et une notice faite pour être crue ne peut pas se faire prendre sur la seule ligne vérifiable. Les quatre portent donc sur ce que devient *ce qu'on saisit*, ce qui reste vrai — et la nuance se lit sur la page, à un lien de là.
 
-Le fait qu'elle a été fermée vit dans le stockage local, hors du document : il décrit ce navigateur-ci, pas le foyer. « Tout effacer » (§4.8) ne le remet donc pas à zéro — l'effacement porte sur les données, pas sur ce qu'on a lu, et rouvrir une modale bloquante devant quelqu'un qui vient de tout effacer serait une punition.
+**Trois familles d'écrans ne la reçoivent pas**, et aucune n'est une exception de confort. Les **trois pages juridiques**, parce qu'elle y mène : son lien est la seule chose qu'elle donne à vérifier, et une modale qui recouvre la page qu'il vient d'ouvrir fait passer le lien pour cassé. Elle revient en repartant, décochée — lire la politique n'est pas dire qu'on l'a lue. Le **nuancier**, qui n'est pas un écran de l'app et qui existe précisément pour inspecter les composants, celui-ci compris. Et un **document qui ne s'ouvre pas** : l'écran d'arrivée porte alors les quatre recours du §5, et retarder un sauvetage de données pour une formalité serait le pire moment de toute l'app pour bloquer. Dans les deux derniers cas le fait de l'avoir lue n'est pas enregistré : elle est due, elle est seulement remise.
+
+Le fait qu'elle a été fermée vit dans le stockage local, hors du document : il décrit ce navigateur-ci, pas le foyer. « Tout effacer » (§4.8) ne le remet donc pas à zéro — l'effacement porte sur les données, pas sur ce qu'on a lu, et rouvrir une modale bloquante devant quelqu'un qui vient de tout effacer serait une punition. La page de confidentialité le dit, plutôt que de promettre qu'il ne reste rien.
+
+Elle ne porte pas la contrepartie du local-first — vider le navigateur efface tout, l'export est le seul recours. Celle-ci reste à la dernière étape de l'onboarding, où elle est déjà nommée : ce sont deux sujets, et un avis qui dirait les deux cesserait d'être lu.
 
 Puis les deux étapes, et **aucune n'exige de réponse** ; **rien à configurer pour démarrer** reste la règle.
 
