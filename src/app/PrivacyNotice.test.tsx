@@ -46,7 +46,7 @@ function action(): HTMLElement {
  *
  * Construit à la main : `createEvent` n'a pas de fabrique `cancel`, et jsdom
  * n'émet rien sur une vraie touche puisque son `showModal()` est un bouchon. Il
- * faut l'objet lui-même et non le booléen de `fireEvent` — c'est
+ * faut l'objet lui-même et non le booléen de `fireEvent` : c'est
  * `defaultPrevented` qui dit que la feuille a refusé de se fermer.
  */
 function pressEscape(node: Element): Event {
@@ -55,7 +55,7 @@ function pressEscape(node: Element): Event {
   return event
 }
 
-describe('PrivacyNotice — quand elle se montre', () => {
+describe('PrivacyNotice : quand elle se montre', () => {
   it('bloque au premier lancement', () => {
     mount()
     expect(dialog()).toBeInTheDocument()
@@ -64,15 +64,15 @@ describe('PrivacyNotice — quand elle se montre', () => {
 
   /* Le vrai contrat du « une seule fois » : sans lui, la notice serait une
      modale bloquante à chaque ouverture de l'app. Rien du tout dans le DOM, et
-     pas seulement pas de feuille — chez qui l'a lue, elle n'a jamais été là. */
+     pas seulement pas de feuille : chez qui l'a lue, elle n'a jamais été là. */
   it('ne revient pas quand elle a été lue', () => {
     localStorage.setItem(NOTICE_STORAGE_KEY, '1')
     const { container } = mount()
     expect(container).toBeEmptyDOMElement()
   })
 
-  /* Le stockage inaccessible — navigation privée sur un vieux Safari. On ne sait
-     pas, donc on montre : une notice vue deux fois est une gêne, une notice
+  /* Le stockage inaccessible, en navigation privée sur un vieux Safari. On ne
+     sait pas, donc on montre : une notice vue deux fois est une gêne, une notice
      jamais vue est la fonctionnalité qui manque. */
   it('se montre plutôt que de se taire quand le stockage refuse', async () => {
     const user = userEvent.setup()
@@ -95,9 +95,9 @@ describe('PrivacyNotice — quand elle se montre', () => {
   })
 })
 
-describe('PrivacyNotice — les écrans qui ne la reçoivent pas', () => {
+describe('PrivacyNotice : les écrans qui ne la reçoivent pas', () => {
   /* Son lien est la seule chose qu'elle donne à vérifier. Tant qu'elle
-     recouvrait la page qu'il ouvre, on ne voyait rien se passer — donc le lien
+     recouvrait la page qu'il ouvre, on ne voyait rien se passer, donc le lien
      passait pour cassé. */
   it.each([PRIVACY_PATH, LEGAL_NOTICE_PATH, TERMS_PATH])('s’efface sur %s', (path) => {
     mount(path)
@@ -131,7 +131,7 @@ describe('PrivacyNotice — les écrans qui ne la reçoivent pas', () => {
   })
 })
 
-describe('PrivacyNotice — la case et le bouton', () => {
+describe('PrivacyNotice : la case et le bouton', () => {
   it('n’ouvre le bouton qu’une fois la case cochée', async () => {
     const user = userEvent.setup()
     mount()
@@ -141,8 +141,8 @@ describe('PrivacyNotice — la case et le bouton', () => {
     expect(action()).toBeEnabled()
   })
 
-  /* La feuille reste montée, refermée : l'animation de sortie de `.sheet` vit en
-     CSS et lui faut son nœud — la démonter escamoterait la modale d'un coup. */
+  /* La feuille reste montée, refermée. L'animation de sortie de `.sheet` vit en
+     CSS et il lui faut son nœud : la démonter escamoterait la modale d'un coup. */
   it('referme et retient, sur le seul geste qui le peut', async () => {
     const user = userEvent.setup()
     mount()
@@ -154,7 +154,7 @@ describe('PrivacyNotice — la case et le bouton', () => {
     expect(localStorage.getItem(NOTICE_STORAGE_KEY)).toBe('1')
   })
 
-  /* La raison du bouton éteint vit sur la case, qui est focusable — un
+  /* La raison du bouton éteint vit sur la case, qui est focusable : un
      `disabled` ne prend pas le focus, donc il ne peut pas l'annoncer lui-même. */
   it('dit pourquoi le bouton est éteint, et le dit encore après', async () => {
     const user = userEvent.setup()
@@ -166,7 +166,7 @@ describe('PrivacyNotice — la case et le bouton', () => {
   })
 })
 
-describe('PrivacyNotice — les sorties qui n’existent pas', () => {
+describe('PrivacyNotice : les sorties qui n’existent pas', () => {
   it('ne se referme pas sur Échap', () => {
     mount()
     expect(pressEscape(dialog()).defaultPrevented).toBe(true)
@@ -191,7 +191,7 @@ describe('PrivacyNotice — les sorties qui n’existent pas', () => {
   })
 })
 
-describe('PrivacyNotice — ce qu’elle donne à vérifier', () => {
+describe('PrivacyNotice : ce qu’elle donne à vérifier', () => {
   it('mène à la page de confidentialité', () => {
     mount()
     expect(screen.getByRole('link', { name: fr.legal.privacy })).toHaveAttribute(
@@ -202,7 +202,7 @@ describe('PrivacyNotice — ce qu’elle donne à vérifier', () => {
 
   /* Sans `aria-describedby`, `showModal()` poserait le focus sur le lien du
      corps et un lecteur d'écran annoncerait le titre puis « Confidentialité,
-     lien » — sans un mot des quatre lignes entre les deux. */
+     lien », sans un mot des quatre lignes entre les deux. */
   it('désigne son texte, pour qu’il soit annoncé et pas traversé', () => {
     mount()
     const described = dialog().getAttribute('aria-describedby')

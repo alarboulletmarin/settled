@@ -12,7 +12,7 @@ import { LEGAL_ROUTES, PRIVACY_PATH, STYLEGUIDE_ROUTE } from './routes'
 /**
  * La promesse de ne rien collecter, devant qui n'a pas l'intention de la lire.
  *
- * Elle est écrite quatre fois ailleurs — sur la présentation, à la dernière
+ * Elle est écrite quatre fois ailleurs : sur la présentation, à la dernière
  * étape de l'onboarding, sur « à propos », et en détail sur
  * `/confidentialite`. Toutes se lisent, et c'est précisément le problème :
  * quelqu'un qui arrive méfiant devant une app de finances saisit ses revenus
@@ -22,12 +22,12 @@ import { LEGAL_ROUTES, PRIVACY_PATH, STYLEGUIDE_ROUTE } from './routes'
  * où l'un fait accepter ce qui est pris, celle-ci dit ce qui n'est pas pris.
  * Elle bloque pour la seule raison qui rend un bandeau cookies efficace : c'est
  * la forme qu'on ne peut pas ne pas voir. Ni croix, ni Échap, ni clic sur le
- * fond — un seul bouton, nommé.
+ * fond : un seul bouton, nommé.
  *
  * **La case est là pour qu'on lise, pas pour qu'on réponde.** Rien n'est
  * enregistré de ce qu'elle vaut : elle allume le bouton, et c'est tout ce
  * qu'elle fait. C'est ce qui distingue cette modale d'une question, et ce qui
- * la réconcilie avec le « rien à configurer pour démarrer » du cahier §1 — elle
+ * la réconcilie avec le « rien à configurer pour démarrer » du cahier §1 : elle
  * ne configure rien et ne demande aucune information sur qui la lit. Le nom du
  * foyer, lui, reste supprimé pour la raison inverse : il exigeait une réponse
  * *sur soi* pour une décoration (§4.1).
@@ -35,14 +35,14 @@ import { LEGAL_ROUTES, PRIVACY_PATH, STYLEGUIDE_ROUTE } from './routes'
  * Elle vit **en fin de corps et non dans le pied**, où elle a d'abord été
  * posée : le pied est hors du défilement, donc sur un téléphone de 320 on
  * cochait « J'ai lu » sans avoir fait défiler une seule des quatre lignes. Une
- * case qui atteste de ce qu'on n'a pas pu lire ne vaut rien — et le DS §6 dit
- * par ailleurs de la légende du pied qu'elle « est pour l'œil, elle n'est reliée
- * à rien », ce qu'un contrôle ne peut pas être.
+ * case qui atteste de ce qu'on n'a pas pu lire ne vaut rien. Le DS §6 dit par
+ * ailleurs de la légende du pied qu'elle « est pour l'œil, elle n'est reliée à
+ * rien », ce qu'un contrôle ne peut pas être.
  *
  * **Échap inerte n'est pas un piège au sens de WCAG 2.1.2.** Le piège de focus
  * reste celui du navigateur, la case répond à la barre d'espace et le bouton à
  * Entrée : la sortie existe au clavier, elle est simplement nommée. Le focus
- * d'entrée, lui, va sur la boîte et non sur son premier lien — sans quoi un
+ * d'entrée, lui, va sur la boîte et non sur son premier lien, sans quoi un
  * lecteur d'écran annoncerait le nom du lien à la place de la description que
  * `describedBy` pose (voir `Sheet`).
  *
@@ -52,12 +52,13 @@ import { LEGAL_ROUTES, PRIVACY_PATH, STYLEGUIDE_ROUTE } from './routes'
  * - **Les trois pages juridiques**, parce qu'elle y mène. Son lien est la seule
  *   chose qu'elle donne à vérifier, et la modale recouvrait la page qu'il vient
  *   d'ouvrir : on ne voyait rien se passer, donc le lien passait pour cassé.
- *   Elle revient en repartant, décochée — le drapeau n'est pas écrit, et lire la
+ *   Elle revient en repartant, décochée : le drapeau n'est pas écrit, et lire la
  *   politique n'est pas la même chose que dire qu'on l'a lue.
  * - **Le nuancier**, qui n'est pas un écran de l'app : `App.tsx` le dit d'une
  *   route de développement que « personne n'ouvre depuis l'app », et le pied de
  *   page refuse de le lier. C'est aussi le seul écran où une surcouche globale
- *   nuit vraiment — il existe pour inspecter les composants, celui-ci compris.
+ *   nuit vraiment, puisqu'il existe pour inspecter les composants, celui-ci
+ *   compris.
  * - **Un document qui ne s'ouvre pas.** L'écran d'arrivée porte alors les quatre
  *   recours du cahier §5, et retarder un sauvetage de données pour une formalité
  *   serait le pire moment de toute l'app pour bloquer. Le drapeau ne s'écrit pas
@@ -66,13 +67,13 @@ import { LEGAL_ROUTES, PRIVACY_PATH, STYLEGUIDE_ROUTE } from './routes'
  * **Le drapeau se lit au premier rendu**, pas dans un effet : le document vit en
  * IndexedDB (asynchrone), la notice doit répondre avant lui, et `localStorage`
  * est synchrone. Elle s'affiche donc aussi chez qui utilise déjà l'app, une
- * fois, ce qui est le comportement voulu — la position de l'app vaut d'être
+ * fois, ce qui est le comportement voulu : la position de l'app vaut d'être
  * annoncée à ceux qui s'en servent déjà.
  */
 export function PrivacyNotice() {
   /* Deux états et non un seul, parce qu'ils ne disent pas la même chose : ce
      qu'on savait au montage, et ce que ce chargement-ci a fait. Le premier est
-     figé — un initialiseur, donc une seule lecture de `localStorage` —, et c'est
+     figé, par un initialiseur, donc une seule lecture de `localStorage`, et c'est
      lui qui décide s'il y a quelque chose à monter ; le second referme la
      feuille en la laissant en place, sans quoi l'animation de sortie de `.sheet`
      n'aurait plus de nœud à animer et le bouton escamoterait la modale d'un
@@ -84,8 +85,8 @@ export function PrivacyNotice() {
 
   const { pathname } = useLocation()
   /* Une lecture synchrone, fausse au premier rendu comme toute lecture du store
-     avant l'hydratation : c'est exactement ce qu'il faut ici — rien ne se
-     retarde, et l'échec, quand il arrive, arrive avec l'écran qui le porte. */
+     avant l'hydratation : c'est exactement ce qu'il faut ici, rien ne se retarde,
+     et l'échec, quand il arrive, arrive avec l'écran qui le porte. */
   const failing = useStore((s) => s.error !== null)
 
   const elsewhere =
@@ -98,7 +99,7 @@ export function PrivacyNotice() {
   return (
     <Sheet
       open={!done && !elsewhere && !failing}
-      /* Elle ne se referme pas, donc `onClose` n'a rien à faire — mais la prop
+      /* Elle ne se referme pas, donc `onClose` n'a rien à faire ; mais la prop
          est requise, et lui donner le bouton reviendrait à écrire une sortie que
          `dismissible={false}` vient justement de retirer. */
       onClose={() => {}}
@@ -121,12 +122,12 @@ export function PrivacyNotice() {
       <div id={bodyId} className="flex flex-col gap-4">
         <p className="t-body">{fr.notice.lead}</p>
 
-        {/* Une vraie liste, et non quatre paragraphes : c'est un décompte —
-            quatre choses qui n'existent pas —, et un lecteur d'écran doit
-            pouvoir l'annoncer comme tel plutôt que comme de la prose. Les
-            puces sont retirées au profit du filet de gauche : quatre lignes qui
-            commencent toutes par « Aucun » n'ont pas besoin qu'on répète le
-            marqueur devant. */}
+        {/* Une vraie liste, et non quatre paragraphes : c'est un décompte de
+            quatre choses qui n'existent pas, et un lecteur d'écran doit pouvoir
+            l'annoncer comme tel plutôt que comme de la prose. Les puces sont
+            retirées au profit du filet de gauche : quatre lignes qui commencent
+            toutes par « Aucun » n'ont pas besoin qu'on répète le marqueur
+            devant. */}
         <ul className="flex list-none flex-col gap-2 border-l border-border pl-4">
           {[
             fr.notice.noAccount,
@@ -141,7 +142,7 @@ export function PrivacyNotice() {
         </ul>
 
         {/* La ligne qui rend les quatre autres vérifiables, et son lien. Sans
-            elle, la notice demande de la croire sur parole — ce qu'elle existe
+            elle, la notice demande de la croire sur parole, ce qu'elle existe
             précisément pour éviter. Le détail de ce qui est enregistré vit sur
             la page, y compris la seule trace qui existe vraiment : les journaux
             de l'hébergeur, qu'aucune des quatre lignes ne prétend nier. */}

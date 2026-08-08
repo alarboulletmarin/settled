@@ -61,7 +61,7 @@ function open(props: Partial<Parameters<typeof Sheet>[0]> = {}, phone = true) {
  *
  * Construit à la main : `createEvent` n'a pas de fabrique `cancel`, et jsdom
  * n'émet rien sur une vraie touche puisque son `showModal()` est un bouchon. Il
- * faut l'objet lui-même et non le booléen de `fireEvent` — c'est
+ * faut l'objet lui-même et non le booléen de `fireEvent` : c'est
  * `defaultPrevented` qui dit que la feuille a refusé de se fermer.
  */
 function pressEscape(node: Element): Event {
@@ -191,7 +191,7 @@ describe('Sheet — tirer vers le bas', () => {
   })
 })
 
-describe('Sheet — la feuille qu’on ne referme pas', () => {
+describe('Sheet : la feuille qu’on ne referme pas', () => {
   /* Les trois sorties sans mot, une par une. Elles restent en place par défaut :
      le dernier cas de ce bloc est là pour que retirer la garde se voie. */
   it('ignore Échap', () => {

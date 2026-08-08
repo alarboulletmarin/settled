@@ -38,8 +38,8 @@ Puis, dans le navigateur, sur `http://localhost:4173/bienvenue` :
 1. **Charger l'exemple** — le jeu se construit à la date du jour, donc les
    chiffres ne seront pas ceux d'ici, et c'est normal.
 2. Poser deux clés dans le `localStorage`, qui couvrent l'écran sans elles :
-   `tout-compte-fait.lastExport` à la date du jour — sans quoi le rappel d'export
-   prend le haut de l'écran — et `tout-compte-fait.notice` à `1`, sans quoi la
+   `tout-compte-fait.lastExport` à la date du jour, sans quoi le rappel d'export
+   prend le haut de l'écran, et `tout-compte-fait.notice` à `1`, sans quoi la
    notice du premier lancement recouvre tout. Elles se posent avant de charger
    l'exemple : la notice s'affiche dès le premier rendu.
 3. Capturer aux tailles du tableau ci-dessus, en densité 2×.

@@ -136,13 +136,13 @@ export const privacyPolicy: LegalDocument = {
       body: [
         'Écrire ou lire quelque chose sur ton appareil suppose en principe ton consentement — et la règle vaut pour le stockage local et IndexedDB, pas seulement pour les cookies. Elle connaît une exception : ce qui est strictement nécessaire à la fourniture du service que tu as expressément demandé.',
         'C’est exactement le cas ici. La base IndexedDB, ce sont tes données elles-mêmes : sans elle, il n’y a pas d’app. Les cinq réglages du stockage local servent l’affichage, le rappel de sauvegarde et la notice du premier lancement, rien d’autre. Aucun identifiant, aucun suivi, aucune transmission. Il n’y a donc rien à te faire consentir, et un bandeau de consentement te ferait cliquer pour rien.',
-        'Ce que tu as vu au premier lancement n’en est pas un. Il ne demande pas d’accepter, il ne propose pas de refuser, et le fermer ne change rien à ce que l’app fait : elle se comporte exactement pareil avant et après. C’est un accusé de lecture, et il existe parce que cette page-ci ne valait rien tant qu’elle ne se lisait qu’ici — quelqu’un qui arrive méfiant saisit ses revenus avant d’avoir croisé une seule de ces lignes.',
+        'Ce que tu as vu au premier lancement n’en est pas un. Il ne demande pas d’accepter, il ne propose pas de refuser, et le fermer ne change rien à ce que l’app fait : elle se comporte exactement pareil avant et après. C’est un accusé de lecture, et il existe parce que cette page-ci ne valait rien tant qu’elle ne se lisait qu’ici. Quelqu’un qui arrive méfiant saisit ses revenus avant d’avoir croisé une seule de ces lignes.',
       ],
     },
     {
       heading: 'Tes droits',
       body: [
-        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien de tes données derrière — la base est vidée, les sauvegardes locales aussi, et les deux dates de sauvegarde partent avec elles. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
+        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien de tes données derrière : la base est vidée, les sauvegardes locales aussi, et les deux dates de sauvegarde partent avec elles. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
         'Trois choses restent dans le stockage local après un effacement, parce qu’aucune ne parle de tes données : le thème, la palette, et le fait que tu as fermé la notice du premier lancement. Effacer ce qu’on a saisi ne fait pas oublier ce qu’on a lu, ni choisi.',
         'Sur les journaux de l’hébergeur, la demande se fait par le dépôt — le lien est en bas de cette page. Tu peux aussi introduire une réclamation auprès de la CNIL.',
       ],

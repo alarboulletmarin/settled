@@ -42,9 +42,8 @@ export type SheetProps = {
    * C'est l'inverse exact de ce que le DS §6 demande partout ailleurs, et ça
    * n'est permis qu'à la notice du premier lancement (cahier §4.1). L'argument
    * est qu'elle ne pose aucune question : il n'y a pas de « non » à offrir
-   * puisqu'il n'y a rien à accepter, et une sortie sans mot — la touche Échap,
-   * un doigt à côté — ferait passer pour un refus le fait d'avoir cliqué de
-   * travers.
+   * puisqu'il n'y a rien à accepter, et une sortie sans mot, touche Échap ou
+   * doigt à côté, ferait passer pour un refus le fait d'avoir cliqué de travers.
    *
    * Ce n'est pas un piège au sens de WCAG 2.1.2 : le piège de focus reste celui
    * du navigateur, et la sortie existe au clavier comme au doigt.
@@ -54,8 +53,8 @@ export type SheetProps = {
    * L'`id` de ce que la feuille dit, posé en `aria-describedby`.
    *
    * `showModal()` place le focus sur le premier élément focusable du contenu.
-   * Une feuille dont le texte *est* le propos — et non le décor d'un
-   * formulaire — le ferait donc traverser sans être lu : un lecteur d'écran
+   * Une feuille dont le texte *est* le propos, et non le décor d'un
+   * formulaire, le ferait donc traverser sans être lu : un lecteur d'écran
    * annoncerait le nom de la feuille puis le premier lien, et rien entre les
    * deux. Là où le contenu doit être entendu, il se désigne.
    */
@@ -71,8 +70,8 @@ export type SheetProps = {
  * classe `.sheet` : `showModal()` n'anime rien, et une feuille montante qui
  * apparaît d'un coup ne dit pas d'où elle vient.
  *
- * `dismissible={false}` retire les trois sorties sans mot — croix, Échap, clic
- * sur le fond — et n'est permis qu'à un seul écran de l'app. Voir la prop.
+ * `dismissible={false}` retire les trois sorties sans mot, croix, Échap et clic
+ * sur le fond, et n'est permis qu'à un seul écran de l'app. Voir la prop.
  */
 export function Sheet({
   open,
@@ -90,8 +89,8 @@ export function Sheet({
      trois autres ont été retirées : `pullToClose` et `dismissible={false}`
      ensemble décriraient une feuille qu'on ne peut pas fermer mais qu'on peut
      jeter au pouce. Les deux props se croisent ici une fois pour toutes, plutôt
-     que de compter sur personne pour ne jamais les poser côte à côte — et une
-     seule fois, parce que la poignée suit la même condition que le geste : elle
+     que de compter sur personne pour ne jamais les poser côte à côte. Une seule
+     fois, aussi, parce que la poignée suit la même condition que le geste : elle
      n'existe que là où il existe. */
   const draggable = pullToClose && dismissible
   const drag = useSheetDrag({ open, onClose, enabled: draggable })
@@ -104,7 +103,7 @@ export function Sheet({
       /* `showModal()` donne le focus au premier élément focusable du contenu.
          Sur une feuille ordinaire c'est la croix, en tête : on arrive donc en
          haut. Sur une feuille dont le texte *est* le propos, c'est le premier
-         lien du corps — et un lecteur d'écran annonce alors son nom à lui, ce
+         lien du corps, et un lecteur d'écran annonce alors son nom à lui, ce
          qui écrase la description que `describedBy` vient de poser. Le focus va
          donc sur la boîte : le nom et la description sont lus d'abord, et la
          première tabulation atteint le lien. */
@@ -122,8 +121,8 @@ export function Sheet({
          focusable de lui-même, et le poser partout ferait de toutes les feuilles
          de l'app un conteneur qui prend le focus. `outline-none` avec, parce
          qu'un conteneur focusé au programme dessine son anneau autour de la
-         boîte entière — le DS §8 demande un focus visible sur ce qu'on
-         actionne, et une boîte n'est pas un bouton. */
+         boîte entière, alors que le DS §8 demande un focus visible sur ce qu'on
+         actionne, et qu'une boîte n'est pas un bouton. */
       tabIndex={dismissible ? undefined : -1}
       /* `preventDefault` dans les deux cas, et pour deux raisons différentes :
          une feuille ordinaire referme elle-même par son `open` plutôt que de
@@ -200,7 +199,7 @@ export function Sheet({
             />
           )}
 
-          {/* La croix n'apparaît que là où le geste existe — la même règle que
+          {/* La croix n'apparaît que là où le geste existe : la même règle que
               la poignée, et que les repères d'action du DS §6. Un bouton
               « Fermer » sur une feuille qui ne se ferme pas serait la pire des
               deux : il promettrait la sortie et ne la donnerait pas. */}

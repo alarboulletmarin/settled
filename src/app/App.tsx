@@ -78,7 +78,7 @@ export function App() {
         <Toaster />
         <UpdatePrompt />
         {/* Hors des routes, comme ses deux voisins, et pour une raison de plus :
-            elle doit répondre pendant que `hydrate` lit encore la base — donc
+            elle doit répondre pendant que `hydrate` lit encore la base, donc
             au-dessus du `Booted` qui attend le statut. Elle recouvre aussi le
             nuancier, une fois, et c'est assumé : le drapeau vaut pour le
             navigateur, et une exemption de route qu'aucun écran ne montre est
