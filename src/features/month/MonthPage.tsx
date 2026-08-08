@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
 import { RECURRENCE_NEW_PATH, entryNewPath, entryPath } from '@/app/routes'
-import { Dashboard } from '@/features/dashboard/Dashboard'
+import { AnalysisGrid } from '@/features/dashboard/AnalysisGrid'
 import { type Metric, MetricInfo } from '@/features/dashboard/MetricInfo'
+import { SituationGrid } from '@/features/dashboard/SituationGrid'
 import { SituationSection } from '@/features/dashboard/SituationSection'
 import { UpcomingSection } from '@/features/dashboard/UpcomingSection'
 import { fr } from '@/i18n/fr'
@@ -35,6 +36,11 @@ export function MonthPage() {
      la nature : il se pose depuis une tuile et se retire depuis la liste. */
   const [family, setFamily] = useState<string | null>(null)
   const [focus, setFocus] = useState(0)
+  /* La même mécanique pour « À confirmer », et pour la même raison : la tuile de
+     suivi désigne une section qui vit plus bas sur cette page. Un compteur
+     plutôt qu'un drapeau — sinon redemander la section après avoir fait défiler
+     ne changerait aucun état, donc ne défilerait pas. */
+  const [pendingFocus, setPendingFocus] = useState(0)
   /* La feuille d'explication vit ici : la tuile du solde l'ouvre depuis la
      grille, les deux rangées de la situation depuis la section d'en dessous.
      Une par appelant en monterait deux dans le DOM pour une seule à l'écran. */
@@ -61,6 +67,10 @@ export function MonthPage() {
   const chooseNature = (value: NatureFilter): void => {
     setNature(value)
     setFamily(null)
+  }
+
+  const showPending = (): void => {
+    setPendingFocus((previous) => previous + 1)
   }
 
   const create = (direction: 'in' | 'out'): void => {
@@ -162,23 +172,43 @@ export function MonthPage() {
           </div>
         </EmptyState>
       ) : (
-        /* Trois étages, et l'ordre est la refonte elle-même : les chiffres du
-           mois d'un coup d'œil, puis ce qui tombe bientôt et ce qui demande un
-           geste, puis le détail où l'on entre. Ce qui a changé n'est pas ce
-           qu'on montre mais ce qu'on montre *en entier* : la grille ne porte
-           plus de liste, « À confirmer » n'affiche plus les treize lignes, et
-           le détail n'ouvre plus tous ses jours. Il fallait six écrans de
-           défilement pour arriver aux lignes du mois. */
+        /* **Trois questions, dans l'ordre où on se les pose**, et cet ordre est
+           la refonte elle-même :
+
+             1. où j'en suis — la grille du solde, puis les deux soldes qui
+                projettent le mois ;
+             2. ce que j'ai à faire — les échéances à confirmer ;
+             3. pourquoi — la grille analytique, ce qui tombe bientôt, et le
+                détail où l'on entre.
+
+           Tout était déjà là, dans le désordre. La page montrait d'abord neuf
+           tuiles — c'est-à-dire toutes les questions du mois avec le même poids
+           —, puis deux sections, et seulement ensuite la seule chose qui demande
+           un geste. Mesuré sur un téléphone, « À confirmer » commençait à
+           ~1 290px du haut, ~1 600px avec deux membres et un crédit : deux
+           écrans de défilement pour trouver sa tâche du jour. Elle en est
+           maintenant à moins d'un.
+
+           Aucune section n'a disparu, aucun calcul n'a bougé : ce sont les mêmes
+           composants, dans un autre ordre, et une grille coupée en deux là où la
+           narration se coupe.
+
+           Les deux grilles prennent la pleine largeur, les sections restent dans
+           une colonne bornée : c'est la convention de toute l'app — un bento
+           s'étale, une liste se lit. */
         <div className="flex flex-col gap-4">
-          <Dashboard
+          <SituationGrid
             onShowNature={showNature}
-            onShowFamily={showFamily}
+            onShowPending={showPending}
             onExplain={setMetric}
           />
           <div className="flex max-w-3xl flex-col gap-4">
             <SituationSection onExplain={setMetric} />
+            <PendingSection focus={pendingFocus} />
+          </div>
+          <AnalysisGrid onShowFamily={showFamily} />
+          <div className="flex max-w-3xl flex-col gap-4">
             <UpcomingSection />
-            <PendingSection />
             <EntriesSection
               nature={nature}
               onNature={chooseNature}

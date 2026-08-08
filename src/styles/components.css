@@ -368,6 +368,28 @@
     }
   }
 
+  /* --- Cible d'un défilement piloté -------------------------------------- */
+
+  /* Une section qu'une tuile fait venir sous les yeux (`lib/reveal.ts`).
+     `scrollIntoView({ block: 'start' })` aligne le haut de l'élément sur le haut
+     de la fenêtre — c'est-à-dire **sous le bandeau du mois**, qui est collant et
+     opaque. On atterrissait donc systématiquement après le titre de la section
+     et après son action principale : la tuile de suivi promet « voir ce qui
+     reste à confirmer » et déposait passé le bouton « Confirmer le mois ».
+
+     Le bandeau fait **128px à toutes les largeurs** — mesuré de 320 à 1440, sa
+     hauteur ne dépend ni de l'écran ni du nombre de personnes, la rangée de
+     pilules défilant sur une seule ligne. Seize pixels de gouttière par-dessus,
+     et c'est le même dégagement que celui qu'on avait voulu au départ, mais
+     compté depuis le bas du bandeau plutôt que depuis le haut de la fenêtre.
+
+     Une classe et non un utilitaire recopié : les deux sections qui s'en
+     servent sont dans deux features différentes, et la même mesure écrite deux
+     fois dérive le jour où le bandeau change. */
+  .reveal-target {
+    scroll-margin-top: 144px;
+  }
+
   /* --- Entrée de vue — DS §4, 240ms ------------------------------------- */
 
   .view-enter {

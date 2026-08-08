@@ -184,6 +184,25 @@ export const fr = {
     styleguide: 'Styleguide',
     about: 'À propos',
     landing: 'La présentation',
+    /* Le quatrième onglet. « Plus » et non « Menu » : il ne cache pas la
+       navigation, il la continue — ce qu'on y trouve est le reste de l'app, pas
+       une autre façon d'atteindre ce qui est déjà dans la barre. */
+    more: 'Plus',
+    moreHint: 'Le reste de tes écrans, et les réglages.',
+    /* Le titre du groupe qui rassemble ce qu'on tient, par opposition aux trois
+       lectures qu'on ouvre pour regarder. Un verbe, parce qu'on y va pour poser
+       une règle ou corriger un partage, pas pour lire un chiffre. */
+    manage: 'Gérer',
+    savings: 'Épargne',
+    split: 'Répartition',
+    /* Ce que chaque rangée de « Gérer » dit d'elle-même : sur un écran qui n'est
+       qu'une liste de portes, le libellé seul demande d'ouvrir pour savoir. */
+    subscriptionsHint: 'Ce qui revient chaque mois, écrit une fois.',
+    savingsHint: 'Ce que tu peux mettre de côté, et où le placer.',
+    splitHint: 'Qui verse quoi sur les charges communes.',
+    creditsHint: 'Tes crédits en cours et ce qu’il reste à rendre.',
+    settingsHint: 'Personnes, catégories, apparence, données.',
+    aboutHint: 'Ce que fait l’app, et ce qu’elle ne fait pas.',
   },
 
   shell: {
@@ -653,11 +672,48 @@ export const fr = {
        des sorties — simplement rien qui soit sorti pour de bon. */
     noBreakdown: 'Aucune charge ni crédit ce mois-ci.',
     /* La tuile ne s'arrête pas au mois affiché : elle lit les règles au-delà
-       des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout. */
+       des mois déjà ouverts. Son vide dit donc qu'il n'y a plus rien du tout —
+       et c'est justement pour ça qu'il n'a pas la même cause selon qu'une règle
+       existe ou non.
+
+       Sans aucune récurrence, ce vide est le vide d'un document qui n'a pas
+       démarré, et le geste qui l'amorce n'est pas une dépense : c'est la même
+       distinction que fait déjà le mois vide (`month.emptyStart`). Avec des
+       règles en place, il n'y a plus rien à proposer — les échéances viendront
+       toutes seules —, et le constat suffit. Un état vide est une invitation
+       quand il y a quelque chose à inviter, pas une invitation de principe. */
     noUpcoming: 'Aucune échéance à venir.',
+    noUpcomingStart:
+      'Aucune échéance à venir. Écris une fois ce qui revient chaque mois, et les prochaines s’inscriront ici toutes seules.',
     progress: 'Jour %s sur %s',
     monthAhead: 'Mois à venir',
     monthDone: 'Mois terminé',
+
+    /* Le couple prévu / confirmé, lu au niveau du mois.
+       C'est le concept central du produit — une opération se prévoit, puis se
+       confirme —, et il ne se lisait nulle part comme un avancement : chaque
+       ligne portait le sien, le mois ne portait pas le compte. Savoir qu'il
+       reste quatre échéances demandait de descendre jusqu'à la liste et de
+       lire son titre.
+
+       **Des opérations, et non des échéances.** Le compte additionne les
+       lignes ponctuelles — des faits, jamais prévues — aux échéances de
+       récurrence, qui le sont. « 12 / 16 échéances » aurait rangé sous ce mot
+       des lignes qui n'en sont pas, alors que le cahier §4.3 le réserve à ce
+       qu'une règle produit.
+
+       **Un ratio en toutes lettres, pas une jauge.** Une tuile plate n'offre
+       que 56px utiles, où un anneau n'entre pas ; et « 12 / 16 » se lit là où
+       un arc demande d'être interprété. C'est aussi ce que demande le DS §8 :
+       la lecture ne repose ni sur une forme ni sur une couleur. */
+    monthStatus: 'Suivi du mois',
+    monthStatusConfirmed: 'opérations confirmées',
+    /* Le nom accessible dit l'état, puis le geste — dans cet ordre, parce que
+       le geste ne se devine pas d'un chiffre. Sans échéance prévue il n'y a
+       plus de geste, et la seconde phrase tombe avec lui. */
+    srMonthStatus: '%s opérations confirmées sur %s.',
+    srMonthStatusGo: '%s opérations confirmées sur %s. Voir ce qui reste à confirmer.',
+
     capacity: 'Capacité d’épargne',
     capacityHint: 'ressources − charges − crédits',
     /* La seconde lecture porte le reste à placer, et non le taux d'épargne : le

@@ -298,6 +298,10 @@ Le prix de la demi-colonne est double, et il se mesure. La lecture secondaire at
 
 Une liste n'entre pas dans la grille : sa hauteur doit venir de son contenu, jamais d'un format. « Prochaines échéances » y serrait cinq lignes à un pixel d'interligne pour tenir dans les 188px d'une `4×2`, et une sixième n'y serait pas entrée.
 
+**Un écran peut porter deux grilles, et l'écran du mois en porte deux.** Une grille bento range des tuiles côte à côte ; elle ne sait pas dire que l'une répond à une question qu'on se pose *avant* l'autre. Or l'écran du mois en pose trois — où j'en suis, ce que j'ai à faire, pourquoi (cahier §4.6) —, et il les a longtemps servies dans le désordre : neuf tuiles d'un bloc, c'est-à-dire toutes les questions du mois avec le même poids, puis deux sections, et enfin la seule qui demande un geste, à deux écrans de défilement sur un téléphone. La grille se coupe donc là où la narration se coupe : **une grille pour la situation, la tâche entre les deux, une grille pour l'analyse.**
+
+Ce n'est pas une permission générale d'en semer partout. Deux grilles se justifient quand une section non-grille doit s'intercaler **entre** deux familles de tuiles, et pas autrement : deux grilles collées l'une à l'autre sont une seule grille mal écrite, dont le pavage se déliterait à la première tuile absente. Et chacune doit rester un bento pour elle-même — tailles inégales, au moins une paire sur deux colonnes, et un pavage qui se referme. C'est ce qui donne son format à la tuile « Suivi du mois » : `4×1`, parce que c'est le seul qui referme la première grille sans un trou aux trois paliers.
+
 La largeur a son plafond, et c'est lui qui choisit entre `2×1` et `4×1`. La `2×1` reste en demi-colonne sur mobile, seule de tous les formats : elle n'offre que **~104px de contenu à 320px**. L'eyebrow y tient sur une ligne quoi qu'il arrive (§6), donc passé sa dégradation il déborde et se fait trancher. Mesuré : le plafond est de **13 caractères** — « Prévisionnel » (12) et « Reste à vivre » (13) tiennent, « Capacité d'épargne » (18) non, elle déborde de 35px. **Au-delà de 13 caractères, le format est `4×1`.** Un débordement de largeur ne se voit pas « par le bas » : il coupe le libellé au milieu d'un mot, et c'est le pire des deux.
 
 ---
@@ -375,6 +379,22 @@ Les pilules qui ne désignent personne n'ont pas de pastille (§2.5), et un file
 C'est aussi la réponse à « **deux lectures qu'une tuile ne sait pas distinguer** », et l'écran du mois en fait un usage, un seul. Le prévisionnel et le reste à vivre annoncent régulièrement le même montant au centime — sans rentrée d'argent en vue, leurs horizons coïncident —, et ce qui les sépare tient dans une phrase qu'aucune tuile plate n'affiche sous 1024px. La rangée donne ce que la tuile ne pouvait pas : sa `description` **passe à la ligne**, donc elle se lit à toutes les largeurs. Une microcopy qui n'existe qu'au-delà de 1024px n'existe pas — et c'est le seul motif qui justifie de sortir une lecture de la grille, pas la place qu'elle y prend.
 
 Une rangée prend l'élément de son geste : un `<Link>` quand elle mène ailleurs, un `<button>` quand elle agit sur place, un bloc quand elle ne fait que se lire. **Le repère n'apparaît que là où le geste existe**, exactement comme celui d'une tuile — une rangée sans repère est une rangée qu'on lit —, et il dit *lequel* : chevron vers un écran, glyphe d'information pour une feuille qui s'ouvre sur place. C'est la taxonomie des repères de tuile, réduite aux deux cas qu'une rangée connaît ; un chevron posé sur une rangée qui ouvre une feuille annonce un écran qui ne vient jamais. Le libellé se tronque, la seconde ligne passe à la ligne : un nom doit tenir sur une rangée, mais une valeur coupée en deux n'avertit plus de rien.
+
+**Navigation** — deux formes d'une même table (`app/routes.ts`), et **la barre d'onglets ne décide plus de l'architecture**.
+
+Elle en portait cinq, ce qui était son plafond à 320px, et ce plafond décidait de tout : il mettait « Récurrences », qu'on écrit une fois, au même rang que « Le mois », qu'on ouvre tous les jours — et surtout il condamnait quatre écrans réels de l'app (épargne, répartition, crédits, avances) à n'avoir aucune adresse de navigation. On n'y arrivait que par une tuile du mois, laquelle s'efface précisément quand elle n'a rien à montrer : un écran atteignable seulement quand on n'en a pas besoin.
+
+| | Barre d'onglets (< 1024px) | Colonne latérale (≥ 1024px) |
+|---|---|---|
+| Contenu | **quatre** destinations : les trois lectures qu'on ouvre pour regarder, puis « Plus » | les mêmes trois, puis les groupes que « Plus » range, dépliés |
+| Ce qui est rangé | un écran « Plus », qui liste les groupes en rangées | rien : la colonne a la place, et un lien vers une page qui la redirait serait un tour sur soi-même |
+| Groupes | — | sans titre, puis « Gérer », puis « Réglages » |
+
+Un groupe se titre en `t-eyebrow` atténué, `aria-hidden` : ce n'est pas une région, c'est une suite de liens qu'une étiquette sépare à l'œil. **Le premier groupe n'a pas de titre** — la colonne doit s'ouvrir sur les destinations quotidiennes, pas sur un mot à lire avant elles.
+
+L'onglet « Plus » reste allumé dans tout ce qu'il range. `NavLink` n'apparie que son propre préfixe ; la table des préfixes vit dans `routes.ts`, et sans elle on quittait l'onglet dès le premier pas à l'intérieur — quatre onglets éteints, sans rien pour dire d'où l'on venait.
+
+Le prix est assumé et se dit : les récurrences et les réglages passent de un à deux appuis. Les premières restent à un appui depuis l'état vide du mois, qui est l'endroit où l'on va justement en poser une.
 
 **Bouton de saisie flottant** — un disque de 56px en lime, au coin bas-droit, au-dessus de la barre d'onglets et sous les surcouches. Il n'existe que sous 1024px : au-delà, la rangée de boutons en tête de l'écran du mois est à l'écran et ne défile jamais hors de vue. Une porte par largeur et pas deux — les mêmes trois boutons deux fois sur un écran ne font pas deux occasions.
 

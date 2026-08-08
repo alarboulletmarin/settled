@@ -553,9 +553,21 @@ latérale au-dessus. La grille bento du DS §5, elle, a **trois paliers** :
 
 | Bande | Colonnes | Rangée | Navigation |
 |---|---|---|---|
-| < 768px | 2 | 88px | barre d'onglets + bouton flottant |
+| < 768px | 2 | 88px | barre de 4 onglets + écran « Plus » + bouton flottant |
 | 768 – 1024px | 4 | 96px | idem |
-| ≥ 1024px | 6 | 108px | colonne latérale |
+| ≥ 1024px | 6 | 108px | colonne latérale, en trois groupes |
+
+La barre porte **quatre** onglets — Le mois, Calendrier, Historique, Plus — et non
+plus cinq. Ce n'est pas un choix de largeur mais d'architecture : cinq était le
+plafond à 320px, et ce plafond décidait qu'un écran de plus n'aurait aucune
+adresse. Quatre écrans réels vivaient dans ce cas. Le quatrième onglet range ce
+qui déborde ; la colonne latérale, qui a la place, déplie les mêmes groupes
+(`SIDEBAR_GROUPS` et `MORE_SECTIONS`, `app/routes.ts`). Voir le DS §6.
+
+L'écran du mois porte **deux** grilles bento et non une, séparées par la section
+« À confirmer » : la grille sait ranger des tuiles côte à côte, elle ne sait pas
+dire que l'une répond à une question qu'on se pose avant l'autre (DS §5,
+cahier §4.6).
 
 Les six colonnes n'arrivent qu'à **1024px, et non 768**. La colonne latérale
 consomme 224px : les déclencher en même temps qu'elle ne laisse que ~480px de
