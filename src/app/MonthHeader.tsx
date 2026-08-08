@@ -30,13 +30,39 @@ import { useHotkeys } from '@/ui/useHotkeys'
  * couleur ailleurs — mais une pilule active passe elle-même en accent, et la
  * pastille y disparaissait, exactement comme celle du premier membre avant
  * qu'il quitte le vert pomme.
+ *
+ * `personsOnly` retire les deux premières, et avec elles le filet qui les
+ * séparait : voir `MonthHeaderProps.personsOnly`.
  */
-function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
+function MonthFilterChips({ personsOnly }: { personsOnly: boolean }) {
   const members = useMembers()
   const filter = useMonthFilter()
   const setFilter = useStore((s) => s.setFilter)
   if (members.length === 0) return null
-  const common = withCommon
+
+  if (personsOnly) {
+    return (
+      <div
+        className="filter-scroller -mx-4 -my-1 flex gap-2 px-4 py-1 md:-mx-8 md:px-8"
+        role="group"
+        aria-label={fr.shell.filterByMember}
+      >
+        {members.map((member) => (
+          <Chip
+            key={member.id}
+            className="shrink-0"
+            color={member.color}
+            active={filter.kind === 'member' && filter.memberId === member.id}
+            onClick={() => {
+              setFilter({ kind: 'member', memberId: member.id })
+            }}
+          >
+            {member.name}
+          </Chip>
+        ))}
+      </div>
+    )
+  }
 
   return (
     /* Une ligne qui défile, à bord perdu : le cadre de l'en-tête est annulé puis
@@ -62,17 +88,15 @@ function MonthFilterChips({ withCommon }: { withCommon: boolean }) {
           vaut « tout le monde » au centime, et le pot est justement la seule
           lecture qui distingue encore les charges du foyer de ses lignes à
           lui. */}
-      {common && (
-        <Chip
-          className="shrink-0"
-          active={filter.kind === 'common'}
-          onClick={() => {
-            setFilter({ kind: 'common' })
-          }}
-        >
-          {fr.shell.common}
-        </Chip>
-      )}
+      <Chip
+        className="shrink-0"
+        active={filter.kind === 'common'}
+        onClick={() => {
+          setFilter({ kind: 'common' })
+        }}
+      >
+        {fr.shell.common}
+      </Chip>
       {/* Les deux premières pilules n'ont pas de pastille parce qu'elles ne
           désignent personne — une pastille est la couleur de quelqu'un. Sans
           rien pour le dire, cette absence se lit comme un oubli ; le filet la
@@ -150,13 +174,26 @@ function ProrataNote() {
  */
 export function MonthHeader({
   withMemberFilter = true,
-  withCommon = true,
+  personsOnly = false,
   prorataNote = false,
 }: {
   withMemberFilter?: boolean
-  /* L'épargne ne se partage jamais : sur son écran, « Commun » ne rendrait que
-     des zéros, et proposer une lecture vide vaut moins que ne pas la proposer. */
-  withCommon?: boolean
+  /**
+   * Les personnes seules, sans « Tout le monde » ni « Commun ».
+   *
+   * Réservé à l'épargne, et ce n'est pas une simplification d'affichage mais la
+   * règle du domaine : une épargne est toujours à quelqu'un. « Commun » ne
+   * rendrait que des zéros — elle ne se partage jamais —, et « Tout le monde »
+   * rendrait pire qu'un zéro : une somme. Deux personnes qui ont 12 000 € et
+   * 8 000 € de côté n'ont pas « 20 000 € », elles ont deux comptes, deux
+   * décisions et deux capacités ; le total du foyer ne se place nulle part et ne
+   * se décide par personne.
+   *
+   * L'écran qui la pose s'assure qu'une personne est bien choisie : une rangée
+   * de pilules dont aucune n'est active laisserait croire à une lecture qui
+   * n'existe pas.
+   */
+  personsOnly?: boolean
   /* Réservé aux écrans de chiffres : le calendrier montre les échéances
      réelles, où une charge commune tombe en entier et n'est à personne. */
   prorataNote?: boolean
@@ -244,7 +281,7 @@ export function MonthHeader({
             </Button>
           )}
         </div>
-        {withMemberFilter && <MonthFilterChips withCommon={withCommon} />}
+        {withMemberFilter && <MonthFilterChips personsOnly={personsOnly} />}
       </header>
 
       {/* La note de lecture ne colle pas : c'est une phrase qui s'explique une

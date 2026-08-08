@@ -5,14 +5,11 @@ import { type Money, ZERO, abs, add } from '@/domain/money'
 import { UNLINKED_SUPPORT } from '@/domain/saving'
 import { savingCapacity, savingLeft, savingRate } from '@/domain/stats'
 import { fr } from '@/i18n/fr'
-import { formatDate, formatMoney, formatPercent, tpl } from '@/i18n/format'
+import { de, formatDate, formatMoney, formatPercent, tpl } from '@/i18n/format'
 import {
-  type MemberSaving,
   useCategoryMap,
   useKindTotals,
-  useMemberFilter,
   useMemberMap,
-  useMemberSavings,
   useMembers,
   useSavingTotal,
   useSavingValuations,
@@ -23,6 +20,7 @@ import {
   useUnlinkedSavings,
 } from '@/store/selectors'
 import { latestValuation } from '@/domain/saving'
+import { useIndividualScope } from './individualScope'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
 import { Dot } from '@/ui/Dot'
@@ -56,16 +54,23 @@ function Term({ label, value, direction }: { label: string; value: Money; direct
  * dit combien n'en ont pas : additionner une inconnue comme un zéro donnerait
  * un patrimoine faux annoncé comme exact, ce qui est pire que pas de chiffre.
  *
+ * **Il nomme la personne**, toujours. C'est une épargne individuelle — jamais
+ * celle du foyer —, et un chiffre de cette taille sans propriétaire à côté se
+ * lit comme une somme. L'écran ne propose d'ailleurs pas d'autre lecture (voir
+ * `useIndividualScope`), mais un total muet ne le dirait pas.
+ *
  * Le net du mois est posé à côté, jamais dedans : ce sont deux questions — ce
  * que je possède, et ce que le mois y a ajouté — et les additionner reviendrait
  * à compter deux fois ce que la dernière valorisation contient déjà.
  */
-function Total({ net }: { net: Money }) {
+function Total({ net, owner }: { net: Money; owner: string | null }) {
   const total = useSavingTotal()
 
   return (
     <Tile variant="accent" className="gap-2">
-      <Eyebrow icon={SavingsIcon}>{fr.savings.total}</Eyebrow>
+      <Eyebrow icon={SavingsIcon}>
+        {owner === null ? fr.savings.total : tpl(fr.savings.totalOf, de(owner))}
+      </Eyebrow>
       {total.valued === 0 ? (
         <p className="t-body">{fr.savings.totalNone}</p>
       ) : (
@@ -226,7 +231,6 @@ function Placed({ saved }: { saved: Money }) {
   const members = useMemberMap()
   const unassigned = useUnassignedSavings()
   const unlinked = useUnlinkedSavings()
-  const filter = useMemberFilter()
 
   /* Une part n'a de sens qu'entre des mouvements de même signe : sur un mois
      où l'on reprend plus qu'on ne place, « −24 % » ne veut rien dire, et le
@@ -293,12 +297,15 @@ function Placed({ saved }: { saved: Money }) {
         <p className="t-label border-t border-border pt-3">{fr.savings.unlinkedHint}</p>
       )}
 
-      {/* Un versement resté « en commun » n'est à personne, et l'épargne ne
-          se partage pas : il ne compte dans la capacité de personne, et rien
-          nulle part ne le disait. C'est le pendant du salaire non attribué de
-          l'écran Répartition. Dit une seule fois, hors filtre : sous filtre, il
-          n'est de toute façon pas dans la liste qu'on regarde. */}
-      {filter === undefined && unassigned.length > 0 && (
+      {/* Un versement resté « en commun » n'est à personne, et l'épargne ne se
+          partage pas : il ne compte dans la capacité de personne. La phrase se
+          disait hors filtre — la lecture qui n'existe plus —, et elle vaut
+          justement davantage maintenant : sous une lecture individuelle, ces
+          versements ne s'affichent nulle part, et rien ne dirait qu'ils
+          existent. `useUnassignedSavings` regarde le mois entier, filtre ou
+          non. C'est le pendant du salaire non attribué de l'écran
+          Répartition. */}
+      {unassigned.length > 0 && (
         <p className="t-label border-t border-border pt-3">{fr.savings.placedUnassigned}</p>
       )}
     </Tile>
@@ -339,52 +346,6 @@ function Left({ left, rate }: { left: Money; rate: number | null }) {
   )
 }
 
-/** La lecture d'un membre, hors filtre : chacun décide sur son compte. */
-function MemberRow({ saving }: { saving: MemberSaving }) {
-  const members = useMemberMap()
-  const currency = useCurrency()
-  const member = members.get(saving.memberId)
-  const over = saving.left < 0
-
-  return (
-    <Tile
-      className="gap-3"
-      label={tpl(
-        fr.savings.srMemberSaving,
-        member?.name ?? '',
-        formatMoney(saving.capacity, currency),
-        formatMoney(saving.saved, currency),
-        formatMoney(saving.left, currency),
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <Dot color={member?.color ?? 'var(--cat-rest)'} />
-        <span className="t-body min-w-0 flex-1 truncate font-medium">{member?.name ?? ''}</span>
-      </div>
-      <ul className="flex flex-col gap-1.5 border-t border-border pt-3">
-        <Term label={fr.savings.capacity} value={saving.capacity} />
-        {/* Signé, comme la ventilation : un mois de reprise rend un versé
-            négatif, et le montrer positif serait un chiffre faux. */}
-        <li className="flex items-baseline gap-3">
-          <span className="t-label min-w-0 flex-1 truncate">{fr.savings.placedTotal}</span>
-          <Amount value={saving.saved} size="body" signed className="shrink-0" />
-        </li>
-        <li className="flex items-baseline gap-3">
-          <span className="t-label min-w-0 flex-1 truncate">
-            {over ? fr.savings.over : fr.savings.left}
-          </span>
-          <Amount
-            value={abs(saving.left)}
-            size="body"
-            tone={over ? 'danger' : 'default'}
-            className="shrink-0"
-          />
-        </li>
-      </ul>
-    </Tile>
-  )
-}
-
 /**
  * L'écran de l'épargne — celui qu'ouvre la tuile Capacité du mois.
  *
@@ -399,19 +360,24 @@ function MemberRow({ saving }: { saving: MemberSaving }) {
  * et un versement n'écrase aucune valorisation : sur un placement, la valeur
  * bouge aussi avec le marché.
  *
- * La lecture est individuelle par construction. L'épargne est le seul chiffre du
- * mois qui n'a aucun sens au foyer : deux personnes qui dégagent 300 € et 900 €
- * n'ont pas « 1 200 € à placer », elles ont deux décisions à prendre sur deux
- * comptes. Il n'y a donc pas de support « commun », et le filtre par personne
- * vaut aussi bien sur le stock que sur le flux.
+ * **La lecture est individuelle, et elle n'a pas d'autre forme.** L'épargne est
+ * le seul chiffre de l'app qui n'a aucun sens au foyer : deux personnes qui ont
+ * 12 000 € et 8 000 € de côté n'ont pas « 20 000 € », et deux qui dégagent 300 €
+ * et 900 € n'ont pas « 1 200 € à placer » — elles ont deux comptes, deux
+ * capacités et deux décisions, dont aucune ne se prend sur une somme. L'écran ne
+ * propose donc ni « Tout le monde » ni « Commun », seulement les personnes, et
+ * il s'assure qu'une est choisie (`useIndividualScope`). Le stock et le flux
+ * suivent la même personne, par le même filtre.
  */
 export function SavingsPage() {
   const navigate = useNavigate()
   const totals = useKindTotals(true)
-  const filter = useMemberFilter()
   const members = useMembers()
-  const perMember = useMemberSavings()
+  const memberMap = useMemberMap()
   const supports = useScopedSavingSupports()
+  /* Pose une personne quand aucune ne l'est : une rangée de pilules dont aucune
+     n'est active laisserait croire à une lecture qui n'existe pas. */
+  const owner = useIndividualScope()
 
   const capacity = savingCapacity(totals)
   const left = savingLeft(totals)
@@ -452,7 +418,7 @@ export function SavingsPage() {
           {fr.entry.savingOut}
         </Button>
       </PageTitle>
-      <MonthHeader prorataNote withCommon={false} />
+      <MonthHeader prorataNote personsOnly />
 
       {nothing ? (
         <EmptyState
@@ -471,7 +437,7 @@ export function SavingsPage() {
           <p className="t-label">{fr.savings.subtitle}</p>
 
           {/* Le stock d'abord : c'est la question qu'on se pose en arrivant. */}
-          <Total net={totals.saving} />
+          <Total net={totals.saving} owner={owner === null ? null : (memberMap.get(owner)?.name ?? null)} />
           <Supports />
 
           {/* Puis le flux du mois, inchangé — la capacité, ce qui est placé, ce
@@ -479,20 +445,6 @@ export function SavingsPage() {
           <Capacity capacity={capacity} />
           <Placed saved={totals.saving} />
           <Left left={left} rate={rate} />
-
-          {/* Hors filtre et à plusieurs : les deux lectures côte à côte, pour
-              ne pas avoir à passer d'une pastille à l'autre pour comparer. */}
-          {filter === undefined && members.length > 1 && perMember.length > 0 && (
-            <section className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
-                <Eyebrow>{fr.savings.byMember}</Eyebrow>
-                <p className="t-label">{fr.savings.byMemberHint}</p>
-              </div>
-              {perMember.map((saving) => (
-                <MemberRow key={saving.memberId} saving={saving} />
-              ))}
-            </section>
-          )}
 
           <Tile className="gap-2">
             <Eyebrow>{fr.savings.method}</Eyebrow>

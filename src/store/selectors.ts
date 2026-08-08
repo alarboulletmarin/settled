@@ -30,8 +30,6 @@ import {
   recurrenceTotals,
   recurrenceTotalsOfKinds,
   restToLive,
-  savingCapacity,
-  savingLeft,
   spendingFlow,
   totalsByKind,
   upcomingDue,
@@ -64,7 +62,6 @@ import {
   memberShares,
   isCommon,
   scopeToMember,
-  scopeToMembers,
   sharedEntries,
   unassignedIncomes,
 } from '@/domain/split'
@@ -949,62 +946,11 @@ export function useUnlinkedSavings(): Entry[] {
   )
 }
 
-/** Ce qu'un membre dégage, ce qu'il place, et ce qu'il lui reste à placer. */
-export type MemberSaving = {
-  memberId: string
-  /** Ressources − charges − crédits, sa part du pot commun comprise. */
-  capacity: Money
-  /** Ce qu'il a déjà versé sur ses supports. */
-  saved: Money
-  /** La différence. Négative, il verse plus qu'il ne dégage. */
-  left: Money
-}
-
-/**
- * La même lecture pour chaque membre, sans avoir à passer d'un filtre à l'autre.
- *
- * L'épargne est le seul chiffre du mois qui n'a aucun sens au foyer : deux
- * personnes qui dégagent 300 € et 900 € n'ont pas « 1 200 € à placer », elles
- * ont deux décisions séparées à prendre, sur deux comptes séparés. Hors filtre,
- * l'écran montre donc les deux colonnes plutôt qu'une somme qui ne se décide
- * nulle part.
- *
- * `scopeToMember` fait tout le travail — les lignes du membre, plus sa part de
- * chaque charge commune : la capacité tient compte du loyer qu'il porte, sans
- * qu'aucun prorata soit recalculé ici.
- */
-export function useMemberSavings(): MemberSaving[] {
-  const members = useMembers()
-  const entries = useEntries()
-  const month = useCurrentYm()
-  const kindOf = useKindOf()
-  const incomes = useMemberIncomes()
-
-  return useMemo(() => {
-    /* Un seul balayage pour tout le foyer, là où c'en était un par membre — et
-       un découpage par charge commune au lieu d'un par charge et par membre.
-       C'est le plus lourd des sélecteurs, et le seul qui multipliait son coût
-       par le nombre de personnes. */
-    const scoped = scopeToMembers(entries, kindOf, incomes)
-    // Prorata incalculable : une capacité qui ignorerait le loyer vaudrait
-    // moins qu'une ligne absente. L'écran dit déjà ce qui manque.
-    if (scoped === null) return []
-
-    return members.flatMap((member) => {
-      const own = scoped.get(member.id)
-      if (own === undefined) return []
-      const totals = totalsByKind(own, month, kindOf, undefined, true)
-      return [
-        {
-          memberId: member.id,
-          capacity: savingCapacity(totals),
-          saved: totals.saving,
-          left: savingLeft(totals),
-        },
-      ]
-    })
-  }, [members, entries, month, kindOf, incomes])
-}
+/* `useMemberSavings` vivait ici — la même lecture pour chaque membre, en
+   colonnes, sur l'écran d'épargne hors filtre. Cet écran-là n'a plus de lecture
+   « hors filtre » : l'épargne est individuelle, son bandeau ne propose que des
+   personnes, et une pilule fait désormais la comparaison que la section
+   proposait. Un sélecteur que plus aucun écran ne lit est du poids mort. */
 
 /**
  * Où en est chaque avance, la plus lourde à reconstituer d'abord.

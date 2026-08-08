@@ -1399,6 +1399,12 @@ export const fr = {
        depuis ce relevé, et elle est toujours nommée comme telle : sur un
        placement, la valeur bouge aussi avec le marché. */
     total: 'Épargne renseignée',
+    /* L'épargne est individuelle, et le total le dit : un chiffre de cette
+       taille sans propriétaire à côté se lit comme une somme du foyer — celle
+       que cet écran existe précisément pour ne pas montrer.
+       Le gabarit reçoit déjà « d'Andrea » ou « de Marie » : l'élision dépend du
+       prénom, donc de `format.de`, et un gabarit ne peut pas la décider. */
+    totalOf: 'Épargne %s',
     totalHint: 'somme des dernières valeurs relevées',
     totalNone: 'Aucune valeur renseignée pour l’instant.',
     /* Une inconnue n'est pas un zéro : le total ne peut pas se présenter comme
@@ -1550,11 +1556,6 @@ export const fr = {
        négatif au-dessus se lit comme une erreur. */
     withdrawn: 'Plus repris que placé ce mois-ci — une avance est passée par là.',
 
-    /* Chacun décide sur son compte : une somme des capacités ne se place nulle
-       part. Hors filtre, l'écran montre donc les colonnes plutôt qu'un total. */
-    byMember: 'Chacun de son côté',
-    byMemberHint: 'L’épargne ne se partage pas : chacun place ce qu’il dégage.',
-
     method: 'Comment c’est calculé',
     methodFormula: 'Capacité = revenus − charges − crédits.',
     methodExcluded:
@@ -1565,7 +1566,6 @@ export const fr = {
       'Le solde du mois, lui, compte le versement comme une sortie : c’est exact en trésorerie, et c’est pour ça que les deux chiffres diffèrent.',
 
     empty: 'Rien à placer tant que le mois n’a ni revenu ni charge.',
-    srMemberSaving: '%s dégage %s, en place %s, il lui reste %s.',
   },
 
   credits: {
