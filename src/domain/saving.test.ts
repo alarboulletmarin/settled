@@ -59,13 +59,28 @@ describe('la dernière valeur connue', () => {
     expect(latestValuation(valuations, 's-livret', '2026-01-01')).toBeNull()
   })
 
-  it('départage deux relevés du même jour de façon déterministe', () => {
-    const twice = [
-      makeSavingValuation({ id: 'a', supportId: 's-livret', amount: eur(100), date: '2026-08-08' }),
-      makeSavingValuation({ id: 'b', supportId: 's-livret', amount: eur(200), date: '2026-08-08' }),
-    ]
-    expect(latestValuation(twice, 's-livret', '2026-08-08')?.id).toBe('b')
-    expect(latestValuation([...twice].reverse(), 's-livret', '2026-08-08')?.id).toBe('b')
+  /* Deux relevés du même jour, c'est une saisie et sa correction — et c'est la
+     correction qu'on veut lire. Les départager par leur identifiant, comme on
+     le faisait, revenait à tirer à pile ou face : `makeId` rend un UUID
+     aléatoire, donc le typo l'emportait une fois sur deux. */
+  it('fait gagner le dernier relevé posé le même jour', () => {
+    const typo = makeSavingValuation({
+      id: 'a',
+      supportId: 's-livret',
+      amount: eur(100),
+      date: '2026-08-08',
+    })
+    const fix = makeSavingValuation({
+      id: 'b',
+      supportId: 's-livret',
+      amount: eur(200),
+      date: '2026-08-08',
+    })
+    expect(latestValuation([typo, fix], 's-livret', '2026-08-08')?.amount).toBe(eur(200))
+    /* Le rang décide seul : les mêmes identifiants dans l'autre sens désignent
+       l'autre relevé. L'ordre est donc bien celui de l'arrivée, et il est
+       total — deux lectures du même document rendent le même « dernier ». */
+    expect(latestValuation([fix, typo], 's-livret', '2026-08-08')?.amount).toBe(eur(100))
   })
 })
 

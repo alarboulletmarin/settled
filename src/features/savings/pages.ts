@@ -7,12 +7,13 @@
  * formulaires, la courbe de son historique — se demande, et n'a donc aucune
  * raison de peser sur le premier chargement de tout le monde.
  *
- * Un seul module pour les trois, comme les réglages : ouvrir une fiche amène
- * aussi ses formulaires, et c'est exactement l'usage — on relève une valeur
- * depuis la fiche qu'on vient d'ouvrir. Trois `import()` séparés auraient fait
- * trois allers-retours de réseau là où l'on fait justement des allers-retours.
+ * Un seul module pour tous, comme les réglages : ouvrir une fiche amène aussi
+ * ses formulaires, et c'est exactement l'usage — on relève une valeur depuis la
+ * fiche qu'on vient d'ouvrir. Autant d'`import()` séparés auraient fait autant
+ * d'allers-retours de réseau là où l'on fait justement des allers-retours.
  * ==========================================================================*/
 
 export { SupportPage } from './SupportPage'
 export { SupportFormPage } from './SupportFormPage'
 export { ValuationFormPage } from './ValuationFormPage'
+export { ValuationsFormPage } from './ValuationsFormPage'

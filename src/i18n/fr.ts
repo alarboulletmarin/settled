@@ -1567,6 +1567,21 @@ export const fr = {
     historyEmpty: 'Aucune valeur relevée. Renseigne-la pour suivre son évolution.',
     historyOne: 'Un seul relevé pour l’instant — la courbe démarre au deuxième.',
 
+    /* --- Relever plusieurs supports d'un coup ------------------------------*/
+    /* On ne relève pas ses comptes un par un : les chiffres arrivent ensemble,
+       sur un relevé de fin de mois. D'où un écran qui les prend tous, et un
+       vocabulaire au pluriel pour ne pas le confondre avec la fiche d'un
+       support — où l'on ne parle que de lui. */
+    valuesUpdate: 'Mettre à jour les valeurs',
+    valuesHint:
+      'Reporte ce que disent tes comptes aujourd’hui. Laisse vide ce que tu ne sais pas : une case vide n’enregistre rien.',
+    valuesDateHint: 'La date du relevé que tu as sous les yeux — la même pour tous.',
+    valuesNone: 'Renseigne au moins une valeur, ou reviens en arrière.',
+    valuesAdded: '%s valeurs enregistrées',
+    /* Le chiffre que la banque va confirmer ou corriger : c'est lui qu'on
+       compare au relevé, pas la dernière valeur connue. */
+    valuesDrift: 'estimée à %s',
+
     /* --- La valeur estimée -------------------------------------------------*/
     estimated: 'Valeur estimée',
     estimatedHint: 'dernière valeur renseignée + mouvements depuis',

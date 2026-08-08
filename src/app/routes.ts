@@ -147,6 +147,10 @@ export const SAVINGS_PATH = '/epargne'
 /* Segment fixe avant `:id`, comme partout ailleurs : React Router le classe
    d'abord, un support ne peut donc pas éclipser le formulaire de création. */
 export const SUPPORT_NEW_PATH = `${SAVINGS_PATH}/nouveau`
+/* Relever tous ses supports d'un coup, sans passer par leurs fiches. Segment
+   fixe lui aussi, et pluriel : `/valeur` sous un support ne vise qu'un compte,
+   `/valeurs` sous l'écran les vise tous. */
+export const VALUATIONS_PATH = `${SAVINGS_PATH}/valeurs`
 export const supportPath = (id: string): string => `${SAVINGS_PATH}/${id}`
 export const supportEditPath = (id: string): string => `${SAVINGS_PATH}/${id}/modifier`
 /* La mise à jour de valeur a son URL, comme toute saisie de l'app : c'est ce

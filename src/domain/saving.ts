@@ -40,16 +40,30 @@ export function supportsOfMember(
  * Les valorisations d'un support, de la plus récente à la plus ancienne.
  *
  * L'ordre est total et déterministe : deux relevés du même jour — une saisie et
- * sa correction — se départagent par leur identifiant, faute de quoi deux
- * lectures du même document pourraient ne pas désigner le même « dernier ».
+ * sa correction — se départagent par leur **ordre d'arrivée**, le dernier posé
+ * d'abord. Faute de quoi deux lectures du même document pourraient ne pas
+ * désigner le même « dernier ».
+ *
+ * Par l'ordre d'arrivée, et pas par l'identifiant : `makeId` rend un UUID
+ * aléatoire, donc départager deux relevés du même jour par leur id, c'est tirer
+ * à pile ou face entre une saisie et sa correction — déterministe, mais faux
+ * une fois sur deux. Les valorisations ne sont qu'empilées (`addSavingValuation`
+ * n'écrase rien) et rien ne les réordonne à la lecture du document : leur rang
+ * dans le tableau *est* leur chronologie, et il survit à l'export.
  */
 export function valuationsOf(
   valuations: readonly SavingValuation[],
   supportId: string,
 ): SavingValuation[] {
   return valuations
-    .filter((valuation) => valuation.supportId === supportId)
-    .sort((a, b) => (a.date === b.date ? compareText(b.id, a.id) : compareText(b.date, a.date)))
+    .map((valuation, rank) => ({ valuation, rank }))
+    .filter((row) => row.valuation.supportId === supportId)
+    .sort((a, b) =>
+      a.valuation.date === b.valuation.date
+        ? b.rank - a.rank
+        : compareText(b.valuation.date, a.valuation.date),
+    )
+    .map((row) => row.valuation)
 }
 
 const compareText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0)

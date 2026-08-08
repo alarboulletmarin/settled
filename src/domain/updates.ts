@@ -296,6 +296,22 @@ export function addSavingValuation(data: Data, valuation: SavingValuation): Data
 }
 
 /**
+ * Plusieurs relevés d'un coup — ce que fait un relevé de banque.
+ *
+ * On ne relève pas ses comptes un par un : les chiffres arrivent ensemble, en
+ * fin de mois ou de trimestre, et les poser un à un demandait d'ouvrir chaque
+ * fiche. En une seule mutation parce que c'est un seul geste : un seul rendu,
+ * une seule écriture, un seul retour arrière — quatre relevés qu'on annulerait
+ * en quatre fois ne seraient pas le geste qu'on vient de faire.
+ */
+export function addSavingValuations(
+  data: Data,
+  valuations: readonly SavingValuation[],
+): Data {
+  return { ...data, savingValuations: [...data.savingValuations, ...valuations] }
+}
+
+/**
  * Corrige un relevé, sans toucher aux autres.
  *
  * Un chiffre mal saisi se rattrape — sinon il reste faux pour toujours dans

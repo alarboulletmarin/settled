@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { MonthHeader } from '@/app/MonthHeader'
-import { SUPPORT_NEW_PATH, entryNewPath, supportPath } from '@/app/routes'
+import { SUPPORT_NEW_PATH, VALUATIONS_PATH, entryNewPath, supportPath } from '@/app/routes'
 import { type Money, ZERO, abs, add } from '@/domain/money'
 import { UNLINKED_SUPPORT } from '@/domain/saving'
 import { savingCapacity, savingLeft, savingRate } from '@/domain/stats'
@@ -152,7 +152,26 @@ function Supports() {
 
   return (
     <section className="flex flex-col gap-3">
-      <Eyebrow>{fr.savings.supports}</Eyebrow>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow>{fr.savings.supports}</Eyebrow>
+        {/* Relever ses comptes sans ouvrir quatre fiches.
+            L'action est sur la **section**, et pas dans les tuiles, parce
+            qu'elle ne peut pas y être : une tuile actionnable est un `<button>`,
+            qui n'admet pas de bouton, et une tuile à lien étendu ne contient
+            plus rien d'actionnable (DS §6). Elle y gagne d'ailleurs — un relevé
+            de banque donne tous les chiffres en même temps, donc le geste réel
+            est « je mets tout à jour », pas « je mets à jour le Livret A ».
+            Corriger un seul chiffre reste sur la fiche du support. */}
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            void navigate(VALUATIONS_PATH)
+          }}
+        >
+          {fr.savings.valuesUpdate}
+        </Button>
+      </div>
       <BentoGrid>
         {shown.map((support) => {
           const latest = latestValuation(valuations, support.id)

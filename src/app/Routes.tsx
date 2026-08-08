@@ -41,6 +41,7 @@ import {
   SETTINGS_PEOPLE_PATH,
   SETTINGS_STORAGE_PATH,
   TERMS_PATH,
+  VALUATIONS_PATH,
 } from './routes'
 
 /**
@@ -97,6 +98,7 @@ const savings = () => import('@/features/savings/pages')
 const SupportPage = lazy(async () => ({ default: (await savings()).SupportPage }))
 const SupportFormPage = lazy(async () => ({ default: (await savings()).SupportFormPage }))
 const ValuationFormPage = lazy(async () => ({ default: (await savings()).ValuationFormPage }))
+const ValuationsFormPage = lazy(async () => ({ default: (await savings()).ValuationsFormPage }))
 
 /**
  * Les trois pages juridiques, dans un seul morceau.
@@ -157,6 +159,7 @@ export function AppRoutes() {
           {/* Le segment fixe est classé avant `:id` par React Router : un
               support ne peut donc pas éclipser le formulaire de création. */}
           <Route path={SUPPORT_NEW_PATH} element={<SupportFormPage />} />
+          <Route path={VALUATIONS_PATH} element={<ValuationsFormPage />} />
           <Route path={`${SAVINGS_PATH}/:id`} element={<SupportPage />} />
           <Route path={`${SAVINGS_PATH}/:id/modifier`} element={<SupportFormPage />} />
           <Route path={`${SAVINGS_PATH}/:id/valeur`} element={<ValuationFormPage />} />

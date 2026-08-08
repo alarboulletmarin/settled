@@ -177,6 +177,15 @@ export function addSavingValuation(input: Omit<SavingValuation, 'id'>): SavingVa
   return valuation
 }
 
+/** Plusieurs relevés en un geste — voir `updates.addSavingValuations`. */
+export function addSavingValuations(
+  inputs: readonly Omit<SavingValuation, 'id'>[],
+): SavingValuation[] {
+  const valuations = inputs.map((input) => ({ ...input, id: makeId() }))
+  mutate((data) => updates.addSavingValuations(data, valuations))
+  return valuations
+}
+
 export function replaceSavingValuation(id: string, next: Omit<SavingValuation, 'id'>): void {
   mutate((data) => updates.replaceSavingValuation(data, id, next))
 }

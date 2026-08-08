@@ -148,6 +148,19 @@ describe('l’épargne se lit au nom d’une personne', () => {
     expect(screen.getByText(tpl(fr.savings.totalOf, de('Andrea')))).toBeInTheDocument()
   })
 
+  /* Le raccourci vit sur la section, et pas dans les tuiles : une tuile
+     actionnable est un `<button>`, qui n'admet pas de bouton, et une tuile à
+     lien étendu ne contient plus rien d'actionnable (DS §6). */
+  it('offre de relever ses supports sans ouvrir leurs fiches', () => {
+    seed()
+    open()
+
+    const shortcut = screen.getByRole('button', { name: fr.savings.valuesUpdate })
+    expect(shortcut.closest('section')).toContainElement(
+      screen.getByRole('button', { name: tpl(fr.savings.supportOpen, 'Livret A') }),
+    )
+  })
+
   /* Sans personne au foyer, il n'y a rien à filtrer et rien à posséder :
      l'écran demande quelqu'un avant de parler d'épargne. */
   it('ne force aucun filtre quand le foyer n’a personne', () => {
