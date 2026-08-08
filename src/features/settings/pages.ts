@@ -11,6 +11,7 @@
  * fichier, comme partout ailleurs dans l'app.
  * ==========================================================================*/
 
+export { AppearancePage } from './AppearancePage'
 export { CategoriesPage } from './CategoriesPage'
 export { CategoryNewPage, FamilyNewPage } from './CategoryForms'
 export { DataPage } from './DataPage'

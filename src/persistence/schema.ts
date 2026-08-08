@@ -12,7 +12,7 @@ import type { Data } from '@/domain/types'
 import { defaultCategories, defaultFamilies, fallbackFamilyId, memberColorAt } from './defaults'
 import { type ImportNotice, normalizeDocument } from './validate'
 
-export const CURRENT_SCHEMA_VERSION = 6
+export const CURRENT_SCHEMA_VERSION = 7
 
 /** Un document venu du disque, avant toute validation. */
 export type RawDocument = Record<string, unknown>
@@ -158,6 +158,23 @@ function toVersion6(doc: RawDocument): RawDocument {
   return { ...doc, household: { ...household, members }, schemaVersion: 6 }
 }
 
+/**
+ * La palette — l'identité colorimétrique, à côté du thème.
+ *
+ * Le champ est ajouté par la normalisation, qui pose « classique » à toute
+ * valeur absente ou inconnue : un document v6 est donc déjà un document v7
+ * valide, et la migration n'a que la version à inscrire. Elle existe quand même,
+ * parce que le pipeline veut une étape par incrément et qu'une marche manquante
+ * se paie la fois d'après.
+ *
+ * Rien à convertir, contrairement à la v6 : la palette ne redéfinit que des
+ * tokens, et ce qui est stocké sur une catégorie ou un membre est déjà un nom de
+ * token. Changer de palette recolore ce qui existe sans réécrire une ligne.
+ */
+function toVersion7(doc: RawDocument): RawDocument {
+  return { ...doc, schemaVersion: 7 }
+}
+
 export const MIGRATIONS: Migration[] = [
   { to: 1, migrate: toVersion1 },
   { to: 2, migrate: toVersion2 },
@@ -165,6 +182,7 @@ export const MIGRATIONS: Migration[] = [
   { to: 4, migrate: toVersion4 },
   { to: 5, migrate: toVersion5 },
   { to: 6, migrate: toVersion6 },
+  { to: 7, migrate: toVersion7 },
 ]
 
 export class ImportError extends Error {

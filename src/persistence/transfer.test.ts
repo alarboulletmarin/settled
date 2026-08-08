@@ -79,7 +79,7 @@ function richData(): Data {
       { ym: '2026-07', openedAt: '2026-07-01', closed: false },
       { ym: '2026-06', openedAt: '2026-06-01', closed: true },
     ],
-    settings: { theme: 'dark', currency: 'CHF', monthStartsOn: 1 },
+    settings: { theme: 'dark', palette: 'vive', currency: 'CHF', monthStartsOn: 1 },
   })
 }
 
@@ -159,7 +159,12 @@ describe('import — fichiers hostiles', () => {
        n'en reçoit pas d'office. Un repli inventé remettrait par l'import le
        mot que l'app a cessé de supposer. */
     expect(data.household.name).toBe('')
-    expect(data.settings).toEqual({ theme: 'system', currency: 'EUR', monthStartsOn: 1 })
+    expect(data.settings).toEqual({
+      theme: 'system',
+      palette: 'classique',
+      currency: 'EUR',
+      monthStartsOn: 1,
+    })
     expect(data.entries).toEqual([])
   })
 })
@@ -539,5 +544,41 @@ describe('palette propre aux membres (v6)', () => {
       '"schemaVersion":6',
     )
     expect(parseImport(doc).data.household.members[0]?.color).toBe('var(--member-3)')
+  })
+})
+
+describe('palette d’apparence (v7)', () => {
+  const v6 = (settings?: unknown) =>
+    JSON.stringify({
+      schemaVersion: 6,
+      household: { name: 'Maison', members: [] },
+      categories: [],
+      advances: [],
+      ...(settings === undefined ? {} : { settings }),
+    })
+
+  it('donne « classique » à un document qui n’en avait pas', () => {
+    expect(parseImport(v6()).data.settings.palette).toBe('classique')
+    expect(parseImport(v6()).data.schemaVersion).toBe(CURRENT_SCHEMA_VERSION)
+  })
+
+  /* Un réglage d'apparence n'est pas une donnée : une valeur venue d'une version
+     qui proposait une palette de plus retombe sur celle par défaut, sans que la
+     ligne soit écartée ni que la lecture ait quoi que ce soit à signaler. */
+  it('ramène une palette inconnue à « classique », sans un mot', () => {
+    const result = parseImport(v6({ theme: 'dark', palette: 'aurore', currency: 'EUR' }))
+    expect(result.data.settings.palette).toBe('classique')
+    expect(result.data.settings.theme).toBe('dark')
+    expect(result.notices).toEqual([])
+  })
+
+  it('garde la palette d’un document qui en porte une', () => {
+    expect(parseImport(v6({ palette: 'contrastee' })).data.settings.palette).toBe('contrastee')
+  })
+
+  /* Thème et palette sont deux réglages, et se règlent séparément. */
+  it('laisse le thème et la palette diverger', () => {
+    const data = parseImport(v6({ theme: 'light', palette: 'vive' })).data
+    expect(data.settings).toMatchObject({ theme: 'light', palette: 'vive' })
   })
 })

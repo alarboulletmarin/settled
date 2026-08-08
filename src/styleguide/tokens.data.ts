@@ -58,25 +58,31 @@ export const SEMANTIC_TOKENS: TokenEntry[] = [
   { name: '--danger-text', value: 'texte d’erreur' },
 ]
 
+/* Le rang, et non la teinte : ces six-là sont fournis par la palette, et deux
+   d'entre elles en changent d'un thème à l'autre. Une légende en hexadécimal
+   était juste tant qu'il n'y avait qu'un jeu de valeurs ; elle mentirait
+   maintenant cinq fois sur six. La pastille, elle, résout `var()` et dit donc
+   toujours vrai. */
 export const CATEGORY_PALETTE: TokenEntry[] = [
-  { name: '--cat-1', value: '#D8F84E' },
-  { name: '--cat-2', value: '#8478F2' },
-  { name: '--cat-3', value: '#4FC3A1' },
-  { name: '--cat-4', value: '#F5B575' },
-  { name: '--cat-5', value: '#F09BB5' },
-  { name: '--cat-6', value: '#7FB8E8' },
+  { name: '--cat-1', value: 'teinte 1' },
+  { name: '--cat-2', value: 'teinte 2' },
+  { name: '--cat-3', value: 'teinte 3' },
+  { name: '--cat-4', value: 'teinte 4' },
+  { name: '--cat-5', value: 'teinte 5' },
+  { name: '--cat-6', value: 'teinte 6' },
   { name: '--cat-rest', value: 'au-delà de six : « Autres »' },
 ]
 
-/* Les mêmes teintes, moins le vert pomme : c'est --accent, donc le signal
-   « actif » et la couleur du commun. Un membre ne le porte jamais — sa pastille
-   se lirait comme une sélection, et disparaîtrait dans une pilule active. */
+/* Les teintes des catégories, moins celle de l'accent : c'est le signal
+   « actif » et la couleur du commun. Un membre ne la porte jamais — sa pastille
+   se lirait comme une sélection, et disparaîtrait dans une pilule active. Deux
+   palettes posent leurs cinq membres à la main, pour cette raison précise. */
 export const MEMBER_PALETTE: TokenEntry[] = [
-  { name: '--member-1', value: 'turquoise — var(--cat-3)' },
-  { name: '--member-2', value: 'ambre — var(--cat-4)' },
-  { name: '--member-3', value: 'rose — var(--cat-5)' },
-  { name: '--member-4', value: 'bleu — var(--cat-6)' },
-  { name: '--member-5', value: 'violet — var(--cat-2)' },
+  { name: '--member-1', value: 'membre 1' },
+  { name: '--member-2', value: 'membre 2' },
+  { name: '--member-3', value: 'membre 3' },
+  { name: '--member-4', value: 'membre 4' },
+  { name: '--member-5', value: 'membre 5' },
 ]
 
 /* Les six premières lignes sont un même chiffre à six tailles : la lettre —

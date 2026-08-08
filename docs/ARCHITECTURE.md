@@ -9,6 +9,11 @@ doit faire, et le [design system](DESIGN-SYSTEM.md) de quoi elle a l'air.
 - `src/styles/tokens.css` — les tokens du design system, déclarés une seule fois,
   en quatre couches : palette de base, tokens sémantiques, couche dérivée,
   exposition à Tailwind. Un composant qui écrit `var(--pine-500)` est un bug.
+- `src/styles/palettes.css` — les cinq autres identités colorimétriques, en
+  surcharges de la couche sémantique. `tokens.css` *est* la palette Classique,
+  qui n'y figure donc pas. Aucun composant n'a jamais à savoir laquelle est
+  active, et `src/theme/palettes.test.ts` mesure les douze couples
+  palette × thème plutôt que de croire ce qui est écrit.
 - `/styleguide` — chaque token, chaque échelle typographique et chaque composant,
   dans les deux thèmes. Livrable permanent, maintenu à jour.
 - `src/domain/` — logique métier pure, sans UI, entièrement testée.
@@ -266,12 +271,25 @@ endroit et au même poids visuel, et changer de thème demandait de traverser
 quarante-sept catégories.
 
 Une entrée, donc — **952 px**, cinq groupes, sept rangées, chacune disant sa
-valeur — et huit vues sous `/reglages/…` : les personnes, la fiche d'un membre,
-le catalogue, une famille, les deux formulaires de création, le stockage, les
-données. Le thème seul reste réglable sur place : trois positions ne méritent
-pas un écran. Chaque vue porte son URL, ce qui rend le retour du navigateur, le
-partage d'un lien et le bouton de l'écran identiques à ceux du reste de l'app —
-là où un état de composant n'aurait été connu d'aucun des trois.
+valeur — et neuf vues sous `/reglages/…` : l'apparence, les personnes, la fiche
+d'un membre, le catalogue, une famille, les deux formulaires de création, le
+stockage, les données. Chaque vue porte son URL, ce qui rend le retour du
+navigateur, le partage d'un lien et le bouton de l'écran identiques à ceux du
+reste de l'app — là où un état de composant n'aurait été connu d'aucun des trois.
+
+**Le thème est descendu dans une vue, et c'est un revirement.** Il restait
+réglable sur place, et l'argument tenait : trois positions, un geste, l'enfouir
+d'un cran aurait coûté plus que la rangée qu'il occupait. Il ne tient plus depuis
+qu'un second réglage d'apparence existe à côté de lui. Une palette ne se choisit
+pas à la lecture de son nom — il faut la voir —, et six aperçus n'entrent pas
+dans les 250 px utiles d'une rangée à 320. Restait à les séparer : le thème sur
+la page d'entrée, la palette dans sa vue. C'était le pire des trois, parce que
+les deux se regardent — une palette n'a pas la même allure en clair et en
+sombre, et « Sombre » ne dit rien sans savoir de quelle palette il est le sombre.
+La page d'entrée ne perd donc pas une rangée, elle en change : « Apparence »
+y dit sa valeur — « Système · Douce » — comme toutes les autres. La devise reste
+le seul réglage qui se fasse encore sur place, et pour la raison inverse : six
+codes dans un sélecteur natif n'ont rien à montrer qu'une vue rendrait mieux.
 
 Deux conséquences, l'une et l'autre écrites une fois : `isFocusScreen` compte
 désormais `/reglages/…` mais pas `/reglages`, ce qui retire le bouton flottant
@@ -456,6 +474,9 @@ appliqué, et reste réversible en une ligne.
 | `--text-muted` en clair | `--ink-400` | 3,72:1 sur `--surface` | même teinte à 75 % → 5,99:1 |
 | `--text-muted` en sombre | `#8FA09A` | 2,75:1 sur `--bg`, qui est du sapin | `--pine-100` sur le fond, valeur du DS dans les surfaces |
 | `--accent-2` | `--violet-500` | blanc à 3,53:1, alors que le DS §2.3 l'annonce AA | `--violet-600` → 4,67:1, déjà dans la palette |
+| anneau de focus en sombre | `--accent-2` | **1,61:1 sur `--bg`**, qui est du sapin : l'anneau ne se voyait pas sur le fond de page, là où WCAG 1.4.11 demande 3:1 | `--focus`, repointé sur `--violet-300` en sombre → 3,56 sur `--bg`, 9,17 sur `--surface`. Le clair ne bouge pas |
+| eyebrow d'une `.tile--accent-2` | blanc sur blanc à 18 % | 3,39:1 — le voile éclaire le fond *vers* la couleur du texte, ce qui est juste sur un accent clair et faux sur un accent sombre | **écart conservé**, déclaré dans `theme/palettes.test.ts` : le corriger demande de veiler en sens inverse sur cette tuile, donc d'en changer l'aspect |
+| voile des tuiles accentuées | 62 % partout | 3,65:1 sur l'accent le plus sourd — le contraste d'un voile d'encre monte avec la clarté de son fond, et le vert pomme est très clair | `--accent-veil`, posé par palette : 62 % pour Classique, jusqu'à 72 % pour Neutre |
 | texte d'alerte | `--alert-500` | 3,55:1 sur `--bg` | `--danger-text` ; `--danger` reste un remplissage |
 | symbole monétaire | opacité 0.5 | 3,65:1 sur `--surface` | 0.6, et 1 là où la couleur de texte n'a aucune marge |
 | échéance prévue | opacité 60 % | ruine le contraste du libellé | pastille en pointillés + couleur de texte secondaire |
@@ -488,6 +509,14 @@ Trois autres points relèvent de la lecture plutôt que du contraste :
   fait en revanche toute la hauteur du tracé (160px), et la lecture existe par
   trois autres chemins : le clavier (flèches, `Origine`, `Fin`), le nom
   accessible de chaque mois, et la lecture d'ensemble en `sr-only`.
+
+- **Le manifeste PWA ne suit pas la palette.** `background_color` et
+  `theme_color` (`vite.config.ts`) sont du JSON construit une fois : ils gardent
+  les valeurs de Classique, et rien ne peut les faire varier avec un réglage qui
+  vit dans le navigateur. L'écart est borné à ce qu'ils peignent — l'écran de
+  démarrage d'une app installée. La barre système, elle, suit : `theme.ts` lit
+  `--bg` sur la feuille et le recopie dans la balise `theme-color`, qui a perdu
+  ses deux variantes conditionnelles pour cette raison.
 
 - **Le manifeste PWA dit encore « foyer », seul de toute l'app.** Le mot a été
   retiré partout ailleurs — interface, page d'accueil, métadonnées, README —

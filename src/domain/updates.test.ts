@@ -420,7 +420,12 @@ describe('ouverture du mois', () => {
 describe('réglages', () => {
   it('modifie un réglage sans écraser les autres', () => {
     const after = updateSettings(makeData(), { theme: 'dark' })
-    expect(after.settings).toEqual({ theme: 'dark', currency: 'EUR', monthStartsOn: 1 })
+    expect(after.settings).toEqual({
+      theme: 'dark',
+      palette: 'classique',
+      currency: 'EUR',
+      monthStartsOn: 1,
+    })
   })
 })
 

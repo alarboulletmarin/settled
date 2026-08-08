@@ -165,7 +165,7 @@ export function Checkbox({
               'flex size-6 items-center justify-center rounded-[7px] border',
               'transition-colors duration-[var(--dur)] ease-ds',
               'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
-              'peer-focus-visible:outline-[var(--accent-2)]',
+              'peer-focus-visible:outline-[var(--focus)]',
               checked ? 'border-transparent bg-accent text-accent-fg' : 'border-border bg-surface-2',
             )}
           >

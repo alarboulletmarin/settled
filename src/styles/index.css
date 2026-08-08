@@ -1,4 +1,7 @@
 @import './fonts.css';
 @import './tokens.css';
+/* Après les tokens, dont il surcharge une partie — et avant les styles, qui ne
+   lisent que des tokens sans savoir lequel a gagné. */
+@import './palettes.css';
 @import './base.css';
 @import './components.css';

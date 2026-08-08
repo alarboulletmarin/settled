@@ -147,6 +147,13 @@ export const settingsFamilyPath = (id: string): string => `${SETTINGS_CATEGORIES
 export const settingsCategoryNewPath = (familyId: string): string =>
   `${SETTINGS_CATEGORIES_PATH}/${familyId}/nouvelle`
 
+/* L'apparence a sa vue, contrairement au thème seul qui restait sur la page
+   d'entrée : trois positions y tenaient, six aperçus non — et une palette ne se
+   choisit pas à la lecture de son nom. Le thème l'y suit, parce que les deux
+   réglages se regardent ensemble : « Sombre » ne veut rien dire sans savoir de
+   quelle palette il est le sombre. */
+export const SETTINGS_APPEARANCE_PATH = `${SETTINGS_PATH}/apparence`
+
 export const SETTINGS_STORAGE_PATH = `${SETTINGS_PATH}/stockage`
 export const SETTINGS_DATA_PATH = `${SETTINGS_PATH}/donnees`
 

@@ -107,6 +107,37 @@ export const fr = {
     toggle: 'Changer de thème',
   },
 
+  /**
+   * L'apparence : le thème et la palette, deux réglages qui se combinent.
+   *
+   * Chaque palette dit ce qu'elle change en une ligne, et pas ce qu'elle
+   * « évoque » : le nom seul ne dit pas grand-chose, et une phrase d'ambiance
+   * en dirait encore moins que l'aperçu posé juste à côté.
+   */
+  appearance: {
+    title: 'Apparence',
+    /* Ce que la vue règle, en tête, parce que deux réglages qui se combinent ne
+       se devinent pas l'un de l'autre. */
+    intro:
+      'Le thème dit clair ou sombre, la palette dit avec quelles couleurs. Chaque palette existe dans les deux thèmes.',
+    paletteLabel: 'Palette',
+  },
+
+  palettes: {
+    classique: 'Classique',
+    classiqueHint: 'Les couleurs d’origine — sapin, vert pomme, violet.',
+    monochrome: 'Monochrome',
+    monochromeHint: 'Une seule teinte, du plus clair au plus sombre.',
+    douce: 'Douce',
+    douceHint: 'Les mêmes familles, moins saturées.',
+    vive: 'Vive',
+    viveHint: 'Des teintes franches, qui se distinguent de loin.',
+    neutre: 'Neutre',
+    neutreHint: 'Presque sans couleur — sauf l’alerte.',
+    contrastee: 'Contrastée',
+    contrasteeHint: 'Le contraste poussé au maximum.',
+  },
+
   nav: {
     label: 'Navigation principale',
     credits: 'Crédits',
@@ -280,10 +311,11 @@ export const fr = {
     preferences: 'Préférences',
     organisation: 'Organisation',
 
-    /* Le thème ne se commente plus : « Clair · Sombre · Système » se lit sur la
-       bascule elle-même, et une phrase pour redire les trois positions qu'on a
-       sous les yeux est exactement le genre d'explication permanente qui
-       allongeait la page sans rien apprendre. */
+    /* L'apparence est une rangée qui dit sa valeur — « Système · Douce » — et
+       mène à sa vue. Le thème y a suivi la palette : trois positions tenaient
+       sur la page d'entrée, six aperçus non, et les séparer aurait fait régler
+       les couleurs à deux endroits. */
+    appearanceSummary: '%s · %s',
 
     currency: 'Devise',
     /* La phrase dit ce que ce réglage **ne fait pas**, et rien d'autre : un
@@ -1474,9 +1506,11 @@ export const fr = {
 
   styleguide: {
     title: 'Styleguide',
-    subtitle: 'Chaque token et chaque composant du design system, dans les deux thèmes.',
+    subtitle:
+      'Chaque token et chaque composant du design system, dans les deux thèmes et dans la palette choisie.',
     sections: {
       base: 'Palette de base',
+      palettes: 'Palettes',
       semantic: 'Tokens sémantiques',
       categories: 'Palette catégories',
       members: 'Palette membres',
@@ -1487,15 +1521,21 @@ export const fr = {
       kinds: 'Natures',
       bento: 'Grille bento',
     },
-    baseNote: 'Ces valeurs ne sont jamais consommées directement par un composant.',
+    baseNote:
+      'Ces valeurs ne sont jamais consommées directement par un composant, et aucune palette n’y touche.',
+    /* Ce que la section montre, et ce qu'elle ne montre pas : les six palettes
+       dans les deux thèmes, mais pas leurs valeurs — elles sont mesurées par
+       `theme/palettes.test.ts`, qui est le seul endroit où elles se vérifient. */
+    palettesNote:
+      'Six identités, chacune dans les deux thèmes. Les composants n’en savent rien : seule la couche de tokens change.',
     semanticNote: 'La seule couche que les composants consomment.',
     categoriesNote:
-      'Six teintes, dans cet ordre. Au-delà, les suivantes basculent en gris sous « Autres ».',
+      'Six teintes, dans cet ordre, fournies par la palette. Au-delà, les suivantes basculent en gris sous « Autres ».',
     /* Le vert pomme est --accent, donc le signal « actif » et la couleur du
        commun. Le premier membre le portait : sa pastille se lisait comme une
        sélection, et disparaissait dans une pilule de filtre active. */
     membersNote:
-      'Les mêmes teintes, moins le vert pomme, qui reste à l’accent et donc au commun. Un membre ne le porte jamais.',
+      'Les mêmes teintes, moins celle de l’accent, qui dit le commun et l’état actif. Un membre ne la porte jamais.',
     typeNote: 'Archivo pour ce qui se lit, Geist Mono pour les libellés utilitaires.',
     shapesNote: 'Base 4px. Mouvement 160ms, 240ms à l’entrée d’une vue.',
     bentoNote: 'Formats autorisés : 2×1, 2×2, 4×1, 4×2, 6×2. Rien d’autre.',

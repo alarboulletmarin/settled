@@ -222,8 +222,43 @@ export type MonthState = {
 
 export type ThemeSetting = 'light' | 'dark' | 'system'
 
+/**
+ * L'identité colorimétrique de l'app, distincte du thème.
+ *
+ * Le thème dit clair ou sombre, la palette dit avec quelles couleurs — et
+ * chaque palette tient dans les deux thèmes. Purement cosmétique : aucune valeur
+ * de ce champ ne change un calcul. Les teintes elles-mêmes ne sont pas ici mais
+ * dans `styles/palettes.css` ; ce qui est stocké sur une catégorie ou un membre
+ * est un nom de token (`"var(--cat-3)"`), donc changer de palette recolore ce
+ * qui existe déjà, sans rien réécrire.
+ */
+export type PaletteSetting =
+  | 'classique'
+  | 'monochrome'
+  | 'douce'
+  | 'vive'
+  | 'neutre'
+  | 'contrastee'
+
+/** L'ordre fait foi : c'est celui des vignettes de l'écran d'apparence. */
+export const PALETTES: readonly PaletteSetting[] = [
+  'classique',
+  'monochrome',
+  'douce',
+  'vive',
+  'neutre',
+  'contrastee',
+]
+
+export const DEFAULT_PALETTE: PaletteSetting = 'classique'
+
+export function isPaletteSetting(value: unknown): value is PaletteSetting {
+  return PALETTES.includes(value as PaletteSetting)
+}
+
 export type Settings = {
   theme: ThemeSetting
+  palette: PaletteSetting
   /** Le symbole sous lequel les montants se lisent. Aucune conversion : ce
    *  n'est pas la multi-devise, que le cahier §2 laisse hors v1. */
   currency: string

@@ -12,6 +12,46 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Ajouté — le thème dit clair ou sombre, la palette dit avec quelles couleurs
+
+**Migration de schéma : v6 → v7.** Un champ `settings.palette` s'ajoute, avec
+« classique » pour tout document qui n'en portait pas. Rien d'autre ne bouge —
+les teintes enregistrées sur une catégorie ou un membre sont des noms de tokens,
+donc elles suivent la palette sans être réécrites.
+
+L'apparence n'avait qu'un réglage. Elle en a deux, qui se combinent : le thème
+dit clair, sombre ou système ; la palette dit avec quelles couleurs. Chacune des
+six existe dans les deux thèmes.
+
+- **Six palettes** — Classique (les couleurs d'origine), Monochrome, Douce,
+  Vive, Neutre, Contrastée. Aucun composant n'a changé : une palette n'est qu'un
+  jeu de surcharges de la couche de tokens, et `tokens.css` *est* la palette
+  Classique, qui n'a donc rien à déclarer et ne peut pas dériver.
+- **Une vue « Apparence »** sous `/reglages`, avec un aperçu par palette. Le
+  thème y descend avec elle : l'argument qui le gardait sur la page d'entrée
+  — trois positions ne méritent pas un écran — valait tant qu'il était seul, et
+  six aperçus ne tiennent pas dans une rangée. La page d'entrée ne perd pas une
+  rangée, elle en change : « Apparence » y dit sa valeur, « Système · Douce ».
+- **Le choix se garde comme le thème** : dans le document, avec un miroir en
+  `localStorage` que le script d'`index.html` lit avant le premier rendu. Sans
+  lui, l'app s'afficherait une frame dans les couleurs d'une autre palette.
+
+### Corrigé — l'anneau de focus ne se voyait pas sur le fond sombre
+
+- **Mesuré à 1,61:1**, là où WCAG 1.4.11 en demande 3 d'un indicateur de focus :
+  le violet des sorties sur le sapin du fond de page. Le défaut est antérieur aux
+  palettes, qui n'ont fait que le rendre visible — l'anneau a désormais son
+  propre token, et le thème sombre le repointe sur un violet plus clair (3,56:1
+  sur le fond, 9,17 sur une surface). **Le thème clair ne change pas.**
+- **Le plancher de contraste est tenu par un test**, et non plus par la
+  relecture : les douze couples palette × thème y sont mesurés — quinze paires de
+  texte à 4,5:1, le focus et l'écart entrées/sorties à 3:1, et la distance entre
+  deux teintes de catégorie. Les écarts assumés y sont déclarés un par un, avec
+  leur plancher propre.
+- **La barre système suit la palette.** Ses deux balises figeaient les couleurs
+  de Classique ; il n'y en a plus qu'une, tenue à jour depuis la feuille de
+  style.
+
 ### Modifié — le calendrier dit enfin ce que ses pastilles veulent dire
 
 La grille montrait quatre signes et n'en nommait aucun : une pastille pleine,
