@@ -1,15 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { entryPath, recurrencePath } from '@/app/routes'
 import { isSearchable, searchEntries, searchRecurrences } from '@/domain/search'
 import { fr } from '@/i18n/fr'
+import { history } from '@/i18n/history'
 import { formatDate, tpl } from '@/i18n/format'
 import { useCategoryMap, useEntries, useRecurrences } from '@/store/selectors'
 import { Amount } from '@/ui/Amount'
 import { Button } from '@/ui/Button'
-import { Eyebrow } from '@/ui/Eyebrow'
-import { Field, TextInput } from '@/ui/Field'
-import { SearchIcon } from '@/ui/Icons'
+import { TextInput } from '@/ui/Field'
 import { ListRow } from '@/ui/ListRow'
 import { Tile } from '@/ui/Tile'
 
@@ -49,8 +48,22 @@ const ALL = Number.MAX_SAFE_INTEGER
  *
  * Chaque résultat mène à sa fiche : une recherche qui montre sans laisser
  * ouvrir oblige à retrouver une deuxième fois ce qu'elle vient de trouver.
+ *
+ * **Un champ, et rien autour tant qu'on n'a rien demandé.** Elle occupait une
+ * tuile entière — cadre, étiquette de tuile, libellé de champ, champ, phrase
+ * d'aide : cinq éléments et cent quatre-vingt-dix pixels posés en tête de
+ * l'écran pour un outil dont on ne se sert pas à chaque visite. Trois des cinq
+ * disaient la même chose que le quatrième. Le champ vit donc nu dans la colonne
+ * de page, comme le filtre du catalogue (`CategoriesPage`), et la surface
+ * n'apparaît qu'avec les résultats — c'est eux qu'elle porte, pas l'attente.
+ *
+ * La phrase d'aide reste, mais là où elle sert : branchée en description du
+ * champ pour qui l'écoute, et écrite à l'œil quand la recherche ne rend rien —
+ * c'est le seul moment où savoir ce qu'elle a fouillé change quelque chose.
  */
 export function SearchSection() {
+  const fieldId = useId()
+  const hintId = `${fieldId}-hint`
   const [query, setQuery] = useState('')
   /* Se referme dès que la recherche change : une liste complète héritée du mot
      précédent n'a pas été demandée pour celui-ci. */
@@ -84,103 +97,120 @@ export function SearchSection() {
   }
 
   return (
-    <Tile className="gap-4">
-      <Eyebrow icon={SearchIcon}>{fr.history.search}</Eyebrow>
+    <>
+      {/* Le libellé existe, il ne s'affiche pas : c'est lui le nom accessible du
+          champ, et l'espace réservé porte le même mot à l'œil. */}
+      <div>
+        <label htmlFor={fieldId} className="sr-only">
+          {history.searchLabel}
+        </label>
+        <TextInput
+          id={fieldId}
+          type="search"
+          value={query}
+          placeholder={history.searchPlaceholder}
+          aria-describedby={hintId}
+          maxLength={60}
+          onChange={(event) => {
+            setQuery(event.target.value)
+            setShowAll(false)
+          }}
+        />
+        <p id={hintId} className="sr-only-text">
+          {history.searchHint}
+        </p>
+      </div>
 
-      <Field label={fr.history.searchLabel} hint={fr.history.searchHint}>
-        {(id) => (
-          <TextInput
-            id={id}
-            type="search"
-            value={query}
-            placeholder={fr.history.searchPlaceholder}
-            maxLength={60}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setShowAll(false)
-            }}
-          />
-        )}
-      </Field>
+      {/* Rien tant qu'on n'a rien tapé : ni tuile vide, ni hauteur réservée. */}
+      {searching && (
+        <Tile className="gap-4">
+          {nothing && (
+            /* La portée de la recherche se dit ici, et nulle part ailleurs :
+               c'est le seul moment où « je n'ai rien trouvé » demande de savoir
+               où l'on a cherché. */
+            <p className="t-label">
+              {tpl(history.searchEmpty, query.trim())} {history.searchHint}
+            </p>
+          )}
 
-      {nothing && <p className="t-label">{tpl(fr.history.searchEmpty, query.trim())}</p>}
+          {found.entries.items.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="t-label font-medium">{history.searchEntries}</span>
+              {/* La note se joint à la date plutôt que de rester invisible
+                  jusqu'à ce qu'on rouvre la ligne — c'est souvent elle qui
+                  distingue deux résultats au même libellé. */}
+              <ul className="flex flex-col">
+                {found.entries.items.map((entry) => (
+                  <li key={entry.id}>
+                    <ListRow
+                      color={colorOf(entry.categoryId)}
+                      label={entry.label}
+                      meta={metaOf(entry)}
+                      planned={entry.status === 'planned'}
+                      trailing={<Amount value={entry.amount} direction={entry.direction} />}
+                      onClick={() => {
+                        void navigate(entryPath(entry.id))
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-      {found.entries.items.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <span className="t-label font-medium">{fr.history.searchEntries}</span>
-          {/* La note se joint à la date plutôt que de rester invisible jusqu'à
-              ce qu'on rouvre la ligne — c'est souvent elle qui distingue deux
-              résultats au même libellé. */}
-          <ul className="flex flex-col">
-            {found.entries.items.map((entry) => (
-              <li key={entry.id}>
-                <ListRow
-                  color={colorOf(entry.categoryId)}
-                  label={entry.label}
-                  meta={metaOf(entry)}
-                  planned={entry.status === 'planned'}
-                  trailing={<Amount value={entry.amount} direction={entry.direction} />}
-                  onClick={() => {
-                    void navigate(entryPath(entry.id))
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
+          {found.recurrences.items.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="t-label font-medium">{history.searchRecurrences}</span>
+              <ul className="flex flex-col">
+                {found.recurrences.items.map((recurrence) => (
+                  <li key={recurrence.id}>
+                    <ListRow
+                      color={colorOf(recurrence.categoryId)}
+                      label={recurrence.label}
+                      meta={
+                        recurrence.endedOn === undefined
+                          ? (categories.get(recurrence.categoryId)?.label ?? fr.common.other)
+                          : fr.recurrences.stoppedBadge
+                      }
+                      trailing={
+                        recurrence.amount === null ? (
+                          <span className="t-label">{fr.recurrences.variable}</span>
+                        ) : (
+                          <Amount value={recurrence.amount} direction={recurrence.direction} />
+                        )
+                      }
+                      onClick={() => {
+                        void navigate(recurrencePath(recurrence.id))
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Une coupe annoncée vaut mieux qu'une coupe muette — c'était déjà
+              le cas —, mais « précise la recherche » est un conseil et non une
+              commande : il ne sert à rien quand les cent quatorze lignes
+              portent réellement le même mot. Le compte des deux listes se dit
+              d'un seul endroit, sous les deux, parce que c'est une seule
+              décision : on demande à tout voir, pas à tout voir des entrées. */}
+          {hidden > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="t-label">{tpl(history.searchMore, hidden)}</p>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setShowAll(true)
+                }}
+              >
+                {history.searchShowAll}
+              </Button>
+            </div>
+          )}
+        </Tile>
       )}
-
-      {found.recurrences.items.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <span className="t-label font-medium">{fr.history.searchRecurrences}</span>
-          <ul className="flex flex-col">
-            {found.recurrences.items.map((recurrence) => (
-              <li key={recurrence.id}>
-                <ListRow
-                  color={colorOf(recurrence.categoryId)}
-                  label={recurrence.label}
-                  meta={
-                    recurrence.endedOn === undefined
-                      ? (categories.get(recurrence.categoryId)?.label ?? fr.common.other)
-                      : fr.recurrences.stoppedBadge
-                  }
-                  trailing={
-                    recurrence.amount === null ? (
-                      <span className="t-label">{fr.recurrences.variable}</span>
-                    ) : (
-                      <Amount value={recurrence.amount} direction={recurrence.direction} />
-                    )
-                  }
-                  onClick={() => {
-                    void navigate(recurrencePath(recurrence.id))
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Une coupe annoncée vaut mieux qu'une coupe muette — c'était déjà le
-          cas —, mais « précise la recherche » est un conseil et non une
-          commande : il ne sert à rien quand les cent quatorze lignes portent
-          réellement le même mot. Le compte des deux listes se dit d'un seul
-          endroit, sous les deux, parce que c'est une seule décision : on
-          demande à tout voir, pas à tout voir des entrées. */}
-      {hidden > 0 && (
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="t-label">{tpl(fr.history.searchMore, hidden)}</p>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setShowAll(true)
-            }}
-          >
-            {fr.history.searchShowAll}
-          </Button>
-        </div>
-      )}
-    </Tile>
+    </>
   )
 }

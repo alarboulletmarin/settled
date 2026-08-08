@@ -7,6 +7,7 @@ import type { MonthPoint } from '@/domain/history'
 import type { Money } from '@/domain/money'
 import { parseYm } from '@/domain/date'
 import { fr } from '@/i18n/fr'
+import { history } from '@/i18n/history'
 import { NO_VALUE, formatMoney, formatYearMonth, monthNameShort, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import { Amount } from '@/ui/Amount'
@@ -27,9 +28,9 @@ const PAD = 6
 
 /** Ce que la lecture montre, et ce que la légende nommait auparavant. */
 const SERIES = [
-  { key: 'in' as const, label: fr.history.legendIn, color: 'var(--flow-in)', line: false },
-  { key: 'out' as const, label: fr.history.legendOut, color: 'var(--flow-out)', line: false },
-  { key: 'balance' as const, label: fr.history.legendBalance, color: 'var(--text)', line: true },
+  { key: 'in' as const, label: history.legendIn, color: 'var(--flow-in)', line: false },
+  { key: 'out' as const, label: history.legendOut, color: 'var(--flow-out)', line: false },
+  { key: 'balance' as const, label: history.legendBalance, color: 'var(--text)', line: true },
 ]
 
 export type MonthlyBarsProps = {
@@ -75,13 +76,13 @@ export function MonthlyBars({ points, label, srText, className }: MonthlyBarsPro
   const labels = points.map((p) =>
     p.hasData
       ? tpl(
-          fr.history.srMonthRead,
+          history.srMonthRead,
           formatYearMonth(p.ym),
           formatMoney(p.in, currency, false),
           formatMoney(p.out, currency, false),
           formatMoney(p.balance, currency, false),
         )
-      : tpl(fr.history.srMonthNoData, formatYearMonth(p.ym)),
+      : tpl(history.srMonthNoData, formatYearMonth(p.ym)),
   )
 
   const money = formatMoney
@@ -105,29 +106,59 @@ export function MonthlyBars({ points, label, srText, className }: MonthlyBarsPro
           disaient les trois mêmes mots, l'une avec des valeurs et l'autre sans.
           `aria-hidden` — chaque mois porte déjà sa lecture complète sur le
           curseur, l'annoncer une seconde fois doublerait chaque flèche. */}
-      <div aria-hidden="true" className="flex flex-col gap-1">
-        <span className="t-eyebrow text-muted">{formatYearMonth(point?.ym ?? '')}</span>
-        <div className="grid grid-cols-3 gap-2">
+      <div aria-hidden="true" className="flex flex-col gap-2">
+        {/* Le mois lu est le sujet de la lecture, pas une étiquette de plus. En
+            `t-eyebrow text-muted` il portait la lettre exacte de l'eyebrow posé
+            juste au-dessus par la tuile : deux micro-libellés mono empilés, et
+            rien qui dise de quoi les trois chiffres parlent. Un `span` et non
+            un `<h3>` — le bloc entier est `aria-hidden`, et un titre absent de
+            la liste des titres est un titre qui ment. La lettre est celle du
+            DS §3, le rang seulement typographique. */}
+        <span className="t-section">{formatYearMonth(point?.ym ?? '')}</span>
+        {/* Deux flux sur une rangée, le solde sur la sienne, séparé par un
+            filet : il n'est pas un troisième flux, il est ce que les deux
+            premiers donnent. C'est aussi ce qui le rend identifiable sans
+            couleur (DS §8) — sa place, son filet et son repère en trait.
+            Trois colonnes reviennent dès qu'il y a la largeur : à 320px elles
+            tomberaient à 77px, où un montant à six chiffres se fait couper par
+            le cadre de la tuile, sans que rien ne le dise. */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 sm:gap-x-2">
           {SERIES.map((serie) => (
-            <div key={serie.key} className="flex min-w-0 flex-col gap-0.5">
+            <div
+              key={serie.key}
+              className={cn(
+                'flex min-w-0 flex-col gap-0.5',
+                serie.key === 'balance' &&
+                  'col-span-2 border-t border-border pt-2 sm:col-span-1 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-3',
+              )}
+            >
               <span className="flex min-w-0 items-center gap-1.5">
                 <span
                   className={cn('shrink-0', serie.line ? 'h-0.5 w-4 rounded-chip' : 'h-2.5 w-2.5 rounded-[3px]')}
                   style={{ backgroundColor: serie.color }}
                 />
-                <span className="t-label min-w-0 truncate">{serie.label}</span>
+                <span
+                  className={cn('t-label min-w-0 truncate', serie.line && 'text-text')}
+                >
+                  {serie.label}
+                </span>
               </span>
               {point?.hasData === true ? (
+                /* Pas de `signed` sur le solde : `Amount` réserve le « + » aux
+                   entrées et aux écarts (DS §3), et un solde n'est ni l'un ni
+                   l'autre. Son « − » s'affiche seul, ce qui suffit. */
                 <Amount
                   value={point[serie.key]}
-                  size="label"
+                  size="body"
                   {...(serie.key === 'balance' ? {} : { direction: serie.key })}
                   withCents={false}
                 />
               ) : (
                 /* Un cadratin, jamais un zéro : le mois n'a pas de donnée, il
-                   n'en a pas pour zéro euro. */
-                <span className="t-num-label tnum">{NO_VALUE}</span>
+                   n'en a pas pour zéro euro. Au même rang que les chiffres
+                   qu'il remplace, sans quoi l'absence se lit plus petite que la
+                   présence. */
+                <span className="t-num-body tnum">{NO_VALUE}</span>
               )}
             </div>
           ))}

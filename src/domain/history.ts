@@ -104,6 +104,38 @@ export function compareMonths(
     .sort((x, y) => Math.abs(y.delta) - Math.abs(x.delta))
 }
 
+export type DeltaSplit = {
+  /** Écart non nul, du plus gros au plus petit — l'ordre de `compareMonths`. */
+  changed: CategoryDelta[]
+  /** Même montant des deux côtés, du plus lourd au plus léger. */
+  unchanged: CategoryDelta[]
+}
+
+/**
+ * Ce qui a changé d'un mois à l'autre, et ce qui n'a pas bougé.
+ *
+ * `compareMonths` rend l'union des catégories des deux mois : une catégorie
+ * présente de part et d'autre au même montant y figure avec un écart de zéro.
+ * Affichées ensemble, ces lignes-là noient les autres — sur un catalogue réel,
+ * quinze « 0,00 € · 0 % » pour deux vraies variations, et la lecture qu'on est
+ * venu chercher se trouve à la quinzième ligne.
+ *
+ * La partition vit ici et non dans le composant parce que c'est une distinction
+ * métier — « ça a bougé » ou « ça n'a pas bougé » — et non une mise en page.
+ *
+ * Les inchangées se reclassent par montant commun décroissant. Elles arrivent
+ * toutes à égalité sous le tri de `compareMonths`, qui classe par ampleur
+ * d'écart : leur ordre y est celui de l'itération d'un `Set`, c'est-à-dire
+ * celui de la première rencontre dans les entrées. Ce qui distingue encore
+ * deux catégories qui n'ont pas bougé, c'est ce qu'elles pèsent.
+ */
+export function splitDeltas(deltas: readonly CategoryDelta[]): DeltaSplit {
+  return {
+    changed: deltas.filter((delta) => delta.delta !== 0),
+    unchanged: deltas.filter((delta) => delta.delta === 0).sort((a, b) => b.right - a.right),
+  }
+}
+
 /* --- Comparaison d'années ------------------------------------------------*/
 
 export type YearPoint = {
@@ -134,6 +166,23 @@ export function yearSeries(
       hasData: point.hasData,
     }
   })
+}
+
+/**
+ * L'index du dernier mois que l'année sait chiffrer — son horizon.
+ *
+ * C'est lui qui rend deux années comparables quand l'une n'est pas finie :
+ * arrêter 2026 en novembre et lire 2025 jusqu'en décembre compare onze mois à
+ * douze, et l'écart annoncé est alors celui d'un mois de plus, pas celui d'une
+ * année qui va mieux. Le cumul de `yearSeries` court sur les douze mois quoi
+ * qu'il arrive — c'est ce qui permet de lire les deux années *au même index*
+ * plutôt que chacune à sa fin.
+ *
+ * `-1` sur une année entièrement vide : il n'y a alors aucun mois où s'arrêter,
+ * et rendre zéro aurait désigné janvier.
+ */
+export function yearHorizon(points: readonly YearPoint[]): number {
+  return points.reduce((last, point, index) => (point.hasData ? index : last), -1)
 }
 
 /** Les années couvertes par les données, de la plus ancienne à la plus récente. */
