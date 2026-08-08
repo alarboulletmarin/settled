@@ -17,10 +17,30 @@ const serie = (id: string, values: (number | null)[], dashed = false): Serie => 
 const twelve = (...values: (number | null)[]): (number | null)[] =>
   Array.from({ length: 12 }, (_, i) => values[i] ?? null)
 
-const draw = (series: Serie[]) =>
-  render(
-    <CumulativeLines series={series} label="Cumul du solde" srText="Cumul 2026 contre 2025 : …" />,
+const draw = (series: Serie[]) => {
+  /* L'écart n'est pas une série : il se lit, il ne se trace pas. Le composant
+     le reçoit à part, et l'appelant le calcule — ici comme dans `YearCompare`. */
+  const [current, before] = series
+  const extra =
+    current !== undefined && before !== undefined
+      ? {
+          label: 'Écart',
+          values: current.values.map((value, index) => {
+            const other = before.values[index]
+            return value === null || other === null || other === undefined ? null : value - other
+          }),
+        }
+      : undefined
+
+  return render(
+    <CumulativeLines
+      series={series}
+      {...(extra === undefined ? {} : { extra })}
+      label="Cumul du solde"
+      srText="Cumul 2026 contre 2025 : …"
+    />,
   )
+}
 
 const ticks = (): string[] =>
   [...document.querySelectorAll('.t-axis.absolute')].map((t) => t.textContent ?? '')
@@ -51,9 +71,31 @@ describe('CumulativeLines', () => {
 
   it('lit par défaut le dernier mois chiffré', () => {
     // Le nom du mois lu, et non celui de la bande sous le tracé : « mars » ne
-    // s'abrège pas, et les deux se ressemblent au point de se confondre.
+    // s'abrège pas, et les deux se ressemblent au point de se confondre. Il
+    // porte le rang du sujet de la lecture (`t-section`) et non celui d'une
+    // étiquette de plus, qui le rendait indiscernable de l'eyebrow de la tuile.
     const { container } = draw([serie('2026', twelve(10_000, 20_000, 30_000))])
-    expect(container.querySelector('.t-eyebrow')).toHaveTextContent('mars')
+    expect(container.querySelector('.t-section')).toHaveTextContent('mars')
+  })
+
+  /* La synthèse annuelle vit dans cette lecture-ci, et non dans un second bloc
+     au-dessus du tracé qui aurait réécrit les deux mêmes nombres — c'est
+     l'argument qui a déjà retiré les légendes d'ici. */
+  it('lit l’écart entre les deux séries, signé et au rang des autres', () => {
+    const { container } = draw([serie('2026', twelve(30_000)), serie('2025', twelve(12_000), true)])
+    expect(screen.getByText('Écart')).toBeInTheDocument()
+    expect([...container.querySelectorAll('.t-num-body')].map((n) => n.textContent)).toEqual([
+      euros(30_000),
+      euros(12_000),
+      `+${euros(18_000)}`,
+    ])
+  })
+
+  /* Pas de pastille sur l'écart : elle désignerait un trait qui n'existe pas.
+     C'est le filet qui le sépare des deux séries. */
+  it('ne donne de repère de couleur qu’aux séries tracées', () => {
+    const { container } = draw([serie('2026', twelve(30_000)), serie('2025', twelve(12_000), true)])
+    expect(container.querySelectorAll('.rounded-chip')).toHaveLength(2)
   })
 
   /* Cahier §4.7 : un mois sans donnée n'est pas un mois à zéro. */
@@ -65,11 +107,13 @@ describe('CumulativeLines', () => {
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('donne les deux années sur un mois qu’elles portent toutes deux', () => {
+  /* Ce qui se lit à l'œil se lit à l'oreille : l'écart entre dans le nom
+     accessible du mois, à sa place dans la phrase. */
+  it('donne les deux années et leur écart sur un mois qu’elles portent toutes deux', () => {
     draw([serie('2026', twelve(10_000)), serie('2025', twelve(8_000), true)])
     expect(screen.getAllByRole('option')[0]).toHaveAttribute(
       'aria-label',
-      `janvier : 2026 ${euros(10_000)}, 2025 ${euros(8_000)}`,
+      `janvier : 2026 ${euros(10_000)}, 2025 ${euros(8_000)}, Écart +${euros(2_000)}`,
     )
   })
 

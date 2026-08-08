@@ -76,7 +76,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           /* Focalisable au script, jamais à la tabulation : le contenu n'est pas
              une étape du parcours clavier, c'est là qu'on le dépose. */
           tabIndex={-1}
-          className="view-enter min-w-0 flex-1 px-4 pt-4 pb-24 md:px-8 md:pt-8 lg:pb-10"
+          /* Le cadre bas se déduit de ce qu'il doit dégager, et non d'un
+             nombre rond : la barre d'onglets, la marge du bouton flottant, le
+             disque, et un blanc sous le contenu. Il valait 96px quand le disque
+             monte à 129 au-dessus du bord — les trente-trois derniers pixels du
+             contenu passaient dessous, au coin bas-droit, et c'est là que
+             tombent les montants d'une liste et la poignée d'un repli. Mesuré
+             sur l'historique, mais le défaut n'était pas le sien : tout écran
+             qui va jusqu'en bas le portait. Écrit avec les jetons du bouton
+             pour que les deux ne puissent plus diverger. */
+          className="view-enter min-w-0 flex-1 px-4 pt-4 pb-[calc(var(--nav-h)+1rem+3.5rem+1rem+env(safe-area-inset-bottom))] md:px-8 md:pt-8 lg:pb-10"
         >
           {/* Celui-ci ne connaît pas `isFocusScreen` : un écran de saisie est
               précisément l'endroit où l'on est en train de perdre du travail. */}

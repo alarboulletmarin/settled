@@ -12,6 +12,102 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — l'historique répond à trois questions, et non plus à quatre cartes
+
+**La page donnait le même poids à tout.** Recherche, douze derniers mois, écart
+entre deux mois, cumul de deux années : quatre grandes tuiles empilées, quatre
+cadres identiques, et rien qui dise laquelle répond à quoi. Prises une par une
+elles étaient justes ; ensemble, elles faisaient plusieurs écrans de défilement
+pour trois questions qui tiennent en une phrase — comment ça évolue, qu'est-ce
+qui a changé, où est cette ligne.
+
+Trois défauts, tous mesurés :
+
+- **La recherche coûtait cent quatre-vingt-dix pixels pour un champ** — un
+  cadre de tuile, une étiquette de tuile, un libellé de champ, le champ, une
+  phrase d'aide. Quatre lignes de chrome en tête de l'écran, dont trois
+  disaient ce que la quatrième dit déjà, et la réponse repoussée sous le pli.
+- **L'écart mensuel affichait toutes les catégories, zéros compris.** Sur le
+  catalogue par défaut, quinze lignes à « 0,00 € · 0 % » pour deux vraies
+  variations : la tuile la plus haute de l'écran pour la lecture la moins
+  dense.
+- **Le cumul annuel comparait une année en cours à une année finie.** Il lisait
+  décembre pour les deux séries, donc huit mois contre douze, et annonçait
+  comme un écart ce qui n'était qu'un mois de plus.
+
+Ce qui change :
+
+- **Un champ nu, et rien autour tant qu'on n'a rien demandé.** La recherche
+  quitte sa tuile, comme le filtre du catalogue l'a déjà fait : **190 px → 44 px
+  au repos**. La surface n'apparaît qu'avec les résultats, et ils arrivent juste
+  sous le doigt plutôt que sous deux graphiques. Le libellé et l'aide ne
+  disparaissent pas — ils restent le nom accessible du champ et sa description,
+  et l'aide se montre à l'œil là où elle sert : quand la recherche ne rend rien.
+
+- **« Évolution », et un mois qui a le rang d'un sujet.** L'étiquette nomme ce
+  que la tuile montre, la fenêtre se dit à côté sur la même ligne. Le mois lu
+  passe de la lettre d'un micro-libellé mono à celle du corps : deux étiquettes
+  empilées, c'était ça, « une succession de labels indépendants ». Entrées,
+  Sorties et Solde gardent leurs pastilles — elles *sont* la légende du tracé —
+  passent à la taille d'un montant de ligne, et le solde prend sa propre rangée
+  sous un filet : il n'est pas un troisième flux, il est ce que les deux
+  premiers donnent. Trois colonnes reviennent dès qu'il y a la largeur.
+
+- **Une seule tuile « Comparer », et une bascule.** Mois ou Années, jamais les
+  deux à la fois, sur le même composant que le sélecteur de thème. Une carte de
+  moins, et le couple de mois survit à l'aller-retour.
+
+- **Ce qui a bougé d'abord, le reste replié.** Un compte et l'écart net en tête
+  — « 10 catégories ont changé · +84,70 € » —, puis les seules lignes qui ont
+  bougé, de la plus grosse à la plus petite. Les inchangées passent derrière un
+  repli qui ne les cache pas : il change ce qu'on lit d'elles. Une catégorie qui
+  n'a pas bougé n'a rien à dire d'un écart, mais elle a quelque chose à dire de
+  ce qu'elle coûte, et c'est **le montant commun aux deux mois** qui s'y
+  affiche. Deux mois identiques donnent une phrase, plus une liste de zéros.
+
+- **Un pourcentage qui n'existe pas se dit avec un mot.** Le mois de référence à
+  zéro rendait un cadratin — « on ne sait pas » — alors qu'on sait très bien :
+  la catégorie apparaît. Elle est « nouvelle ». Jamais d'`Infinity`, jamais de
+  `NaN` : la proportion est nulle en amont, pas rattrapée à l'affichage.
+
+- **Le rouge n'a pas changé de sens.** Il ne tombe que sur une hausse de charge
+  ou de crédit — trois cents euros de plus sur un livret ne sont pas une facture
+  qui flambe —, et il n'est jamais seul à parler : le signe est écrit, et la
+  lecture accessible le prononce.
+
+- **Deux années se lisent au même mois.** Le résumé et l'écart s'arrêtent au
+  dernier mois que l'année choisie sait chiffrer, et l'écran le nomme :
+  « 2026 s'arrête à août : les deux années se lisent à ce mois-là. » La
+  comparaison est explicite au lieu d'être devinée — « 2026 contre 2025 » à côté
+  du sélecteur —, et l'écart entre les deux courbes entre dans la lecture qui
+  existait déjà, plutôt que dans un second bloc qui aurait réécrit les mêmes
+  deux nombres.
+
+- **Une légende sans trait ne s'affiche plus.** L'année d'avant se jugeait sur
+  le document entier pendant que le tracé lisait la portée courante : sous un
+  filtre par membre, une ligne de légende apparaissait pour une courbe qui
+  n'existait pas.
+
+- **Deux sélecteurs de la même largeur, qui se superposent sous 360px.** Le
+  seuil est mesuré : une demi-tuile y laisse 65px de texte au contrôle quand
+  « sept. 2026 » en demande 70, et un `<select>` fermé tronque sans le dire.
+
+### Corrigé — le bouton flottant passait sur les derniers pixels de chaque écran
+
+Le cadre bas de la coquille valait 96px quand le disque monte à 129px au-dessus
+du bord. Les trente-trois derniers pixels du contenu passaient dessous, au coin
+bas-droit — c'est-à-dire sur les montants d'une liste et sur la poignée d'un
+repli. Il se déduit maintenant de ce qu'il doit dégager, avec les jetons du
+bouton, pour que les deux ne puissent plus diverger.
+
+### Corrigé — l'historique tombait sur un document sans le moindre mois
+
+La comparaison mensuelle calculait son mois de repli avant le garde qui explique
+qu'il n'y a rien à comparer, et l'arithmétique sur un mois vide lève. Le garde
+passe devant. Dans la foulée, un couple de mois qui ne désigne plus rien — après
+un import ou un chargement du jeu d'exemple — retombe sur les deux derniers au
+lieu de laisser un sélecteur afficher une valeur absente de sa propre liste.
+
 ### Modifié — les réglages deviennent une section, et redeviennent lisibles
 
 **La page portait toute la gestion de l'app.** Les personnes, le catalogue

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { MonthPoint } from '@/domain/history'
 import { money } from '@/domain/money'
 import { formatMoney, tpl } from '@/i18n/format'
-import { fr } from '@/i18n/fr'
+import { history } from '@/i18n/history'
 import { MonthlyBars } from './MonthlyBars'
 
 /* Les attentes passent par les formateurs plutôt que par des chaînes écrites à
@@ -81,7 +81,7 @@ describe('MonthlyBars', () => {
     expect(screen.getAllByRole('option')[0]).toHaveAttribute(
       'aria-label',
       tpl(
-        fr.history.srMonthRead,
+        history.srMonthRead,
         'janvier 2026',
         euros(200_000),
         euros(150_000),

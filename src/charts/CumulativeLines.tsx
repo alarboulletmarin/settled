@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import type { Money } from '@/domain/money'
 import { fr } from '@/i18n/fr'
+import { history } from '@/i18n/history'
 import { NO_VALUE, formatMoney, monthName, tpl } from '@/i18n/format'
 import { cn } from '@/lib/cn'
 import { useCurrency } from '@/ui/currency'
@@ -26,6 +27,25 @@ export type Serie = {
   values: (number | null)[]
   color: string
   dashed?: boolean
+}
+
+/**
+ * Une lecture de plus dans la ligne du curseur, qui n'est pas un trait.
+ *
+ * L'écart entre deux séries se lit au même mois qu'elles, et c'est tout ce
+ * qu'on veut savoir d'une comparaison d'années : ni une troisième courbe — un
+ * écart tracé au-dessus de ses deux termes ne se lit plus —, ni un second bloc
+ * de synthèse posé à côté, qui écrirait les deux mêmes nombres une seconde
+ * fois. C'est exactement l'argument qui a retiré les légendes de ces
+ * graphiques : deux blocs pour un seul sens, c'est le second qui ne sert pas.
+ *
+ * Pas de pastille : elle ne désigne aucun trait, et c'est précisément ce que
+ * son absence doit dire. Un filet la sépare des séries.
+ */
+export type ExtraRead = {
+  label: string
+  /** Un point par mois. `null` là où l'écart n'a pas de sens. */
+  values: (number | null)[]
 }
 
 /**
@@ -61,11 +81,13 @@ function toPoints(values: readonly (number | null)[], min: number, span: number)
  */
 export function CumulativeLines({
   series,
+  extra,
   label,
   srText,
   className,
 }: {
   series: readonly Serie[]
+  extra?: ExtraRead
   label: string
   srText: string
   className?: string
@@ -97,15 +119,21 @@ export function CumulativeLines({
   const lastWithData = first === undefined ? 0 : lastIn([first]) || lastIn(series)
   const shown = Math.min(active ?? lastWithData, Math.max(months - 1, 0))
 
+  const money = (value: number | null, signed = false): string =>
+    value === null
+      ? NO_VALUE
+      : `${signed && value > 0 ? '+' : ''}${formatMoney(value as Money, currency, false)}`
+
+  /* L'écart entre en toutes lettres dans le nom accessible du mois, à sa place
+     dans la phrase : ce qui se lit à l'œil se lit à l'oreille, ou l'un des deux
+     ment. */
   const read = (index: number): string =>
-    series
-      .map((serie) => {
-        const value = valueAt(serie, index)
-        return `${serie.label} ${value === null ? NO_VALUE : formatMoney(value as Money, currency, false)}`
-      })
-      .join(', ')
+    [
+      ...series.map((serie) => `${serie.label} ${money(valueAt(serie, index))}`),
+      ...(extra === undefined ? [] : [`${extra.label} ${money(extra.values[index] ?? null, true)}`]),
+    ].join(', ')
   const labels = Array.from({ length: months }, (_, index) =>
-    tpl(fr.history.srCumulativeRead, monthName(index + 1), read(index)),
+    tpl(history.srCumulativeRead, monthName(index + 1), read(index)),
   )
 
   /* Trois graduations, dont deux peuvent tomber sur la même valeur : `min` est
@@ -126,29 +154,34 @@ export function CumulativeLines({
     <div className={cn('flex flex-col gap-3', className)}>
       {/* La lecture au-dessus du tracé, qui a repris la légende — voir
           `MonthlyBars` pour le raisonnement, qui vaut mot pour mot ici. */}
-      <div aria-hidden="true" className="flex flex-col gap-1">
-        <span className="t-eyebrow text-muted">{monthName(shown + 1)}</span>
-        <div className="flex flex-wrap gap-x-6 gap-y-1">
-          {series.map((serie) => {
-            const value = valueAt(serie, shown)
-            return (
-              <div key={serie.id} className="flex min-w-0 flex-col gap-0.5">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className="h-0.5 w-4 shrink-0 rounded-chip"
-                    style={{
-                      backgroundColor: serie.color,
-                      opacity: serie.dashed === true ? 0.7 : 1,
-                    }}
-                  />
-                  <span className="t-label tnum min-w-0 truncate">{serie.label}</span>
-                </span>
-                <span className="t-num-label tnum">
-                  {value === null ? NO_VALUE : formatMoney(value as Money, currency, false)}
-                </span>
-              </div>
-            )
-          })}
+      <div aria-hidden="true" className="flex flex-col gap-2">
+        {/* Même rang que le mois lu des barres, et pour la même raison — voir
+            `MonthlyBars`, dont le raisonnement vaut mot pour mot ici. */}
+        <span className="t-section">{monthName(shown + 1)}</span>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {series.map((serie) => (
+            <div key={serie.id} className="flex min-w-0 flex-col gap-0.5">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span
+                  className="h-0.5 w-4 shrink-0 rounded-chip"
+                  style={{
+                    backgroundColor: serie.color,
+                    opacity: serie.dashed === true ? 0.7 : 1,
+                  }}
+                />
+                <span className="t-label tnum min-w-0 truncate">{serie.label}</span>
+              </span>
+              <span className="t-num-body tnum">{money(valueAt(serie, shown))}</span>
+            </div>
+          ))}
+          {extra !== undefined && (
+            <div className="flex min-w-0 flex-col gap-0.5 border-l border-border pl-3">
+              {/* Pas de pastille, et le filet à la place : cette lecture-ci ne
+                  désigne aucun trait du tracé. */}
+              <span className="t-label min-w-0 truncate text-text">{extra.label}</span>
+              <span className="t-num-body tnum">{money(extra.values[shown] ?? null, true)}</span>
+            </div>
+          )}
         </div>
       </div>
 

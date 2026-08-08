@@ -147,6 +147,21 @@ export function formatYearMonth(value: YearMonth): string {
 }
 
 /**
+ * « juil. 2026 » — le mois et son année, sur une largeur de sélecteur.
+ *
+ * Pour les contrôles que la largeur d'un téléphone divise en deux. À 320px, une
+ * demi-colonne de tuile laisse une soixantaine de pixels de texte à un `Select`
+ * — son cadre et sa réserve de chevron en prennent cinquante à eux seuls — et
+ * « novembre 2026 » s'y fait trancher au milieu du mot. La forme courte est
+ * celle que les axes de graphique tiennent déjà (`monthNameShort`) : on ne
+ * l'invente pas ici, on l'étend d'un an.
+ */
+export function formatYearMonthShort(value: YearMonth): string {
+  const { y, m } = parseYm(value)
+  return `${monthNameShort(m)} ${String(y)}`
+}
+
+/**
  * « juillet » — le mois seul.
  *
  * Pour les endroits où l'année ne tient pas et où elle n'apprend rien : un
