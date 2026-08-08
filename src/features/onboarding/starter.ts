@@ -7,8 +7,10 @@
  * Les deux lignes ne sont pas choisies au hasard. Un salaire par personne est
  * ce qui fait parler le prorata : le revenu d'un membre ne se déclare nulle
  * part, il se lit sur ses récurrences de nature `resource` (voir
- * `domain/split.ts`). Le loyer est la charge commune que tout foyer porte, et
- * la première qui rende le partage lisible.
+ * `domain/split.ts`). Le toit est la charge commune la plus répandue, et la
+ * première qui rende le partage lisible — mais elle ne suppose pas un loyer :
+ * on peut être hébergé, verser une participation, ou ne rien payer du tout, et
+ * la ligne le dit plutôt que de faire de « Loyer » une évidence.
  */
 
 import { type ISODate, type YearMonth, startOfMonth } from '@/domain/date'
@@ -25,7 +27,7 @@ import { fr } from '@/i18n/fr'
 const SALARY_CATEGORY = 'salary'
 const RENT_CATEGORY = 'rent'
 
-/** La ligne du foyer seul, qui n'a pas d'id de membre pour la nommer. */
+/** La ligne de qui est seul·e, et n'a pas d'id de membre pour la nommer. */
 const SOLO_KEY = 'solo'
 const RENT_KEY = 'rent'
 
@@ -35,21 +37,22 @@ export type StarterLine = {
   key: string
   /** Ce que le champ demande. */
   label: string
+  /** Ce qu'il faut ajouter sous le champ, quand le libellé ne suffit pas. */
+  hint?: string
   /** Ce que la récurrence portera comme nom — voir `starterSalaryLabel`. */
   recurrenceLabel: string
   categoryId: string
   direction: Direction
-  /** À qui la ligne revient. Absent sur le loyer, qui est au foyer. */
+  /** À qui la ligne revient. Absent sur le loyer, qui est commun. */
   memberId?: string
 }
 
 /**
  * Les lignes proposées : un salaire par membre, puis le toit.
  *
- * Sans membre, une seule ligne de revenu et pas de propriétaire : le foyer
- * d'une personne fonctionne très bien sans que personne n'y soit nommé, et
- * lui demander de se désigner lui-même serait la seule question de l'app à
- * n'avoir aucune conséquence.
+ * Sans membre, une seule ligne de revenu et pas de propriétaire : seul·e, on
+ * n'a besoin d'être nommé nulle part, et demander à quelqu'un de se désigner
+ * lui-même serait la seule question de l'app à n'avoir aucune conséquence.
  */
 export function starterLines(members: readonly Member[]): StarterLine[] {
   const salaries: StarterLine[] =
@@ -77,6 +80,7 @@ export function starterLines(members: readonly Member[]): StarterLine[] {
     {
       key: RENT_KEY,
       label: fr.onboarding.starterRent,
+      hint: fr.onboarding.starterRentHint,
       recurrenceLabel: fr.onboarding.starterRentLabel,
       categoryId: RENT_CATEGORY,
       direction: 'out',

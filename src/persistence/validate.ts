@@ -374,7 +374,10 @@ export function normalizeDocument(raw: unknown): NormalizedDocument {
   const data: Data = {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     household: {
-      name: str(household['name'], 'Maison'),
+      /* Le nom est facultatif et purement décoratif : un document qui n'en
+         porte pas n'en reçoit pas d'office. Y remettre « Maison » ferait
+         rentrer par l'import le mot que l'app a cessé de supposer. */
+      name: str(household['name'], ''),
       members: compact(array(household['members']), 'members', member, notices),
     },
     // Un document sans famille lisible repart du catalogue : sans premier

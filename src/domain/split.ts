@@ -91,7 +91,7 @@ export function isSharedEntry(entry: Entry, kind: CategoryKind): boolean {
  * document ne se remplit pas de booléens redondants.
  *
  * La chaîne vide compte comme « aucun membre » : c'est ce que vaut le choix
- * « tout le foyer » dans un `select`.
+ * « en commun » dans un `select`.
  */
 export function defaultShared(kind: CategoryKind, memberId?: string): boolean {
   return isSpending(kind) && (memberId === undefined || memberId === '')
@@ -432,7 +432,7 @@ export function scopeToMember(
 ): Entry[] | null {
   // Seul du foyer, son mois est le mois du foyer : tout lui revient — le
   // commun à son montant plein, et les lignes que personne ne porte (une paie
-  // ou un versement laissés « tout le foyer »), qui ne sont pas communes et
+  // ou un versement laissés « en commun »), qui ne sont pas communes et
   // que le découpage du prorata ne saurait donc pas lui rendre. C'est ce qui
   // fait que la lecture filtrée sur lui et « tout le monde » disent le même
   // centime.

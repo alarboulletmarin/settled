@@ -715,7 +715,7 @@ describe('un foyer d’une seule personne', () => {
     makeEntry({ id: 'loyer', date: '2026-07-05', amount: eur(95_000), categoryId: 'logement' }),
     /* À lui. */
     makeEntry({ id: 'sien', date: '2026-07-15', amount: eur(4_000), categoryId: 'courses', memberId: 'm-1' }),
-    /* Laissés « tout le foyer » : ni communs ni à lui — le découpage du prorata
+    /* Laissés « en commun » : ni communs ni à lui — le découpage du prorata
        ne les voit pas, seule la règle solo les lui rend. */
     makeEntry({ id: 'paie', date: '2026-07-01', direction: 'in', amount: eur(250_000), categoryId: 'salaire' }),
     makeEntry({ id: 'livret', date: '2026-07-12', amount: eur(20_000), categoryId: 'livret', memberId: '' }),

@@ -2,7 +2,7 @@
 
 # Tout compte fait
 
-**Le suivi des finances du foyer, sans compte et sans serveur.**
+**Le suivi de tes finances, sans compte et sans serveur.**
 Les données vivent dans le navigateur. Rien ne sort de l'appareil.
 
 [![CI](https://github.com/alarboulletmarin/tout-compte-fait/actions/workflows/ci.yml/badge.svg)](https://github.com/alarboulletmarin/tout-compte-fait/actions/workflows/ci.yml)
@@ -50,10 +50,10 @@ au prorata des revenus.
 
 Nulle part. Il n'y a ni compte, ni serveur, ni analytics, ni cookie tiers : le
 document vit en IndexedDB dans le navigateur, et l'app fonctionne en mode avion.
-Personne — auteur compris — ne peut lire un foyer.
+Personne — auteur compris — ne peut lire ces données.
 
 La contrepartie est réelle et il faut la connaître : **vider les données du
-navigateur efface le foyer**, et rien ne se synchronise entre deux appareils.
+navigateur efface tout**, et rien ne se synchronise entre deux appareils.
 D'où l'export, un fichier JSON qu'on range où l'on veut, et le rappel qui le
 propose tous les trente jours.
 

@@ -37,7 +37,7 @@ avec le gabarit « Bug ». Ce qui aide vraiment :
 - une capture, si c'est visuel.
 
 **N'attache jamais ton fichier de données exporté.** Il contient tes revenus,
-tes crédits et le nom des gens de ton foyer. Si le bug ne se reproduit qu'avec
+tes crédits et le prénom des gens avec qui tu partages. Si le bug ne se reproduit qu'avec
 des données particulières, décris leur *forme* — « une récurrence mensuelle au
 31 avec un montant variable » — ou reproduis-le sur le jeu d'exemple.
 

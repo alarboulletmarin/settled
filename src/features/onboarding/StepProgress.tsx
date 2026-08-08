@@ -6,7 +6,7 @@ import { ChevronLeft } from '@/ui/Icons'
 import { Ring } from '@/ui/Ring'
 
 /**
- * L'en-tête des deux questions : le retour, le nom de l'app, et la progression.
+ * L'en-tête des deux étapes : le retour, le nom de l'app, et la progression.
  *
  * La progression était une phrase — « Étape 1 sur 2 ». Elle est maintenant
  * l'anneau signature en jauge, à l'épaisseur du DS §6, celle qu'utilisent déjà
@@ -19,9 +19,9 @@ import { Ring } from '@/ui/Ring'
  * ou charger l'exemple n'a plus qu'à répondre ou à fermer.
  */
 /** Le nombre d'étapes. Vit ici parce que c'est ici que la jauge le divise. */
-const STEPS = 3
+const STEPS = 2
 
-export function StepProgress({ step, onBack }: { step: 1 | 2 | 3; onBack?: () => void }) {
+export function StepProgress({ step, onBack }: { step: 1 | 2; onBack?: () => void }) {
   const label = tpl(fr.onboarding.progress, step)
 
   return (
@@ -31,8 +31,7 @@ export function StepProgress({ step, onBack }: { step: 1 | 2 | 3; onBack?: () =>
           <ChevronLeft size={18} />
         </Link>
       ) : (
-        /* Le retour nomme l'étape où il ramène : avec trois étapes, « revenir en
-           arrière » ne désigne plus un seul endroit, et un lecteur d'écran qui
+        /* Le retour nomme l'étape où il ramène : un lecteur d'écran qui
            n'entend que « retour » ne sait pas s'il perd une réponse. */
         <button
           type="button"

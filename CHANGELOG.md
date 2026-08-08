@@ -12,6 +12,46 @@ qu'un fichier exporté aujourd'hui se rouvre demain.
 
 ## [Non publié]
 
+### Modifié — le mot « foyer » quitte l'app
+
+« Foyer » supposait une chose que le calcul n'utilise jamais : la cohabitation.
+Rien dans `domain/split.ts` ne dépend du fait que les personnes vivent ensemble
+— le prorata marche à l'identique pour un couple à deux adresses, deux
+colocataires, ou quelqu'un qui partage un abonnement avec sa sœur. Le mot
+laissait pourtant dehors qui vit seul, qui vit chez ses parents, et qui partage
+à distance. Il faisait en plus trois métiers à la fois — le conteneur, la portée
+de partage, les personnes —, ce qui interdisait de le remplacer par un seul
+mot.
+
+- **La portée de partage dit « en commun ».** C'est le mot que l'app avait déjà
+  pour son filtre. Le cahier §4.6 signalait la collision sans la corriger :
+  « Tout le monde » et « Tout le foyer » ont porté la même étiquette à un écran
+  d'écart en voulant dire le contraire. La saisie, les en-têtes de groupe et le
+  sélecteur de personne s'alignent sur le filtre, et la collision tombe.
+- **Les personnes sont des personnes.** « Qui vit ici ? » devient « Avec qui tu
+  partages des dépenses ? » — la question porte sur ce dont le calcul se sert.
+  La section des réglages s'appelle « Personnes ».
+- **Le nom du foyer ne se demande plus.** Il ouvrait l'onboarding et il était la
+  seule réponse *exigée* de toute l'app, pour un libellé de colonne latérale.
+  Il vit dans les réglages, facultatif, sous « Nom affiché » ; vide, la ligne ne
+  s'affiche pas, et la colonne garde le nom de l'app qu'elle porte déjà
+  au-dessus. **Le premier lancement passe donc de trois étapes à deux, et
+  aucune n'exige de réponse.**
+- **La ligne du logement ne dit plus « Loyer » tout court.** Voir ce mot comme
+  l'une des deux seules lignes proposées disait « cette app n'est pas pour toi »
+  à qui n'en paie pas. Elle nomme le loyer, le crédit immobilier et ce qu'on
+  verse pour se loger, et dit qu'on peut la laisser vide — ce qu'elle était
+  déjà sans le dire.
+- **Le solo cesse d'être une dérogation.** « Le foyer fonctionne très bien en
+  solo » concédait que ça marche quand même ; les formulations disent maintenant
+  ce qui se passe, sans s'excuser.
+
+Aucun changement de modèle, donc **aucune migration** : `Household.name` reste
+une chaîne, simplement facultative. Un document existant garde son nom et
+l'affiche. Le `name` du manifeste PWA est le seul endroit qui garde le mot — il
+porte l'identité des installations déjà en place ; l'écart est assumé et inscrit
+dans l'architecture.
+
 ### Modifié — le calendrier devient un calendrier
 
 Il en avait la forme et rien d'autre. Sa grille ne calculait que les cases

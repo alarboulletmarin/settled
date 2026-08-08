@@ -21,7 +21,7 @@ import { Checkbox } from '@/ui/Field'
  * du compte mais reste à qui le fait. Sur les deux autres, la case ne pouvait
  * qu'afficher « non » et proposer un « oui » que le calcul aurait ignoré.
  *
- * Sur « tout le foyer », elle est **cochée et verrouillée**. Une charge que
+ * Sur « en commun », elle est **cochée et verrouillée**. Une charge que
  * personne ne s'attribue *est* commune, par la règle même : la décocher sans
  * dire à qui elle est produirait une ligne qui sort du compte du foyer sans
  * apparaître dans le mois de personne, et la somme des soldes individuels

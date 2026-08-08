@@ -22,7 +22,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog'
 import { Dot } from '@/ui/Dot'
 import { Eyebrow } from '@/ui/Eyebrow'
 import { Field, TextInput } from '@/ui/Field'
-import { Close, HouseholdIcon } from '@/ui/Icons'
+import { Close, PeopleIcon } from '@/ui/Icons'
 import { Tile } from '@/ui/Tile'
 import { useCurrency } from '@/ui/currency'
 import { useDraftField } from '@/ui/useDraftField'
@@ -32,7 +32,7 @@ import { MemberNameInput } from './MemberNameInput'
 /**
  * Ce que le retrait d'un membre annonce, selon ce qu'il emporte vraiment.
  *
- * Tout ce qu'il libère est réversible — une entrée rendue au foyer se
+ * Tout ce qu'il libère est réversible — une entrée rendue au commun se
  * réattribue —, sauf ses avances : `Advance.memberId` n'est pas facultatif, une
  * épargne est toujours à quelqu'un. Une question qui annonce « rien n'est
  * effacé » ne peut donc pas les taire.
@@ -54,10 +54,12 @@ export function HouseholdSection() {
   const [newMember, setNewMember] = useState('')
   const [removing, setRemoving] = useState<Member | null>(null)
   const trimmed = newMember.trim()
-  /* Le nom du foyer se lit en tête de chaque écran : le vider en cours de
-     frappe l'y effaçait à chaque caractère. Il n'est jamais enregistré vide,
-     comme un prénom, et pour la même raison. */
-  const householdDraft = useDraftField(name, setHouseholdName, { allowEmpty: false })
+  /* Le nom se lit en tête de chaque écran, et il est facultatif : il ne se
+     demande plus au premier lancement, où il était la seule réponse exigée de
+     toute l'app pour un simple libellé. Vide, `Nav` masque la ligne — d'où
+     `allowEmpty`, sans quoi on ne pourrait plus revenir en arrière après
+     l'avoir rempli une fois. */
+  const householdDraft = useDraftField(name, setHouseholdName, { allowEmpty: true })
 
   const removedAdvances =
     removing === null ? 0 : advances.filter((a) => a.memberId === removing.id).length
@@ -66,9 +68,9 @@ export function HouseholdSection() {
 
   return (
     <Tile className="gap-4">
-      <Eyebrow icon={HouseholdIcon}>{fr.settings.household}</Eyebrow>
+      <Eyebrow icon={PeopleIcon}>{fr.settings.household}</Eyebrow>
 
-      <Field label={fr.settings.householdName} required>
+      <Field label={fr.settings.householdName} hint={fr.settings.householdHint} optional>
         {(id) => (
           <TextInput
             id={id}
@@ -152,7 +154,7 @@ export function HouseholdSection() {
           </ul>
         )}
 
-        {/* Un salaire resté « tout le foyer » ne compte dans le revenu de
+        {/* Un salaire resté « en commun » ne compte dans le revenu de
             personne : il rentre bien sur le mois, mais il ne pèse dans aucune
             part, et rien nulle part ne le disait. C'est la première explication
             d'une répartition qui ne se calcule pas — la saisie l'exige
@@ -248,7 +250,7 @@ export function HouseholdSection() {
           if (member === null) return
           /* Le seul des six gestes qui n'annonçait rien. C'est aussi celui qui
              touche le plus d'endroits à la fois — ses entrées et ses
-             récurrences rendues au foyer, ses avances supprimées, le filtre du
+             récurrences rendues au commun, ses avances supprimées, le filtre du
              mois rabattu sur « tout le monde » — et donc celui où l'instantané
              rend le plus de service : aucun geste inverse ne les recollerait
              un par un. */

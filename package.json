@@ -1,7 +1,7 @@
 {
   "name": "tout-compte-fait",
   "version": "1.0.0",
-  "description": "Suivi des finances du foyer, sans compte ni serveur. Les données vivent dans le navigateur et rien ne sort de l'appareil.",
+  "description": "Suivi de tes finances, sans compte ni serveur. Les données vivent dans le navigateur et rien ne sort de l'appareil.",
   "keywords": [
     "finances-personnelles",
     "budget",

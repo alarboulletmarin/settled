@@ -106,13 +106,13 @@ export const legalNotice: LegalDocument = {
 
 export const privacyPolicy: LegalDocument = {
   intro:
-    'Les données de ton foyer ne quittent pas ton appareil. Ni l’éditeur, ni l’hébergeur, ni personne d’autre ne peut les lire — il n’existe aucun serveur où elles pourraient se trouver.',
+    'Tes données ne quittent pas ton appareil. Ni l’éditeur, ni l’hébergeur, ni personne d’autre ne peut les lire — il n’existe aucun serveur où elles pourraient se trouver.',
   updated: UPDATED,
   sections: [
     {
       heading: 'Ce que l’app enregistre, et où',
       body: [
-        'Tout ce que tu saisis — foyer, membres, catégories, récurrences, entrées, crédits, avances — est enregistré dans la base IndexedDB de ton navigateur, sur ton appareil. C’est le seul endroit où ces informations existent.',
+        'Tout ce que tu saisis — personnes, catégories, récurrences, entrées, crédits, avances — est enregistré dans la base IndexedDB de ton navigateur, sur ton appareil. C’est le seul endroit où ces informations existent.',
         'S’y ajoutent trois réglages minuscules, dans le stockage local du même navigateur : le thème choisi, la date de ton dernier export, et la date à laquelle tu as écarté le rappel d’export. Ils décrivent cet appareil-ci, et c’est pourquoi ils ne figurent pas dans un fichier exporté.',
         'Rien de tout cela n’est transmis. L’app ne fait aucune requête réseau vers un tiers : elle ne contient ni appel à une interface distante, ni ressource externe — les polices de caractères elles-mêmes sont servies depuis le site, précisément pour qu’aucune requête ne parte ailleurs.',
       ],
@@ -141,14 +141,14 @@ export const privacyPolicy: LegalDocument = {
     {
       heading: 'Tes droits',
       body: [
-        'Sur les données de ton foyer, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien derrière. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
+        'Sur tes données, ils s’exercent directement, sans passer par personne : l’export te rend un fichier complet, chaque ligne se corrige ou se supprime dans l’app, et « Tout effacer » dans les réglages ne laisse rien derrière. C’est la conséquence directe du fait que ces données ne sont qu’à toi.',
         'Sur les journaux de l’hébergeur, la demande se fait par le dépôt — le lien est en bas de cette page. Tu peux aussi introduire une réclamation auprès de la CNIL.',
       ],
     },
     {
       heading: 'La contrepartie, qu’il faut connaître',
       body: [
-        'Puisque rien n’est ailleurs, rien ne se récupère ailleurs. Vider les données de ton navigateur efface ton foyer, et personne — l’éditeur compris — ne peut te le rendre. Rien ne se synchronise non plus d’un appareil à l’autre.',
+        'Puisque rien n’est ailleurs, rien ne se récupère ailleurs. Vider les données de ton navigateur les efface, et personne — l’éditeur compris — ne peut te les rendre. Rien ne se synchronise non plus d’un appareil à l’autre.',
         'D’où l’export, un fichier que tu ranges où tu veux, et le rappel que l’app t’adresse au bout de trente jours. Sur iPhone, installe l’app sur l’écran d’accueil : Safari efface les données d’un site non installé après environ sept jours sans visite.',
       ],
     },

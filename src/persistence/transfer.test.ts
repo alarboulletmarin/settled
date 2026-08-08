@@ -155,7 +155,10 @@ describe('import — fichiers hostiles', () => {
 
   it('remet les valeurs par défaut sur un document tronqué', () => {
     const data = parseImport('{}').data
-    expect(data.household.name).toBe('Maison')
+    /* Le nom est facultatif et décoratif : un document qui n'en porte pas
+       n'en reçoit pas d'office. Un repli inventé remettrait par l'import le
+       mot que l'app a cessé de supposer. */
+    expect(data.household.name).toBe('')
     expect(data.settings).toEqual({ theme: 'system', currency: 'EUR', monthStartsOn: 1 })
     expect(data.entries).toEqual([])
   })
